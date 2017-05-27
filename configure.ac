@@ -1,5 +1,5 @@
 AC_PREREQ(2.57)
-AC_INIT(Judy, 1.0.5, dougbaskins@yahoo.com)
+AC_INIT(Judy, 1.0.6, dougbaskins@gmail.com)
 
 AM_MAINTAINER_MODE
 
