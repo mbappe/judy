@@ -184,11 +184,15 @@
 typedef struct SHORCUTLEAF
 {
     Pvoid_t   scl_Pvalue;               // callers value area.
+    // Should be "uint8_t scl_Index[];" but too nervous to make that
+    // change now. Use (strcpy) to disable __strcpy_chk for now.
     uint8_t   scl_Index[WORDSIZE];      // base Index string.
 } scl_t  , *Pscl_t;
 
 // overhead of the scl_Pvalue only, the scl_Index is calculate elsewhere
 
+// Should be "#define STRUCTOVD (sizeof(scl_t)) but too nervous to make
+// that change now. Use (strcpy) to disable __strcpy_chk for now.
 #define STRUCTOVD       (sizeof(scl_t) - WORDSIZE)
 
 // How big to malloc a shortcut leaf; stringlen should already include the
@@ -199,7 +203,7 @@ typedef struct SHORCUTLEAF
 // string routines, may replace with your own
 //
 #define STRCMP(S1,S2)   strcmp((void *)(S1), (void *)(S2))
-#define STRCPY(S1,S2)   strcpy((void *)(S1), (void *)(S2))
+#define STRCPY(S1,S2)   (strcpy)((void *)(S1), (void *)(S2))
 #define STRLEN(S1)      (strlen((void *)(S1)) + 1)
 
 
