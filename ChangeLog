@@ -1,3 +1,10 @@
+1.0.6  Version
+o fixed build of 32-bit libJudy.a on 64-bit machines
+o 32-bit build of Judy1LHCheck and Judy1LHTime is still
+  broken at least in part because Checkit doesn't add -m32.
+o fixed missing empty man/man3 directory in git repo issue
+o worked around __strcpy_chk on Mac by using (strcpy)
+
 1.0.5  Version (May 2007) by (twh)
 o added proper clean targets to enable multiple builds
 o added examples directory
