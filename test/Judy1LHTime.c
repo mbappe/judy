@@ -78,6 +78,11 @@
 
 #endif // defined(_WIN64)
 
+// damn apple or posix
+#ifndef MAP_ANONYMOUS
+#define  MAP_ANONYMOUS MAP_ANON
+#endif  // ! MAP_ANONYMOUS
+
 //=======================================================================
 //             R A M   M E T R I C S  
 //=======================================================================
