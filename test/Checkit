@@ -40,6 +40,8 @@ fi
 
 echo "$CC -O -I../src Judy1LHTime.c -DNOINLINE  -o Judy1LHTime  $LIBJUDY -lm"
       $CC -O -I../src Judy1LHTime.c -DNOINLINE  -o Judy1LHTime  $LIBJUDY -lm
+      #$CC -O -I../src Judy1LHTime.c -DRAMMETRICS -DNOINLINE -m32 -o Judy1LHTime  $LIBJUDY -lm
+      #clang -O -I../src Judy1LHTime.c -DRAMMETRICS -DNOINLINE -m32 -o Judy1LHTime  ../src/obj/.libs/libJudy.a -lm
 RET=$?
 if [ $RET -ne 0 ] ; then
 echo "===  $? Failed: $CC Judy1LHTime.c"
