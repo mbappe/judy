@@ -1420,7 +1420,7 @@ main(int argc, char *argv[])
 
 //            printf(""OWx"\n", PrintKey);
 
-            printf("0x"Owx", %2d %lu\n", PrintKey, (int)log2((double)(PrintKey)) + 1, PrintKey);
+            printf("0x" Owx", %2d %lu\n", PrintKey, (int)log2((double)(PrintKey)) + 1, PrintKey);
 
 #ifdef __LP64__
 //            printf("0x%016lx\n", PrintKey);
@@ -1889,7 +1889,7 @@ main(int argc, char *argv[])
 #else   // ! USE_MALLOC
 
         JudyMalloc((Word_t)1000);       
-        By = mmap(NULL, Bytes, (PROT_READ|PROT_WRITE), (MAP_PRIVATE|MAP_ANONYMOUS), -1, 0);
+        By = (uint8_t *)mmap(NULL, Bytes, (PROT_READ|PROT_WRITE), (MAP_PRIVATE|MAP_ANONYMOUS), -1, 0);
         if (By == (uint8_t *)NULL)
         {
             FAILURE("mmap failure, Bytes =", Bytes);
