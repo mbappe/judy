@@ -113,7 +113,7 @@
 #define	PCNULL	((char *) NULL)
 typedef int bool_t;			// for clarity with Boolean values.
 
-char * gc_usage[] = {
+const char * gc_usage[] = {
     "usage: %s filename.htm[l]",
     "",
     "Reads restricted (Judy-specific) HTML from filename.htm[l] and emits",
@@ -135,7 +135,7 @@ char * gc_myname;			// how program was invoked.
 
 // Common error string:
 
-char * FmtErrLineEnds = FILELINE "Input line ends within an HTML tag; for this "
+const char * FmtErrLineEnds = FILELINE "Input line ends within an HTML tag; for this "
 			"translator, all tags must be on a single input line";
 
 // Macros for skipping whitespace or non-whitespace; in the latter case,
@@ -200,7 +200,7 @@ enum {
 // match.
 
 struct docnode_type {
-	char *	dnt_tag;		// HTML tag.
+	const char *	dnt_tag;		// HTML tag.
 	bool_t	dnt_savetag;		// flag: save HTML tag.
 	bool_t	dnt_nest;		// flag: see comments above.
 	int	dnt_type;		// corresponding number.
@@ -316,7 +316,7 @@ char *	StrSaveN( char * String, ...);
 void *	Malloc(	  size_t Size);
 
 void	Usage(void);
-void    Error(int Exitvalue, int MyErrno, char * Message, ...);
+void    Error(int Exitvalue, int MyErrno, const char * Message, ...);
 
 DBGCODE(void DumpTree(Pdn_t Pdn, int Depth, bool_t Separator);)
 
@@ -726,7 +726,7 @@ FUNCTION void EmitNroffBody(
 	char *	PageName)	// such as "Judy1".
 {
 	int	DLcount = 0;	   // set to 1 if hit <DL> here.
-	char *	suffix  = PCNULL;  // to print after children, before siblings.
+	const char *	suffix  = PCNULL;  // to print after children, before siblings.
 
 // When about to emit text, if the previous output came from a lower input line
 // number, start with a newline; otherwise do not, and let the text
@@ -1344,7 +1344,7 @@ FUNCTION int TagType(
 	int	 Linenum)	// for error reporting.
 {
 	int	 dn_type;	// to return.
-	char *	 mytag;		// local variation.
+	const char *	 mytag;		// local variation.
 
 	assert( Tag != PCNULL);
 	assert(*Tag != CHNULL);
@@ -1559,9 +1559,9 @@ FUNCTION void MarkNoEmit(
 // escape codes.
 
 struct et_list {
-	char * et_escape;	// expected text.
+	const char * et_escape;	// expected text.
 	size_t et_len;		// of expected text.
-	char   et_emit;		// equivalent char.
+	const char   et_emit;		// equivalent char.
 } et_list[] = {
 	{ "amp;", 4, '&', },
 	{ "gt;",  3, '>', },
@@ -1821,7 +1821,7 @@ FUNCTION void Usage(void)
 FUNCTION void Error(
 	int	Exitvalue,	// or NOEXIT for warning.
 	int	MyErrno,	// system errno if relevant.
-	char *	Message, ...)
+	const char *	Message, ...)
 {
 	va_list Parg;		// place in arg list.
 

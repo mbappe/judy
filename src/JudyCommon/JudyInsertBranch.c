@@ -32,7 +32,7 @@
 
 #include "JudyPrivate1L.h"
 
-extern int j__udyCreateBranchL(Pjp_t, Pjp_t, uint8_t *, Word_t, Pvoid_t);
+extern int j__udyCreateBranchL(Pjp_t, Pjp_t, uint8_t *, Word_t, Pjpm_t);
 
 
 // ****************************************************************************

@@ -80,36 +80,36 @@ DBGCODE(extern void JudyCheckSorted(Pjll_t Pjll, Word_t Pop1, long IndexSize);)
 
 #ifdef JUDY1
 
-extern int      j__udy1BranchBToBranchL(Pjp_t Pjp, Pvoid_t Pjpm);
+extern int      j__udy1BranchBToBranchL(Pjp_t Pjp, Pjpm_t Pjpm);
 #ifndef JU_64BIT
-extern int      j__udy1LeafB1ToLeaf1(Pjp_t, Pvoid_t);
+extern int      j__udy1LeafB1ToLeaf1(Pjp_t, Pjpm_t);
 #endif
-extern Word_t   j__udy1Leaf1ToLeaf2(uint16_t *, Pjp_t, Word_t, Pvoid_t);
-extern Word_t   j__udy1Leaf2ToLeaf3(uint8_t  *, Pjp_t, Word_t, Pvoid_t);
+extern Word_t   j__udy1Leaf1ToLeaf2(uint16_t *, Pjp_t, Word_t, Pjpm_t);
+extern Word_t   j__udy1Leaf2ToLeaf3(uint8_t  *, Pjp_t, Word_t, Pjpm_t);
 #ifndef JU_64BIT
-extern Word_t   j__udy1Leaf3ToLeafW(Pjlw_t,     Pjp_t, Word_t, Pvoid_t);
+extern Word_t   j__udy1Leaf3ToLeafW(Pjlw_t,     Pjp_t, Word_t, Pjpm_t);
 #else
-extern Word_t   j__udy1Leaf3ToLeaf4(uint32_t *, Pjp_t, Word_t, Pvoid_t);
-extern Word_t   j__udy1Leaf4ToLeaf5(uint8_t  *, Pjp_t, Word_t, Pvoid_t);
-extern Word_t   j__udy1Leaf5ToLeaf6(uint8_t  *, Pjp_t, Word_t, Pvoid_t);
-extern Word_t   j__udy1Leaf6ToLeaf7(uint8_t  *, Pjp_t, Word_t, Pvoid_t);
-extern Word_t   j__udy1Leaf7ToLeafW(Pjlw_t,     Pjp_t, Word_t, Pvoid_t);
+extern Word_t   j__udy1Leaf3ToLeaf4(uint32_t *, Pjp_t, Word_t, Pjpm_t);
+extern Word_t   j__udy1Leaf4ToLeaf5(uint8_t  *, Pjp_t, Word_t, Pjpm_t);
+extern Word_t   j__udy1Leaf5ToLeaf6(uint8_t  *, Pjp_t, Word_t, Pjpm_t);
+extern Word_t   j__udy1Leaf6ToLeaf7(uint8_t  *, Pjp_t, Word_t, Pjpm_t);
+extern Word_t   j__udy1Leaf7ToLeafW(Pjlw_t,     Pjp_t, Word_t, Pjpm_t);
 #endif
 
 #else // JUDYL
 
-extern int      j__udyLBranchBToBranchL(Pjp_t Pjp, Pvoid_t Pjpm);
-extern int      j__udyLLeafB1ToLeaf1(Pjp_t, Pvoid_t);
-extern Word_t   j__udyLLeaf1ToLeaf2(uint16_t *, Pjv_t, Pjp_t, Word_t, Pvoid_t);
-extern Word_t   j__udyLLeaf2ToLeaf3(uint8_t  *, Pjv_t, Pjp_t, Word_t, Pvoid_t);
+extern int      j__udyLBranchBToBranchL(Pjp_t Pjp, Pjpm_t Pjpm);
+extern int      j__udyLLeafB1ToLeaf1(Pjp_t, Pjpm_t);
+extern Word_t   j__udyLLeaf1ToLeaf2(uint16_t *, Pjv_t, Pjp_t, Word_t, Pjpm_t);
+extern Word_t   j__udyLLeaf2ToLeaf3(uint8_t  *, Pjv_t, Pjp_t, Word_t, Pjpm_t);
 #ifndef JU_64BIT
-extern Word_t   j__udyLLeaf3ToLeafW(Pjlw_t,     Pjv_t, Pjp_t, Word_t, Pvoid_t);
+extern Word_t   j__udyLLeaf3ToLeafW(Pjlw_t,     Pjv_t, Pjp_t, Word_t, Pjpm_t);
 #else
-extern Word_t   j__udyLLeaf3ToLeaf4(uint32_t *, Pjv_t, Pjp_t, Word_t, Pvoid_t);
-extern Word_t   j__udyLLeaf4ToLeaf5(uint8_t  *, Pjv_t, Pjp_t, Word_t, Pvoid_t);
-extern Word_t   j__udyLLeaf5ToLeaf6(uint8_t  *, Pjv_t, Pjp_t, Word_t, Pvoid_t);
-extern Word_t   j__udyLLeaf6ToLeaf7(uint8_t  *, Pjv_t, Pjp_t, Word_t, Pvoid_t);
-extern Word_t   j__udyLLeaf7ToLeafW(Pjlw_t,     Pjv_t, Pjp_t, Word_t, Pvoid_t);
+extern Word_t   j__udyLLeaf3ToLeaf4(uint32_t *, Pjv_t, Pjp_t, Word_t, Pjpm_t);
+extern Word_t   j__udyLLeaf4ToLeaf5(uint8_t  *, Pjv_t, Pjp_t, Word_t, Pjpm_t);
+extern Word_t   j__udyLLeaf5ToLeaf6(uint8_t  *, Pjv_t, Pjp_t, Word_t, Pjpm_t);
+extern Word_t   j__udyLLeaf6ToLeaf7(uint8_t  *, Pjv_t, Pjp_t, Word_t, Pjpm_t);
+extern Word_t   j__udyLLeaf7ToLeafW(Pjlw_t,     Pjv_t, Pjp_t, Word_t, Pjpm_t);
 #endif
 
 #endif // JUDYL
@@ -265,7 +265,7 @@ ContinueDelWalk:                // for modifying state without recursing.
                 pop1 = LeafToLeaf(Pleaf, JU_PVALUEPASS                  \
                           (Pjbl->jbl_jp) + offset,                      \
                           JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset],    \
-                          cLevel), (Pvoid_t) Pjpm);                     \
+                          cLevel), Pjpm);                     \
                 Pleaf = (LeafType) (((Word_t) Pleaf) + ((cLevel) * pop1)); \
       JUDYLCODE(Pjv  += pop1;)                                          \
             }                                                           \
@@ -461,7 +461,7 @@ BranchLKeep:
                     pop1 = LeafToLeaf(Pleaf, JU_PVALUEPASS              \
                                       Pjp2 + offset - 1,                \
                                       JU_DIGITTOSTATE(digit, cLevel),   \
-                                      (Pvoid_t) Pjpm);                  \
+                                      Pjpm);                  \
                     Pleaf = (LeafType) (((Word_t) Pleaf) + ((cLevel) * pop1)); \
           JUDYLCODE(Pjv  += pop1;)                                      \
                 }                                                       \
@@ -725,7 +725,7 @@ BranchBKeep:
                                                                         \
                 pop1 = LeafToLeaf(Pleaf, JU_PVALUEPASS Pjp2,            \
                                   JU_DIGITTOSTATE(ldigit, cLevel),      \
-                                  (Pvoid_t) Pjpm);                      \
+                                  Pjpm);                      \
                 Pleaf = (LeafType) (((Word_t) Pleaf) + ((cLevel) * pop1)); \
       JUDYLCODE(Pjv  += pop1;)                                          \
             }                                                           \
@@ -908,7 +908,7 @@ BranchBKeep:
                                                                         \
             (void) LeafToLeaf((LeafType) Pjllnew, JU_PVALUEPASS Pjp,    \
                               Index & cJU_DCDMASK(cIS), /* TBD, Doug says */ \
-                              (Pvoid_t) Pjpm);                          \
+                              Pjpm);                          \
             DBGCODE(JudyCheckSorted(Pjllnew, MaxPop1, cIS + 1);)        \
                                                                         \
             D_cdP0 = (~cJU_MASKATSTATE((cIS) + 1)) & JU_JPDCDPOP0(Pjp); \
@@ -2016,7 +2016,7 @@ JUDYLCODE(PPvoid_t PPvalue;)  // pointer from JudyLGet().
                              (Pjbl->jbl_jp) + offset,
                              JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset],
                                              cJU_BYTESPERWORD),
-                             (Pvoid_t) Pjpm);
+                             Pjpm);
                     Pjlwnew += pop1;            // advance through indexes.
           JUDYLCODE(Pjv     += pop1;)           // advance through values.
                 }
@@ -2059,7 +2059,7 @@ JUDYLCODE(PPvoid_t PPvalue;)  // pointer from JudyLGet().
                         pop1 = j__udyLeafM1ToLeafW(Pjlwnew, JU_PVALUEPASS
                                  Pjp2 + offset,
                                  JU_DIGITTOSTATE(digit, cJU_BYTESPERWORD),
-                                 (Pvoid_t) Pjpm);
+                                 Pjpm);
                         Pjlwnew += pop1;         // advance through indexes.
               JUDYLCODE(Pjv     += pop1;)        // advance through values.
                         ++offset;
@@ -2112,7 +2112,7 @@ JUDYLCODE(PPvoid_t PPvalue;)  // pointer from JudyLGet().
 
                     pop1 = j__udyLeafM1ToLeafW(Pjlwnew, JU_PVALUEPASS
                              Pjp, JU_DIGITTOSTATE(ldigit, cJU_BYTESPERWORD),
-                             (Pvoid_t) Pjpm);
+                             Pjpm);
                     Pjlwnew += pop1;            // advance through indexes.
           JUDYLCODE(Pjv     += pop1;)           // advance through values.
                 }

@@ -49,7 +49,7 @@ FUNCTION int j__udyCreateBranchL(
 	Pjp_t	PJPs,		// Array of JPs to put into Bitmap branch
 	uint8_t Exp[],		// Array of expanses to put into bitmap
 	Word_t  ExpCnt,		// Number of above JPs and Expanses
-	Pvoid_t	Pjpm)
+	Pjpm_t	Pjpm)
 {
 	Pjbl_t	PjblRaw;	// pointer to linear branch.
 	Pjbl_t	Pjbl;
@@ -91,7 +91,7 @@ FUNCTION int j__udyCreateBranchB(
 	Pjp_t	PJPs,		// Array of JPs to put into Bitmap branch
 	uint8_t Exp[],		// Array of expanses to put into bitmap
 	Word_t  ExpCnt,		// Number of above JPs and Expanses
-	Pvoid_t	Pjpm)
+	Pjpm_t	Pjpm)
 {
 	Pjbb_t	PjbbRaw;	// pointer to bitmap branch.
 	Pjbb_t	Pjbb;
@@ -200,7 +200,7 @@ FUNCTION int j__udyCreateBranchB(
 
 FUNCTION int j__udyCreateBranchU(
 	Pjp_t	  Pjp,
-	Pvoid_t	  Pjpm)
+	Pjpm_t	  Pjpm)
 {
 	jp_t	  JPNull;
         Pjbu_t    PjbuRaw;

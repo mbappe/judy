@@ -1506,7 +1506,7 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
         {                                                       \
             if (PJError)                                        \
             {                                                   \
-                JU_ERRNO(PJError) = (uint8_t)JU_ERRNO(Pjpm);    \
+                JU_ERRNO(PJError) = (JU_Errno_t)JU_ERRNO(Pjpm);    \
                 JU_ERRID(PJError) = JU_ERRID(Pjpm);             \
             }                                                   \
         }

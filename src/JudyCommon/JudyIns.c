@@ -54,39 +54,39 @@ DBGCODE(extern void JudyCheckSorted(Pjll_t Pjll, Word_t Pop1, long IndexSize);)
 // could be merged with this file, either in SoftCM or at compile-time.
 
 #ifdef JUDY1
-extern int j__udy1CreateBranchB(Pjp_t, Pjp_t, uint8_t *, Word_t, Pvoid_t);
-extern int j__udy1CreateBranchU(Pjp_t, Pvoid_t);
+extern int j__udy1CreateBranchB(Pjp_t, Pjp_t, uint8_t *, Word_t, Pjpm_t);
+extern int j__udy1CreateBranchU(Pjp_t, Pjpm_t);
 
 #ifndef JU_64BIT
-extern int j__udy1Cascade1(Pjp_t, Pvoid_t);
+extern int j__udy1Cascade1(Pjp_t, Pjpm_t);
 #endif
-extern int j__udy1Cascade2(Pjp_t, Pvoid_t);
-extern int j__udy1Cascade3(Pjp_t, Pvoid_t);
+extern int j__udy1Cascade2(Pjp_t, Pjpm_t);
+extern int j__udy1Cascade3(Pjp_t, Pjpm_t);
 #ifdef JU_64BIT
-extern int j__udy1Cascade4(Pjp_t, Pvoid_t);
-extern int j__udy1Cascade5(Pjp_t, Pvoid_t);
-extern int j__udy1Cascade6(Pjp_t, Pvoid_t);
-extern int j__udy1Cascade7(Pjp_t, Pvoid_t);
+extern int j__udy1Cascade4(Pjp_t, Pjpm_t);
+extern int j__udy1Cascade5(Pjp_t, Pjpm_t);
+extern int j__udy1Cascade6(Pjp_t, Pjpm_t);
+extern int j__udy1Cascade7(Pjp_t, Pjpm_t);
 #endif
-extern int j__udy1CascadeL(Pjp_t, Pvoid_t);
+extern int j__udy1CascadeL(Pjp_t, Pjpm_t);
 
 extern int j__udy1InsertBranch(Pjp_t Pjp, Word_t Index, Word_t Btype, Pjpm_t);
 
 #else // JUDYL
 
-extern int j__udyLCreateBranchB(Pjp_t, Pjp_t, uint8_t *, Word_t, Pvoid_t);
-extern int j__udyLCreateBranchU(Pjp_t, Pvoid_t);
+extern int j__udyLCreateBranchB(Pjp_t, Pjp_t, uint8_t *, Word_t, Pjpm_t);
+extern int j__udyLCreateBranchU(Pjp_t, Pjpm_t);
 
-extern int j__udyLCascade1(Pjp_t, Pvoid_t);
-extern int j__udyLCascade2(Pjp_t, Pvoid_t);
-extern int j__udyLCascade3(Pjp_t, Pvoid_t);
+extern int j__udyLCascade1(Pjp_t, Pjpm_t);
+extern int j__udyLCascade2(Pjp_t, Pjpm_t);
+extern int j__udyLCascade3(Pjp_t, Pjpm_t);
 #ifdef JU_64BIT
-extern int j__udyLCascade4(Pjp_t, Pvoid_t);
-extern int j__udyLCascade5(Pjp_t, Pvoid_t);
-extern int j__udyLCascade6(Pjp_t, Pvoid_t);
-extern int j__udyLCascade7(Pjp_t, Pvoid_t);
+extern int j__udyLCascade4(Pjp_t, Pjpm_t);
+extern int j__udyLCascade5(Pjp_t, Pjpm_t);
+extern int j__udyLCascade6(Pjp_t, Pjpm_t);
+extern int j__udyLCascade7(Pjp_t, Pjpm_t);
 #endif
-extern int j__udyLCascadeL(Pjp_t, Pvoid_t);
+extern int j__udyLCascadeL(Pjp_t, Pjpm_t);
 
 extern int j__udyLInsertBranch(Pjp_t Pjp, Word_t Index, Word_t Btype, Pjpm_t);
 #endif

@@ -595,7 +595,8 @@ splaysearch(ANSREC * ans, char *word)
 void
 splayinsert(ANSREC * ans, char *word)
 {
-    TREEREC  *curr = ans->root, *par, *gpar, *prev = NULL, *wcreate();
+    TREEREC  *curr = ans->root, *par, *gpar, *prev = NULL;
+    TREEREC  *wcreate(char *, TREEREC *);
     int       val = 0;
 
     scount--;
@@ -808,7 +809,8 @@ rightrotate(ANSREC * ans, TREEREC * par)
 void
 redblackinsert(ANSREC * ans, char *word)
 {
-    TREEREC  *curr = ans->root, *par, *gpar, *prev = NULL, *wcreate();
+    TREEREC  *curr = ans->root, *par, *gpar, *prev = NULL;
+    TREEREC *wcreate(char *, TREEREC *);
     int       val;
 
     if (ans->root == NULL)

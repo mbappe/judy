@@ -25,12 +25,12 @@
 
 #include "JudyPrivate1L.h"
 
-extern int j__udyCreateBranchL(Pjp_t, Pjp_t, uint8_t *, Word_t, Pvoid_t);
-extern int j__udyCreateBranchB(Pjp_t, Pjp_t, uint8_t *, Word_t, Pvoid_t);
+extern int j__udyCreateBranchL(Pjp_t, Pjp_t, uint8_t *, Word_t, Pjpm_t);
+extern int j__udyCreateBranchB(Pjp_t, Pjp_t, uint8_t *, Word_t, Pjpm_t);
 
 DBGCODE(extern void JudyCheckSorted(Pjll_t Pjll, Word_t Pop1, long IndexSize);)
 
-static const jbb_t StageJBBZero;	// zeroed versions of namesake struct.
+static const jbb_t StageJBBZero = {};	// zeroed versions of namesake struct.
 
 // TBD:  There are multiple copies of (some of) these CopyWto3, Copy3toW,
 // CopyWto7 and Copy7toW functions in Judy1Cascade.c, JudyLCascade.c, and
@@ -317,7 +317,7 @@ FUNCTION static Pjlb_t j__udyJLL2toJLB1(
 	Pjv_t      Pjv,		// array of associated values.
 #endif
 	Word_t     LeafPop1,	// number of indexes/values.
-	Pvoid_t    Pjpm)	// jpm_t for JudyAlloc*()/JudyFree*().
+	Pjpm_t    Pjpm)	// jpm_t for JudyAlloc*()/JudyFree*().
 {
 	Pjlb_t     PjlbRaw;
 	Pjlb_t     Pjlb;
@@ -406,7 +406,7 @@ JUDYLCODE(int	   subexp;)
 
 FUNCTION int j__udyCascade1(
 	Pjp_t	   Pjp,
-	Pvoid_t    Pjpm)
+	Pjpm_t	   Pjpm)
 {
         Word_t     DcdP0;
 	uint8_t	 * PLeaf;
@@ -487,7 +487,7 @@ JUDYLCODE(Pjv_t	   Pjv;)
 
 FUNCTION int j__udyCascade2(
 	Pjp_t	   Pjp,
-	Pvoid_t	   Pjpm)
+	Pjpm_t	   Pjpm)
 {
 	uint16_t * PLeaf;	// pointer to leaf, explicit type.
 	Word_t	   End, Start;	// temporaries.
@@ -705,7 +705,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 
 FUNCTION int j__udyCascade3(
 	Pjp_t	   Pjp,
-	Pvoid_t	   Pjpm)
+	Pjpm_t	   Pjpm)
 {
 	uint8_t  * PLeaf;	// pointer to leaf, explicit type.
 	Word_t	   End, Start;	// temporaries.
@@ -924,7 +924,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 
 FUNCTION int j__udyCascade4(
 	Pjp_t	   Pjp,
-	Pvoid_t	   Pjpm)
+	Pjpm_t	   Pjpm)
 {
 	uint32_t * PLeaf;	// pointer to leaf, explicit type.
 	Word_t	   End, Start;	// temporaries.
@@ -1133,7 +1133,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 
 FUNCTION int j__udyCascade5(
 	Pjp_t	   Pjp,
-	Pvoid_t	   Pjpm)
+	Pjpm_t	   Pjpm)
 {
 	uint8_t  * PLeaf;	// pointer to leaf, explicit type.
 	Word_t	   End, Start;	// temporaries.
@@ -1325,7 +1325,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 
 FUNCTION int j__udyCascade6(
 	Pjp_t	   Pjp,
-	Pvoid_t	   Pjpm)
+	Pjpm_t	   Pjpm)
 {
 	uint8_t  * PLeaf;	// pointer to leaf, explicit type.
 	Word_t	   End, Start;	// temporaries.
@@ -1518,7 +1518,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 
 FUNCTION int j__udyCascade7(
 	Pjp_t	   Pjp,
-	Pvoid_t	   Pjpm)
+	Pjpm_t	   Pjpm)
 {
 	uint8_t  * PLeaf;	// pointer to leaf, explicit type.
 	Word_t	   End, Start;	// temporaries.
@@ -1714,7 +1714,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 
 FUNCTION int j__udyCascadeL(
 	Pjp_t	   Pjp,
-	Pvoid_t	   Pjpm)
+	Pjpm_t	   Pjpm)
 {
 	Pjlw_t	   Pjlw;	// leaf to work on.
 	Word_t	   End, Start;	// temporaries.

@@ -9,12 +9,21 @@ JUDY_H=`find ../ -name Judy.h`
 
 echo "$CC -O SLcompare.c -DHASHMETHOD -o SL_Hash"
       $CC -O SLcompare.c -DHASHMETHOD -o SL_Hash
+      #clang -m32 -O SLcompare.c -DHASHMETHOD -o SL_Hash
+      #c++ -std=c++14 -O SLcompare.c -DHASHMETHOD -o SL_Hash
+      #c++ -std=c++14 -m32 -O SLcompare.c -DHASHMETHOD -o SL_Hash
 
 echo "$CC -O SLcompare.c -DSPLAYMETHOD -o SL_Splay"
       $CC -O SLcompare.c -DSPLAYMETHOD -o SL_Splay
+      #clang -m32 -O SLcompare.c -DSPLAYMETHOD -o SL_Splay
+      #c++ -std=c++14 -O SLcompare.c -DSPLAYMETHOD -o SL_Splay
+      #c++ -std=c++14 -m32 -O SLcompare.c -DSPLAYMETHOD -o SL_Splay
 
 echo "$CC -O SLcompare.c -DREDBLACKMETHOD -o SL_Redblack"
       $CC -O SLcompare.c -DREDBLACKMETHOD -o SL_Redblack
+      #clang cc -m32 -O SLcompare.c -DREDBLACKMETHOD -o SL_Redblack
+      #cc++ -std=c++14 -O SLcompare.c -DREDBLACKMETHOD -o SL_Redblack
+      #cc++ -std=c++14 -m32 -O SLcompare.c -DREDBLACKMETHOD -o SL_Redblack
 
 echo
 echo Compiling with Judy library: $LIBJUDY
@@ -22,30 +31,37 @@ echo
 
 echo "$CC -O -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIBJUDY -lm"
       $CC -O -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIBJUDY -lm
+      #clang -m32 -O -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy ../src/obj/.libs/libJudy.a -lm
+      #c++ -std=c++14 -O -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy ../src/obj/.libs/libJudy.a -lm
+      #c++ -std=c++14 -m32 -O -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy ../src/obj/.libs/libJudy.a -lm
 RET=$?
 if [ $RET -ne 0 ] ; then
-echo "===  $? Failed: $CC SLcompare.c -DJUDYMETHOD"
-echo "===  $? Failed: $CC -O -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIBJUDY -lm"
-exit $?
+echo "===  $RET Failed: $CC SLcompare.c -DJUDYMETHOD"
+echo "===  $RET Failed: $CC -O -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIBJUDY -lm"
+exit $RET
 fi
 
 echo "$CC -O -I../src Judy1LHCheck.c -o Judy1LHCheck $LIBJUDY -lm"
       $CC -O -I../src Judy1LHCheck.c -o Judy1LHCheck $LIBJUDY -lm
+      #clang -m32 -O -I../src Judy1LHCheck.c -o Judy1LHCheck ../src/obj/.libs/libJudy.a -lm
+      #c++ -std=c++14 -O -I../src Judy1LHCheck.c -o Judy1LHCheck ../src/obj/.libs/libJudy.a -lm
+      #c++ -std=c++14 -m32 -O -I../src Judy1LHCheck.c -o Judy1LHCheck ../src/obj/.libs/libJudy.a -lm
 RET=$?
 if [ $RET -ne 0 ] ; then
-echo "===  $? Failed: $CC Judy1LHCheck.c"
-exit $?
+echo "===  $RET Failed: $CC Judy1LHCheck.c"
+exit $RET
 fi
 
 
 echo "$CC -O -I../src Judy1LHTime.c -DNOINLINE  -o Judy1LHTime  $LIBJUDY -lm"
       $CC -O -I../src Judy1LHTime.c -DNOINLINE  -o Judy1LHTime  $LIBJUDY -lm
-      #$CC -O -I../src Judy1LHTime.c -DRAMMETRICS -DNOINLINE -m32 -o Judy1LHTime  $LIBJUDY -lm
-      #clang -O -I../src Judy1LHTime.c -DRAMMETRICS -DNOINLINE -m32 -o Judy1LHTime  ../src/obj/.libs/libJudy.a -lm
+      #$CC -m32 -O -I../src Judy1LHTime.c -DRAMMETRICS -DNOINLINE -o Judy1LHTime  $LIBJUDY -lm
+      #clang -m32 -O -I../src Judy1LHTime.c -DRAMMETRICS -DNOINLINE -o Judy1LHTime  ../src/obj/.libs/libJudy.a -lm
+      #c++ -std=c++14 -m32 -O -I../src Judy1LHTime.c -DRAMMETRICS -DNOINLINE -o Judy1LHTime  ../src/obj/.libs/libJudy.a -lm
 RET=$?
 if [ $RET -ne 0 ] ; then
-echo "===  $? Failed: $CC Judy1LHTime.c"
-exit $?
+echo "===  $RET Failed: $CC Judy1LHTime.c"
+exit $RET
 fi
 
 #  -OR-    if Judy is installed, these can be compiled from anywhere:
@@ -59,8 +75,8 @@ echo "     Validate Judy1/JudyL/JudyHS functions (except Judy*ByCount)"
 ./Judy1LHCheck -n 300000 -B20 > /dev/null
 RET=$?
 if [ $RET -ne 0 ] ; then
-echo "===  $? Failed: Judy1/JudyL/JudyHS validate program"
-exit $?
+echo "===  $RET Failed: Judy1/JudyL/JudyHS validate program"
+exit $RET
 fi
 echo "===  Pass: Judy1/JudyL/JudyHS validate program"
 
@@ -99,8 +115,8 @@ echo "   lines avg_linelen  getline   StoreD RAMused/line  store/ln lookup/ln AD
 ./SL_Judy     StringCompare.c | grep JUDY
 RET=$?
 if [ $RET -ne 0 ] ; then
-echo "===  $? Failed: JudySL if StoreD numbers are all the same" 
-exit $?
+echo "===  $RET Failed: JudySL if StoreD numbers are all the same" 
+exit $RET
 fi
 echo "===  Pass: JudySL if StoreD numbers are all the same"
 echo

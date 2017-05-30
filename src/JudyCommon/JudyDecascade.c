@@ -231,7 +231,7 @@ FUNCTION static void j__udyCopy7toW(
 
 FUNCTION int j__udyBranchBToBranchL(
 	Pjp_t	Pjp,		// points to BranchB to shrink.
-	Pvoid_t	Pjpm)		// for global accounting.
+	Pjpm_t	Pjpm)		// for global accounting.
 {
 	Pjbb_t	PjbbRaw;	// old BranchB to shrink.
 	Pjbb_t	Pjbb;
@@ -324,7 +324,7 @@ FUNCTION int j__udyBranchBToBranchL(
 
 FUNCTION int j__udyBranchUToBranchB(
 	Pjp_t	Pjp,		// points to BranchU to shrink.
-	Pvoid_t	Pjpm)		// for global accounting.
+	Pjpm_t	Pjpm)		// for global accounting.
 {
 	assert(FALSE);
 	return(1);
@@ -347,7 +347,7 @@ FUNCTION int j__udyBranchUToBranchB(
 
 FUNCTION int j__udyLeafB1ToLeaf1(
 	Pjp_t	  Pjp,		// points to LeafB1 to shrink.
-	Pvoid_t	  Pjpm)		// for global accounting.
+	Pjpm_t	  Pjpm)		// for global accounting.
 {
 	Pjlb_t    PjlbRaw;	// bitmap in old leaf.
 	Pjlb_t    Pjlb;
@@ -438,7 +438,7 @@ FUNCTION Word_t  j__udyLeaf1ToLeaf2(
 #endif
 	Pjp_t	   Pjp,		// 1-byte-index object from which to copy.
 	Word_t     MSByte,	// most-significant byte, prefix to each Index.
-	Pvoid_t	   Pjpm)	// for global accounting.
+	Pjpm_t	   Pjpm)	// for global accounting.
 {
 	Word_t	   Pop1;	// Indexes in leaf.
 	Word_t	   Offset;	// in linear leaf list.
@@ -599,7 +599,7 @@ FUNCTION Word_t  j__udyLeaf2ToLeaf3(
 #endif
 	Pjp_t	  Pjp,		// 2-byte-index object from which to copy.
 	Word_t    MSByte,	// most-significant byte, prefix to each Index.
-	Pvoid_t	  Pjpm)		// for global accounting.
+	Pjpm_t	  Pjpm)		// for global accounting.
 {
 	Word_t	  Pop1;		// Indexes in leaf.
 #if (defined(JUDYL) && defined(JU_64BIT))
@@ -703,7 +703,7 @@ FUNCTION Word_t  j__udyLeaf3ToLeaf4(
 #endif
 	Pjp_t	   Pjp,		// 3-byte-index object from which to copy.
 	Word_t     MSByte,	// most-significant byte, prefix to each Index.
-	Pvoid_t	   Pjpm)	// for global accounting.
+	Pjpm_t	   Pjpm)	// for global accounting.
 {
 	Word_t	   Pop1;	// Indexes in leaf.
 JUDYLCODE(Pjv_t	   Pjv3Raw;)	// source object value area.
@@ -802,7 +802,7 @@ FUNCTION Word_t  j__udyLeaf4ToLeaf5(
 #endif
 	Pjp_t	  Pjp,		// 4-byte-index object from which to copy.
 	Word_t    MSByte,	// most-significant byte, prefix to each Index.
-	Pvoid_t	  Pjpm)		// for global accounting.
+	Pjpm_t	  Pjpm)		// for global accounting.
 {
 	Word_t	  Pop1;		// Indexes in leaf.
 JUDYLCODE(Pjv_t	  Pjv4;)	// source object value area.
@@ -886,7 +886,7 @@ FUNCTION Word_t  j__udyLeaf5ToLeaf6(
 #endif
 	Pjp_t	  Pjp,		// 5-byte-index object from which to copy.
 	Word_t    MSByte,	// most-significant byte, prefix to each Index.
-	Pvoid_t	  Pjpm)		// for global accounting.
+	Pjpm_t	  Pjpm)		// for global accounting.
 {
 	Word_t	  Pop1;		// Indexes in leaf.
 JUDYLCODE(Pjv_t	  Pjv5;)	// source object value area.
@@ -970,7 +970,7 @@ FUNCTION Word_t  j__udyLeaf6ToLeaf7(
 #endif
 	Pjp_t	  Pjp,		// 6-byte-index object from which to copy.
 	Word_t    MSByte,	// most-significant byte, prefix to each Index.
-	Pvoid_t	  Pjpm)		// for global accounting.
+	Pjpm_t	  Pjpm)		// for global accounting.
 {
 	Word_t	  Pop1;		// Indexes in leaf.
 JUDYLCODE(Pjv_t	  Pjv6;)	// source object value area.
@@ -1055,7 +1055,7 @@ FUNCTION Word_t  j__udyLeaf3ToLeafW(
 #endif
 	Pjp_t	Pjp,		// 3-byte-index object from which to copy.
 	Word_t	MSByte,		// most-significant byte, prefix to each Index.
-	Pvoid_t	Pjpm)		// for global accounting.
+	Pjpm_t	Pjpm)		// for global accounting.
 {
 	Word_t	Pop1;		// Indexes in leaf.
 JUDYLCODE(Pjv_t Pjv3;)		// source object value area.
@@ -1140,7 +1140,7 @@ FUNCTION Word_t  j__udyLeaf7ToLeafW(
 #endif
 	Pjp_t	Pjp,		// 7-byte-index object from which to copy.
 	Word_t	MSByte,		// most-significant byte, prefix to each Index.
-	Pvoid_t	Pjpm)		// for global accounting.
+	Pjpm_t	Pjpm)		// for global accounting.
 {
 	Word_t	Pop1;		// Indexes in leaf.
 JUDYLCODE(Pjv_t	Pjv7;)		// source object value area.

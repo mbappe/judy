@@ -202,9 +202,9 @@ typedef struct SHORCUTLEAF
 
 // string routines, may replace with your own
 //
-#define STRCMP(S1,S2)   strcmp((void *)(S1), (void *)(S2))
-#define STRCPY(S1,S2)   (strcpy)((void *)(S1), (void *)(S2))
-#define STRLEN(S1)      (strlen((void *)(S1)) + 1)
+#define STRCMP(S1,S2)   strcmp((const char *)(S1), (const char *)(S2))
+#define STRCPY(S1,S2)   (strcpy)((char *)(S1), (const char *)(S2))
+#define STRLEN(S1)      (strlen((const char *)(S1)) + 1)
 
 
 // Index and value area for a shortcut leaf, depending on how it matches the

@@ -229,7 +229,7 @@ typedef struct L_EAFSTRING
     if (PJERROR != (PJError_t) NULL)            \
     {                                           \
         if (JERRNO)                             \
-            JU_ERRNO(PJError) = (JERRNO);       \
+            JU_ERRNO(PJError) = (JU_Errno_t)(JERRNO);       \
         JU_ERRID(PJERROR) = __LINE__;           \
     }                                           \
 }

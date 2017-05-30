@@ -137,7 +137,7 @@ pre_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
     }
 
 //  Map a normal self-aligned 2Mib buffer for dlmalloc pagesize
-    buf = mmap(NULL, length, prot, flags, fd, offset);
+    buf = (char *)mmap(NULL, length, prot, flags, fd, offset);
 
 #ifdef  RAMMETRICS
     if (j__MFlag)
@@ -165,7 +165,7 @@ pre_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
 
 //      Allocate again big enough (4Mib) to insure getting a buffer big enough that
 //      can be trimmed to  2MB alignment.
-        buf = mmap(NULL, length + HUGETLBSZ, prot, flags, fd, offset);
+        buf = (char *)mmap(NULL, length + HUGETLBSZ, prot, flags, fd, offset);
 
 #ifdef  RAMMETRICS
         if (j__MFlag)
@@ -190,7 +190,7 @@ pre_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
         buf += HUGETLBSZ - remain;
 
 //      and free it too.
-        ret = munmap(buf + length, remain);          
+        ret = munmap(buf + length, remain);
 
 #ifdef  RAMMETRICS
         if (j__MFlag)
