@@ -300,7 +300,7 @@ JudySLGet(Pcvoid_t PArray, const uint8_t * Index, PJError_t PJError)
 {
     const uint8_t *pos = Index;         // place in Index.
     Word_t    indexword;                // buffer for aligned copy.
-    PPvoid_t  PPValue;                  // from JudyL array.
+    PWord_t  PPValue;                  // from JudyL array.
 
 // CHECK FOR CALLER ERROR (NULL POINTER):
 
@@ -325,8 +325,8 @@ JudySLGet(Pcvoid_t PArray, const uint8_t * Index, PJError_t PJError)
 
         JLG(PPValue, PArray, indexword);
 
-        if ((PPValue == (PPvoid_t) NULL) || LASTWORD_BY_VALUE(indexword))
-            return (PPValue);
+        if ((PPValue == NULL) || LASTWORD_BY_VALUE(indexword))
+            return ((PPvoid_t)PPValue);
 
 // CONTINUE TO NEXT LEVEL DOWN JUDYL ARRAY TREE:
 //
@@ -335,7 +335,7 @@ JudySLGet(Pcvoid_t PArray, const uint8_t * Index, PJError_t PJError)
 // dump or assertion; see version 1.25).
 
         pos += WORDSIZE;
-        PArray = *PPValue;              // each value -> next array.
+        PArray = (Pvoid_t)*PPValue;              // each value -> next array.
     } while(1);                         // forever
 //  NOTREACHED JudySLGet()
 }
@@ -619,7 +619,7 @@ JudySLDelSub(PPvoid_t PPArray,          // in which to delete.
              PJError_t PJError)         // optional, for returning error info.
 {
     Word_t    indexword;                // next word to find.
-    PPvoid_t  PPValue;                  // from JudyL array.
+    PWord_t  PPValue;                  // from JudyL array.
     int       retcode;                  // from lower-level call.
 
     assert(PPArray != (PPvoid_t) NULL);
@@ -678,13 +678,13 @@ JudySLDelSub(PPvoid_t PPArray,          // in which to delete.
 //
 
     JLG(PPValue, *PPArray, indexword);
-    if (PPValue == (PPvoid_t) NULL)
+    if (PPValue == NULL)
         return (0);                     // Index not in JudySL array.
 // If a previous JudySLIns() ran out of memory partway down the tree, it left a
 // null *PPValue; this is automatically treated as a dead-end (not a core dump
 // or assertion; see version 1.25).
     if ((retcode =
-         JudySLDelSub(PPValue, PPArrayOrig, Index + WORDSIZE,
+         JudySLDelSub((PPvoid_t)PPValue, PPArrayOrig, Index + WORDSIZE,
                       len - WORDSIZE, PJError)) != 1)
     {
         return (retcode);               // no lower-level delete, or error.
@@ -697,7 +697,7 @@ JudySLDelSub(PPvoid_t PPArray,          // in which to delete.
 // empty the current array and null out *PPArray in turn (or pass through an
 // error).  Otherwise simply indicate that a deletion did occur.
 
-    if (*PPValue == (Pvoid_t)NULL)
+    if (*PPValue == (Word_t)NULL)
     {
         if ((retcode = JudyLDel(PPArray, indexword, PJError)) == JERR)
         {
@@ -765,7 +765,7 @@ JudySLPrevSub(Pcvoid_t PArray, uint8_t * Index, int orig,
               PJError_t PJError)        // optional, for returning error info.
 {
     Word_t    indexword;                // next word to find.
-    PPvoid_t  PPValue;                  // from JudyL array.
+    PWord_t  PPValue;                  // from JudyL array.
 // ORIGINAL SEARCH:
 //
 // When at a shortcut leaf, copy its remaining Index (string) chars into Index
@@ -775,9 +775,9 @@ JudySLPrevSub(Pcvoid_t PArray, uint8_t * Index, int orig,
     {
         if (IS_PSCL(PArray))
         {
-            if ((PPValue = PPSCLVALUE_GT(Index, PArray)) != (PPvoid_t) NULL)
+            if ((PPValue = (PWord_t)PPSCLVALUE_GT(Index, PArray)) != NULL)
                 (void)STRCPY(Index, PSCLINDEX(PArray));
-            return (PPValue);
+            return ((PPvoid_t)PPValue);
         }
 
 // If the current Index word:
@@ -789,20 +789,20 @@ JudySLPrevSub(Pcvoid_t PArray, uint8_t * Index, int orig,
         if (len > WORDSIZE)             // not at end of Index.
         {
             JLG(PPValue, PArray, indexword);
-            if (PPValue != (PPvoid_t) NULL)
+            if (PPValue != NULL)
             {
 
 // If a previous JudySLIns() ran out of memory partway down the tree, it left a
 // null *PPValue; this is automatically treated as a dead-end (not a core dump
 // or assertion; see version 1.25):
 
-                PPValue = JudySLPrevSub(*PPValue, Index + WORDSIZE,
+                PPValue = (PWord_t)JudySLPrevSub((Pvoid_t)*PPValue, Index + WORDSIZE,
                                         /* original = */ 1,
                                         len - WORDSIZE, PJError);
-                if (PPValue == PPJERR)
+                if (PPValue == (PWord_t)PPJERR)
                     return (PPJERR);    // propagate error.
-                if (PPValue != (PPvoid_t) NULL)
-                    return (PPValue);   // see above.
+                if (PPValue != NULL)
+                    return ((PPvoid_t)PPValue);   // see above.
             }
         }
 
@@ -812,13 +812,13 @@ JudySLPrevSub(Pcvoid_t PArray, uint8_t * Index, int orig,
 // the Index word, if any, prior to the current index word.  If none is found,
 // return null; otherwise fall through to common later code.
 
-        if ((PPValue = JudyLPrev(PArray, &indexword, PJError)) == PPJERR)
+        if ((PPValue = (PWord_t)JudyLPrev(PArray, &indexword, PJError)) == (PWord_t)PPJERR)
         {
             JudySLModifyErrno(PJError, PArray, orig ? PArray : (Pvoid_t)NULL);
             return (PPJERR);
         }
 
-        if (PPValue == (PPvoid_t) NULL)
+        if (PPValue == NULL)
             return ((PPvoid_t) NULL);   // no previous index word.
     }                                   // if.
 
@@ -841,7 +841,7 @@ JudySLPrevSub(Pcvoid_t PArray, uint8_t * Index, int orig,
         }
 
         indexword = ~0UL;
-        if ((PPValue = JudyLLast(PArray, &indexword, PJError)) == PPJERR)
+        if ((PPValue = (PWord_t)JudyLLast(PArray, &indexword, PJError)) == (PWord_t)PPJERR)
         {
             JudySLModifyErrno(PJError, PArray, orig ? PArray : (Pvoid_t)NULL);
             return (PPJERR);
@@ -851,7 +851,7 @@ JudySLPrevSub(Pcvoid_t PArray, uint8_t * Index, int orig,
 // null *PPValue; this is automatically treated as a dead-end (not a core dump
 // or assertion; see version 1.25):
 
-        if (PPValue == (PPvoid_t) NULL)
+        if (PPValue == NULL)
             return ((PPvoid_t) NULL);   // no previous index word.
     }
 
@@ -870,11 +870,11 @@ JudySLPrevSub(Pcvoid_t PArray, uint8_t * Index, int orig,
 
     COPYWORDtoSTRING(Index, indexword); // copy next 4[8] bytes.
     if (LASTWORD_BY_VALUE(indexword))
-        return (PPValue);
+        return ((PPvoid_t)PPValue);
 // If a previous JudySLIns() ran out of memory partway down the tree, it left a
 // null *PPValue; this is automatically treated as a dead-end (not a core dump
 // or assertion; see version 1.25):
-    return (JudySLPrevSub(*PPValue, Index + WORDSIZE, /* original = */ 0,
+    return (JudySLPrevSub((Pvoid_t)*PPValue, Index + WORDSIZE, /* original = */ 0,
                           len - WORDSIZE, PJError));
 }                                       // JudySLPrevSub()
 
@@ -915,14 +915,14 @@ JudySLNextSub(Pcvoid_t PArray, uint8_t * Index, int orig,
               PJError_t PJError)        // optional, for returning error info.
 {
     Word_t    indexword;                // next word to find.
-    PPvoid_t  PPValue;                  // from JudyL array.
+    PWord_t  PPValue;                  // from JudyL array.
     if (orig)
     {
         if (IS_PSCL(PArray))
         {
-            if ((PPValue = PPSCLVALUE_LT(Index, PArray)) != (PPvoid_t) NULL)
+            if ((PPValue = (PWord_t)PPSCLVALUE_LT(Index, PArray)) != NULL)
                 (void)STRCPY(Index, PSCLINDEX(PArray));
-            return (PPValue);
+            return ((PPvoid_t)PPValue);
         }
 
         COPYSTRINGtoWORD(indexword, Index);     // copy next 4[8] bytes.
@@ -930,29 +930,29 @@ JudySLNextSub(Pcvoid_t PArray, uint8_t * Index, int orig,
         if (len > WORDSIZE)             // not at end of Index.
         {
             JLG(PPValue, PArray, indexword);
-            if (PPValue != (PPvoid_t) NULL)
+            if (PPValue != NULL)
             {
 // If a previous JudySLIns() ran out of memory partway down the tree, it left a
 // null *PPValue; this is automatically treated as a dead-end (not a core dump
 // or assertion; see version 1.25):
 
-                PPValue = JudySLNextSub(*PPValue, Index + WORDSIZE,
+                PPValue = (PWord_t)JudySLNextSub((Pvoid_t)*PPValue, Index + WORDSIZE,
                                         /* original = */ 1,
                                         len - WORDSIZE, PJError);
-                if (PPValue == PPJERR)
+                if (PPValue == (PWord_t)PPJERR)
                     return (PPJERR);    // propagate error.
-                if (PPValue != (PPvoid_t) NULL)
-                    return (PPValue);   // see above.
+                if (PPValue != NULL)
+                    return ((PPvoid_t)PPValue);   // see above.
             }
         }
 
-        if ((PPValue = JudyLNext(PArray, &indexword, PJError)) == PPJERR)
+        if ((PPValue = (PWord_t)JudyLNext(PArray, &indexword, PJError)) == (PWord_t)PPJERR)
         {
             JudySLModifyErrno(PJError, PArray, orig ? PArray : (Pvoid_t)NULL);
             return (PPJERR);
         }
 
-        if (PPValue == (PPvoid_t) NULL)
+        if (PPValue == NULL)
             return ((PPvoid_t) NULL);   // no next index word.
     }
     else
@@ -964,7 +964,7 @@ JudySLNextSub(Pcvoid_t PArray, uint8_t * Index, int orig,
         }
 
         indexword = 0;
-        if ((PPValue = JudyLFirst(PArray, &indexword, PJError)) == PPJERR)
+        if ((PPValue = (PWord_t)JudyLFirst(PArray, &indexword, PJError)) == (PWord_t)PPJERR)
         {
             JudySLModifyErrno(PJError, PArray, orig ? PArray : (Pvoid_t)NULL);
             return (PPJERR);
@@ -974,17 +974,17 @@ JudySLNextSub(Pcvoid_t PArray, uint8_t * Index, int orig,
 // null *PPValue; this is automatically treated as a dead-end (not a core dump
 // or assertion; see version 1.25):
 
-        if (PPValue == (PPvoid_t) NULL)
+        if (PPValue == NULL)
             return ((PPvoid_t) NULL);   // no next index word.
     }
 
     COPYWORDtoSTRING(Index, indexword); // copy next 4[8] bytes
     if (LASTWORD_BY_VALUE(indexword))
-        return (PPValue);
+        return ((PPvoid_t)PPValue);
 // If a previous JudySLIns() ran out of memory partway down the tree, it left a
 // null *PPValue; this is automatically treated as a dead-end (not a core dump
 // or assertion; see version 1.25):
-    return (JudySLNextSub(*PPValue, Index + WORDSIZE, /* original = */ 0,
+    return (JudySLNextSub((Pvoid_t)*PPValue, Index + WORDSIZE, /* original = */ 0,
                           len - WORDSIZE, PJError));
 }                                       // JudySLNextSub()
 

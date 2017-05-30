@@ -265,11 +265,11 @@ JudyHSGet(Pcvoid_t PArray,              // pointer (^) to structure
     )
 {
     uint8_t  *String = (uint8_t *)Str;
-    PPvoid_t  PPValue;                  // pointer to Value
+    PWord_t  PPValue;                  // pointer to Value
     Word_t    Index;                    // 4[8] bytes of String
 
     JLG(PPValue, PArray, Len);          // find hash table for strings of Len
-    if (PPValue == (PPvoid_t) NULL)
+    if (PPValue == NULL)
         return ((PPvoid_t) NULL);       // no strings of this Len
 
 //  check for caller error (null pointer)
@@ -283,7 +283,7 @@ JudyHSGet(Pcvoid_t PArray,              // pointer (^) to structure
         uint32_t  HValue;               // hash of input string
         JUDYHASHSTR(HValue, String, Len);       // hash to no more than 32 bits
         JLG(PPValue, *PPValue, (Word_t)HValue); // get ^ to hash bucket
-        if (PPValue == (PPvoid_t) NULL)
+        if (PPValue == NULL)
             return ((PPvoid_t) NULL);   // no entry in Hash table
     }
 #endif // DONOTUSEHASH
@@ -316,7 +316,7 @@ JudyHSGet(Pcvoid_t PArray,              // pointer (^) to structure
             COPYSTRINGtoWORD(Index, String, WORDSIZE);
 
             JLG(PPValue, *PPValue, Index);      // decode next 4[8] bytes
-            if (PPValue == (PPvoid_t) NULL)     // if NULL array, bail out
+            if (PPValue == NULL)     // if NULL array, bail out
                 return ((PPvoid_t) NULL);       // string does not match
 
             String += WORDSIZE;                 // advance
@@ -328,7 +328,7 @@ JudyHSGet(Pcvoid_t PArray,              // pointer (^) to structure
 
     COPYSTRINGtoWORD(Index, String, Len);
     JLG(PPValue, *PPValue, Index);      // decode last 1-4[8] bytes
-    return (PPValue);
+    return ((PPvoid_t)PPValue);
 }
 
 // Add string to a tree of JudyL arrays (all lengths must be same)
@@ -461,7 +461,7 @@ JudyHSIns(PPvoid_t PPArray,             // ^ to JudyHashArray name
     )
 {
     uint8_t * String = (uint8_t *)Str;
-    PPvoid_t  PPValue;
+    PWord_t  PPValue;
 
 //  string can only be NULL if Len is 0.
 
@@ -471,10 +471,10 @@ JudyHSIns(PPvoid_t PPArray,             // ^ to JudyHashArray name
         return (PPJERR);
     }
     JLG(PPValue, *PPArray, Len);        // JudyL hash table for strings of Len
-    if (PPValue == (PPvoid_t) NULL)     // make new if missing, (very rare)
+    if (PPValue == NULL)     // make new if missing, (very rare)
     {
-        PPValue = JudyLIns(PPArray, Len, PJError);
-        if (PPValue == PPJERR)
+        PPValue = (PWord_t)JudyLIns(PPArray, Len, PJError);
+        if (PPValue == (PWord_t)PPJERR)
         {
             JU_SET_ERRNO(PJError, 0);
             return (PPJERR);
@@ -485,8 +485,8 @@ JudyHSIns(PPvoid_t PPArray,             // ^ to JudyHashArray name
     {
         uint32_t  HValue;                       // hash of input string
         JUDYHASHSTR(HValue, String, Len);       // hash to no more than 32 bits
-        PPValue = JudyLIns(PPValue, (Word_t)HValue, PJError);
-        if (PPValue == PPJERR)
+        PPValue = (PWord_t)JudyLIns((PPvoid_t)PPValue, (Word_t)HValue, PJError);
+        if (PPValue == (PWord_t)PPJERR)
         {
             JU_SET_ERRNO(PJError, 0);
             return (PPJERR);
@@ -494,8 +494,8 @@ JudyHSIns(PPvoid_t PPArray,             // ^ to JudyHashArray name
     }
 #endif // DONOTUSEHASH
 
-    PPValue = insStrJudyLTree(String, Len, PPValue, PJError); // add string 
-    return (PPValue);                   //  ^  to Value
+    PPValue = (PWord_t)insStrJudyLTree(String, Len, (PPvoid_t)PPValue, PJError); // add string 
+    return ((PPvoid_t)PPValue);                   //  ^  to Value
 }
 
 // Delete string from tree of JudyL arrays (all Lens must be same)
@@ -507,7 +507,7 @@ delStrJudyLTree(uint8_t * String,      // delete from tree of JudyL arrays
                  PJError_t PJError      // for returning error info
     )
 {
-    PPvoid_t  PPValueN;                 // next pointer
+    PWord_t  PPValueN;                 // next pointer
     Word_t    Index;
     int       Ret;                      // -1=failed, 1=success, 2=quit del
 
@@ -529,10 +529,10 @@ delStrJudyLTree(uint8_t * String,      // delete from tree of JudyL arrays
         String += WORDSIZE;             // advance to next 4[8] bytes
         Len -= WORDSIZE;
 
-        Ret = delStrJudyLTree(String, Len, PPValueN, PJError);
+        Ret = delStrJudyLTree(String, Len, (PPvoid_t)PPValueN, PJError);
         if (Ret != 1) return(Ret);
 
-        if (*PPValueN == (PPvoid_t) NULL)
+        if (*PPValueN == (Word_t)NULL)
         {
 //          delete JudyL element from tree
 
@@ -560,7 +560,7 @@ JudyHSDel(PPvoid_t PPArray,             // ^ to JudyHashArray struct
     )
 {
     uint8_t * String = (uint8_t *)Str;
-    PPvoid_t  PPBucket, PPHtble;
+    PWord_t  PPBucket, PPHtble;
     int       Ret;                      // return bool from Delete routine
 #ifndef DONOTUSEHASH
     uint32_t  HValue = 0;               // hash value of input string
@@ -598,7 +598,7 @@ JudyHSDel(PPvoid_t PPArray,             // ^ to JudyHashArray struct
 
 // delete from JudyL tree
 //
-    Ret = delStrJudyLTree(String, Len, PPBucket, PJError);
+    Ret = delStrJudyLTree(String, Len, (PPvoid_t)PPBucket, PJError);
     if (Ret != 1)
     {
         JU_SET_ERRNO(PJError, 0);
@@ -606,14 +606,14 @@ JudyHSDel(PPvoid_t PPArray,             // ^ to JudyHashArray struct
     }
 //  handle case of missing JudyL array from hash table and length table
 
-    if (*PPBucket == (Pvoid_t)NULL)     // if JudyL tree gone
+    if (*PPBucket == (Word_t)NULL)     // if JudyL tree gone
     {
 #ifndef DONOTUSEHASH
         if (Len > WORDSIZE)
         {
 //          delete entry in Hash table
 
-            Ret = JudyLDel(PPHtble, (Word_t)HValue, PJError); 
+            Ret = JudyLDel((PPvoid_t)PPHtble, (Word_t)HValue, PJError); 
             if (Ret != 1)
             {
                 JU_SET_ERRNO(PJError, 0);
@@ -621,7 +621,7 @@ JudyHSDel(PPvoid_t PPArray,             // ^ to JudyHashArray struct
             }
         }
 #endif // USEHASH
-        if (*PPHtble == (PPvoid_t) NULL)        // if Hash table gone
+        if (*PPHtble == (Word_t) NULL)        // if Hash table gone
         {
 //          delete entry from the String length table
 
