@@ -188,9 +188,9 @@ FUNCTION int main()
     int ii;
 
 #ifdef JUDY1
-    char *fname = "Judy1Tables.c";
+    const char *fname = "Judy1Tables.c";
 #else
-    char *fname = "JudyLTables.c";
+    const char *fname = "JudyLTables.c";
 #endif
 
     if ((fd = fopen(fname, "w")) == NULL){
