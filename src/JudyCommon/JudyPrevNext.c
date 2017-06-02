@@ -907,9 +907,9 @@ SM1Imm_01:	JU_RET_FOUND_IMM_01(Pjp);
 // Shorthand for where to find start of Index bytes array:
 
 #ifdef JUDY1
-#define	PJI (Pjp->jp_1Index)
+#define	PJI (Pjp->jp_1Index1)
 #else
-#define	PJI (Pjp->jp_LIndex)
+#define	PJI (Pjp->jp_LIndex1)
 #endif
 
 	    case cJU_JPIMMED_1_02:

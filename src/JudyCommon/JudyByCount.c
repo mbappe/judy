@@ -817,9 +817,9 @@ Imm_01:
 // Shorthand for where to find start of Index bytes array:
 
 #ifdef JUDY1
-#define	PJI (Pjp->jp_1Index)
+#define	PJI (Pjp->jp_1Index1)
 #else
-#define	PJI (Pjp->jp_LIndex)
+#define	PJI (Pjp->jp_LIndex1)
 #endif
 
 // Optional code to check the remaining ordinal (see SETOFFSET_IMM()) against

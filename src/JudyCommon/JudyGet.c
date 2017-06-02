@@ -569,36 +569,36 @@ JudyBranchB:
 // Note: Need ? if (JU_DCDNOTMATCHINDEX(Index, Pjp, 1)) break;
 
         case cJ1_JPFULLPOPU1m15:
-            if (Pjp->jp_1Index[14] == (uint8_t)Index) break;
+            if (Pjp->jp_1Index1[14] == (uint8_t)Index) break;
         case cJ1_JPFULLPOPU1m14:
-            if (Pjp->jp_1Index[13] == (uint8_t)Index) break;
+            if (Pjp->jp_1Index1[13] == (uint8_t)Index) break;
         case cJ1_JPFULLPOPU1m13:
-            if (Pjp->jp_1Index[12] == (uint8_t)Index) break;
+            if (Pjp->jp_1Index1[12] == (uint8_t)Index) break;
         case cJ1_JPFULLPOPU1m12:
-            if (Pjp->jp_1Index[11] == (uint8_t)Index) break;
+            if (Pjp->jp_1Index1[11] == (uint8_t)Index) break;
         case cJ1_JPFULLPOPU1m11:
-            if (Pjp->jp_1Index[10] == (uint8_t)Index) break;
+            if (Pjp->jp_1Index1[10] == (uint8_t)Index) break;
         case cJ1_JPFULLPOPU1m10:
-            if (Pjp->jp_1Index[9] == (uint8_t)Index) break;
+            if (Pjp->jp_1Index1[9] == (uint8_t)Index) break;
         case cJ1_JPFULLPOPU1m9:
-            if (Pjp->jp_1Index[8] == (uint8_t)Index) break;
+            if (Pjp->jp_1Index1[8] == (uint8_t)Index) break;
         case cJ1_JPFULLPOPU1m8:
-            if (Pjp->jp_1Index[7] == (uint8_t)Index) break;
+            if (Pjp->jp_1Index1[7] == (uint8_t)Index) break;
 #endif
         case cJ1_JPFULLPOPU1m7:
-            if (Pjp->jp_1Index[6] == (uint8_t)Index) break;
+            if (Pjp->jp_1Index1[6] == (uint8_t)Index) break;
         case cJ1_JPFULLPOPU1m6:
-            if (Pjp->jp_1Index[5] == (uint8_t)Index) break;
+            if (Pjp->jp_1Index1[5] == (uint8_t)Index) break;
         case cJ1_JPFULLPOPU1m5:
-            if (Pjp->jp_1Index[4] == (uint8_t)Index) break;
+            if (Pjp->jp_1Index1[4] == (uint8_t)Index) break;
         case cJ1_JPFULLPOPU1m4:
-            if (Pjp->jp_1Index[3] == (uint8_t)Index) break;
+            if (Pjp->jp_1Index1[3] == (uint8_t)Index) break;
         case cJ1_JPFULLPOPU1m3:
-            if (Pjp->jp_1Index[2] == (uint8_t)Index) break;
+            if (Pjp->jp_1Index1[2] == (uint8_t)Index) break;
         case cJ1_JPFULLPOPU1m2:
-            if (Pjp->jp_1Index[1] == (uint8_t)Index) break;
+            if (Pjp->jp_1Index1[1] == (uint8_t)Index) break;
         case cJ1_JPFULLPOPU1m1:
-            if (Pjp->jp_1Index[0] == (uint8_t)Index) break;
+            if (Pjp->jp_1Index1[0] == (uint8_t)Index) break;
 
             return(1);  // found, not in exclusion list
 
@@ -630,14 +630,14 @@ JudyBranchB:
 #ifdef JUDY1
 
 #define CHECKINDEXNATIVE(LEAF_T, PJP, IDX, INDEX)                       \
-if (((LEAF_T *)((PJP)->jp_1Index))[(IDX) - 1] == (LEAF_T)(INDEX))       \
+if (((LEAF_T *)((PJP)->jp_1Index1))[(IDX) - 1] == (LEAF_T)(INDEX))      \
     return(1)
 
 #define CHECKLEAFNONNAT(LFBTS, PJP, INDEX, IDX, COPY)                   \
 {                                                                       \
     Word_t   i_ndex;                                                    \
     uint8_t *a_ddr;                                                     \
-    a_ddr  = (PJP)->jp_1Index + (((IDX) - 1) * (LFBTS));                \
+    a_ddr  = (PJP)->jp_1Index1 + (((IDX) - 1) * (LFBTS));                \
     COPY(i_ndex, a_ddr);                                                \
     if (i_ndex == JU_LEASTBYTES((INDEX), (LFBTS)))                      \
         return(1);                                                      \
@@ -647,14 +647,14 @@ if (((LEAF_T *)((PJP)->jp_1Index))[(IDX) - 1] == (LEAF_T)(INDEX))       \
 #ifdef JUDYL
 
 #define CHECKINDEXNATIVE(LEAF_T, PJP, IDX, INDEX)                       \
-if (((LEAF_T *)((PJP)->jp_LIndex))[(IDX) - 1] == (LEAF_T)(INDEX))       \
+if (((LEAF_T *)((PJP)->jp_LIndex1))[(IDX) - 1] == (LEAF_T)(INDEX))       \
         return((PPvoid_t)(P_JV((PJP)->jp_Addr) + (IDX) - 1))
 
 #define CHECKLEAFNONNAT(LFBTS, PJP, INDEX, IDX, COPY)                   \
 {                                                                       \
     Word_t   i_ndex;                                                    \
     uint8_t *a_ddr;                                                     \
-    a_ddr  = (PJP)->jp_LIndex + (((IDX) - 1) * (LFBTS));                \
+    a_ddr  = (PJP)->jp_LIndex1 + (((IDX) - 1) * (LFBTS));                \
     COPY(i_ndex, a_ddr);                                                \
     if (i_ndex == JU_LEASTBYTES((INDEX), (LFBTS)))                      \
         return((PPvoid_t)(P_JV((PJP)->jp_Addr) + (IDX) - 1));           \
@@ -691,9 +691,17 @@ if (((LEAF_T *)((PJP)->jp_LIndex))[(IDX) - 1] == (LEAF_T)(INDEX))       \
 #if (defined(JUDY1) || defined(JU_64BIT))
         case cJU_JPIMMED_2_03: CHECKINDEXNATIVE(uint16_t, Pjp, 3, Index);
         case cJU_JPIMMED_2_02: CHECKINDEXNATIVE(uint16_t, Pjp, 2, Index);
-                               CHECKINDEXNATIVE(uint16_t, Pjp, 1, Index);
+//                               CHECKINDEXNATIVE(uint16_t, Pjp, 1, Index);
+#ifdef  JUDYL
+             if (Pjp->jp_LIndex2[0] == (uint16_t)(Index))
+                 return((PPvoid_t)(P_JV(Pjp->jp_Addr) + 1 - 1));
+#else   // JUDY1
+             if (Pjp->jp_1Index2[0] == (uint16_t)(Index))
+                 return(1);
+#endif  // JUDY1
+
         break;
-#endif
+#endif  // (defined(JUDY1) || defined(JU_64BIT))
 
 #if (defined(JUDY1) && defined(JU_64BIT))
         case cJ1_JPIMMED_3_05: 
@@ -714,7 +722,9 @@ if (((LEAF_T *)((PJP)->jp_LIndex))[(IDX) - 1] == (LEAF_T)(INDEX))       \
 
         case cJ1_JPIMMED_4_03: CHECKINDEXNATIVE(uint32_t, Pjp, 3, Index);
         case cJ1_JPIMMED_4_02: CHECKINDEXNATIVE(uint32_t, Pjp, 2, Index);
-                               CHECKINDEXNATIVE(uint32_t, Pjp, 1, Index);
+//                               CHECKINDEXNATIVE(uint32_t, Pjp, 1, Index);
+            if (Pjp->jp_1Index4[0] == (uint32_t)(Index))
+                 return(1);
             break;
 
         case cJ1_JPIMMED_5_03:

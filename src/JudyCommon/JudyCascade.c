@@ -598,10 +598,10 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 				PjpJP->jp_Addr = (Word_t) PjvnewRaw;
 
 //				Copy to JP as an immediate Leaf
-				JU_COPYMEM(PjpJP->jp_LIndex, PLeaf + Start,
+				JU_COPYMEM(PjpJP->jp_LIndex1, PLeaf + Start,
 					   Pop1);
 #else
-				JU_COPYMEM(PjpJP->jp_1Index, PLeaf + Start,
+				JU_COPYMEM(PjpJP->jp_1Index1, PLeaf + Start,
 					   Pop1);
 #endif
 //				Set Type, Population and Index size
@@ -835,11 +835,9 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 				PjpJP->jp_Addr = (Word_t) PjvnewRaw;
 
 //				Copy to Index to JP as an immediate Leaf
-				JU_COPYMEM((uint16_t *) (PjpJP->jp_LIndex),
-					   StageA + Start, Pop1);
+				JU_COPYMEM(PjpJP->jp_LIndex2, StageA + Start, Pop1);
 #else // JUDY1
-				JU_COPYMEM((uint16_t *) (PjpJP->jp_1Index),
-					   StageA + Start, Pop1);
+				JU_COPYMEM(PjpJP->jp_1Index2, StageA + Start, Pop1);
 #endif // JUDY1
 //				Set Type, Population and Index size
 				PjpJP->jp_Type = cJU_JPIMMED_2_02 + Pop1 - 2;
@@ -1049,11 +1047,9 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 				PjpJP->jp_Addr = (Word_t) PjvnewRaw;
 
 //				Copy to Index to JP as an immediate Leaf
-				j__udyCopyWto3(PjpJP->jp_LIndex,
-					       StageA + Start, Pop1);
+				j__udyCopyWto3(PjpJP->jp_LIndex1, StageA + Start, Pop1);
 #else
-				j__udyCopyWto3(PjpJP->jp_1Index,
-					       StageA + Start, Pop1);
+				j__udyCopyWto3(PjpJP->jp_1Index1, StageA + Start, Pop1);
 #endif
 //				Set type, population and Index size
 				PjpJP->jp_Type = cJU_JPIMMED_3_02 + Pop1 - 2;
@@ -1241,8 +1237,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //		cJ1_JPIMMED_4_02..3: Judy1 64
 
 //                              Copy to Index to JP as an immediate Leaf
-				j__udyCopyWto4(PjpJP->jp_1Index,
-					       StageA + Start, Pop1);
+				j__udyCopyWto4(PjpJP->jp_1Index1, StageA + Start, Pop1);
 
 //                              Set pointer, type, population and Index size
 				PjpJP->jp_Type = cJ1_JPIMMED_4_02 + Pop1 - 2;
@@ -1433,8 +1428,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //		cJ1_JPIMMED_5_02..3: Judy1 64
 
 //                              Copy to Index to JP as an immediate Leaf
-				j__udyCopyWto5(PjpJP->jp_1Index,
-					       StageA + Start, Pop1);
+				j__udyCopyWto5(PjpJP->jp_1Index1, StageA + Start, Pop1);
 
 //                              Set pointer, type, population and Index size
 				PjpJP->jp_Type = cJ1_JPIMMED_5_02 + Pop1 - 2;
@@ -1626,8 +1620,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //		cJ1_JPIMMED_6_02:    Judy1 64
 
 //                              Copy to Index to JP as an immediate Leaf
-				j__udyCopyWto6(PjpJP->jp_1Index,
-					       StageA + Start, 2);
+				j__udyCopyWto6(PjpJP->jp_1Index1, StageA + Start, 2);
 
 //                              Set pointer, type, population and Index size
 				PjpJP->jp_Type = cJ1_JPIMMED_6_02;
@@ -1864,10 +1857,10 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //		cJ1_JPIMMED_7_02   :  Judy1 64
 //                              Copy to JP as an immediate Leaf
 #ifdef  JU_64BIT
-				j__udyCopyWto7(PjpJP->jp_1Index, Pjlw+Start, 2);
+				j__udyCopyWto7(PjpJP->jp_1Index1, Pjlw+Start, 2);
 				PjpJP->jp_Type = cJ1_JPIMMED_7_02;
 #else
-				j__udyCopyWto3(PjpJP->jp_1Index, Pjlw+Start, 2);
+				j__udyCopyWto3(PjpJP->jp_1Index1, Pjlw+Start, 2);
 				PjpJP->jp_Type = cJ1_JPIMMED_3_02;
 #endif // 32 Bit
 			}

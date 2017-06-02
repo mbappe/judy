@@ -817,7 +817,7 @@ BranchU:
 // different place than for Judy1:
 
 #define	IMMABOVE(Func,Pop1) \
-	LEAFABOVE(Func, (Pjll_t) (Pjp->jp_LIndex), Pop1)
+	LEAFABOVE(Func, (Pjll_t) (Pjp->jp_LIndex1), Pop1)
 #endif
 
 // For all leaf types, the population AT OR ABOVE is the total pop1 less the

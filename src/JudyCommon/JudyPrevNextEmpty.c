@@ -1313,8 +1313,8 @@ LeafB1NextSubexp:	// return here to check next bitmap subexpanse.
 // Immediate JPs with Pop1 > 1:
 
 #define	IMM_MULTI(Func,BaseJPType)			\
-	JUDY1CODE(Pword = (PWord_t) (Pjp->jp_1Index);)	\
-	JUDYLCODE(Pword = (PWord_t) (Pjp->jp_LIndex);)	\
+	JUDY1CODE(Pword = (PWord_t) (Pjp->jp_1Index1);)	\
+	JUDYLCODE(Pword = (PWord_t) (Pjp->jp_LIndex1);)	\
 	Func(Pword, JU_JPTYPE(Pjp) - (BaseJPType) + 1)
 
 	case cJU_JPIMMED_1_02:

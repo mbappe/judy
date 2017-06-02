@@ -55,7 +55,6 @@ typedef struct J_UDY_POINTER_OTHERS      // JPO.
         {
             Word_t      j_po_Addr;       // first word:  Pjp_t, Word_t, etc.
             union {
-//              Word_t  j_po_DcdPop0:cJU_BITSPERWORD-cJU_BITSPERBYTE;
                 uint8_t j_po_DcdP0[sizeof(Word_t) - 1];
                 uint8_t j_po_Bytes[sizeof(Word_t)];     // last byte = jp_Type.
             } jpo_u;
@@ -78,12 +77,33 @@ typedef struct J_UDY_POINTER_OTHERS      // JPO.
 // TBD:  Revise this structure to not overload j_po_DcdPopO this way?  The
 // current arrangement works, its just confusing.
 
+#ifdef  JUDY1
 typedef struct _JUDY_POINTER_IMMED      // JPI.
         {
-            uint8_t j_pi_1Index[sizeof(Word_t)];        // see above.
-            uint8_t j_pi_LIndex[sizeof(Word_t) - 1];    // see above.
-            uint8_t j_pi_Type;                  // JP type, 1 of cJ*_JPIMMED*.
+            union 
+            {
+                uint8_t  j_pi_1Index1[sizeof(Word_t) + sizeof(Word_t) - 1];
+                uint16_t j_pi_1Index2[(sizeof(Word_t) + sizeof(Word_t) - 1)/2];
+#ifdef  JU_64BIT
+                uint32_t j_pi_1Index4[(sizeof(Word_t) + sizeof(Word_t) - 1)/4];
+#endif  // JU_64BIT
+            };
         } jpi_t;
+#endif  // JUDY1
+
+#ifdef  JUDYL
+typedef struct _JUDY_POINTER_IMMED      // JPI.
+        {
+            Word_t      j_po_Addr;       // first word:  Pjp_t, Word_t, etc.
+            union 
+            {
+                uint8_t  j_pi_LIndex1[sizeof(Word_t) - 1];    // see above.
+#ifdef  JU_64BIT
+                uint16_t j_pi_LIndex2[(sizeof(Word_t) - 1)/2];
+#endif  // JU_64BIT
+            };
+        } jpi_t;
+#endif  // JUDYL
 
 
 // UNION OF JP TYPES:
@@ -100,11 +120,11 @@ typedef union J_UDY_POINTER             // JP.
         } jp_t, *Pjp_t;
 
 // For coding convenience:
-//
-// Note, jp_Type has the same bits in jpo_t and jpi_t.
-
-#define jp_1Index  j_pi.j_pi_1Index     // for storing Indexes in first  word.
-#define jp_LIndex  j_pi.j_pi_LIndex     // for storing Indexes in second word.
+#define jp_1Index1 j_pi.j_pi_1Index1    // for storing uint8_t  Indexes in first  word.
+#define jp_1Index2 j_pi.j_pi_1Index2    // for storing uint16_t Indexes in first  word.
+#define jp_1Index4 j_pi.j_pi_1Index4    // for storing uint32_t Indexes in first  word.
+#define jp_LIndex1 j_pi.j_pi_LIndex1    // for storing Indexes in second word.
+#define jp_LIndex2 j_pi.j_pi_LIndex2    // for storing uint16_t Indexes in first  word.
 #define jp_Addr    j_po.j_po_Addr
 //#define       jp_DcdPop0 j_po.jpo_u.j_po_DcdPop0
 #define jp_Type    j_po.jpo_u.j_po_Bytes[sizeof(Word_t) - 1]

@@ -559,9 +559,9 @@ JUDYLCODE(Pjv_t	   Pjv1;)
 	    for (Offset = 0; Offset < Pop1; ++Offset)
 	    {
 #ifdef JUDY1
-		PLeaf2[Offset] = MSByte | Pjp->jp_1Index[Offset];
+		PLeaf2[Offset] = MSByte | Pjp->jp_1Index1[Offset];
 #else
-		PLeaf2[Offset] = MSByte | Pjp->jp_LIndex[Offset];
+		PLeaf2[Offset] = MSByte | Pjp->jp_LIndex1[Offset];
 		Pjv2  [Offset] = Pjv1[Offset];
 #endif
 	    }
@@ -656,8 +656,8 @@ JUDYLCODE(Pjv_t	  Pjv2;)
 #endif
 #if (defined(JUDY1) || defined(JU_64BIT))
 	{
-	    JUDY1CODE(uint16_t * PLeaf2 = (uint16_t *) (Pjp->jp_1Index);)
-	    JUDYLCODE(uint16_t * PLeaf2 = (uint16_t *) (Pjp->jp_LIndex);)
+	    JUDY1CODE(uint16_t * PLeaf2 = (uint16_t *) (Pjp->jp_1Index1);)
+	    JUDYLCODE(uint16_t * PLeaf2 = (uint16_t *) (Pjp->jp_LIndex1);)
 
 	    Pop1 = JU_JPTYPE(Pjp) - cJU_JPIMMED_2_02 + 2; assert(Pop1);
 	    j__udyCopy2to3(PLeaf3, PLeaf2, Pop1, MSByte);
@@ -752,8 +752,8 @@ JUDYLCODE(Pjv_t	   Pjv3;)
 	case cJ1_JPIMMED_3_05:
 #endif
 	{
-	    JUDY1CODE(uint8_t * PLeaf3 = (uint8_t *) (Pjp->jp_1Index);)
-	    JUDYLCODE(uint8_t * PLeaf3 = (uint8_t *) (Pjp->jp_LIndex);)
+	    JUDY1CODE(uint8_t * PLeaf3 = (uint8_t *) (Pjp->jp_1Index1);)
+	    JUDYLCODE(uint8_t * PLeaf3 = (uint8_t *) (Pjp->jp_LIndex1);)
 
 	    JUDY1CODE(Pop1 = JU_JPTYPE(Pjp) - cJU_JPIMMED_3_02 + 2;)
 	    JUDYLCODE(Pop1 = 2;)
@@ -848,7 +848,7 @@ JUDYLCODE(Pjv_t	  Pjv4;)	// source object value area.
 	case cJ1_JPIMMED_4_02:
 	case cJ1_JPIMMED_4_03:
 	{
-	    uint32_t * PLeaf4 = (uint32_t *) (Pjp->jp_1Index);
+	    uint32_t * PLeaf4 = (uint32_t *) (Pjp->jp_1Index1);
 
 	    Pop1 = JU_JPTYPE(Pjp) - cJ1_JPIMMED_4_02 + 2;
 	    j__udyCopy4to5(PLeaf5, PLeaf4, Pop1, MSByte);
@@ -932,7 +932,7 @@ JUDYLCODE(Pjv_t	  Pjv5;)	// source object value area.
 	case cJ1_JPIMMED_5_02:
 	case cJ1_JPIMMED_5_03:
 	{
-	    uint8_t * PLeaf5 = (uint8_t *) (Pjp->jp_1Index);
+	    uint8_t * PLeaf5 = (uint8_t *) (Pjp->jp_1Index1);
 
 	    Pop1 = JU_JPTYPE(Pjp) - cJ1_JPIMMED_5_02 + 2;
 	    j__udyCopy5to6(PLeaf6, PLeaf5, Pop1, MSByte);
@@ -1015,7 +1015,7 @@ JUDYLCODE(Pjv_t	  Pjv6;)	// source object value area.
 
 	case cJ1_JPIMMED_6_02:
 	{
-	    uint8_t * PLeaf6 = (uint8_t *) (Pjp->jp_1Index);
+	    uint8_t * PLeaf6 = (uint8_t *) (Pjp->jp_1Index1);
 
 	    j__udyCopy6to7(PLeaf7, PLeaf6, /* Pop1 = */ 2, MSByte);
 	    return(2);
@@ -1100,7 +1100,7 @@ JUDYLCODE(Pjv_t Pjv3;)		// source object value area.
 
 	case cJU_JPIMMED_3_02:
 	{
-	    uint8_t * PLeaf3 = (uint8_t *) (Pjp->jp_1Index);
+	    uint8_t * PLeaf3 = (uint8_t *) (Pjp->jp_1Index1);
 
 	    j__udyCopy3toW((PWord_t) Pjlw, PLeaf3, /* Pop1 = */ 2, MSByte);
 	    return(2);
@@ -1185,7 +1185,7 @@ JUDYLCODE(Pjv_t	Pjv7;)		// source object value area.
 
 	case cJ1_JPIMMED_7_02:
 	{
-	    uint8_t * PLeaf7 = (uint8_t *) (Pjp->jp_1Index);
+	    uint8_t * PLeaf7 = (uint8_t *) (Pjp->jp_1Index1);
 
 	    j__udyCopy7toW((PWord_t) Pjlw, PLeaf7, /* Pop1 = */ 2, MSByte);
 	    return(2);

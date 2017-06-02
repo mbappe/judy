@@ -567,8 +567,8 @@ JUDYLCODE(Pjv_t Pjv);
 
         if (pop1 <= immed_maxpop1[Level])      // note: always < root level.
         {
-            JUDY1CODE(uint8_t * Pjll = (uint8_t *) (PjpParent->jp_1Index);)
-            JUDYLCODE(uint8_t * Pjll = (uint8_t *) (PjpParent->jp_LIndex);)
+            JUDY1CODE(uint8_t * Pjll = (uint8_t *) (PjpParent->jp_1Index1);)
+            JUDYLCODE(uint8_t * Pjll = (uint8_t *) (PjpParent->jp_LIndex1);)
 
             CHECKLEAFORDER;             // indexes to be stored are sorted.
 
