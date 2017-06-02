@@ -520,7 +520,7 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
     P_leafEnd = P_leaf + ((POP1) * (LFBTS));                    \
                                                                 \
     do {                                                        \
-        JU_COPY3_PINDEX_TO_LONG(i_ndex, P_leaf);                \
+        COPYINDEX(i_ndex, P_leaf);                              \
         if (I_ndex <= i_ndex) break;                            \
         P_leaf += (LFBTS);                                      \
     } while (P_leaf < P_leafEnd);                               \
