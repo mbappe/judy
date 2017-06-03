@@ -268,7 +268,9 @@ JudyHSGet(Pcvoid_t PArray,              // pointer (^) to structure
     PWord_t  PPValue;                  // pointer to Value
     Word_t    Index;                    // 4[8] bytes of String
 
-    JLG(PPValue, PArray, Len);          // find hash table for strings of Len
+//  find hash table for strings of Len
+
+    PPValue = (PWord_t)JudyLGet(PArray, Len, NULL);
     if (PPValue == NULL)
         return ((PPvoid_t) NULL);       // no strings of this Len
 
@@ -282,7 +284,10 @@ JudyHSGet(Pcvoid_t PArray,              // pointer (^) to structure
     {
         uint32_t  HValue;               // hash of input string
         JUDYHASHSTR(HValue, String, Len);       // hash to no more than 32 bits
-        JLG(PPValue, *PPValue, (Word_t)HValue); // get ^ to hash bucket
+
+ //     get ^ to hash bucket
+
+        PPValue = (PWord_t)JudyLGet((Pvoid_t)*PPValue, (Word_t)HValue, NULL);
         if (PPValue == NULL)
             return ((PPvoid_t) NULL);   // no entry in Hash table
     }
@@ -315,7 +320,9 @@ JudyHSGet(Pcvoid_t PArray,              // pointer (^) to structure
         {
             COPYSTRINGtoWORD(Index, String, WORDSIZE);
 
-            JLG(PPValue, *PPValue, Index);      // decode next 4[8] bytes
+//          decode next 4[8] bytes
+
+            PPValue = (PWord_t)JudyLGet((Pvoid_t)*PPValue, Index, NULL);
             if (PPValue == NULL)     // if NULL array, bail out
                 return ((PPvoid_t) NULL);       // string does not match
 
@@ -327,7 +334,10 @@ JudyHSGet(Pcvoid_t PArray,              // pointer (^) to structure
 //  Get remaining 1..4[8] bytes left in string
 
     COPYSTRINGtoWORD(Index, String, Len);
-    JLG(PPValue, *PPValue, Index);      // decode last 1-4[8] bytes
+
+//  decode last 1-4[8] bytes
+
+    PPValue = (PWord_t)JudyLGet((Pvoid_t)*PPValue, Index, NULL);
     return ((PPvoid_t)PPValue);
 }
 
@@ -470,7 +480,10 @@ JudyHSIns(PPvoid_t PPArray,             // ^ to JudyHashArray name
         JU_SET_ERRNO(PJError, JU_ERRNO_NULLPINDEX);
         return (PPJERR);
     }
-    JLG(PPValue, *PPArray, Len);        // JudyL hash table for strings of Len
+
+//  JudyL hash table for strings of Len
+
+    PPValue = (PWord_t)JudyLGet(*PPArray, Len, NULL);
     if (PPValue == NULL)     // make new if missing, (very rare)
     {
         PPValue = (PWord_t)JudyLIns(PPArray, Len, PJError);
@@ -524,8 +537,10 @@ delStrJudyLTree(uint8_t * String,      // delete from tree of JudyL arrays
     if (Len > WORDSIZE)                 // delete from JudyL tree, not leaf
     {
         COPYSTRINGtoWORD(Index, String, WORDSIZE);      // get Index
-        JLG(PPValueN, *PPValue, Index); // get pointer to next JudyL array
 
+//      get pointer to next JudyL array
+
+        PPValueN = (PWord_t)JudyLGet(*PPValue, Index, NULL);
         String += WORDSIZE;             // advance to next 4[8] bytes
         Len -= WORDSIZE;
 
@@ -577,7 +592,9 @@ JudyHSDel(PPvoid_t PPArray,             // ^ to JudyHashArray struct
 
 //  string is in structure, so testing for absence is not necessary
 
-    JLG(PPHtble, *PPArray, Len);        // JudyL hash table for strings of Len
+//  JudyL hash table for strings of Len
+
+    PPHtble = (PWord_t)JudyLGet(*PPArray, Len, NULL);
 
 #ifdef DONOTUSEHASH
     PPBucket = PPHtble;                 // simulate below code
@@ -588,7 +605,7 @@ JudyHSDel(PPvoid_t PPArray,             // ^ to JudyHashArray struct
 
 //  get pointer to hash bucket
 
-        JLG(PPBucket, *PPHtble, (Word_t)HValue);
+        PPBucket = (PWord_t)JudyLGet((Pvoid_t)*PPHtble, (Word_t)HValue, NULL);
     }
     else
     {

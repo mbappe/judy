@@ -323,7 +323,7 @@ JudySLGet(Pcvoid_t PArray, const uint8_t * Index, PJError_t PJError)
 
         COPYSTRINGtoWORD(indexword, pos);       // copy next 4[8] bytes.
 
-        JLG(PPValue, PArray, indexword);
+        PPValue = (PWord_t)JudyLGet(PArray, indexword, NULL);
 
         if ((PPValue == NULL) || LASTWORD_BY_VALUE(indexword))
             return ((PPvoid_t)PPValue);
@@ -677,7 +677,7 @@ JudySLDelSub(PPvoid_t PPArray,          // in which to delete.
 // currently valid.
 //
 
-    JLG(PPValue, *PPArray, indexword);
+    PPValue = (PWord_t)JudyLGet(*PPArray, indexword, NULL);
     if (PPValue == NULL)
         return (0);                     // Index not in JudySL array.
 // If a previous JudySLIns() ran out of memory partway down the tree, it left a
@@ -788,7 +788,7 @@ JudySLPrevSub(Pcvoid_t PArray, uint8_t * Index, int orig,
         COPYSTRINGtoWORD(indexword, Index);     // copy next 4[8] bytes.
         if (len > WORDSIZE)             // not at end of Index.
         {
-            JLG(PPValue, PArray, indexword);
+            PPValue = (PWord_t)JudyLGet(PArray, indexword, NULL);
             if (PPValue != NULL)
             {
 
@@ -929,7 +929,7 @@ JudySLNextSub(Pcvoid_t PArray, uint8_t * Index, int orig,
 
         if (len > WORDSIZE)             // not at end of Index.
         {
-            JLG(PPValue, PArray, indexword);
+            PPValue = (PWord_t)JudyLGet(PArray, indexword, NULL);
             if (PPValue != NULL)
             {
 // If a previous JudySLIns() ran out of memory partway down the tree, it left a
