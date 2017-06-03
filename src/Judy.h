@@ -91,7 +91,7 @@ typedef void ** PPvoid_t;
 
 #ifndef _WORD_T
 #define _WORD_T
-typedef unsigned long    Word_t, * PWord_t;  // expect 32-bit or 64-bit words.
+typedef uintptr_t Word_t, * PWord_t;  // expect 32-bit or 64-bit words.
 #endif
 
 #ifndef NULL
