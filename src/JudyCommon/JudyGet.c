@@ -851,7 +851,7 @@ static  Word_t  calls = 0;              // times called so far.
             enabled  = TRUE;
 
             (void) printf("JudyCheckPop() present and enabled; callsmin = "
-                          "%lu\n", callsmin);
+                          "%" PRIuPTR"\n", callsmin);
         }
         else if (! enabled) return;
 
@@ -861,7 +861,7 @@ static  Word_t  calls = 0;              // times called so far.
         {
             if (++calls < callsmin) return;
 
-            (void) printf("JudyCheckPop() activated at call %lu\n", calls);
+            (void) printf("JudyCheckPop() activated at call %" PRIuPTR"\n", calls);
             active = TRUE;
         }
 
@@ -1099,6 +1099,13 @@ BranchU:
         return(0);              // to make some compilers happy.
 
 } // JudyCheckPopSM()
+
+#if defined(JUDY1)
+void
+JudyCheckSorted(Pjll_t Pjll, Word_t Pop1, long IndexSize)
+{
+}
+#endif // defined(JUDY1)
 
 #endif // DEBUG
 #endif // ! JUDYGETINLINE

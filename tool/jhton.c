@@ -1895,7 +1895,7 @@ FUNCTION void DumpTree(
 
 	    for (indent = 0; indent <= Depth; ++indent) PUTC('.');
 
-	    (void) printf(" %-5s %3d %c %lx %lx \"%s\"\n",
+	    (void) printf(" %-5s %3d %c %p %p \"%s\"\n",
 			  ((Pdn -> dn_type) == DN_TYPE_TEXT) ?
 			      "text" : TAG(Pdn -> dn_type),
 			  Pdn -> dn_linenum,
