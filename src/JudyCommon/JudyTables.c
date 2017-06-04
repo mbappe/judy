@@ -216,7 +216,7 @@ FUNCTION int main()
 	fprintf(fd," %d,", AllocSizes[ii]);
 
 #ifndef JU_64BIT
-    fprintf(fd," Leaf1 = %d\";\n\n", cJ1_LEAF1_MAXPOP1);
+    fprintf(fd," Leaf1 = %zd\";\n\n", cJ1_LEAF1_MAXPOP1);
 #else
     fprintf(fd,"\";\n\n");			// no Leaf1 in this case.
 #endif
