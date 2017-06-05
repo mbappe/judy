@@ -1,16 +1,3 @@
-#if (! (defined(JUDY1) || defined(JUDYL)))
-#error:  One of -DJUDY1 or -DJUDYL must be specified.
-#endif
-
-#ifdef JUDY1
-#include "Judy1.h"
-#endif
-
-#ifdef JUDYL
-#include "JudyL.h"
-#endif
-
-#include "JudyPrivate1L.h"
 // Copyright (C) 2000 - 2002 Hewlett-Packard Company
 //
 // This program is free software; you can redistribute it and/or modify it
@@ -42,6 +29,24 @@
 // are only used here, and exported from Judy*Decascade, which is a separate
 // file for profiling reasons (to prevent inlining), but which potentially
 // could be merged with this file, either in SoftCM or at compile-time.
+
+#if (! (defined(JUDY1) || defined(JUDYL)))
+#error:  One of -DJUDY1 or -DJUDYL must be specified.
+#endif
+
+#ifdef JUDY1
+#include "Judy1.h"
+#else
+#include "JudyL.h"
+#endif
+
+#include "JudyPrivate1L.h"
+
+#ifdef TRACEJP
+#include "JudyPrintJP.c"
+#endif
+
+
 #ifdef JUDY1
 extern int j__udy1CreateBranchB(Pjp_t, Pjp_t, uint8_t *, Word_t, Pjpm_t);
 extern int j__udy1CreateBranchU(Pjp_t, Pjpm_t);
@@ -117,7 +122,13 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
     jp_t      newJP;                    // for creating a new Immed JP.
     Word_t    exppop1;                  // expanse (leaf) population.
     int       retcode;                  // return codes:  -1, 0, 1.
+
   ContinueInsWalk:                     // for modifying state without recursing.
+
+#ifdef TRACEJP
+        JudyPrintJP(Pjp, "i", __LINE__);
+#endif
+
     switch (JU_JPTYPE(Pjp))             // entry:  Pjp, Index.
     {
 // ****************************************************************************
@@ -2293,7 +2304,13 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
     jp_t      newJP;                    // for creating a new Immed JP.
     Word_t    exppop1;                  // expanse (leaf) population.
     int       retcode;                  // return codes:  -1, 0, 1.
+
   ContinueInsWalk:                     // for modifying state without recursing.
+
+#ifdef TRACEJP
+        JudyPrintJP(Pjp, "i", __LINE__);
+#endif
+
     switch (JU_JPTYPE(Pjp))             // entry:  Pjp, Index.
     {
 // ****************************************************************************
