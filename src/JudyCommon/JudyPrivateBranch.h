@@ -55,6 +55,7 @@ typedef struct J_UDY_POINTER_OTHERS      // JPO.
         {
             Word_t      j_po_Addr;       // first word:  Pjp_t, Word_t, etc.
             union {
+                Word_t  j_po_Addr1;
                 uint8_t j_po_DcdP0[sizeof(Word_t) - 1];
                 uint8_t j_po_Bytes[sizeof(Word_t)];     // last byte = jp_Type.
             } jpo_u;
@@ -78,7 +79,7 @@ typedef struct J_UDY_POINTER_OTHERS      // JPO.
 // current arrangement works, its just confusing.
 
 #ifdef  JUDY1
-typedef struct _JUDY_POINTER_IMMED      // JPI.
+typedef struct _JUDY_POINTER_IMMED1  
         {
             union 
             {
@@ -92,7 +93,7 @@ typedef struct _JUDY_POINTER_IMMED      // JPI.
 #endif  // JUDY1
 
 #ifdef  JUDYL
-typedef struct _JUDY_POINTER_IMMED      // JPI.
+typedef struct _JUDY_POINTER_IMMEDL      // JPI.
         {
             Word_t      j_po_Addr;       // first word:  Pjp_t, Word_t, etc.
             union 
@@ -104,7 +105,6 @@ typedef struct _JUDY_POINTER_IMMED      // JPI.
             };
         } jpi_t;
 #endif  // JUDYL
-
 
 // UNION OF JP TYPES:
 //
@@ -120,13 +120,18 @@ typedef union J_UDY_POINTER             // JP.
         } jp_t, *Pjp_t;
 
 // For coding convenience:
+#define jp_1Index  j_p1.j_p1_1Index     // for storing Indexes in first  word.
+#define jp_LIndex  j_pL.j_pL_LIndex     // for storing Indexes in second word.
 #define jp_1Index1 j_pi.j_pi_1Index1    // for storing uint8_t  Indexes in first  word.
 #define jp_1Index2 j_pi.j_pi_1Index2    // for storing uint16_t Indexes in first  word.
 #define jp_1Index4 j_pi.j_pi_1Index4    // for storing uint32_t Indexes in first  word.
 #define jp_LIndex1 j_pi.j_pi_LIndex1    // for storing Indexes in second word.
 #define jp_LIndex2 j_pi.j_pi_LIndex2    // for storing uint16_t Indexes in first  word.
 #define jp_Addr    j_po.j_po_Addr
+#define jp_Addr1   j_po.jpo_u.j_po_Addr1
 //#define       jp_DcdPop0 j_po.jpo_u.j_po_DcdPop0
+#define jp_Addr1   j_po.jpo_u.j_po_Addr1
+//#define jp_Type    j_po.jpo_u.j_po_Bytes[sizeof(Word_t) - 1]
 #define jp_Type    j_po.jpo_u.j_po_Bytes[sizeof(Word_t) - 1]
 #define jp_DcdP0   j_po.jpo_u.j_po_DcdP0
 
@@ -171,7 +176,8 @@ typedef union J_UDY_POINTER             // JP.
 // same space.
 
 #define J__U_GROWCK(POP1,MAXPOP1,POPTOWORDS) \
-        (((POP1) != (MAXPOP1)) && (POPTOWORDS[POP1] == POPTOWORDS[(POP1) + 1]))
+        (POPTOWORDS[POP1] == POPTOWORDS[(POP1) + 1])
+////        (((POP1) != (MAXPOP1)) && (POPTOWORDS[POP1] == POPTOWORDS[(POP1) + 1]))
 
 #define JU_BRANCHBJPGROWINPLACE(NumJPs) \
         J__U_GROWCK(NumJPs, cJU_BITSPERSUBEXPB, j__U_BranchBJPPopToWords)
@@ -179,9 +185,12 @@ typedef union J_UDY_POINTER             // JP.
 
 // DETERMINE IF AN INDEX IS (NOT) IN A JPS EXPANSE:
 
+#ifdef  noDCDCHECK
+#define JU_DCDNOTMATCHINDEX(INDEX,PJP,POP0BYTES) (0)
+#else   // DCDCHECK
 #define JU_DCDNOTMATCHINDEX(INDEX,PJP,POP0BYTES) \
-        (((INDEX) ^ JU_JPDCDPOP0(PJP)) & cJU_DCDMASK(POP0BYTES))
-
+    (((INDEX) ^ JU_JPDCDPOP0(PJP)) & cJU_DCDMASK(POP0BYTES))
+#endif  // DCDCHECK
 
 // NUMBER OF JPs IN AN UNCOMPRESSED BRANCH:
 //
@@ -253,7 +262,8 @@ typedef struct J__UDY_BRANCH_LINEAR
 //
 // Note:  The numbers below are the same in both 32 and 64 bit systems.
 
-#define cJU_BRANCHBMAXJPS  184          // maximum JPs for bitmap branches.
+//#define cJU_BRANCHBMAXJPS  184          // maximum JPs for bitmap branches.
+#define cJU_BRANCHBMAXJPS  86          // maximum JPs for bitmap branches.
 
 // Convenience wrappers for referencing BranchB bitmaps or JP subarray
 // pointers:
@@ -284,17 +294,24 @@ typedef struct J__UDY_BRANCH_BITMAP_SUBEXPANSE
 typedef struct J__UDY_BRANCH_BITMAP
         {
             jbbs_t jbb_jbbs   [cJU_NUMSUBEXPB];
-#ifdef SUBEXPCOUNTS
-            Word_t jbb_subPop1[cJU_NUMSUBEXPB];
-#endif
+
+#ifdef  BBSEARCH
+            Word_t jbb_Pop1;
+#endif  // BBSEARCH
+
+//            Pjp_t  jbbs_Pjp[];
+
         } jbb_t, * Pjbb_t;
 
 #define JU_BRANCHJP_NUMJPSTOWORDS(NumJPs) (j__U_BranchBJPPopToWords[NumJPs])
 
-#ifdef SUBEXPCOUNTS
-#define cJU_NUMSUBEXPU  16      // number of subexpanse counts.
-#endif
+// ****************************************************************************
+// JUDY BITMAP LEAF2
+// ****************************************************************************
 
+#define cJLB2_EXP       ((Word_t)65336)
+#define cJLB2_BM        (cJLB2_EXP/cbPW)     // 2k[1k]
+#define cJLB2_WORDS     (sizeof(jlb2_t[cJLB2_BM]) / cBPW)
 
 // ****************************************************************************
 // JUDY BRANCH UNCOMPRESSED (JBU) SUPPORT
@@ -306,16 +323,16 @@ typedef struct J__UDY_BRANCH_BITMAP
 
 #define JU_JBU_PJP(Pjp,Index,Level) \
         (&((P_JBU((Pjp)->jp_Addr))->jbu_jp[JU_DIGITATSTATE(Index, Level)]))
+
 #define JU_JBU_PJP0(Pjp) \
         (&((P_JBU((Pjp)->jp_Addr))->jbu_jp[0]))
 
 typedef struct J__UDY_BRANCH_UNCOMPRESSED
-        {
-            jp_t   jbu_jp     [cJU_BRANCHUNUMJPS];  // JPs for populated exp.
-#ifdef SUBEXPCOUNTS
-            Word_t jbu_subPop1[cJU_NUMSUBEXPU];
-#endif
-        } jbu_t, * Pjbu_t;
+{
+//        Word_t  jbu_headr[2];         // MUST! be an even number of words
+        jp_t   jbu_jp     [cJU_BRANCHUNUMJPS];  // JPs for populated exp.
+//        jp_t   jbu_jp[0];                       // JPs for populated exp.
+} jbu_t, * Pjbu_t;
 
 
 // ****************************************************************************
@@ -349,7 +366,8 @@ typedef struct J__UDY_BRANCH_UNCOMPRESSED
 // This is was done to allow malloc() to coalesce memory before the next big
 // (~512 words) allocation.
 
-#define JU_BTOU_POP_INCREMENT    300
+//#define JU_BTOU_POP_INCREMENT    300
+#define JU_BTOU_POP_INCREMENT    150
 
 // Min/max population below BranchB, then convert to BranchU:
 
@@ -360,10 +378,10 @@ typedef struct J__UDY_BRANCH_UNCOMPRESSED
 
 // These are set up to have conservative conversion schedules to BranchU:
 
-#define JU_BRANCHL_MAX_POP      (-1UL)
-#define JU_BTOU_POP_INCREMENT      300
+#define JU_BRANCHL_MAX_POP      ((Word_t)-1)
+//#define JU_BTOU_POP_INCREMENT      300
 #define JU_BRANCHB_MIN_POP        1000
-#define JU_BRANCHB_MAX_POP      (-1UL)
+#define JU_BRANCHB_MAX_POP      ((Word_t)-1)
 
 #endif // NO_BRANCHU
 
@@ -380,8 +398,7 @@ typedef struct J__UDY_BRANCH_UNCOMPRESSED
 // TBD:  I have my doubts about the necessity of these macros (dlb):
 
 // Produce 1-digit mask at specified state:
-
-#define cJU_MASKATSTATE(State)  (0xffL << (((State) - 1) * cJU_BITSPERBYTE))
+#define cJU_MASKATSTATE(State)  (((Word_t)0xff) << (((State) - 1) * cJU_BITSPERBYTE))
 
 // Get byte (digit) from Index at the specified state, right justified:
 //

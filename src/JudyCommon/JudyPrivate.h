@@ -19,7 +19,7 @@
 // Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // _________________
 
-// @(#) $Revision: 4.77 $ $Source: /judy/src/JudyCommon/JudyPrivate.h $
+// @(#) $Revision: 1.9 $ $Source: /home/doug/judy-1.0.5_PSplit_goto_newLeaf3_U2_1K_1_L765_5th_cleanedup/src/JudyCommon/RCS/JudyPrivate.h,v $
 //
 // Header file for all Judy sources, for global but private (non-exported)
 // declarations.
@@ -231,6 +231,8 @@ typedef int bool_t;
 #define TRACEMF  1      // malloc calls at a lower level in JudyMalloc.c.
 #endif
 
+// Well maybe someday the compiler will set define instead of this kludge
+#define JU_LITTLE_ENDIAN (((union { unsigned x; unsigned char c; }){1}).c)
 
 // SUPPORT FOR DEBUG-ONLY CODE:
 //
@@ -269,6 +271,45 @@ typedef int bool_t;
 #define JUDY1CODE(Code) // null.
 #endif
 
+// Enable measurements for average number of compare misses in search routines
+
+#ifdef  SEARCHMETRICS
+Word_t  j__MissCompares;
+// Word_t  j__SearchPopulation;
+Word_t  j__SearchGets;
+Word_t  j__DirectHits;
+
+// if BUCKETSIZE not defined, default to one word
+#ifndef BUCKETSIZE
+#define BUCKETSIZE      (sizeof(Word_t))       // Bytes per bucket
+#endif  // BUCKETSIZE
+
+#define KEYSPERBUCKET(KEY)   (BUCKETSIZE / (KEY))
+
+// Perhaps should change name to SEARCHCOMPAREMISSES
+#define  MISSCOMPARES(CNT)      (j__MissCompares   += (Word_t)(CNT))
+
+#ifdef  DIRINWORDS
+
+// on a bucket basis
+#define  DIRECTHITS(_START, POS, KEY)                    \
+    (j__DirectHits += (((_START) / KEYSPERBUCKET(KEY) == ((POS) / KEYSPERBUCKET(KEY)) ? 1 : 0)))
+
+#else  // DIRINWORDS
+
+// on a key basis
+#define  DIRECTHITS(_START, POS, KEY)  (j__DirectHits += 1)
+
+#endif  // DIRINWORDS
+
+// #define  SEARCHPOPULATION(CNT)  (j__SearchPopulation += (Word_t)(CNT))
+#else
+#define STARTSEARCH             // null
+#define  MISSCOMPARES(CNT)      // null
+#define  DIRECTHITS(_START, POS, KEY)   // null
+// #define  SEARCHPOPULATION(CNT)  // null
+#endif  // ! SEARCHMETRICS
+
 #include <assert.h>
 
 // ****************************************************************************
@@ -293,27 +334,102 @@ typedef int bool_t;
 
 // Bits Per Byte:
 
-#define cJU_BITSPERBYTE 0x8
 
 // Bytes Per Word and Bits Per Word, latter assuming sizeof(byte) is 8 bits:
 //
 // Expect 32 [64] bits per word.
 
+#define cJU_BITSPERBYTE 0x8
 #define cJU_BYTESPERWORD (sizeof(Word_t))
-#define cJU_BITSPERWORD  (sizeof(Word_t) * cJU_BITSPERBYTE)
+#define cBPW             (cJU_BYTESPERWORD)
+
+#define cJU_BITSPERWORD  (cBPW * cJU_BITSPERBYTE)
+#define cbPW             (cJU_BITSPERWORD)
 
 #define JU_BYTESTOWORDS(BYTES) \
         (((BYTES) + cJU_BYTESPERWORD - 1) / cJU_BYTESPERWORD)
 
 // A word that is all-ones, normally equal to -1UL, but safer with ~0:
 
-#define cJU_ALLONES  (~0UL)
+#define cJU_ALLONES  (~(Word_t)0)
 
 // Note, these are forward references, but thats OK:
 
 #define cJU_FULLBITMAPB ((BITMAPB_t) cJU_ALLONES)
 #define cJU_FULLBITMAPL ((BITMAPL_t) cJU_ALLONES)
 
+// ****************************************************************************
+// Return base 2 log (floor) of num -or- most significant bit number of num
+//
+// Note 1: This routine would be very slow if the compiler did not 
+//     recognize it and change to use an SSE2 instruction.
+//
+// Note 2: measured at about < 1nS on Intel(R) Core(TM) i5-4670K CPU @ 4.5GHz
+//
+// Note 3: using clz instruction (32bit only) faster and requires __builtin_clz()
+//        clz == c_ount number of l_eading z_ero bits in a word. When subtracted
+//        from number of bit -1 in a word it gives you fls() or log2()
+//
+// If passing a constant, the time is zero, since the compiler calculates it.
+
+// Note: With the gcc, icc and clang compilers, this routine turns into a 
+// "bsr" instruction and therefore about a clock in time.
+
+#ifdef __GNUC__
+
+static inline int
+j__log2(Word_t num)
+{
+    assert(num != 0);           // zero is undefined
+
+//  This produces a "bsr" instruction on X86 family
+    return ((cbPW - 1) - __builtin_clzl(num));
+}
+
+#else   // not __GNUC__ -- hope compiler can recognize it
+
+static inline int
+j__log2(Word_t num)
+{
+    int       __lb = 0;
+
+    assert(num != 0);           // log of zero is undefined
+
+#ifdef JU_64BIT
+    if (num >= (((Word_t)1) << (1 * 32)))
+    {
+        num >>= 32;
+        __lb += 32;
+    }
+#endif  // JU_64BIT
+
+    if (num >= (((Word_t)1) << (1 * 16)))
+    {
+        num >>= 16;
+        __lb += 16;
+    }
+    if (num >= (((Word_t)1) << (1 * 8)))
+    {
+        num >>= 8;
+        __lb += 8;
+    }
+    if (num >= (((Word_t)1) << (1 * 4)))
+    {
+        num >>= 4;
+        __lb += 4;
+    }
+    if (num >= (((Word_t)1) << (1 * 2)))
+    {
+        num >>= 2;
+        __lb += 2;
+    }
+    if (num >= (((Word_t)1) << (1 * 1)))
+    {
+        __lb += 1;
+    }
+    return (__lb);
+}
+#endif  // not __GNUC__
 
 // ****************************************************************************
 // MISCELLANEOUS JUDY-SPECIFIC DECLARATIONS
@@ -324,7 +440,7 @@ typedef int bool_t;
 // State at the start of the Judy SM, based on 1 byte decoded per state; equal
 // to the number of bytes per Index to decode.
 
-#define cJU_ROOTSTATE (sizeof(Word_t))
+#define cJU_ROOTSTATE (cBPW)
 
 
 // SUBEXPANSES PER STATE:
@@ -358,7 +474,6 @@ typedef Pvoid_t Pjll_t;  // pointer to lower-level linear leaf.
 typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 #endif
 
-
 // POINTER PREPARATION MACROS:
 //
 // These macros are used to strip malloc-namespace-type bits from a pointer +
@@ -371,7 +486,7 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 //    jp.jp_Addr        generic pointer to next-level node, except when used
 //                      as a JudyL Immed01 value area
 //    JU_JBB_PJP        macro hides jbbs_Pjp (pointer to JP subarray)
-//    JL_JLB_PVALUE     macro hides jLlbs_PValue (pointer to value subarray)
+//    JL_JLB_PVALUE     macro hides jLlbs_PV_Raw (pointer to value subarray)
 //
 // When setting one of these fields or passing an address to j__udyFree*(), the
 // "raw" memory address is used; otherwise the memory address must be passed
@@ -388,13 +503,42 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 #define P_JBB(  ADDR) ((Pjbb_t) (ADDR))  // BranchB.
 #define P_JBU(  ADDR) ((Pjbu_t) (ADDR))  // BranchU.
 #define P_JLL(  ADDR) ((Pjll_t) (ADDR))  // LeafL.
+#define P_JLB2( ADDR) ((Pjlb2_t)(ADDR))  // LeafL2.
 #define P_JLB(  ADDR) ((Pjlb_t) (ADDR))  // LeafB1.
 #define P_JP(   ADDR) ((Pjp_t)  (ADDR))  // JP.
 
 #ifdef JUDYL
-#define P_JV(   ADDR) ((Pjv_t)  (ADDR))  // &value.
-#endif
 
+#ifdef  JU_64BIT
+// Strip hi 10 bits and low 4 bits
+#define P_JV(   ADDR) ((Pjv_t)  (((Word_t)(ADDR)) & 0x3FFFFFFFFFFFF0))  // &value.
+#endif  // JU_64BIT
+
+#ifdef  JU_32BIT
+// Strip low 3 bits
+#define P_JV(   ADDR) ((Pjv_t)  (((Word_t)(ADDR)) & 0xFFFFFFF8))  // &value.
+#endif  // JU_32BIT
+
+#endif  // JUDYL
+
+// Need a spare words in Leafs
+#ifdef  SUBEXPW
+#define cL1W    1
+#define cL2W    1
+#define cL3W    1
+#define cL4W    1
+#define cL5W    1
+#define cL6W    1
+#define cL7W    1
+#else   // ! SUBEXPW
+#define cL1W    0
+#define cL2W    0
+#define cL3W    0
+#define cL4W    0
+#define cL5W    0
+#define cL6W    0
+#define cL7W    0
+#endif  // ! SUBEXPW
 
 // LEAST BYTES:
 //
@@ -411,7 +555,7 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 // processors.
 
 #define JU_LEASTBYTESMASK(BYTES) \
-        ((0x100UL << (cJU_BITSPERBYTE * ((BYTES) - 1))) - 1)
+        (((Word_t)0x100 << (cJU_BITSPERBYTE * ((BYTES) - 1))) - 1)
 
 #define JU_LEASTBYTES(INDEX,BYTES)  ((INDEX) & JU_LEASTBYTESMASK(BYTES))
 
@@ -426,9 +570,17 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 // A default aspect ratio is hardwired here if not overridden at compile time,
 // such as by "EXTCCOPTS=-DBITMAP_BRANCH16x16 make".
 
+#ifdef  JU_32BIT
 #if (! (defined(BITMAP_BRANCH8x32) || defined(BITMAP_BRANCH16x16) || defined(BITMAP_BRANCH32x8)))
 #define BITMAP_BRANCH32x8 1     // 32 bits per subexpanse, 8 subexpanses.
 #endif
+#endif  // JU_32BIT
+
+#ifdef  JU_64BIT
+#if (! (defined(BITMAP_BRANCH8x32) || defined(BITMAP_BRANCH16x16) || defined(BITMAP_BRANCH32x8) || defined(BITMAP_BRANCH64x4)))
+#define BITMAP_BRANCH64x4 1     // 64 bits per subexpanse, 4 subexpanses.
+#endif
+#endif  // JU_64BIT
 
 #ifdef BITMAP_BRANCH8x32
 #define BITMAPB_t uint8_t
@@ -442,6 +594,10 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 #define BITMAPB_t uint32_t
 #endif
 
+#ifdef BITMAP_BRANCH64x4
+#define BITMAPB_t uint64_t
+#endif  
+
 // Note:  For bitmap leaves, BITMAP_LEAF64x4 is only valid for 64 bit:
 //
 // Note:  Choice of aspect ratio mostly matters for JudyL bitmap leaves.  For
@@ -449,17 +605,15 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 // BITMAP_LEAF* values choices varies, but correctness and performance are the
 // same.
 
-#ifndef JU_64BIT
-
+#ifdef  JU_32BIT
 #if (! (defined(BITMAP_LEAF8x32) || defined(BITMAP_LEAF16x16) || defined(BITMAP_LEAF32x8)))
 #define BITMAP_LEAF32x8         // 32 bits per subexpanse, 8 subexpanses.
 #endif
+#endif  // 32_BIT
 
-#else // 32BIT
-
+#ifdef  JU_64BIT
 #if (! (defined(BITMAP_LEAF8x32) || defined(BITMAP_LEAF16x16) || defined(BITMAP_LEAF32x8) || defined(BITMAP_LEAF64x4)))
 #define BITMAP_LEAF64x4         // 64 bits per subexpanse, 4 subexpanses.
-
 #endif
 #endif // JU_64BIT
 
@@ -488,212 +642,481 @@ extern const uint8_t j__1_BranchBJPPopToWords[];
 
 #ifdef JUDYL
 extern const uint8_t j__L_BranchBJPPopToWords[];
+extern const uint8_t j__L_BranchBLPopToWords[];
 #endif
 
-// Fast LeafL search routine used for inlined code:
+// Conversion size to Linear for a Binary Search
+#ifndef LENSIZE
+#define LENSIZE 4       // experimentally best - haswell in-cache
+#endif  // LENSIZE
 
-#if (! defined(SEARCH_BINARY)) || (! defined(SEARCH_LINEAR))
-// default a binary search leaf method
-#define SEARCH_BINARY 1
-//#define SEARCH_LINEAR 1
-#endif
-
-#ifdef SEARCH_LINEAR
-
-#define SEARCHLEAFNATIVE(LEAFTYPE,ADDR,POP1,INDEX)              \
-    LEAFTYPE *P_leaf = (LEAFTYPE *)(ADDR);                      \
-    LEAFTYPE  I_ndex = (INDEX); /* with masking */              \
-    if (I_ndex > P_leaf[(POP1) - 1]) return(~(POP1));           \
-    while(I_ndex > *P_leaf) P_leaf++;                           \
-    if (I_ndex == *P_leaf) return(P_leaf - (LEAFTYPE *)(ADDR)); \
-    return(~(P_leaf - (LEAFTYPE *)(ADDR)));
-
-
-#define SEARCHLEAFNONNAT(ADDR,POP1,INDEX,LFBTS,COPYINDEX)       \
+// The non-native searches (Leaf Key size = 3,5,6,7)
+#define SEARCHLINARNONNAT(ADDR,POP1,INDEX,LFBTS,COPYINDEX,START)\
 {                                                               \
-    uint8_t *P_leaf, *P_leafEnd;                                \
+    uint8_t *P_leaf;                                            \
+    uint8_t *P_leafEnd;                                         \
+    uint8_t  MSBIndex;                                          \
     Word_t   i_ndex;                                            \
     Word_t   I_ndex = JU_LEASTBYTES((INDEX), (LFBTS));          \
-    Word_t   p_op1;                                             \
+    (void)(START);                                              \
                                                                 \
     P_leaf    = (uint8_t *)(ADDR);                              \
-    P_leafEnd = P_leaf + ((POP1) * (LFBTS));                    \
+    P_leafEnd = P_leaf + (((POP1) - 1) * (LFBTS));              \
+    COPYINDEX(i_ndex, P_leafEnd);                               \
+    if (I_ndex > i_ndex) return(~(POP1));                       \
                                                                 \
-    do {                                                        \
+/*  These 2 lines of code are for high byte only candidate   */ \
+    MSBIndex   = (uint8_t)(I_ndex >> (((LFBTS) - 1) * 8));      \
+    while (MSBIndex > *P_leaf) P_leaf += (LFBTS);               \
+                                                                \
+    for (;;)                                                    \
+    {                                                           \
+        int     o_ff = 0;                                       \
         COPYINDEX(i_ndex, P_leaf);                              \
-        if (I_ndex <= i_ndex) break;                            \
-        P_leaf += (LFBTS);                                      \
-    } while (P_leaf < P_leafEnd);                               \
+        if (I_ndex <= i_ndex)                                   \
+        {                                                       \
+            o_ff = (P_leaf - (uint8_t *)(ADDR)) / (LFBTS);      \
                                                                 \
-    p_op1 = (P_leaf - (uint8_t *) (ADDR)) / (LFBTS);            \
-    if (I_ndex == i_ndex) return(p_op1);                        \
-    return(~p_op1);                                             \
+            MISSCOMPARES(o_ff);                                 \
+                                                                \
+            if (I_ndex != i_ndex) o_ff = ~o_ff;                 \
+            return(o_ff);                                       \
+        }                                                       \
+        P_leaf += LFBTS;                                        \
+    }                                                           \
 }
-#endif // SEARCH_LINEAR
 
+// The native searches (Leaf Key size = 1,2,4
+#define SEARCHLINARNATIVE(LEAFTYPE_t,ADDR,POP1,INDEX, START)    \
+{                                                               \
+    LEAFTYPE_t *P_leaf = (LEAFTYPE_t *)(ADDR);                  \
+    LEAFTYPE_t  I_ndex = (INDEX); /* with masking */            \
+    int         _off;                                           \
+    (void)(START);                                              \
+                                                                \
+    if (I_ndex > P_leaf[(POP1) - 1]) return(~(POP1));           \
+    while(I_ndex > *P_leaf) P_leaf++;                           \
+    _off = P_leaf - (LEAFTYPE_t *)(ADDR);                       \
+                                                                \
+    MISSCOMPARES(_off);                                         \
+                                                                \
+    if (I_ndex != *P_leaf) _off = ~_off;                        \
+    return(_off);                                               \
+}
+
+// This is binary search should be smarter and faster
+// search in order middle, then half remainder until LENSIZE, then 8 linear
+
+#define SEARCHBINARYNATIVE(LEAFTYPE_t,ADDR,POP1,INDEX, START)   \
+{                                                               \
+    LEAFTYPE_t *P_leaf = (LEAFTYPE_t *)(ADDR);                  \
+    LEAFTYPE_t I_ndex = (LEAFTYPE_t)INDEX; /* truncate HiBits */\
+    int       l_ow  = 0;                                        \
+    int       h_igh = (int)(POP1);                              \
+    int       m_id;                                             \
+    (void)(START);                                              \
+                                                                \
+    while ((h_igh - l_ow) > LENSIZE)   /* Binary Search */      \
+    {                                                           \
+        MISSCOMPARES(1);                                        \
+                                                                \
+        m_id = (h_igh + l_ow) / 2;                              \
+        if ((P_leaf)[m_id] <= (I_ndex))                         \
+        {                                                       \
+            if ((P_leaf)[m_id] == (I_ndex)) return(m_id);       \
+            l_ow = m_id;                                        \
+        }                                                       \
+        else                                                    \
+        {                                                       \
+            h_igh = m_id;                                       \
+        }                                                       \
+    }                                                           \
+                                                                \
+    if ((h_igh == (POP1)) && ((I_ndex) > (P_leaf)[(POP1) - 1])) \
+        return(~(POP1));                                        \
+                                       /* Linear Search */      \
+    while ((P_leaf)[l_ow] < (I_ndex))                           \
+    {                                                           \
+        MISSCOMPARES(1);                                        \
+                                                                \
+        l_ow++;                                                 \
+    }                                                           \
+    if ((P_leaf)[l_ow] != (I_ndex)) l_ow = ~l_ow;               \
+    return(l_ow);                                               \
+}
+
+#define SEARCHBINARYNONNAT(ADDR,POP1,KEY,LFBTS,COPYINDEX,START) \
+{                                                               \
+    Word_t      __LeafKey;      /* current Key in Leaf */       \
+    Word_t      __Key;          /* Key to search for */         \
+    uint8_t      *__PLeaf;      /* ^ to Leaf to search */       \
+    int         l_ow  = 0;                                      \
+    int         h_igh = (int)(POP1);                            \
+    int         m_id;                                           \
+                                                                \
+    __Key       = JU_LEASTBYTES((KEY), (LFBTS));                \
+    __PLeaf = (uint8_t *)(ADDR);                                \
+    (void)(START);                                              \
+                                                                \
+    while ((h_igh - l_ow) > LENSIZE)   /* Binary Search */      \
+    {                                                           \
+        m_id = (h_igh + l_ow) / 2;                              \
+        COPYINDEX(__LeafKey, __PLeaf + (m_id * (LFBTS)));       \
+                                                                \
+        MISSCOMPARES(1);                                        \
+                                                                \
+        if (__LeafKey <= __Key)                                 \
+        {                                                       \
+            if (__LeafKey == __Key) return(m_id);               \
+            l_ow = m_id;                                        \
+        }                                                       \
+        else                                                    \
+        {                                                       \
+            h_igh = m_id;                                       \
+        }                                                       \
+    }                                                           \
+    if (h_igh == (POP1))                                        \
+    {                                                           \
+       COPYINDEX(__LeafKey, __PLeaf + (((POP1) - 1) * (LFBTS)));\
+       if (__Key > __LeafKey) return(~(POP1));                  \
+    }                                                           \
+                   /* Linear Search */                          \
+    COPYINDEX(__LeafKey, __PLeaf + (l_ow * (LFBTS)));           \
+    while (__LeafKey < __Key)                                   \
+    {                                                           \
+        MISSCOMPARES(1);                                        \
+                                                                \
+        l_ow++;                                                 \
+        COPYINDEX(__LeafKey, __PLeaf + (l_ow * (LFBTS)));       \
+    }                                                           \
+    if (__LeafKey != __Key) l_ow = ~l_ow;                       \
+    return(l_ow);                                               \
+}
+
+
+// Use bits of the Key (INDEX) to determine where to start search.
+// Good for populations up to 2..255
+// NOTE: Should not be used for LeafW because LeafW is the only
+// Leaf that can have a population == 1
+
+// This macro can be used to "guess" the offset into a Leaf to 
+// begin the search, given the Population and siginificant bits
+// of the Leaf.  I.E.
+//
+//    Word_t MSb = (Word_t)(PLeaf[0] ^ PLeaf[(POP1) - 1]);
+//    LOG2 = j__log2(MSb) + 1;
+//    
+//                     - or -
+//
+//    LOG2 = (cbPW - __builtin_clzl(MSb);
+//
+// This should be done in the JudyIns routine and passed to the
+// JudyGet routine.
+// Note:  The second form should work with a population == 1
+
+
+// This routine will do a linear Search forward or reverse 
+// beginning with element START.  It is specifically designed
+// to "touch" as few bytes of RAM as possible, therefore limiting
+// cache-line hits to few as possible.  Measurements show the
+// typical accesses to RAM are about 3 adjacent elements.
+
+#ifdef  EXPERMENT1
+//             posidx = j__udySearchLeaf1IMM(Pjll, Pop1, Index)
+//
+#define LEAFKEY(LEAF, POS) (((LEAF) >> ((POS) * 8)) & 0xff)
+
+#define SEARCHBIDIRNATIVEI(LEAFSIZE_t, PLEAF, POP1, KEY, START) \
+{                                                               \
+    Word_t      __Array;        /* up to 7 byte immed_01 */     \
+    Word_t      __LeafKey;      /* current Key in Leaf */       \
+    LEAFSIZE_t  __Key;          /* Key to search for */         \
+    int         __pos;          /* starting pos of search */    \
+                                                                \
+    assert((Word_t)(START) < (Word_t)(POP1));                   \
+    __Array  = *((PWord_t)(PLEAF));                             \
+    __pos    = (int)(START);                                    \
+    __Key    = (LEAFSIZE_t)(KEY);                               \
+    __LeafKey = LEAFKEY(__Array,__pos);                         \
+                                                                \
+    if (__Key >= __LeafKey)     /* Search forward */            \
+    {                                                           \
+        if (__LeafKey == __Key) /* 1st check if direct hit */   \
+        {                                                       \
+            DIRECTHITS(START, __pos, sizeof(__Key));            \
+            return(__pos);      /* Nailed it */                 \
+        }                                                       \
+        for (__pos++; __pos < (POP1); __pos++)                  \
+        {                                                       \
+            __LeafKey = LEAFKEY(__Array,__pos);                 \
+            if (__LeafKey >= __Key)                             \
+            {                                                   \
+                if (__LeafKey == __Key)                         \
+                {                                               \
+                    MISSCOMPARES(__pos - (START));              \
+                    DIRECTHITS((START), __pos, sizeof(__Key));  \
+                    return(__pos);                              \
+                }                                               \
+                break;                                          \
+            }                                                   \
+        }                                                       \
+    }                                                           \
+    else                /* Search in reverse */                 \
+    {                                                           \
+        while (__pos)                                           \
+        {                                                       \
+            __pos--;                                            \
+            __LeafKey = LEAFKEY(__Array,__pos);                 \
+                                                                \
+            if (__LeafKey <= __Key)                             \
+            {                                                   \
+                if (__LeafKey == __Key)                         \
+                {                                               \
+                    MISSCOMPARES((START) - __pos);              \
+                    DIRECTHITS((START), __pos, sizeof(__Key));  \
+                    return(__pos);                              \
+                }                                               \
+                __pos++;  /* advance to hole */                 \
+                break;                                          \
+            }                                                   \
+        }                                                       \
+    }                                                           \
+    return (~__pos);       /* ones comp location of hole */     \
+}
+#endif  // EXPERMENT1 
+
+#define SEARCHBIDIRNATIVE(LEAFSIZE_t, PLEAF, POP1, KEY, START)  \
+{                                                               \
+    Word_t      __LeafKey;      /* current Key in Leaf */       \
+    LEAFSIZE_t  __Key;          /* Key to search for */         \
+    LEAFSIZE_t  *__PLeaf;       /* ^ toLeaf to search */        \
+    int         __pos;          /* starting pos of search */    \
+                                                                \
+    assert((Word_t)(START) < (Word_t)(POP1));                   \
+    __pos    = (int)(START);                                    \
+    __Key    = (LEAFSIZE_t)(KEY);                               \
+    __PLeaf  = (LEAFSIZE_t *)(PLEAF);                           \
+    __LeafKey = (Word_t)__PLeaf[__pos];                         \
+                                                                \
+    if (__Key >= __LeafKey)     /* Search forward */            \
+    {                                                           \
+        if (__LeafKey == __Key) /* 1st check if direct hit */   \
+        {                                                       \
+            DIRECTHITS((START), __pos, sizeof(__Key));          \
+            return(__pos);  /* Nailed it */                     \
+        }                                                       \
+        for (__pos++; __pos < (POP1); __pos++)                  \
+        {                                                       \
+            __LeafKey = __PLeaf[__pos];                         \
+            if (__LeafKey >= __Key)                             \
+            {                                                   \
+                if (__LeafKey == __Key)                         \
+                {                                               \
+                    MISSCOMPARES(__pos - (START));              \
+                    DIRECTHITS((START), __pos, sizeof(__Key));  \
+                    return(__pos);                              \
+                }                                               \
+                break;                                          \
+            }                                                   \
+        }                                                       \
+    }                                                           \
+    else                /* Search in reverse */                 \
+    {                                                           \
+        while (__pos)                                           \
+        {                                                       \
+            __pos--;                                            \
+            __LeafKey = __PLeaf[__pos];                         \
+                                                                \
+            if (__LeafKey <= __Key)                             \
+            {                                                   \
+                if (__LeafKey == __Key)                         \
+                {                                               \
+                    MISSCOMPARES((START) - __pos);              \
+                    DIRECTHITS((START), __pos, sizeof(__Key));  \
+                    return(__pos);                              \
+                }                                               \
+                __pos++;  /* advance to hole */                 \
+                break;                                          \
+            }                                                   \
+        }                                                       \
+    }                                                           \
+    return (~__pos);       /* ones comp location of hole */     \
+}
+
+// This routine will do a linear search forward or reverse 
+// beginning with element START 
+
+#define SEARCHBIDIRNONNAT(ADDR,POP1,KEY,LFBTS,COPYINDEX,START)  \
+{                                                               \
+    Word_t      __LeafKey;      /* current Key in Leaf */       \
+    Word_t      __Key;          /* Key to search for */         \
+    uint8_t      *__PLeaf;      /* ^ to Leaf to search */       \
+    int         __pos;          /* starting pos of search */    \
+                                                                \
+    assert((Word_t)(START) < (Word_t)(POP1));                   \
+    __pos       = (int)(START);                                 \
+    __Key       = JU_LEASTBYTES((KEY), (LFBTS));                \
+    __PLeaf     = (uint8_t *)(ADDR);                            \
+    COPYINDEX(__LeafKey, __PLeaf + (__pos * (LFBTS)));          \
+                                                                \
+    if (__LeafKey == __Key)                                     \
+    {                                                           \
+        DIRECTHITS((START), __pos, sizeof(__Key));              \
+                                                                \
+        return(__pos);  /* Nailed it */                         \
+    }                                                           \
+    MISSCOMPARES(1);                                            \
+                                                                \
+    if (__Key > __LeafKey)                                      \
+    {                   /* Search forward */                    \
+        for (__pos++; __pos < (POP1); __pos++)                  \
+        {                                                       \
+            COPYINDEX(__LeafKey, __PLeaf + (__pos * (LFBTS)));  \
+            if (__LeafKey >= __Key)                             \
+            {                                                   \
+                if (__LeafKey == __Key)                         \
+                {                                               \
+                    DIRECTHITS((START), __pos, sizeof(__Key));  \
+                    return(__pos);                              \
+                }                                               \
+                break;                                          \
+            }                                                   \
+            MISSCOMPARES(1);                                    \
+        }                                                       \
+    }                                                           \
+    else                /* Search in reverse */                 \
+    {                                                           \
+        while (__pos)                                           \
+        {                                                       \
+            __pos--;                                            \
+            COPYINDEX(__LeafKey, __PLeaf + (__pos * (LFBTS)));  \
+            if (__LeafKey <= __Key)                             \
+            {                                                   \
+                if (__LeafKey == __Key)                         \
+                {                                               \
+                    DIRECTHITS((START), __pos, sizeof(__Key));  \
+                    return(__pos);                              \
+                }                                               \
+                __pos++;  /* advance to hole */                 \
+                break;                                          \
+            }                                                   \
+            MISSCOMPARES(1);                                    \
+        }                                                       \
+    }                                                           \
+    return (~__pos);       /* ones comp location of hole */     \
+}
+
+// The native searches (Leaf Key size = 1,2,4,8)
+#if (! defined(SEARCH_BINARY)) && (! defined(SEARCH_LINEAR)) && (! defined(SEARCH_PSPLIT))
+// default a search leaf method
+#define SEARCH_LINEAR 
+#endif  // (! defined(SEARCH_BINARY)) && (! defined(SEARCH_LINEAR)) && (! defined(SEARCH_PSPLIT))
+
+
+// search in order 1,2,3,4..
+#ifdef  SEARCH_LINEAR
+#define SEARCHLEAFNATIVE        SEARCHLINARNATIVE
+#define SEARCHLEAFNONNAT        SEARCHLINARNONNAT
+#endif  // SEARCH_LINEAR
+
+
+// search in order middle, then half remainder
 #ifdef SEARCH_BINARY
-
-#define SEARCHLEAFNATIVE(LEAFTYPE,ADDR,POP1,INDEX)              \
-    LEAFTYPE *P_leaf = (LEAFTYPE *)(ADDR);                      \
-    LEAFTYPE I_ndex = (LEAFTYPE)INDEX; /* truncate hi bits */   \
-    Word_t   l_ow   = cJU_ALLONES;                              \
-    Word_t   m_id;                                              \
-    Word_t   h_igh  = POP1;                                     \
-                                                                \
-    while ((h_igh - l_ow) > 1UL)                                \
-    {                                                           \
-        m_id = (h_igh + l_ow) / 2;                              \
-        if (P_leaf[m_id] > I_ndex)                              \
-            h_igh = m_id;                                       \
-        else                                                    \
-            l_ow = m_id;                                        \
-    }                                                           \
-    if (l_ow == cJU_ALLONES || P_leaf[l_ow] != I_ndex)          \
-        return(~h_igh);                                         \
-    return(l_ow)
-
-
-#define SEARCHLEAFNONNAT(ADDR,POP1,INDEX,LFBTS,COPYINDEX)       \
-    uint8_t *P_leaf = (uint8_t *)(ADDR);                        \
-    Word_t   l_ow   = cJU_ALLONES;                              \
-    Word_t   m_id;                                              \
-    Word_t   h_igh  = POP1;                                     \
-    Word_t   I_ndex = JU_LEASTBYTES((INDEX), (LFBTS));          \
-    Word_t   i_ndex;                                            \
-                                                                \
-    I_ndex = JU_LEASTBYTES((INDEX), (LFBTS));                   \
-                                                                \
-    while ((h_igh - l_ow) > 1UL)                                \
-    {                                                           \
-        m_id = (h_igh + l_ow) / 2;                              \
-        COPYINDEX(i_ndex, &P_leaf[m_id * (LFBTS)]);             \
-        if (i_ndex > I_ndex)                                    \
-            h_igh = m_id;                                       \
-        else                                                    \
-            l_ow = m_id;                                        \
-    }                                                           \
-    if (l_ow == cJU_ALLONES) return(~h_igh);                    \
-                                                                \
-    COPYINDEX(i_ndex, &P_leaf[l_ow * (LFBTS)]);                 \
-    if (i_ndex != I_ndex) return(~h_igh);                       \
-    return(l_ow)
-
+#define SEARCHLEAFNATIVE        SEARCHBINARYNATIVE
+#define SEARCHLEAFNONNAT        SEARCHBINARYNONNAT
 #endif // SEARCH_BINARY
+
+
+#ifdef SEARCH_PSPLIT
+#define SEARCHLEAFNATIVE        SEARCHBIDIRNATIVE
+#define SEARCHLEAFNONNAT        SEARCHBIDIRNONNAT
+#endif  // SEARCH_PSPLIT
 
 // Fast way to count bits set in 8..32[64]-bit int:
 //
 // For performance, j__udyCountBits*() are written to take advantage of
 // platform-specific features where available.
 //
+// A good compiler should recognize this code sequence and decide if a
+// popcnt and/or a imull instruction should be used. (dlb2012)
 
-#ifdef JU_NOINLINE
+#ifdef __POPCNT__
 
-extern BITMAPB_t j__udyCountBitsB(BITMAPB_t word);
-extern BITMAPL_t j__udyCountBitsL(BITMAPL_t word);
-
-// Compiler supports inline
-
-#elif  defined(JU_HPUX_IPF)
-
-#define j__udyCountBitsB(WORD)  _Asm_popcnt(WORD)
-#define j__udyCountBitsL(WORD)  _Asm_popcnt(WORD)
-
-#elif defined(JU_LINUX_IPF)
-
-static inline BITMAPB_t j__udyCountBitsB(BITMAPB_t word)
+static inline int
+j__udyCount32Bits(uint32_t word32)
 {
-        BITMAPB_t result;
-        __asm__ ("popcnt %0=%1" : "=r" (result) : "r" (word));
-        return(result);
+     return ((int)__builtin_popcount(word32));
 }
 
-static inline BITMAPL_t j__udyCountBitsL(BITMAPL_t word)
+static inline int
+j__udyCount64Bits(uint64_t word64)
 {
-        BITMAPL_t result;
-        __asm__ ("popcnt %0=%1" : "=r" (result) : "r" (word));
-        return(result);
+     return ((int)__builtin_popcountl(word64));
 }
 
+#else   // ! __POPCNT__
 
-#else // No instructions available, use inline code
-
-// ****************************************************************************
-// __ J U D Y   C O U N T   B I T S   B
-//
-// Return the number of bits set in "Word", for a bitmap branch.
-//
-// Note:  Bitmap branches have maximum bitmap size = 32 bits.
-
-#ifdef JU_WIN
-static __inline BITMAPB_t j__udyCountBitsB(BITMAPB_t word)
-#else
-static inline BITMAPB_t j__udyCountBitsB(BITMAPB_t word)
-#endif 
+// Hopefully non-X86 compilers will recognize this and use popc replacement
+static inline int
+j__udyCount32Bits(uint32_t word32)
 {
-        word = (word & 0x55555555) + ((word & 0xAAAAAAAA) >>  1);
-        word = (word & 0x33333333) + ((word & 0xCCCCCCCC) >>  2);
-        word = (word & 0x0F0F0F0F) + ((word & 0xF0F0F0F0) >>  4); // >= 8 bits.
-#if defined(BITMAP_BRANCH16x16) || defined(BITMAP_BRANCH32x8)
-        word = (word & 0x00FF00FF) + ((word & 0xFF00FF00) >>  8); // >= 16 bits.
-#endif
+//  Calculate each nibble to have counts of 0..4 bits in each nibble.
+    word32 -= (word32 >> 1) & (uint32_t)0x55555555;
+    word32 = ((word32 >> 2) & (uint32_t)0x33333333) + 
+                   (word32  & (uint32_t)0x33333333);
 
-#ifdef BITMAP_BRANCH32x8
-        word = (word & 0x0000FFFF) + ((word & 0xFFFF0000) >> 16); // >= 32 bits.
-#endif
-        return(word);
+//  Odd nibbles += even nibbles (in parallel)
+    word32 += word32 >> 4;
 
-} // j__udyCountBitsB()
+//  Clean out the even nibbles for some calculating space
+    word32 &= (uint32_t)0x0F0F0F0F;
 
+//  Now sum the 4 bytes of bit counts of 0..8 bits each in odd nibble.
+    word32 *= (uint32_t)0x01010101;               // sums bytes (1 instruction)
+    word32  = word32 >> (32 - 8);       // sum in high byte
 
-// ****************************************************************************
-// __ J U D Y   C O U N T   B I T S   L
-//
-// Return the number of bits set in "Word", for a bitmap leaf.
-//
-// Note:  Bitmap branches have maximum bitmap size = 32 bits.
+    return ((int)word32);
+}
 
-// Note:  Need both 32-bit and 64-bit versions of j__udyCountBitsL() because
-// bitmap leaves can have 64-bit bitmaps.
-
-#ifdef JU_WIN
-static __inline BITMAPL_t j__udyCountBitsL(BITMAPL_t word)
-#else
-static inline BITMAPL_t j__udyCountBitsL(BITMAPL_t word)
-#endif
+static inline int
+j__udyCount64Bits(uint64_t word64)
 {
-#ifndef JU_64BIT
+//  Calculate each nibble to have counts of 0..4 bits in each nibble.
+    word64 -= (word64 >> 1) & (uint64_t)0x5555555555555555;
+    word64 = ((word64 >> 2) & (uint64_t)0x3333333333333333) + 
+                    (word64 & (uint64_t)0x3333333333333333);
 
-        word = (word & 0x55555555) + ((word & 0xAAAAAAAA) >>  1);
-        word = (word & 0x33333333) + ((word & 0xCCCCCCCC) >>  2);
-        word = (word & 0x0F0F0F0F) + ((word & 0xF0F0F0F0) >>  4); // >= 8 bits.
-#if defined(BITMAP_LEAF16x16) || defined(BITMAP_LEAF32x8)
-        word = (word & 0x00FF00FF) + ((word & 0xFF00FF00) >>  8); // >= 16 bits.
-#endif
-#ifdef BITMAP_LEAF32x8
-        word = (word & 0x0000FFFF) + ((word & 0xFFFF0000) >> 16); // >= 32 bits.
-#endif
+//  Odd nibbles += even nibbles (in parallel)
+    word64 += word64 >> 4;
 
-#else // JU_64BIT
+//  Clean out the even nibbles for some calculating space
+    word64 &= (uint64_t)0x0F0F0F0F0F0F0F0F;    // sums bytes (1 instruction)
 
-        word = (word & 0x5555555555555555) + ((word & 0xAAAAAAAAAAAAAAAA) >> 1);
-        word = (word & 0x3333333333333333) + ((word & 0xCCCCCCCCCCCCCCCC) >> 2);
-        word = (word & 0x0F0F0F0F0F0F0F0F) + ((word & 0xF0F0F0F0F0F0F0F0) >> 4);
-#if defined(BITMAP_LEAF16x16) || defined(BITMAP_LEAF32x8) || defined(BITMAP_LEAF64x4)
-        word = (word & 0x00FF00FF00FF00FF) + ((word & 0xFF00FF00FF00FF00) >> 8);
-#endif
-#if defined(BITMAP_LEAF32x8) || defined(BITMAP_LEAF64x4)
-        word = (word & 0x0000FFFF0000FFFF) + ((word & 0xFFFF0000FFFF0000) >>16);
-#endif
-#ifdef BITMAP_LEAF64x4
-        word = (word & 0x00000000FFFFFFFF) + ((word & 0xFFFFFFFF00000000) >>32);
-#endif
-#endif // JU_64BIT
+//  Now sum the 8 bytes of bit counts of 0..8 bits each in odd nibble.
+    word64 *= (uint64_t)0x0101010101010101;
+    word64  = word64 >> (64 - 8);       // sum in high byte
 
-        return(word);
+    return ((int)word64);                       // 0..64
+}
+#endif  // ! __POPCNT__
 
-} // j__udyCountBitsL()
+// Always 32 bits or less for 32 and 64Bit machines
 
-#endif // Compiler supports inline
+#ifdef  JU_32BIT
+#define j__udyCountBitsL j__udyCount32Bits
+#define j__udyCountBitsB j__udyCount32Bits
+#endif  // JU_32BIT
+
+#ifdef  JU_64BIT
+#define j__udyCountBitsL j__udyCount64Bits
+
+#ifdef BITMAP_BRANCH64x4
+#define j__udyCountBitsB j__udyCount64Bits
+#else   // 32x8 Bits
+#define j__udyCountBitsB j__udyCount32Bits
+#endif  // ! BITMAP_BRANCH64x4
+
+#endif  // JU_64BIT
 
 // GET POP0:
 //
@@ -730,51 +1153,42 @@ static inline BITMAPL_t j__udyCountBitsL(BITMAPL_t word)
 
 #define JU_JPTYPE(PJP)          ((PJP)->jp_Type)
 
-#define JU_JPLEAF_POP0(PJP)     ((PJP)->jp_DcdP0[sizeof(Word_t) - 2])
+#define JU_JPLEAF_POP0(PJP)     ((PJP)->jp_DcdP0[cBPW - 2])
+#define JU_JPLEAF_POP0_L(PJP)                                           \
+    (((PJP)->jp_DcdP0[cBPW - 2] | ((Word_t)((PJP)->jp_DcdP0[cBPW - 3]) <<  8))
 
-#ifdef JU_64BIT
+// define the JU_SWAP macro
 
-#define JU_JPDCDPOP0(PJP)               \
-    ((Word_t)(PJP)->jp_DcdP0[0] << 48 | \
-     (Word_t)(PJP)->jp_DcdP0[1] << 40 | \
-     (Word_t)(PJP)->jp_DcdP0[2] << 32 | \
-     (Word_t)(PJP)->jp_DcdP0[3] << 24 | \
-     (Word_t)(PJP)->jp_DcdP0[4] << 16 | \
-     (Word_t)(PJP)->jp_DcdP0[5] <<  8 | \
-     (Word_t)(PJP)->jp_DcdP0[6])
+#ifdef  JU_32BIT
+#define JU_SWAP(WORD)   ((Word_t)__builtin_bswap32(WORD))
+#endif  // JU_32BIT
+
+#ifdef  JU_64BIT
+#define JU_SWAP(WORD)   ((Word_t)__builtin_bswap64(WORD))
+#endif  // JU_64BIT
 
 
-#define JU_JPSETADT(PJP,ADDR,DCDPOP0,TYPE)                      \
-{                                                               \
-    (PJP)->jp_Addr     = (ADDR);                                \
-    (PJP)->jp_DcdP0[0] = (uint8_t)((Word_t)(DCDPOP0) >> 48);    \
-    (PJP)->jp_DcdP0[1] = (uint8_t)((Word_t)(DCDPOP0) >> 40);    \
-    (PJP)->jp_DcdP0[2] = (uint8_t)((Word_t)(DCDPOP0) >> 32);    \
-    (PJP)->jp_DcdP0[3] = (uint8_t)((Word_t)(DCDPOP0) >> 24);    \
-    (PJP)->jp_DcdP0[4] = (uint8_t)((Word_t)(DCDPOP0) >> 16);    \
-    (PJP)->jp_DcdP0[5] = (uint8_t)((Word_t)(DCDPOP0) >>  8);    \
-    (PJP)->jp_DcdP0[6] = (uint8_t)((Word_t)(DCDPOP0));          \
-    (PJP)->jp_Type     = (TYPE);                                \
+// TEMP, should be in JudyPrivateBranch.c
+#define jp_Addr1   j_po.jpo_u.j_po_Addr1
+
+
+#ifdef  JU_LITTLE_ENDIAN
+#define JU_JPDCDPOP0(PJP)  (JU_SWAP((PJP)->jp_Addr1) >> 8)
+
+#define JU_JPSETADT(PJP,ADDR,DCDPOP0,TYPE)                              \
+{                                                                       \
+    (PJP)->jp_Addr  = (ADDR);                                           \
+    (PJP)->jp_Addr1 = JU_SWAP(((Word_t)(DCDPOP0) << 8) | (uint8_t)(TYPE)); \
 }
+#else   // BIG_ENDIAN
+#define JU_JPDCDPOP0(PJP)  (((PJP)->jp_Addr1) >> 8)
 
-#else   // 32 Bit
-
-#define JU_JPDCDPOP0(PJP)               \
-    ((Word_t)(PJP)->jp_DcdP0[0] << 16 | \
-     (Word_t)(PJP)->jp_DcdP0[1] <<  8 | \
-     (Word_t)(PJP)->jp_DcdP0[2])
-
-
-#define JU_JPSETADT(PJP,ADDR,DCDPOP0,TYPE)                      \
-{                                                               \
-    (PJP)->jp_Addr     = (ADDR);                                \
-    (PJP)->jp_DcdP0[0] = (uint8_t)((Word_t)(DCDPOP0) >> 16);    \
-    (PJP)->jp_DcdP0[1] = (uint8_t)((Word_t)(DCDPOP0) >>  8);    \
-    (PJP)->jp_DcdP0[2] = (uint8_t)((Word_t)(DCDPOP0));          \
-    (PJP)->jp_Type     = (TYPE);                                \
+#define JU_JPSETADT(PJP,ADDR,DCDPOP0,TYPE)                              \
+{                                                                       \
+    (PJP)->jp_Addr  = (ADDR);                                           \
+    (PJP)->jp_Addr1 = ((Word_t)(DCDPOP0) << 8) | (uint8_t)(TYPE);       \
 }
-
-#endif  // 32 Bit
+#endif  // BIG_ENDIAN
 
 // NUMBER OF BITS IN A BRANCH OR LEAF BITMAP AND SUBEXPANSE:
 //
@@ -784,8 +1198,8 @@ static inline BITMAPL_t j__udyCountBitsL(BITMAPL_t word)
 
 // Bitmaps are accessed in units of "subexpanses":
 
-#define cJU_BITSPERSUBEXPB  (sizeof(BITMAPB_t) * cJU_BITSPERBYTE)
-#define cJU_NUMSUBEXPB      (cJU_BITSPERBITMAP / cJU_BITSPERSUBEXPB)
+#define cJU_BITSPERSUBEXPB  (sizeof(BITMAPB_t) * cJU_BITSPERBYTE)       // 4[8]
+#define cJU_NUMSUBEXPB      (cJU_BITSPERBITMAP / cJU_BITSPERSUBEXPB)    // 128[64]
 
 #define cJU_BITSPERSUBEXPL  (sizeof(BITMAPL_t) * cJU_BITSPERBYTE)
 #define cJU_NUMSUBEXPL      (cJU_BITSPERBITMAP / cJU_BITSPERSUBEXPL)
@@ -799,10 +1213,8 @@ static inline BITMAPL_t j__udyCountBitsL(BITMAPL_t word)
 // Warning:  BitNum must be less than cJU_BITSPERWORD, that is, 0 ..
 // cJU_BITSPERWORD - 1, to avoid a truncated shift on some machines.
 //
-// TBD:  Perhaps use an array[32] of masks instead of calculating them.
-
-#define JU_BITPOSMASKB(BITNUM) (1L << ((BITNUM) % cJU_BITSPERSUBEXPB))
-#define JU_BITPOSMASKL(BITNUM) (1L << ((BITNUM) % cJU_BITSPERSUBEXPL))
+#define JU_BITPOSMASKB(BITNUM) ((BITMAPB_t)1 << ((BITNUM) % cJU_BITSPERSUBEXPB))
+#define JU_BITPOSMASKL(BITNUM) ((BITMAPL_t)1 << ((BITNUM) % cJU_BITSPERSUBEXPL))
 
 
 // TEST/SET/CLEAR A BIT IN A BITMAP LEAF:
@@ -894,6 +1306,7 @@ static inline BITMAPL_t j__udyCountBitsL(BITMAPL_t word)
 // Copy a series of generic objects (uint8_t, uint16_t, uint32_t, Word_t) from
 // one place to another.
 
+#ifdef  MEMMOVE
 #define JU_COPYMEM(PDST,PSRC,POP1)                      \
     {                                                   \
         Word_t i_ndex = 0;                              \
@@ -901,6 +1314,15 @@ static inline BITMAPL_t j__udyCountBitsL(BITMAPL_t word)
         do { (PDST)[i_ndex] = (PSRC)[i_ndex]; } \
         while (++i_ndex < (POP1));                      \
     }
+#else   // ! MEMMOVE
+#define JU_COPYMEM(PDST,PSRC,POP1)                      \
+    {                                                   \
+        Word_t i_ndex = 0;                              \
+        assert((POP1) > 0);                             \
+        do { (PDST)[i_ndex] = (PSRC)[i_ndex]; } \
+        while (++i_ndex < (POP1));                      \
+    }
+#endif  // ! MEMMOVE
 
 
 // ****************************************************************************
@@ -1049,33 +1471,58 @@ static inline BITMAPL_t j__udyCountBitsL(BITMAPL_t word)
 // In these macros, "i_offset" is an index offset, and "b_off" is a byte
 // offset for odd Index sizes.
 //
-// Note:  Endian issues only arise fro insertion, not deletion, and even for
+// Note:  Endian issues only arise for insertion, not deletion, and even for
 // insertion, they are transparent when native (even) objects are used, and
 // handled explicitly for odd (non-native) Index sizes.
 //
 // Note:  The following macros are tricky enough that there is some test code
 // for them appended to this file.
 
+#ifdef  MEMMOVE
+#include <string.h> 
 #define JU_INSERTINPLACE(PARRAY,POP1,OFFSET,INDEX)              \
         assert((long) (POP1) > 0);                              \
         assert((Word_t) (OFFSET) <= (Word_t) (POP1));           \
         {                                                       \
-            Word_t i_offset = (POP1);                           \
+            size_t n = ((POP1)-(OFFSET)) * sizeof(*(PARRAY));   \
+            void   *src  = (void *)((PARRAY) + (OFFSET));       \
+            void   *dest = src + sizeof(*(PARRAY));             \
+            memmove(dest, src, n);                              \
+            (PARRAY)[OFFSET] = (INDEX);                         \
+        }
+
+#else   // ! MEMMOVE
+#define JU_INSERTINPLACE(PARRAY,POP1,OFFSET,INDEX)              \
+        assert((long) (POP1) > 0);                              \
+        assert((Word_t) (OFFSET) <= (Word_t) (POP1));           \
+        {                                                       \
+            int    i_offset = (int)(POP1);                      \
                                                                 \
             while (i_offset-- > (OFFSET))                       \
                 (PARRAY)[i_offset + 1] = (PARRAY)[i_offset];    \
                                                                 \
             (PARRAY)[OFFSET] = (INDEX);                         \
         }
+#endif  // ! MEMMOVE
 
 
 // Variation for non-native Indexes, where cIS = Index Size
 // and PByte must point to a uint8_t (byte); shift byte-by-byte:
 //
 
+#ifdef  MEMMOVE
 #define JU_INSERTINPLACE3(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
-    Word_t i_off = POP1;                                        \
+    size_t n = ((POP1)-(OFFSET)) * 3;                           \
+    void   *src  = (void *)((PBYTE) + ((OFFSET) * 3));          \
+    void   *dest = src + 3;                                     \
+    memmove(dest, src, n);                                      \
+    JU_COPY3_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 3]), INDEX);   \
+}
+#else   // ! MEMMOVE
+#define JU_INSERTINPLACE3(PBYTE,POP1,OFFSET,INDEX)              \
+{                                                               \
+    int    i_off = POP1;                                        \
                                                                 \
     while (i_off-- > (OFFSET))                                  \
     {                                                           \
@@ -1086,12 +1533,23 @@ static inline BITMAPL_t j__udyCountBitsL(BITMAPL_t word)
     }                                                           \
     JU_COPY3_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 3]), INDEX);   \
 }
+#endif  // ! MEMMOVE
 
 #ifdef JU_64BIT
 
+#ifdef  MEMMOVE
 #define JU_INSERTINPLACE5(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
-    Word_t i_off = POP1;                                        \
+    size_t n = ((POP1)-(OFFSET)) * 5;                           \
+    void   *src  = (void *)((PBYTE) + ((OFFSET) * 5));          \
+    void   *dest = src + 5;                                     \
+    memmove(dest, src, n);                                      \
+    JU_COPY5_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 5]), INDEX);   \
+}
+#else   // ! MEMMOVE
+#define JU_INSERTINPLACE5(PBYTE,POP1,OFFSET,INDEX)              \
+{                                                               \
+    int    i_off = POP1;                                        \
                                                                 \
     while (i_off-- > (OFFSET))                                  \
     {                                                           \
@@ -1104,10 +1562,21 @@ static inline BITMAPL_t j__udyCountBitsL(BITMAPL_t word)
     }                                                           \
     JU_COPY5_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 5]), INDEX);   \
 }
+#endif  // ! MEMMOVE
 
+#ifdef  MEMMOVE
 #define JU_INSERTINPLACE6(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
-    Word_t i_off = POP1;                                        \
+    size_t n = ((POP1)-(OFFSET)) * 6;                           \
+    void   *src  = (void *)((PBYTE) + ((OFFSET) * 6));          \
+    void   *dest = src + 6;                                     \
+    memmove(dest, src, n);                                      \
+    JU_COPY6_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 6]), INDEX);   \
+}
+#else   // ! MEMMOVE
+#define JU_INSERTINPLACE6(PBYTE,POP1,OFFSET,INDEX)              \
+{                                                               \
+    int    i_off = POP1;                                        \
                                                                 \
     while (i_off-- > (OFFSET))                                  \
     {                                                           \
@@ -1121,10 +1590,21 @@ static inline BITMAPL_t j__udyCountBitsL(BITMAPL_t word)
     }                                                           \
     JU_COPY6_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 6]), INDEX);   \
 }
+#endif  // ! MEMMOVE
 
+#ifdef  MEMMOVE
 #define JU_INSERTINPLACE7(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
-    Word_t i_off = POP1;                                        \
+    size_t n = ((POP1)-(OFFSET)) * 7;                           \
+    void   *src  = (void *)((PBYTE) + ((OFFSET) * 7));          \
+    void   *dest = src + 7;                                     \
+    memmove(dest, src, n);                                      \
+    JU_COPY7_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 7]), INDEX);   \
+}
+#else   // ! MEMMOVE
+#define JU_INSERTINPLACE7(PBYTE,POP1,OFFSET,INDEX)              \
+{                                                               \
+    int    i_off = POP1;                                        \
                                                                 \
     while (i_off-- > (OFFSET))                                  \
     {                                                           \
@@ -1139,6 +1619,8 @@ static inline BITMAPL_t j__udyCountBitsL(BITMAPL_t word)
     }                                                           \
     JU_COPY7_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 7]), INDEX);   \
 }
+#endif  // ! MEMMOVE
+
 #endif // JU_64BIT
 
 // Counterparts to the above for deleting an Index:
@@ -1149,10 +1631,25 @@ static inline BITMAPL_t j__udyCountBitsL(BITMAPL_t word)
         assert((long) (POP1) > 0);                              \
         assert((Word_t) (OFFSET) < (Word_t) (POP1));            \
         {                                                       \
-            Word_t i_offset = (OFFSET);                         \
+            int    i_offset = (OFFSET);                         \
                                                                 \
-            while (++i_offset < (POP1))                         \
+            while (++i_offset < (int)(POP1))                    \
+            {                                                   \
                 (PARRAY)[i_offset - 1] = (PARRAY)[i_offset];    \
+            }                                                   \
+     /*       (PARRAY)[(POP1) - 1] = 0;     zero pad */         \
+            (PARRAY)[i_offset - 1] = 0;     /* zero pad */      \
+        }
+
+#define JU_DELETEINPLACEJP(PARRAY,POP1,OFFSET,IGNORE)           \
+        assert((long) (POP1) > 0);                              \
+        assert((Word_t) (OFFSET) < (Word_t) (POP1));            \
+        {                                                       \
+            int    i_offset = (OFFSET);                         \
+            while (++i_offset < (int)(POP1))                    \
+            {                                                   \
+                (PARRAY)[i_offset - 1] = (PARRAY)[i_offset];    \
+            }                                                   \
         }
 
 // Variation for odd-byte-sized (non-native) Indexes, where cIS = Index Size
@@ -1167,9 +1664,9 @@ static inline BITMAPL_t j__udyCountBitsL(BITMAPL_t word)
         assert((long) (POP1) > 0);                              \
         assert((Word_t) (OFFSET) < (Word_t) (POP1));            \
         {                                                       \
-            Word_t b_off = (((OFFSET) + 1) * (cIS)) - 1;        \
+            int    b_off = (int)(((OFFSET) + 1) * (cIS)) - 1;   \
                                                                 \
-            while (++b_off < ((POP1) * (cIS)))                  \
+            while (++b_off < (int)((POP1) * (cIS)))             \
                 (PBYTE)[b_off - (cIS)] = (PBYTE)[b_off];        \
         }
 
@@ -1184,14 +1681,14 @@ static inline BITMAPL_t j__udyCountBitsL(BITMAPL_t word)
         assert((long) (POP1) > 0);                              \
         assert((Word_t) (OFFSET) <= (Word_t) (POP1));           \
         {                                                       \
-            Word_t i_offset;                                    \
+            int    i_offset;                                    \
                                                                 \
-            for (i_offset = 0; i_offset < (OFFSET); ++i_offset) \
+            for (i_offset = 0; i_offset < (int)(OFFSET); ++i_offset) \
                 (PDEST)[i_offset] = (PSOURCE)[i_offset];        \
                                                                 \
             (PDEST)[i_offset] = (INDEX);                        \
                                                                 \
-            for (/* null */; i_offset < (POP1); ++i_offset)     \
+            for (/* null */; i_offset < (int)(POP1); ++i_offset)\
                 (PDEST)[i_offset + 1] = (PSOURCE)[i_offset];    \
         }
 
@@ -1199,9 +1696,9 @@ static inline BITMAPL_t j__udyCountBitsL(BITMAPL_t word)
 assert((long) (POP1) > 0);                                      \
 assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
 {                                                               \
-    Word_t o_ff;                                                \
+    int    o_ff;                                                \
                                                                 \
-    for (o_ff = 0; o_ff < (OFFSET); o_ff++)                     \
+    for (o_ff = 0; o_ff < (int)(OFFSET); o_ff++)                \
     {                                                           \
         Word_t  i_dx = o_ff * 3;                                \
         (PDEST)[i_dx + 0] = (PSOURCE)[i_dx + 0];                \
@@ -1210,7 +1707,7 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
     }                                                           \
     JU_COPY3_LONG_TO_PINDEX(&((PDEST)[(OFFSET) * 3]), INDEX);   \
                                                                 \
-    for (/* null */; o_ff < (POP1); o_ff++)                     \
+    for (/* null */; o_ff < (int)(POP1); o_ff++)                \
     {                                                           \
         Word_t  i_dx = o_ff * 3;                                \
         (PDEST)[i_dx + 0 + 3] = (PSOURCE)[i_dx + 0];            \
@@ -1225,11 +1722,11 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
 assert((long) (POP1) > 0);                                      \
 assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
 {                                                               \
-    Word_t o_ff;                                                \
+    int    o_ff;                                                \
                                                                 \
-    for (o_ff = 0; o_ff < (OFFSET); o_ff++)                     \
+    for (o_ff = 0; o_ff < (int)(OFFSET); o_ff++)                \
     {                                                           \
-        Word_t  i_dx = o_ff * 5;                                \
+        int     i_dx = o_ff * 5;                                \
         (PDEST)[i_dx + 0] = (PSOURCE)[i_dx + 0];                \
         (PDEST)[i_dx + 1] = (PSOURCE)[i_dx + 1];                \
         (PDEST)[i_dx + 2] = (PSOURCE)[i_dx + 2];                \
@@ -1238,9 +1735,9 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
     }                                                           \
     JU_COPY5_LONG_TO_PINDEX(&((PDEST)[(OFFSET) * 5]), INDEX);   \
                                                                 \
-    for (/* null */; o_ff < (POP1); o_ff++)                     \
+    for (/* null */; o_ff < (int)(POP1); o_ff++)                \
     {                                                           \
-        Word_t  i_dx = o_ff * 5;                                \
+        int     i_dx = o_ff * 5;                                \
         (PDEST)[i_dx + 0 + 5] = (PSOURCE)[i_dx + 0];            \
         (PDEST)[i_dx + 1 + 5] = (PSOURCE)[i_dx + 1];            \
         (PDEST)[i_dx + 2 + 5] = (PSOURCE)[i_dx + 2];            \
@@ -1253,9 +1750,9 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
 assert((long) (POP1) > 0);                                      \
 assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
 {                                                               \
-    Word_t o_ff;                                                \
+    int    o_ff;                                                \
                                                                 \
-    for (o_ff = 0; o_ff < (OFFSET); o_ff++)                     \
+    for (o_ff = 0; o_ff < (int)(OFFSET); o_ff++)                \
     {                                                           \
         Word_t  i_dx = o_ff * 6;                                \
         (PDEST)[i_dx + 0] = (PSOURCE)[i_dx + 0];                \
@@ -1267,9 +1764,9 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
     }                                                           \
     JU_COPY6_LONG_TO_PINDEX(&((PDEST)[(OFFSET) * 6]), INDEX);   \
                                                                 \
-    for (/* null */; o_ff < (POP1); o_ff++)                     \
+    for (/* null */; o_ff < (int)(POP1); o_ff++)                \
     {                                                           \
-        Word_t  i_dx = o_ff * 6;                                \
+        int     i_dx = o_ff * 6;                                \
         (PDEST)[i_dx + 0 + 6] = (PSOURCE)[i_dx + 0];            \
         (PDEST)[i_dx + 1 + 6] = (PSOURCE)[i_dx + 1];            \
         (PDEST)[i_dx + 2 + 6] = (PSOURCE)[i_dx + 2];            \
@@ -1283,9 +1780,9 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
 assert((long) (POP1) > 0);                                      \
 assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
 {                                                               \
-    Word_t o_ff;                                                \
+    int    o_ff;                                                \
                                                                 \
-    for (o_ff = 0; o_ff < (OFFSET); o_ff++)                     \
+    for (o_ff = 0; o_ff < (int)(OFFSET); o_ff++)                \
     {                                                           \
         Word_t  i_dx = o_ff * 7;                                \
         (PDEST)[i_dx + 0] = (PSOURCE)[i_dx + 0];                \
@@ -1298,9 +1795,9 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
     }                                                           \
     JU_COPY7_LONG_TO_PINDEX(&((PDEST)[(OFFSET) * 7]), INDEX);   \
                                                                 \
-    for (/* null */; o_ff < (POP1); o_ff++)                     \
+    for (/* null */; o_ff < (int)(POP1); o_ff++)                \
     {                                                           \
-        Word_t  i_dx = o_ff * 7;                                \
+        int     i_dx = o_ff * 7;                                \
         (PDEST)[i_dx + 0 + 7] = (PSOURCE)[i_dx + 0];            \
         (PDEST)[i_dx + 1 + 7] = (PSOURCE)[i_dx + 1];            \
         (PDEST)[i_dx + 2 + 7] = (PSOURCE)[i_dx + 2];            \
@@ -1319,12 +1816,12 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
         assert((long) (POP1) > 0);                              \
         assert((Word_t) (OFFSET) < (Word_t) (POP1));            \
         {                                                       \
-            Word_t i_offset;                                    \
+            int    i_offset;                                    \
                                                                 \
             for (i_offset = 0; i_offset < (OFFSET); ++i_offset) \
                 (PDEST)[i_offset] = (PSOURCE)[i_offset];        \
                                                                 \
-            for (++i_offset; i_offset < (POP1); ++i_offset)     \
+            for (++i_offset; i_offset < (int)(POP1); ++i_offset)\
                 (PDEST)[i_offset - 1] = (PSOURCE)[i_offset];    \
         }
 
@@ -1342,14 +1839,14 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
         {                                                               \
             uint8_t *_Pdest   = (uint8_t *) (PDEST);                    \
             uint8_t *_Psource = (uint8_t *) (PSOURCE);                  \
-            Word_t   b_off;                                             \
+            int      b_off;                                             \
                                                                         \
-            for (b_off = 0; b_off < ((OFFSET) * (cIS)); ++b_off)        \
+            for (b_off = 0; b_off < (int)((OFFSET) * (cIS)); ++b_off)   \
                 *_Pdest++ = *_Psource++;                                \
                                                                         \
             _Psource += (cIS);                                          \
                                                                         \
-            for (b_off += (cIS); b_off < ((POP1) * (cIS)); ++b_off)     \
+            for (b_off += (cIS); b_off < (int)((POP1) * (cIS)); ++b_off)\
                 *_Pdest++ = *_Psource++;                                \
         }
 
@@ -1382,9 +1879,11 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
 
 #define JU_RET_FOUND_JPM(Pjpm)                  JU_RET_FOUND
 #define JU_RET_FOUND_PVALUE(Pjv,OFFSET)         JU_RET_FOUND
+
 #ifndef JU_64BIT
 #define JU_RET_FOUND_LEAF1(Pjll,POP1,OFFSET)    JU_RET_FOUND
 #endif
+
 #define JU_RET_FOUND_LEAF2(Pjll,POP1,OFFSET)    JU_RET_FOUND
 #define JU_RET_FOUND_LEAF3(Pjll,POP1,OFFSET)    JU_RET_FOUND
 #ifdef JU_64BIT
@@ -1453,8 +1952,23 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
 #define JU_RET_FOUND_IMM(PJP,OFFSET) \
             return((PPvoid_t) (P_JV((PJP)->jp_Addr) + (OFFSET)))
 
+#ifdef BMVALUE
+
 #define JU_RET_FOUND_LEAF_B1(PJLB,SUBEXP,OFFSET) \
             return((PPvoid_t) (P_JV(JL_JLB_PVALUE(PJLB, SUBEXP)) + (OFFSET)))
+
+#else   // BMVALUE
+
+#define _bm(P,S)  ((Word_t)((P)->jLlb_jLlbs[S].jLlbs_Bitmap))
+#define _bmi(P,S) ((_bm(P,S) & -_bm(P,S)) == (_bm(P,S)))
+
+#define JU_RET_FOUND_LEAF_B1(PJLB,SUBEXP,OFFSET)                \
+    return((PPvoid_t) ((_bmi(PJLB,SUBEXP)) ?                    \
+    ((Pjv_t)(&(PJLB)->jLlb_jLlbs[SUBEXP].jLlbs_PV_Raw))         \
+    : (P_JV((PJLB)->jLlb_jLlbs[SUBEXP].jLlbs_PV_Raw)) + (OFFSET)))
+
+#endif  // BMVALUE
+
 
 #endif // JUDYL
 
@@ -1506,7 +2020,7 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
         {                                                       \
             if (PJError)                                        \
             {                                                   \
-                JU_ERRNO(PJError) = (JU_Errno_t)JU_ERRNO(Pjpm);    \
+                JU_ERRNO(PJError) = (uint8_t)JU_ERRNO(Pjpm);    \
                 JU_ERRID(PJError) = JU_ERRID(Pjpm);             \
             }                                                   \
         }
@@ -1521,93 +2035,153 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
         (((void *) (ADDR) != (void *) NULL) ? JU_ERRNO_OVERRUN : JU_ERRNO_NOMEM)
 
 #define JU_CHECKALLOC(Type,Ptr,Retval)                  \
-        if ((Ptr) < (Type) sizeof(Word_t))              \
+        if ((Ptr) < (Type) cBPW)                        \
         {                                               \
             JU_SET_ERRNO(PJError, JU_ALLOC_ERRNO(Ptr)); \
             return(Retval);                             \
         }
 
+// Cheap and dirty search for matching branchL
+static inline int j__udySearchBranchL(uint8_t *Lst, int pop1, uint8_t Exp)
+{
+    SEARCHLINARNATIVE(uint8_t, Lst, pop1, Exp, 0); 
+}
+
 // Leaf search routines
 
-#ifdef JU_NOINLINE
+// This calculates a proportional division of Pop1 and significant hi-bits
+// to produce a statical starting offset to begin search.
 
-int j__udySearchLeaf1(Pjll_t Pjll, Word_t LeafPop1, Word_t Index);
-int j__udySearchLeaf2(Pjll_t Pjll, Word_t LeafPop1, Word_t Index);
-int j__udySearchLeaf3(Pjll_t Pjll, Word_t LeafPop1, Word_t Index);
+static inline int  FSPLIT(Word_t FIRST, Word_t LAST, Word_t KEY, Word_t POP1)
+{
+    int Start;
+
+    if (KEY > LAST)  return (~POP1);
+    if (KEY < FIRST) return (~0);
+
+#ifdef DOUB
+    Start = (double)(KEY - FIRST) * (double)(POP1 - 1) / (double)(LAST - FIRST);
+#else   // DOUB
+    Start = ((KEY - FIRST) * (POP1 - 1)) / (LAST - FIRST);
+#endif  // DOUB
+
+    return(Start);
+}
+
+// -------------------------------------------------------
+// THIS NEEDS REVIEW!!!!!! Key mask and log are not the same
+// Used to mask to single Key
+//      = JU_LEASTBYTES((KEY), (LFBTS)); 
+//
+#define MskK(cbPK, KEY)         ((Word_t)(KEY) & (((Word_t)1 << (cbPK)) - 1))
+#define KEYMASK(cbPK)           (((Word_t)1 << (cbPK)) - 1)
+
+
+#ifdef ONEWAY
+#define NSPLIT(POP, KEY, LOG2)                                  \
+        ((((((Word_t)(KEY)) << (cbPW - (LOG2))) >> (cbPW - (LOG2))) * (POP)) >> (LOG2))
+#else   // ! ONEWAY
+#define NSPLIT(POP, KEY, LOG2)  (((Word_t)(KEY) * (POP)) >> (LOG2))
+#endif  // ! ONEWAY
+// End of review THIS NEEDS REVIEW!!!!!! Key mask and log are not the same
+// -------------------------------------------------------
+
+static inline int j__udySearchLeaf1(Pjll_t Pjll, int LeafPop1, Word_t Index)
+{
+    int Start;
+
+//    Start = NSPLIT(LeafPop1, Index, (cbPW - __builtin_clzl(((uint8_t *)Pjll)[0] ^ ((uint8_t *)Pjll)[LeafPop1 - 1])));
+
+//  The vast majority of these are == 8, so hard code 8 
+    Start = NSPLIT(LeafPop1, (uint8_t)Index, 1 * 8); 
+    SEARCHLEAFNATIVE(uint8_t,  Pjll, LeafPop1, Index, Start); 
+}
+
+static inline int j__udySearchLeaf2(Pjll_t Pjll, int LeafPop1, Word_t Index)
+{
+    int Start;
+
+//    Start = NSPLIT(LeafPop1, Index, (cbPW - __builtin_clzl(((uint16_t *)Pjll)[0] ^ ((uint16_t *)Pjll)[LeafPop1 - 1])));
+
+    Start = NSPLIT(LeafPop1, (uint16_t)Index, 2 * 8); 
+    SEARCHLEAFNATIVE(uint16_t,  Pjll, LeafPop1, Index, Start); 
+}
+
+static inline int j__udySearchLeaf3(Pjll_t Pjll, int LeafPop1, Word_t Index)
+{
+//  The vast majority of these are == 24, so hard code 24 
+    int Start = NSPLIT(LeafPop1, JU_LEASTBYTES(Index, 3), 3 * 8); 
+    SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 3, JU_COPY3_PINDEX_TO_LONG, Start); 
+}
 
 #ifdef JU_64BIT
+static inline int j__udySearchLeaf4(Pjll_t Pjll, int LeafPop1, Word_t Index)
+{
+    int Start = NSPLIT(LeafPop1, (uint32_t)Index, 4 * 8); 
+    SEARCHLEAFNATIVE(uint32_t,  Pjll, LeafPop1, Index, Start); 
+}
 
-int j__udySearchLeaf4(Pjll_t Pjll, Word_t LeafPop1, Word_t Index);
-int j__udySearchLeaf5(Pjll_t Pjll, Word_t LeafPop1, Word_t Index);
-int j__udySearchLeaf6(Pjll_t Pjll, Word_t LeafPop1, Word_t Index);
-int j__udySearchLeaf7(Pjll_t Pjll, Word_t LeafPop1, Word_t Index);
+static inline int j__udySearchLeaf5(Pjll_t Pjll, int LeafPop1, Word_t Index)
+{
+    int Start = NSPLIT(LeafPop1, JU_LEASTBYTES(Index, 5), 5 * 8); 
+    SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 5, JU_COPY5_PINDEX_TO_LONG, Start); 
+}
 
+static inline int j__udySearchLeaf6(Pjll_t Pjll, int LeafPop1, Word_t Index)
+{
+    int Start = NSPLIT(LeafPop1, JU_LEASTBYTES(Index, 6), 6 * 8); 
+    SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 6, JU_COPY6_PINDEX_TO_LONG, Start); 
+}
+
+static inline int j__udySearchLeaf7(Pjll_t Pjll, int LeafPop1, Word_t Index)
+{
+    int Start = NSPLIT(LeafPop1, JU_LEASTBYTES(Index, 7), 7 * 8); 
+    SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 7, JU_COPY7_PINDEX_TO_LONG, Start); 
+}
 #endif // JU_64BIT
 
-int j__udySearchLeafW(Pjlw_t Pjlw, Word_t LeafPop1, Word_t Index);
 
-#else  // complier support for inline
+#ifdef NSLEAFW
 
-#ifdef JU_WIN
-static __inline int j__udySearchLeaf1(Pjll_t Pjll, Word_t LeafPop1, Word_t Index)
-#else
-static inline int j__udySearchLeaf1(Pjll_t Pjll, Word_t LeafPop1, Word_t Index)
-#endif
-{ SEARCHLEAFNATIVE(uint8_t,  Pjll, LeafPop1, Index); }
+static inline int j__udySearchLeafW(Pjlw_t Pjlw, int LeafPop1, Word_t Index)
+{
 
-#ifdef JU_WIN
-static __inline int j__udySearchLeaf2(Pjll_t Pjll, Word_t LeafPop1, Word_t Index)
-#else
-static inline int j__udySearchLeaf2(Pjll_t Pjll, Word_t LeafPop1, Word_t Index)
-#endif
-{ SEARCHLEAFNATIVE(uint16_t, Pjll, LeafPop1, Index); }
+      if (LeafPop1 > 16)
+      {
+          int Start = 0;
 
-#ifdef JU_WIN
-static __inline int j__udySearchLeaf3(Pjll_t Pjll, Word_t LeafPop1, Word_t Index)
-#else
-static inline int j__udySearchLeaf3(Pjll_t Pjll, Word_t LeafPop1, Word_t Index)
-#endif
-{ SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 3, JU_COPY3_PINDEX_TO_LONG); }
+//        Check id the Index is within the bounds of the leaf
+          if (Index > Pjlw[LeafPop1 - 1]) return (~(LeafPop1)); // redundant from below
+          if (Index < Pjlw[0]) return (~0);
 
-#ifdef JU_64BIT
+          Word_t AIndex = Index - Pjlw[0];              // see above check
+          Word_t Diff = Pjlw[LeafPop1 - 1] - Pjlw[0];   // no error possible
 
-#ifdef JU_WIN
-static __inline int j__udySearchLeaf4(Pjll_t Pjll, Word_t LeafPop1, Word_t Index)
-#else
-static inline int j__udySearchLeaf4(Pjll_t Pjll, Word_t LeafPop1, Word_t Index)
-#endif
-{ SEARCHLEAFNATIVE(uint32_t, Pjll, LeafPop1, Index); }
+          Start = AIndex * (LeafPop1 - 1) / Diff;
+          SEARCHBIDIRNATIVE(Word_t,  Pjlw, LeafPop1, Index, Start); 
+      }
+      else
+      {
+          SEARCHLINARNATIVE(Word_t,  Pjlw, LeafPop1, Index, 0); 
+      }
+}
 
-#ifdef JU_WIN
-static __inline int j__udySearchLeaf5(Pjll_t Pjll, Word_t LeafPop1, Word_t Index)
-#else
-static inline int j__udySearchLeaf5(Pjll_t Pjll, Word_t LeafPop1, Word_t Index)
-#endif
-{ SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 5, JU_COPY5_PINDEX_TO_LONG); }
+#else	// NSLEAFW
 
-#ifdef JU_WIN
-static __inline int j__udySearchLeaf6(Pjll_t Pjll, Word_t LeafPop1, Word_t Index)
-#else
-static inline int j__udySearchLeaf6(Pjll_t Pjll, Word_t LeafPop1, Word_t Index)
-#endif
-{ SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 6, JU_COPY6_PINDEX_TO_LONG); }
+static inline int j__udySearchLeafW(Pjlw_t Pjlw, int LeafPop1, Word_t Index)
+{
+//    This is OK for small Leafs (~31)
+//    SEARCHLEAFNATIVE(Word_t,  Pjlw, LeafPop1, Index, LeafPop1 / 2); 
 
-#ifdef JU_WIN
-static __inline int j__udySearchLeaf7(Pjll_t Pjll, Word_t LeafPop1, Word_t Index)
-#else
-static inline int j__udySearchLeaf7(Pjll_t Pjll, Word_t LeafPop1, Word_t Index)
-#endif
-{ SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 7, JU_COPY7_PINDEX_TO_LONG); }
+//  This helps for very large leafs -- 100+
+//    int Start = NSPLIT(LeafPop1, Index, (cbPW - __builtin_clzl(Pjlw[0] ^ Pjlw[LeafPop1 - 1])));
+//    SEARCHBIDIRNATIVE(Word_t,  Pjlw, LeafPop1, Index, LeafPop1/2); 
+//    SEARCHBIDIRNATIVE(Word_t,  Pjlw, LeafPop1, Index, Start); 
+    
+//    SEARCHLINARNATIVE(Word_t,  Pjlw, LeafPop1, Index, 0); 
 
-#endif // JU_64BIT
-
-#ifdef JU_WIN
-static __inline int j__udySearchLeafW(Pjlw_t Pjlw, Word_t LeafPop1, Word_t Index)
-#else
-static inline int j__udySearchLeafW(Pjlw_t Pjlw, Word_t LeafPop1, Word_t Index)
-#endif
-{ SEARCHLEAFNATIVE(Word_t, Pjlw, LeafPop1, Index); }
-
-#endif // compiler support for inline
-
+    SEARCHBINARYNATIVE(Word_t, Pjlw, LeafPop1, Index, 0); 
+//    SEARCHLEAFNATIVE(Word_t,  Pjlw, LeafPop1, Index, Start); 
+}
+#endif	// NSLEAFW
 #endif // ! _JUDYPRIVATE_INCLUDED

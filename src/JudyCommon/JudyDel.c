@@ -387,7 +387,7 @@ BranchLKeep:
             assert(JU_JPDCDPOP0(Pjp) == JU_TRIMTODCDSIZE(Index));
 
             JU_DELETEINPLACE(Pjbl->jbl_Expanse, numJPs, offset, ignore);
-            JU_DELETEINPLACE(Pjbl->jbl_jp,      numJPs, offset, ignore);
+            JU_DELETEINPLACEJP(Pjbl->jbl_jp,      numJPs, offset, ignore);
 
             DBGCODE(JudyCheckSorted((Pjll_t) (Pjbl->jbl_Expanse),
                                     numJPs - 1, 1);)
@@ -614,7 +614,7 @@ BranchBKeep:
             else if (JU_BRANCHBJPGROWINPLACE(numJPs - 1))
             {
                 assert(numJPs > 0);
-                JU_DELETEINPLACE(Pjp2, numJPs, offset, ignore);
+                JU_DELETEINPLACEJP(Pjp2, numJPs, offset, ignore);
             }
 
 // JP array would end up too large; compress it to a smaller one:

@@ -28,9 +28,7 @@
 extern int j__udyCreateBranchL(Pjp_t, Pjp_t, uint8_t *, Word_t, Pjpm_t);
 extern int j__udyCreateBranchB(Pjp_t, Pjp_t, uint8_t *, Word_t, Pjpm_t);
 
-DBGCODE(extern void JudyCheckSorted(Pjll_t Pjll, Word_t Pop1, long IndexSize);)
-
-static const jbb_t StageJBBZero = {};	// zeroed versions of namesake struct.
+static const jbb_t StageJBBZero = {0};	// zeroed versions of namesake struct.
 
 // TBD:  There are multiple copies of (some of) these CopyWto3, Copy3toW,
 // CopyWto7 and Copy7toW functions in Judy1Cascade.c, JudyLCascade.c, and
@@ -144,18 +142,13 @@ FUNCTION static void j__udyCopyWto3(
 #ifdef JU_64BIT
 
 FUNCTION static void j__udyCopyWto4(
-	uint8_t	* PDest,
+	uint32_t *PDest32,
 	PWord_t	  PSrc,
 	Word_t	  LeafIndexes)
 {
-	uint32_t *PDest32 = (uint32_t *)PDest;
-
 	do
-	{
-		*PDest32 = *PSrc;
-		PSrc	+= 1;
-		PDest32	+= 1;
-	} while(--LeafIndexes);
+	    *PDest32++ = *PSrc++;
+	while(--LeafIndexes);
 
 } // j__udyCopyWto4()
 
@@ -225,10 +218,10 @@ FUNCTION static void j__udyCopyWto7(
 
 // Clear the array that keeps track of the number of JPs in a subexpanse:
 
-#define ZEROJP(SubJPCount)                                              \
+#define ZEROJP(SubJPCount, NUMB)                                        \
 	{								\
-		int ii;							\
-		for (ii = 0; ii < cJU_NUMSUBEXPB; ii++) (SubJPCount[ii]) = 0; \
+		for (int ii = 0; ii < (int)NUMB; ii++)                  \
+                        SubJPCount[ii] = 0;                             \
 	}
 
 // ****************************************************************************
@@ -265,7 +258,19 @@ static int j__udyStageJBBtoJBB(
 	    Pjp_t  Pjp;
 	    Word_t NumJP;       // number of JPs in each subexpanse.
 
+#ifndef BMVALUE
 	    if ((NumJP = PSubCount[subexp]) == 0) continue;	// empty.
+#else /* BMVALUE */
+	    NumJP = PSubCount[subexp];
+
+#ifdef BBSEARCH
+            printf("JBBtoJBB set sub = %ld to %lu count\n", subexp, NumJP);
+            Pjbb->jbb_Pop1 |= NumJP << (subexp * 8);     // Sub pops in struct
+#endif  // BBSEARCH
+
+	    if (NumJP == 0) 
+                continue;	// empty.
+#endif /* BMVALUE */
 
 // Out of memory, back out previous allocations:
 
@@ -313,55 +318,74 @@ static int j__udyStageJBBtoJBB(
 
 FUNCTION static Pjlb_t j__udyJLL2toJLB1(
 	uint16_t * Pjll,	// array of 16-bit indexes.
+
 #ifdef JUDYL
 	Pjv_t      Pjv,		// array of associated values.
-#endif
+#endif  // JUDYL
+
 	Word_t     LeafPop1,	// number of indexes/values.
 	Pjpm_t    Pjpm)	// jpm_t for JudyAlloc*()/JudyFree*().
 {
 	Pjlb_t     PjlbRaw;
 	Pjlb_t     Pjlb;
 	int	   offset;
-JUDYLCODE(int	   subexp;)
+#ifdef  JUDYL
+        int	   subexp;
+#endif  // JUDYL
 
-// Allocate the LeafB1:
-
+//      Allocate the LeafB1:
 	if ((PjlbRaw = j__udyAllocJLB1(Pjpm)) == (Pjlb_t) NULL)
-	    return((Pjlb_t) NULL);
+            return((Pjlb_t) NULL);
 	Pjlb = P_JLB(PjlbRaw);
 
 // Copy Leaf2 indexes to LeafB1:
 
-	for (offset = 0; offset < LeafPop1; ++offset)
+	for (offset = 0; offset < (int)LeafPop1; ++offset)
 	    JU_BITMAPSETL(Pjlb, Pjll[offset]);
 
 #ifdef JUDYL
 
 // Build LeafVs from bitmap:
 
-	for (subexp = 0; subexp < cJU_NUMSUBEXPL; ++subexp)
+	for (subexp = 0; subexp < (int)cJU_NUMSUBEXPL; ++subexp)
 	{
 	    struct _POINTER_VALUES
 	    {
 		Word_t pv_Pop1;		// size of value area.
-		Pjv_t  pv_Pjv;		// raw pointer to value area.
+		Word_t pv_Pjv;		// raw pointer to value area.
 	    } pv[cJU_NUMSUBEXPL];
 
 // Get the population of the subexpanse, and if any, allocate a LeafV:
 
 	    pv[subexp].pv_Pop1 = j__udyCountBitsL(JU_JLB_BITMAP(Pjlb, subexp));
 
+#ifndef BMVALUE
 	    if (pv[subexp].pv_Pop1)
 	    {
 		Pjv_t Pjvnew;
+#else /* BMVALUE */
+	    if (pv[subexp].pv_Pop1 == 0)
+                continue;               // skip subexpanse
+#endif /* BMVALUE */
 
+#ifndef BMVALUE
 // TBD:  There is an opportunity to put pop == 1 value in pointer:
+#else /* BMVALUE */
+	    if (pv[subexp].pv_Pop1 == 1)
+            {
+		JL_JLB_PVALUE(Pjlb, subexp) = *Pjv;             // place Value
+                Pjv++;
+                continue;               // on to next subexpanse
+            }
+            {
+		Pjv_t Pjvnew;
+#endif /* BMVALUE */
 
 		pv[subexp].pv_Pjv = j__udyLAllocJV(pv[subexp].pv_Pop1, Pjpm);
 
 // Upon out of memory, free all previously allocated:
 
-		if (pv[subexp].pv_Pjv == (Pjv_t) NULL)
+		if (pv[subexp].pv_Pjv == 0)
 		{
 		    while(subexp--)
 		    {
@@ -372,7 +396,7 @@ JUDYLCODE(int	   subexp;)
 			}
 		    }
 		    j__udyFreeJLB1(PjlbRaw, Pjpm);
-		    return((Pjlb_t) NULL);
+		    return((Pjlb_t)NULL);
 		}
 
 		Pjvnew = P_JV(pv[subexp].pv_Pjv);
@@ -383,7 +407,7 @@ JUDYLCODE(int	   subexp;)
 
 		JL_JLB_PVALUE(Pjlb, subexp) = pv[subexp].pv_Pjv;
 
-	    } // populated subexpanse.
+            } // a  populated subexpanse > 1.
 	} // each subexpanse.
 
 #endif // JUDYL
@@ -414,7 +438,13 @@ FUNCTION int j__udyCascade1(
 	Pjlb_t	   Pjlb;
 	Word_t     Pop1;
 	Word_t     ii;		// temp for loop counter
-JUDYLCODE(Pjv_t	   Pjv;)
+#ifdef  JUDYL
+        Pjv_t	   Pjv;
+#endif  // JUDYL
+
+#ifdef  PCAS
+        printf("\n==================Cascade1()\n");
+#endif  // PCAS
 
 	assert(JU_JPTYPE(Pjp) == cJU_JPLEAF1);
 	assert((JU_JPDCDPOP0(Pjp) & 0xFF) == (cJU_LEAF1_MAXPOP1-1));
@@ -426,25 +456,47 @@ JUDYLCODE(Pjv_t	   Pjv;)
 	PLeaf = (uint8_t *) P_JLL(Pjp->jp_Addr);
 	Pop1  = JU_JPLEAF_POP0(Pjp) + 1;
 
-	JUDYLCODE(Pjv = JL_LEAF1VALUEAREA(PLeaf, Pop1);)
+#ifdef  JUDYL
+	Pjv = JL_LEAF1VALUEAREA(PLeaf, Pop1);
+#endif  // JUDYL
 
 //	Copy 1 byte index Leaf to bitmap Leaf
 	for (ii = 0; ii < Pop1; ii++) JU_BITMAPSETL(Pjlb, PLeaf[ii]);
 
 #ifdef JUDYL
-//	Build 8 subexpanse Value leaves from bitmap
+//	Build 4 subexpanse Value leaves from bitmap
 	for (ii = 0; ii < cJU_NUMSUBEXPL; ii++)
 	{
 //	    Get number of Indexes in subexpanse
+#ifndef BMVALUE
 	    if ((Pop1 = j__udyCountBitsL(JU_JLB_BITMAP(Pjlb, ii))))
+#else /* BMVALUE */
+	    Pop1 = j__udyCountBitsL(JU_JLB_BITMAP(Pjlb, ii));
+
+            if (Pop1 == 0)
+                continue;       // on to next subexpanse
+
+            if (Pop1 == 1)
+            {
+		JL_JLB_PVALUE(Pjlb, ii) = *Pjv;
+                Pjv++;
+                continue;       // on to next subexpanse
+            }
+
+#endif /* BMVALUE */
 	    {
-		Pjv_t PjvnewRaw;	// value area of new leaf.
-		Pjv_t Pjvnew;
+		Word_t PjvnewRaw;	// value area of new leaf.
+		Pjv_t  Pjvnew;
 
 		PjvnewRaw = j__udyLAllocJV(Pop1, Pjpm);
-		if (PjvnewRaw == (Pjv_t) NULL)	// out of memory.
+		if (PjvnewRaw == 0)	// out of memory.
+#ifndef BMVALUE
 		{
+#endif /* ! BMVALUE */
 //                  Free prevously allocated LeafVs:
+#ifdef BMVALUE
+		{   // Free prevously allocated LeafVs:
+#endif /* BMVALUE */
 		    while(ii--)
 		    {
 			if ((Pop1 = j__udyCountBitsL(JU_JLB_BITMAP(Pjlb, ii))))
@@ -460,9 +512,17 @@ JUDYLCODE(Pjv_t	   Pjv;)
 		Pjvnew    = P_JV(PjvnewRaw);
 		JU_COPYMEM(Pjvnew, Pjv, Pop1);
 
+#ifndef BMVALUE
 		Pjv += Pop1;
+#endif /* ! BMVALUE */
 		JL_JLB_PVALUE(Pjlb, ii) = PjvnewRaw;
+#ifndef BMVALUE
 	    }
+#else /* BMVALUE */
+	        Pjv += Pop1;
+                continue;       // on to next subexpanse
+            }
+#endif /* BMVALUE */
 	}
 #endif // JUDYL
 
@@ -493,7 +553,9 @@ FUNCTION int j__udyCascade2(
 	Word_t	   End, Start;	// temporaries.
 	Word_t	   ExpCnt;	// count of expanses of splay.
 	Word_t     CIndex;	// current Index word.
-JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
+#ifdef  JUDYL
+        Pjv_t	   Pjv;	        // value area of leaf.
+#endif  // JUDYL
 
 //	Temp staging for parts(Leaves) of newly splayed leaf
 	jp_t	   StageJP   [cJU_LEAF2_MAXPOP1];  // JPs of new leaves
@@ -504,11 +566,17 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 	assert(JU_JPTYPE(Pjp) == cJU_JPLEAF2);
 	assert((JU_JPDCDPOP0(Pjp) & 0xFFFF) == (cJU_LEAF2_MAXPOP1-1));
 
+#ifdef  PCAS
+        printf("\n==================Cascade2()\n");
+#endif  // PCAS
+
 //	Get the address of the Leaf
 	PLeaf = (uint16_t *) P_JLL(Pjp->jp_Addr);
 
 //	And its Value area
-	JUDYLCODE(Pjv = JL_LEAF2VALUEAREA(PLeaf, cJU_LEAF2_MAXPOP1);)
+#ifdef  JUDYL
+	Pjv = JL_LEAF2VALUEAREA(PLeaf, cJU_LEAF2_MAXPOP1);
+#endif  // JUDYL
 
 //  If Leaf is in 1 expanse -- just compress it to a Bitmap Leaf
 
@@ -535,7 +603,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //  Else in 2+ expanses, splay Leaf into smaller leaves at higher compression
 
 	StageJBB = StageJBBZero;       // zero staged bitmap branch
-	ZEROJP(SubJPCount);
+	ZEROJP(SubJPCount, cJU_NUMSUBEXPB);
 
 //	Splay the 2 byte index Leaf to 1 byte Index Leaves
 	for (ExpCnt = Start = 0, End = 1; ; End++)
@@ -583,24 +651,25 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //		cJL_JPIMMED_1_02..7:  JudyL 64
 //		cJ1_JPIMMED_1_02..15: Judy1 64
 #ifdef JUDYL
-				Pjv_t  PjvnewRaw;	// value area of leaf.
+				Word_t PjvnewRaw;	// value area of leaf.
 				Pjv_t  Pjvnew;
 
 //				Allocate Value area for Immediate Leaf
 				PjvnewRaw = j__udyLAllocJV(Pop1, Pjpm);
-				if (PjvnewRaw == (Pjv_t) NULL)
+				if (PjvnewRaw == 0)
 					FREEALLEXIT(ExpCnt, StageJP, Pjpm);
 
 				Pjvnew = P_JV(PjvnewRaw);
 
 //				Copy to Values to Value Leaf
 				JU_COPYMEM(Pjvnew, Pjv + Start, Pop1);
-				PjpJP->jp_Addr = (Word_t) PjvnewRaw;
+				PjpJP->jp_Addr = PjvnewRaw;
 
 //				Copy to JP as an immediate Leaf
-				JU_COPYMEM(PjpJP->jp_LIndex1, PLeaf + Start,
-					   Pop1);
+//		                j__udyCopy2to1(PjpJP->jp_LIndex1, PLeaf + Start, Pop1);
+				JU_COPYMEM(PjpJP->jp_LIndex1, PLeaf + Start, Pop1);
 #else
+//		                j__udyCopy2to1(jp_1Index1, PLeaf + Start, Pop1);
 				JU_COPYMEM(PjpJP->jp_1Index1, PLeaf + Start,
 					   Pop1);
 #endif
@@ -618,7 +687,9 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
                                 Word_t  DcdP0;
 				Pjll_t PjllRaw;	 // pointer to new leaf.
 				Pjll_t Pjll;
-		      JUDYLCODE(Pjv_t  Pjvnew;)	 // value area of new leaf.
+#ifdef  JUDYL
+		                Pjv_t  Pjvnew; 	 // value area of new leaf.
+#endif  // JUDYL
 
 //				Get a new Leaf
 				PjllRaw = j__udyAllocJLL1(Pop1, Pjpm);
@@ -632,9 +703,8 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 				JU_COPYMEM(Pjvnew, Pjv + Start, Pop1);
 #endif
 //				Copy Indexes to new Leaf
+//		                j__udyCopy2to1(Pjll, PLeaf+Start, Pop1);
 				JU_COPYMEM((uint8_t *)Pjll, PLeaf+Start, Pop1);
-
-				DBGCODE(JudyCheckSorted(Pjll, Pop1, 1);)
 
                                 DcdP0 = (JU_JPDCDPOP0(Pjp) & cJU_DCDMASK(2)) 
                                                 |
@@ -652,6 +722,10 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //		cJU_JPLEAF_B1
                                 Word_t  DcdP0;
 				Pjlb_t PjlbRaw;
+#ifdef PCAS
+                                printf("j__udyJLL2toJLB1()\n");
+#endif  // PCAS
+
 				PjlbRaw = j__udyJLL2toJLB1(
 						PLeaf + Start,
 #ifdef JUDYL
@@ -690,6 +764,11 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 	}
 	else
 	{
+
+#ifdef PCAS
+             printf("j__udyStageJBBtoJBB()\n");
+#endif  // PCAS
+
 	    if (j__udyStageJBBtoJBB(Pjp, &StageJBB, StageJP, SubJPCount, Pjpm)
 		== -1) FREEALLEXIT(ExpCnt, StageJP, Pjpm);
 	}
@@ -711,17 +790,24 @@ FUNCTION int j__udyCascade3(
 	Word_t	   End, Start;	// temporaries.
 	Word_t	   ExpCnt;	// count of expanses of splay.
 	Word_t     CIndex;	// current Index word.
-JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
+#ifdef  JUDYL
+        Pjv_t	   Pjv; 	// value area of leaf.
+#endif  // JUDYL
 
 //	Temp staging for parts(Leaves) of newly splayed leaf
 	jp_t	   StageJP   [cJU_LEAF3_MAXPOP1];  // JPs of new leaves
 	Word_t	   StageA    [cJU_LEAF3_MAXPOP1];
 	uint8_t	   StageExp  [cJU_LEAF3_MAXPOP1];  // Expanses of new leaves
+//	uint8_t	   SubJPCount[cJU_NUMSUBEXPB];     // JPs in each subexpanse
 	uint8_t	   SubJPCount[cJU_NUMSUBEXPB];     // JPs in each subexpanse
 	jbb_t      StageJBB;                       // staged bitmap branch
 
 	assert(JU_JPTYPE(Pjp) == cJU_JPLEAF3);
 	assert((JU_JPDCDPOP0(Pjp) & 0xFFFFFF) == (cJU_LEAF3_MAXPOP1-1));
+
+#ifdef  PCAS
+        printf("\n==================Cascade3()\n");
+#endif  // PCAS
 
 //	Get the address of the Leaf
 	PLeaf = (uint8_t *) P_JLL(Pjp->jp_Addr);
@@ -730,17 +816,22 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 	j__udyCopy3toW(StageA, PLeaf, cJU_LEAF3_MAXPOP1);
 
 //	Get the address of the Leaf and Value area
-	JUDYLCODE(Pjv = JL_LEAF3VALUEAREA(PLeaf, cJU_LEAF3_MAXPOP1);)
+#ifdef  JUDYL
+	Pjv = JL_LEAF3VALUEAREA(PLeaf, cJU_LEAF3_MAXPOP1);
+#endif  // JUDYL
 
 //  If Leaf is in 1 expanse -- just compress it (compare 1st, last & Index)
 
 	CIndex = StageA[0];
+//printf("Index = 0x%lx != last = 0x%lx\n", CIndex, StageA[cJU_LEAF3_MAXPOP1-1]);
 	if (!JU_DIGITATSTATE(CIndex ^ StageA[cJU_LEAF3_MAXPOP1-1], 3))
 	{
                 Word_t DcdP0;
 		Pjll_t PjllRaw;	 // pointer to new leaf.
 		Pjll_t Pjll;
-      JUDYLCODE(Pjv_t  Pjvnew;)	 // value area of new leaf.
+#ifdef  JUDYL
+		Pjv_t  Pjvnew;	 // value area of new leaf.
+#endif  // JUDYL
 
 //		Alloc a 2 byte Index Leaf
 		PjllRaw	= j__udyAllocJLL2(cJU_LEAF3_MAXPOP1, Pjpm);
@@ -749,15 +840,13 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 		Pjll = P_JLL(PjllRaw);
 
 //		Copy just 2 bytes Indexes to new Leaf
-//		j__udyCopyWto2((uint16_t *) Pjll, StageA, cJU_LEAF3_MAXPOP1);
-		JU_COPYMEM    ((uint16_t *) Pjll, StageA, cJU_LEAF3_MAXPOP1);
+//		j__udyCopyWto2(Pjll, StageA, cJU_LEAF3_MAXPOP1);
+		JU_COPYMEM((uint16_t *) Pjll, StageA, cJU_LEAF3_MAXPOP1);
 #ifdef JUDYL
 //		Copy Value area into new Leaf
 		Pjvnew = JL_LEAF2VALUEAREA(Pjll, cJU_LEAF3_MAXPOP1);
 		JU_COPYMEM(Pjvnew, Pjv, cJU_LEAF3_MAXPOP1);
-#endif
-		DBGCODE(JudyCheckSorted(Pjll, cJU_LEAF3_MAXPOP1, 2);)
-
+#endif  // JUDYL
 //		Form new JP, Pop0 field is unchanged
 //		Add in another Dcd byte because compressing
                 DcdP0 = (CIndex & cJU_DCDMASK(2)) | JU_JPDCDPOP0(Pjp);
@@ -770,7 +859,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //  Else in 2+ expanses, splay Leaf into smaller leaves at higher compression
 
 	StageJBB = StageJBBZero;       // zero staged bitmap branch
-	ZEROJP(SubJPCount);
+	ZEROJP(SubJPCount, cJU_NUMSUBEXPB);
 
 //	Splay the 3 byte index Leaf to 2 byte Index Leaves
 	for (ExpCnt = Start = 0, End = 1; ; End++)
@@ -790,9 +879,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //
 //                      set the bit that is the current expanse
 			JU_JBB_BITMAP(&StageJBB, subexp) |= JU_BITPOSMASKB(expanse);
-#ifdef SUBEXPCOUNTS
-			StageJBB.jbb_subPop1[subexp] += Pop1; // pop of subexpanse
-#endif
+
 //                      count number of expanses in each subexpanse
 			SubJPCount[subexp]++;
 
@@ -806,7 +893,9 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
                                 CIndex;
 #ifdef JUDY1
                             JU_JPSETADT(PjpJP, 0, DcdP0, cJ1_JPIMMED_2_01);
-#else   // JUDYL
+#endif  // JUDY1
+
+#ifdef  JUDYL
                             JU_JPSETADT(PjpJP, Pjv[Start], DcdP0, 
                                 cJL_JPIMMED_2_01);
 #endif  // JUDYL
@@ -819,12 +908,12 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //		cJ1_JPIMMED_2_02..7:  Judy1 64
 #ifdef JUDYL
 //				Alloc is 1st in case of malloc fail
-				Pjv_t PjvnewRaw;  // value area of new leaf.
-				Pjv_t Pjvnew;
+				Word_t PjvnewRaw;  // value area of new leaf.
+				Pjv_t  Pjvnew;
 
 //				Allocate Value area for Immediate Leaf
 				PjvnewRaw = j__udyLAllocJV(Pop1, Pjpm);
-				if (PjvnewRaw == (Pjv_t) NULL)
+				if (PjvnewRaw == 0)
 					FREEALLEXIT(ExpCnt, StageJP, Pjpm);
 
 				Pjvnew = P_JV(PjvnewRaw);
@@ -832,13 +921,18 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //				Copy to Values to Value Leaf
 				JU_COPYMEM(Pjvnew, Pjv + Start, Pop1);
 
-				PjpJP->jp_Addr = (Word_t) PjvnewRaw;
+				PjpJP->jp_Addr = PjvnewRaw;
 
 //				Copy to Index to JP as an immediate Leaf
+//		                j__udyCopyWto2(PjpJP->jp_LIndex2, StageA+Start, Pop1);
 				JU_COPYMEM(PjpJP->jp_LIndex2, StageA + Start, Pop1);
-#else // JUDY1
+#endif  // JUDYL
+
+#ifdef  JUDY1
+//		                j__udyCopyWto2(PjpJP->jp_1Index2, StageA+Start, Pop1);
 				JU_COPYMEM(PjpJP->jp_1Index2, StageA + Start, Pop1);
-#endif // JUDY1
+#endif  // JUDY1
+
 //				Set Type, Population and Index size
 				PjpJP->jp_Type = cJU_JPIMMED_2_02 + Pop1 - 2;
 			}
@@ -850,7 +944,9 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
                                 Word_t  DcdP0;
 				Pjll_t PjllRaw;	 // pointer to new leaf.
 				Pjll_t Pjll;
-		      JUDYLCODE(Pjv_t  Pjvnew;)	 // value area of new leaf.
+#ifdef  JUDYL
+		                Pjv_t  Pjvnew; 	 // value area of new leaf.
+#endif  // JUDYL
 
 				PjllRaw = j__udyAllocJLL2(Pop1, Pjpm);
 				if (PjllRaw == (Pjll_t) NULL)
@@ -863,10 +959,9 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 				JU_COPYMEM(Pjvnew, Pjv + Start, Pop1);
 #endif
 //				Copy least 2 bytes per Index of Leaf to new Leaf
+//		                j__udyCopyWto2(Pjll, StageA+Start, Pop1);
 				JU_COPYMEM((uint16_t *) Pjll, StageA+Start,
 					   Pop1);
-
-				DBGCODE(JudyCheckSorted(Pjll, Pop1, 2);)
 
                                 DcdP0 = (JU_JPDCDPOP0(Pjp) & cJU_DCDMASK(3)) 
                                                 |
@@ -888,6 +983,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 	}
 
 //      Now put all the Leaves below a BranchL or BranchB:
+//        printf("ExpCnt = %lu\n", ExpCnt);
 	if (ExpCnt <= cJU_BRANCHLMAXJPS) // put the Leaves below a BranchL
 	{
 	    if (j__udyCreateBranchL(Pjp, StageJP, StageExp, ExpCnt,
@@ -928,7 +1024,9 @@ FUNCTION int j__udyCascade4(
 	Word_t	   End, Start;	// temporaries.
 	Word_t	   ExpCnt;	// count of expanses of splay.
 	Word_t     CIndex;	// current Index word.
-JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
+#ifdef  JUDYL
+        Pjv_t	   Pjv; 	// value area of leaf.
+#endif  // JUDYL
 
 //	Temp staging for parts(Leaves) of newly splayed leaf
 	jp_t	   StageJP   [cJU_LEAF4_MAXPOP1];  // JPs of new leaves
@@ -940,6 +1038,10 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 	assert(JU_JPTYPE(Pjp) == cJU_JPLEAF4);
 	assert((JU_JPDCDPOP0(Pjp) & 0xFFFFFFFF) == (cJU_LEAF4_MAXPOP1-1));
 
+#ifdef  PCAS
+        printf("\n==================Cascade4()\n");
+#endif  // PCAS
+
 //	Get the address of the Leaf
 	PLeaf = (uint32_t *) P_JLL(Pjp->jp_Addr);
 
@@ -947,7 +1049,9 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 	j__udyCopy4toW(StageA, PLeaf, cJU_LEAF4_MAXPOP1);
 
 //	Get the address of the Leaf and Value area
-	JUDYLCODE(Pjv = JL_LEAF4VALUEAREA(PLeaf, cJU_LEAF4_MAXPOP1);)
+#ifdef  JUDYL
+	Pjv = JL_LEAF4VALUEAREA(PLeaf, cJU_LEAF4_MAXPOP1);
+#endif  // JUDYL
 
 //  If Leaf is in 1 expanse -- just compress it (compare 1st, last & Index)
 
@@ -957,7 +1061,9 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
                 Word_t DcdP0;
 		Pjll_t PjllRaw;	 // pointer to new leaf.
 		Pjll_t Pjll;
-      JUDYLCODE(Pjv_t  Pjvnew;)	 // value area of new Leaf.
+#ifdef  JUDYL
+                Pjv_t  Pjvnew;	 // value area of new Leaf.
+#endif  // JUDYL
 
 //		Alloc a 3 byte Index Leaf
 		PjllRaw = j__udyAllocJLL3(cJU_LEAF4_MAXPOP1, Pjpm);
@@ -972,8 +1078,6 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 		Pjvnew = JL_LEAF3VALUEAREA(Pjll, cJU_LEAF4_MAXPOP1);
 		JU_COPYMEM(Pjvnew, Pjv, cJU_LEAF4_MAXPOP1);
 #endif
-		DBGCODE(JudyCheckSorted(Pjll, cJU_LEAF4_MAXPOP1, 3);)
-
 	        DcdP0 = JU_JPDCDPOP0(Pjp) | (CIndex & cJU_DCDMASK(3));
                 JU_JPSETADT(Pjp, (Word_t)PjllRaw, DcdP0, cJU_JPLEAF3);
 
@@ -983,7 +1087,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //  Else in 2+ expanses, splay Leaf into smaller leaves at higher compression
 
 	StageJBB = StageJBBZero;       // zero staged bitmap branch
-	ZEROJP(SubJPCount);
+	ZEROJP(SubJPCount, cJU_NUMSUBEXPB);
 
 //	Splay the 4 byte index Leaf to 3 byte Index Leaves
 	for (ExpCnt = Start = 0, End = 1; ; End++)
@@ -1003,9 +1107,6 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //
 //                      set the bit that is the current expanse
 			JU_JBB_BITMAP(&StageJBB, subexp) |= JU_BITPOSMASKB(expanse);
-#ifdef SUBEXPCOUNTS
-			StageJBB.jbb_subPop1[subexp] += Pop1; // pop of subexpanse
-#endif
 //                      count number of expanses in each subexpanse
 			SubJPCount[subexp]++;
 
@@ -1032,25 +1133,27 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 
 #ifdef JUDYL
 //				Alloc is 1st in case of malloc fail
-				Pjv_t PjvnewRaw;  // value area of new leaf.
-				Pjv_t Pjvnew;
+				Word_t PjvnewRaw;  // value area of new leaf.
+				Pjv_t  Pjvnew;
 
 //				Allocate Value area for Immediate Leaf
 				PjvnewRaw = j__udyLAllocJV(Pop1, Pjpm);
-				if (PjvnewRaw == (Pjv_t) NULL)
+				if (PjvnewRaw == 0)
 					FREEALLEXIT(ExpCnt, StageJP, Pjpm);
 
 				Pjvnew = P_JV(PjvnewRaw);
 
 //				Copy to Values to Value Leaf
 				JU_COPYMEM(Pjvnew, Pjv + Start, Pop1);
-				PjpJP->jp_Addr = (Word_t) PjvnewRaw;
+				PjpJP->jp_Addr = PjvnewRaw;
 
 //				Copy to Index to JP as an immediate Leaf
-				j__udyCopyWto3(PjpJP->jp_LIndex1, StageA + Start, Pop1);
+				j__udyCopyWto3(PjpJP->jp_LIndex1,
+					       StageA + Start, Pop1);
 #else
-				j__udyCopyWto3(PjpJP->jp_1Index1, StageA + Start, Pop1);
-#endif
+				j__udyCopyWto3(PjpJP->jp_1Index1,
+					       StageA + Start, Pop1);
+#endif  // JUDY1
 //				Set type, population and Index size
 				PjpJP->jp_Type = cJU_JPIMMED_3_02 + Pop1 - 2;
 			}
@@ -1060,7 +1163,9 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
                                 Word_t  DcdP0;
 				Pjll_t PjllRaw;	 // pointer to new leaf.
 				Pjll_t Pjll;
-		      JUDYLCODE(Pjv_t  Pjvnew;)	 // value area of new leaf.
+#ifdef  JUDYL
+		                Pjv_t  Pjvnew;	 // value area of new leaf.
+#endif  // JUDYL
 
 				PjllRaw = j__udyAllocJLL3(Pop1, Pjpm);
 				if (PjllRaw == (Pjll_t)NULL)
@@ -1075,9 +1180,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //				Copy to Values to new Leaf
 				Pjvnew = JL_LEAF3VALUEAREA(Pjll, Pop1);
 				JU_COPYMEM(Pjvnew, Pjv + Start, Pop1);
-#endif
-				DBGCODE(JudyCheckSorted(Pjll, Pop1, 3);)
-
+#endif  // JUDYL
                                 DcdP0 = (JU_JPDCDPOP0(Pjp) & cJU_DCDMASK(4)) 
                                                 |
                                         (CIndex & cJU_DCDMASK(4-1)) 
@@ -1135,7 +1238,9 @@ FUNCTION int j__udyCascade5(
 	Word_t	   End, Start;	// temporaries.
 	Word_t	   ExpCnt;	// count of expanses of splay.
 	Word_t     CIndex;	// current Index word.
-JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
+#ifdef  JUDYL
+         Pjv_t	   Pjv; 	// value area of leaf.
+#endif  // JUDYL
 
 //	Temp staging for parts(Leaves) of newly splayed leaf
 	jp_t	   StageJP   [cJU_LEAF5_MAXPOP1];  // JPs of new leaves
@@ -1143,6 +1248,10 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 	uint8_t	   StageExp  [cJU_LEAF5_MAXPOP1];  // Expanses of new leaves
 	uint8_t	   SubJPCount[cJU_NUMSUBEXPB];     // JPs in each subexpanse
 	jbb_t      StageJBB;                       // staged bitmap branch
+
+#ifdef  PCAS
+        printf("\n==================Cascade5()\n");
+#endif  // PCAS
 
 	assert(JU_JPTYPE(Pjp) == cJU_JPLEAF5);
 	assert((JU_JPDCDPOP0(Pjp) & 0xFFFFFFFFFF) == (cJU_LEAF5_MAXPOP1-1));
@@ -1154,7 +1263,9 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 	j__udyCopy5toW(StageA, PLeaf, cJU_LEAF5_MAXPOP1);
 
 //	Get the address of the Leaf and Value area
-	JUDYLCODE(Pjv = JL_LEAF5VALUEAREA(PLeaf, cJU_LEAF5_MAXPOP1);)
+#ifdef  JUDYL
+	Pjv = JL_LEAF5VALUEAREA(PLeaf, cJU_LEAF5_MAXPOP1);
+#endif  // JUDYL
 
 //  If Leaf is in 1 expanse -- just compress it (compare 1st, last & Index)
 
@@ -1164,7 +1275,9 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
                 Word_t DcdP0;
 		Pjll_t PjllRaw;	 // pointer to new leaf.
 		Pjll_t Pjll;
-      JUDYLCODE(Pjv_t  Pjvnew;)	 // value area of new leaf.
+#ifdef  JUDYL
+                Pjv_t  Pjvnew;	 // value area of new leaf.
+#endif  // JUDYL
 
 //		Alloc a 4 byte Index Leaf
 		PjllRaw = j__udyAllocJLL4(cJU_LEAF5_MAXPOP1, Pjpm);
@@ -1173,13 +1286,12 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 		Pjll = P_JLL(PjllRaw);
 
 //		Copy Index area into new Leaf
-		j__udyCopyWto4((uint8_t *) Pjll, StageA, cJU_LEAF5_MAXPOP1);
+		j__udyCopyWto4((uint32_t *)Pjll, StageA, cJU_LEAF5_MAXPOP1);
 #ifdef JUDYL
 //		Copy Value area into new Leaf
 		Pjvnew = JL_LEAF4VALUEAREA(Pjll, cJU_LEAF5_MAXPOP1);
 		JU_COPYMEM(Pjvnew, Pjv, cJU_LEAF5_MAXPOP1);
 #endif
-		DBGCODE(JudyCheckSorted(Pjll, cJU_LEAF5_MAXPOP1, 4);)
 
 	        DcdP0 = JU_JPDCDPOP0(Pjp) | (CIndex & cJU_DCDMASK(4));
                 JU_JPSETADT(Pjp, (Word_t)PjllRaw, DcdP0, cJU_JPLEAF4);
@@ -1190,7 +1302,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //  Else in 2+ expanses, splay Leaf into smaller leaves at higher compression
 
 	StageJBB = StageJBBZero;       // zero staged bitmap branch
-	ZEROJP(SubJPCount);
+	ZEROJP(SubJPCount, cJU_NUMSUBEXPB);
 
 //	Splay the 5 byte index Leaf to 4 byte Index Leaves
 	for (ExpCnt = Start = 0, End = 1; ; End++)
@@ -1210,9 +1322,6 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //
 //                      set the bit that is the current expanse
 			JU_JBB_BITMAP(&StageJBB, subexp) |= JU_BITPOSMASKB(expanse);
-#ifdef SUBEXPCOUNTS
-			StageJBB.jbb_subPop1[subexp] += Pop1; // pop of subexpanse
-#endif
 //                      count number of expanses in each subexpanse
 			SubJPCount[subexp]++;
 
@@ -1231,25 +1340,30 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
                                 cJL_JPIMMED_4_01);
 #endif  // JUDYL
 			}
+#ifndef noIMMED37
 #ifdef JUDY1
 			else if (Pop1 <= cJ1_IMMED4_MAXPOP1)
 			{
 //		cJ1_JPIMMED_4_02..3: Judy1 64
 
 //                              Copy to Index to JP as an immediate Leaf
-				j__udyCopyWto4(PjpJP->jp_1Index1, StageA + Start, Pop1);
+				j__udyCopyWto4(PjpJP->jp_1Index4,
+					       StageA + Start, Pop1);
 
 //                              Set pointer, type, population and Index size
 				PjpJP->jp_Type = cJ1_JPIMMED_4_02 + Pop1 - 2;
 			}
-#endif
+#endif  // JUDY1
+#endif  // ! noIMMED37
 			else
 			{
 //		cJU_JPLEAF4
                                 Word_t  DcdP0;
 				Pjll_t PjllRaw;	 // pointer to new leaf.
 				Pjll_t Pjll;
-		      JUDYLCODE(Pjv_t  Pjvnew;)	 // value area of new leaf.
+#ifdef  JUDYL
+		                Pjv_t  Pjvnew; 	 // value area of new leaf.
+#endif  // JUDYL
 
 //				Get a new Leaf
 				PjllRaw = j__udyAllocJLL4(Pop1, Pjpm);
@@ -1259,14 +1373,13 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 				Pjll = P_JLL(PjllRaw);
 
 //				Copy Indexes to new Leaf
-				j__udyCopyWto4((uint8_t *) Pjll, StageA + Start,
+				j__udyCopyWto4((uint32_t *)Pjll, StageA + Start,
 					       Pop1);
 #ifdef JUDYL
 //				Copy to Values to new Leaf
 				Pjvnew = JL_LEAF4VALUEAREA(Pjll, Pop1);
 				JU_COPYMEM(Pjvnew, Pjv + Start, Pop1);
-#endif
-				DBGCODE(JudyCheckSorted(Pjll, Pop1, 4);)
+#endif  // JUDYL
 
                                 DcdP0 = (JU_JPDCDPOP0(Pjp) & cJU_DCDMASK(5)) 
                                                 |
@@ -1326,7 +1439,9 @@ FUNCTION int j__udyCascade6(
 	Word_t	   End, Start;	// temporaries.
 	Word_t	   ExpCnt;	// count of expanses of splay.
 	Word_t     CIndex;	// current Index word.
-JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
+#ifdef  JUDYL
+        Pjv_t	   Pjv;	        // value area of leaf.
+#endif  // JUDYL
 
 //	Temp staging for parts(Leaves) of newly splayed leaf
 	jp_t	   StageJP   [cJU_LEAF6_MAXPOP1];  // JPs of new leaves
@@ -1334,6 +1449,10 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 	uint8_t	   StageExp  [cJU_LEAF6_MAXPOP1];  // Expanses of new leaves
 	uint8_t	   SubJPCount[cJU_NUMSUBEXPB];     // JPs in each subexpanse
 	jbb_t      StageJBB;                       // staged bitmap branch
+
+#ifdef  PCAS
+        printf("\n==================Cascade6()\n");
+#endif  // PCAS
 
 	assert(JU_JPTYPE(Pjp) == cJU_JPLEAF6);
 	assert((JU_JPDCDPOP0(Pjp) & 0xFFFFFFFFFFFF) == (cJU_LEAF6_MAXPOP1-1));
@@ -1345,7 +1464,9 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 	j__udyCopy6toW(StageA, PLeaf, cJU_LEAF6_MAXPOP1);
 
 //	Get the address of the Leaf and Value area
-	JUDYLCODE(Pjv = JL_LEAF6VALUEAREA(PLeaf, cJU_LEAF6_MAXPOP1);)
+#ifdef  JUDYL
+	Pjv = JL_LEAF6VALUEAREA(PLeaf, cJU_LEAF6_MAXPOP1);
+#endif  // JUDYL
 
 //  If Leaf is in 1 expanse -- just compress it (compare 1st, last & Index)
 
@@ -1355,7 +1476,9 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
                 Word_t DcdP0;
 		Pjll_t PjllRaw;	 // pointer to new leaf.
 		Pjll_t Pjll;
-      JUDYLCODE(Pjv_t  Pjvnew;)	 // value area of new leaf.
+#ifdef  JUDYL
+                Pjv_t  Pjvnew; 	 // value area of new leaf.
+#endif  // JUDYL
 
 //		Alloc a 5 byte Index Leaf
 		PjllRaw = j__udyAllocJLL5(cJU_LEAF6_MAXPOP1, Pjpm);
@@ -1369,9 +1492,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //		Copy Value area into new Leaf
 		Pjvnew = JL_LEAF5VALUEAREA(Pjll, cJU_LEAF6_MAXPOP1);
 		JU_COPYMEM(Pjvnew, Pjv, cJU_LEAF6_MAXPOP1);
-#endif
-		DBGCODE(JudyCheckSorted(Pjll, cJU_LEAF6_MAXPOP1, 5);)
-
+#endif  // JUDYL
 	        DcdP0 = JU_JPDCDPOP0(Pjp) | (CIndex & cJU_DCDMASK(5));
                 JU_JPSETADT(Pjp, (Word_t)PjllRaw, DcdP0, cJU_JPLEAF5);
 
@@ -1381,7 +1502,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //  Else in 2+ expanses, splay Leaf into smaller leaves at higher compression
 
 	StageJBB = StageJBBZero;       // zero staged bitmap branch
-	ZEROJP(SubJPCount);
+	ZEROJP(SubJPCount, cJU_NUMSUBEXPB);
 
 //	Splay the 6 byte index Leaf to 5 byte Index Leaves
 	for (ExpCnt = Start = 0, End = 1; ; End++)
@@ -1401,9 +1522,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //
 //                      set the bit that is the current expanse
 			JU_JBB_BITMAP(&StageJBB, subexp) |= JU_BITPOSMASKB(expanse);
-#ifdef SUBEXPCOUNTS
-			StageJBB.jbb_subPop1[subexp] += Pop1; // pop of subexpanse
-#endif
+
 //                      count number of expanses in each subexpanse
 			SubJPCount[subexp]++;
 
@@ -1428,19 +1547,22 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //		cJ1_JPIMMED_5_02..3: Judy1 64
 
 //                              Copy to Index to JP as an immediate Leaf
-				j__udyCopyWto5(PjpJP->jp_1Index1, StageA + Start, Pop1);
+				j__udyCopyWto5(PjpJP->jp_1Index1,
+					       StageA + Start, Pop1);
 
 //                              Set pointer, type, population and Index size
 				PjpJP->jp_Type = cJ1_JPIMMED_5_02 + Pop1 - 2;
 			}
-#endif
+#endif  // JUDY1
 			else
 			{
 //		cJU_JPLEAF5
                                 Word_t  DcdP0;
 				Pjll_t PjllRaw;	 // pointer to new leaf.
 				Pjll_t Pjll;
-		      JUDYLCODE(Pjv_t  Pjvnew;)	 // value area of new leaf.
+#ifdef  JUDYL
+		                Pjv_t  Pjvnew; 	 // value area of new leaf.
+#endif  // JUDYL
 
 //				Get a new Leaf
 				PjllRaw = j__udyAllocJLL5(Pop1, Pjpm);
@@ -1457,8 +1579,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 #ifdef JUDYL
 				Pjvnew = JL_LEAF5VALUEAREA(Pjll, Pop1);
 				JU_COPYMEM(Pjvnew, Pjv + Start, Pop1);
-#endif
-				DBGCODE(JudyCheckSorted(Pjll, Pop1, 5);)
+#endif  // JUDYL
 
                                 DcdP0 = (JU_JPDCDPOP0(Pjp) & cJU_DCDMASK(6)) 
                                                 |
@@ -1518,7 +1639,9 @@ FUNCTION int j__udyCascade7(
 	Word_t	   End, Start;	// temporaries.
 	Word_t	   ExpCnt;	// count of expanses of splay.
 	Word_t     CIndex;	// current Index word.
-JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
+#ifdef  JUDYL
+        Pjv_t	   Pjv; 	// value area of leaf.
+#endif  // JUDYL
 
 //	Temp staging for parts(Leaves) of newly splayed leaf
 	jp_t	   StageJP   [cJU_LEAF7_MAXPOP1];  // JPs of new leaves
@@ -1530,6 +1653,10 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 	assert(JU_JPTYPE(Pjp) == cJU_JPLEAF7);
 	assert(JU_JPDCDPOP0(Pjp) == (cJU_LEAF7_MAXPOP1-1));
 
+#ifdef  PCAS
+        printf("\n==================Cascade7()\n");
+#endif  // PCAS
+
 //	Get the address of the Leaf
 	PLeaf = (uint8_t *) P_JLL(Pjp->jp_Addr);
 
@@ -1537,7 +1664,9 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 	j__udyCopy7toW(StageA, PLeaf, cJU_LEAF7_MAXPOP1);
 
 //	Get the address of the Leaf and Value area
-	JUDYLCODE(Pjv = JL_LEAF7VALUEAREA(PLeaf, cJU_LEAF7_MAXPOP1);)
+#ifdef  JUDYL
+	Pjv = JL_LEAF7VALUEAREA(PLeaf, cJU_LEAF7_MAXPOP1);
+#endif  // JUDYL
 
 //  If Leaf is in 1 expanse -- just compress it (compare 1st, last & Index)
 
@@ -1547,7 +1676,9 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
                 Word_t DcdP0;
 		Pjll_t PjllRaw;	 // pointer to new leaf.
 		Pjll_t Pjll;
-      JUDYLCODE(Pjv_t  Pjvnew;)	 // value area of new leaf.
+#ifdef  JUDYL
+                Pjv_t  Pjvnew; 	 // value area of new leaf.
+#endif  // JUDYL
 
 //		Alloc a 6 byte Index Leaf
 		PjllRaw = j__udyAllocJLL6(cJU_LEAF7_MAXPOP1, Pjpm);
@@ -1562,7 +1693,6 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 		Pjvnew = JL_LEAF6VALUEAREA(Pjll, cJU_LEAF7_MAXPOP1);
 		JU_COPYMEM(Pjvnew, Pjv, cJU_LEAF7_MAXPOP1);
 #endif
-		DBGCODE(JudyCheckSorted(Pjll, cJU_LEAF7_MAXPOP1, 6);)
 
 	        DcdP0 = JU_JPDCDPOP0(Pjp) | (CIndex & cJU_DCDMASK(6));
                 JU_JPSETADT(Pjp, (Word_t)PjllRaw, DcdP0, cJU_JPLEAF6);
@@ -1573,7 +1703,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //  Else in 2+ expanses, splay Leaf into smaller leaves at higher compression
 
 	StageJBB = StageJBBZero;       // zero staged bitmap branch
-	ZEROJP(SubJPCount);
+	ZEROJP(SubJPCount, cJU_NUMSUBEXPB);
 
 //	Splay the 7 byte index Leaf to 6 byte Index Leaves
 	for (ExpCnt = Start = 0, End = 1; ; End++)
@@ -1614,25 +1744,30 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
                                 cJL_JPIMMED_6_01);
 #endif  // JUDYL
 			}
+#ifndef noIMMED37
 #ifdef JUDY1
 			else if (Pop1 == cJ1_IMMED6_MAXPOP1)
 			{
 //		cJ1_JPIMMED_6_02:    Judy1 64
 
 //                              Copy to Index to JP as an immediate Leaf
-				j__udyCopyWto6(PjpJP->jp_1Index1, StageA + Start, 2);
+				j__udyCopyWto6(PjpJP->jp_1Index1,
+					       StageA + Start, 2);
 
 //                              Set pointer, type, population and Index size
 				PjpJP->jp_Type = cJ1_JPIMMED_6_02;
 			}
-#endif
+#endif  // JUDY1
+#endif // ! noIMMED37
 			else
 			{
 //		cJU_JPLEAF6
                                 Word_t  DcdP0;
 				Pjll_t PjllRaw;	 // pointer to new leaf.
 				Pjll_t Pjll;
-		      JUDYLCODE(Pjv_t  Pjvnew;)	 // value area of new leaf.
+#ifdef  JUDYL
+		                Pjv_t  Pjvnew; 	 // value area of new leaf.
+#endif  // JUDYL
 
 //				Get a new Leaf
 				PjllRaw = j__udyAllocJLL6(Pop1, Pjpm);
@@ -1648,7 +1783,6 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 				Pjvnew = JL_LEAF6VALUEAREA(Pjll, Pop1);
 				JU_COPYMEM(Pjvnew, Pjv + Start, Pop1);
 #endif
-				DBGCODE(JudyCheckSorted(Pjll, Pop1, 6);)
 
                                 DcdP0 = (JU_JPDCDPOP0(Pjp) & cJU_DCDMASK(7)) 
                                                 |
@@ -1713,7 +1847,9 @@ FUNCTION int j__udyCascadeL(
 	Word_t	   End, Start;	// temporaries.
 	Word_t	   ExpCnt;	// count of expanses of splay.
 	Word_t	   CIndex;	// current Index word.
-JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
+#ifdef  JUDYL
+        Pjv_t	   Pjv; 	// value area of leaf.
+#endif  // JUDYL
 
 //	Temp staging for parts(Leaves) of newly splayed leaf
 	jp_t	StageJP [cJU_LEAFW_MAXPOP1];
@@ -1721,13 +1857,19 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 	uint8_t	   SubJPCount[cJU_NUMSUBEXPB];     // JPs in each subexpanse
 	jbb_t      StageJBB;                       // staged bitmap branch
 
+#ifdef  PCAS
+        printf("\n==================CascadeL()\n");
+#endif  // PCAS
+
 //	Get the address of the Leaf
 	Pjlw = P_JLW(Pjp->jp_Addr);
 
 	assert(Pjlw[0] == (cJU_LEAFW_MAXPOP1 - 1));
 
 //	Get pointer to Value area of old Leaf
-	JUDYLCODE(Pjv = JL_LEAFWVALUEAREA(Pjlw, cJU_LEAFW_MAXPOP1);)
+#ifdef  JUDYL
+	Pjv = JL_LEAFWVALUEAREA(Pjlw, cJU_LEAFW_MAXPOP1);
+#endif  // JUDYL
 
 	Pjlw++;		// Now point to Index area
 
@@ -1739,7 +1881,9 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 	{
 		Pjll_t PjllRaw;		// pointer to new leaf.
 		Pjll_t Pjll;
-      JUDYLCODE(Pjv_t  Pjvnew;)		// value area of new leaf.
+#ifdef  JUDYL
+                Pjv_t  Pjvnew; 		// value area of new leaf.
+#endif  // JUDYL
 
 //		Get the common expanse to all elements in Leaf
 		StageExp[0] = JU_DIGITATSTATE(CIndex, cJU_ROOTSTATE);
@@ -1758,7 +1902,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 		Pjvnew = JL_LEAF7VALUEAREA(Pjll, cJU_LEAFW_MAXPOP1);
 		JU_COPYMEM(Pjvnew, Pjv, cJU_LEAFW_MAXPOP1);
 #endif
-		DBGCODE(JudyCheckSorted(Pjll, cJU_LEAFW_MAXPOP1, 7);)
+
 #else // 32 Bit
 		PjllRaw	= j__udyAllocJLL3(cJU_LEAFW_MAXPOP1, Pjpm);
 		if (PjllRaw == (Pjll_t) NULL) return(-1);
@@ -1772,7 +1916,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 		Pjvnew = JL_LEAF3VALUEAREA(Pjll, cJU_LEAFW_MAXPOP1);
 		JU_COPYMEM(Pjvnew, Pjv, cJU_LEAFW_MAXPOP1);
 #endif
-		DBGCODE(JudyCheckSorted(Pjll, cJU_LEAFW_MAXPOP1, 3);)
+
 #endif  // 32 Bit
 
 //		Following not needed because cJU_DCDMASK(3[7]) is == 0
@@ -1797,7 +1941,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 //  Else in 2+ expanses, splay Leaf into smaller leaves at higher compression
 
 	StageJBB = StageJBBZero;       // zero staged bitmap branch
-	ZEROJP(SubJPCount);
+	ZEROJP(SubJPCount, cJU_NUMSUBEXPB);
 
 //	Splay the 4[8] byte Index Leaf to 3[7] byte Index Leaves
 	for (ExpCnt = Start = 0, End = 1; ; End++)
@@ -1846,6 +1990,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 #endif  // JUDYL
 #endif  // JU_32BIT
 			}
+#ifndef noIMMED37
 #ifdef JUDY1
 #ifdef  JU_64BIT
 			else if (Pop1 <= cJ1_IMMED7_MAXPOP1)
@@ -1859,18 +2004,22 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 #ifdef  JU_64BIT
 				j__udyCopyWto7(PjpJP->jp_1Index1, Pjlw+Start, 2);
 				PjpJP->jp_Type = cJ1_JPIMMED_7_02;
-#else
+#else   // JU_32BIT
 				j__udyCopyWto3(PjpJP->jp_1Index1, Pjlw+Start, 2);
 				PjpJP->jp_Type = cJ1_JPIMMED_3_02;
-#endif // 32 Bit
+#endif  // 32 Bit
 			}
-#endif // JUDY1
+#endif  // JUDY1
+#endif  // ! noIMMED37
+
 			else // Linear Leaf JPLEAF3[7]
 			{
 //		cJU_JPLEAF3[7]
 				Pjll_t PjllRaw;	 // pointer to new leaf.
 				Pjll_t Pjll;
-		      JUDYLCODE(Pjv_t  Pjvnew;)	 // value area of new leaf.
+#ifdef  JUDYL
+		                Pjv_t  Pjvnew; 	 // value area of new leaf.
+#endif  // JUDYL
 #ifdef JU_64BIT
 				PjllRaw = j__udyAllocJLL7(Pop1, Pjpm);
 				if (PjllRaw == (Pjll_t) NULL) return(-1);
@@ -1882,7 +2031,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 				Pjvnew = JL_LEAF7VALUEAREA(Pjll, Pop1);
 				JU_COPYMEM(Pjvnew, Pjv + Start, Pop1);
 #endif // JUDYL
-				DBGCODE(JudyCheckSorted(Pjll, Pop1, 7);)
+
 #else // JU_64BIT - 32 Bit
 				PjllRaw = j__udyAllocJLL3(Pop1, Pjpm);
 				if (PjllRaw == (Pjll_t) NULL) return(-1);
@@ -1894,7 +2043,7 @@ JUDYLCODE(Pjv_t	   Pjv;)	// value area of leaf.
 				Pjvnew = JL_LEAF3VALUEAREA(Pjll, Pop1);
 				JU_COPYMEM(Pjvnew, Pjv + Start, Pop1);
 #endif // JUDYL
-				DBGCODE(JudyCheckSorted(Pjll, Pop1, 3);)
+
 #endif // 32 Bit
 
 #ifdef JU_64BIT

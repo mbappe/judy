@@ -30,8 +30,8 @@
 // file for profiling reasons (to prevent inlining), but which potentially
 // could be merged with this file, either in SoftCM or at compile-time.
 
-#if (! (defined(JUDY1) || defined(JUDYL)))
-#error:  One of -DJUDY1 or -DJUDYL must be specified.
+#if (defined(JUDY1) == defined(JUDYL))
+#error:  EXACTLY one of -DJUDY1 and -DJUDYL must be specified.
 #endif
 
 #ifdef JUDY1
@@ -42,7 +42,7 @@
 
 #include "JudyPrivate1L.h"
 
-#ifdef TRACEJP
+#ifdef TRACEJPI
 #include "JudyPrintJP.c"
 #endif
 
@@ -125,7 +125,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
 
   ContinueInsWalk:                     // for modifying state without recursing.
 
-#ifdef TRACEJP
+#ifdef TRACEJPI
         JudyPrintJP(Pjp, "i", __LINE__);
 #endif
 
@@ -357,30 +357,60 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
         digit = JU_DIGITATSTATE(Index, cJU_ROOTSTATE);
         exppop1 = Pjpm->jpm_Pop0;
         // fall through:
+
 // COMMON CODE FOR BITMAP BRANCHES:
 //
 // Come here with digit and exppop1 already set.
-      JudyBranchB:
-// If population increment is greater than..  (300):
-        if ((Pjpm->jpm_Pop0 - Pjpm->jpm_LastUPop0) > JU_BTOU_POP_INCREMENT)
-        {
-// If total population of array is greater than..  (750):
-            if (Pjpm->jpm_Pop0 > JU_BRANCHB_MAX_POP)
+
+JudyBranchB:
+
+#ifdef noB
+//           Convert branchB to branchU
+             if (j__udyCreateBranchU(Pjp, Pjpm) == -1) return(-1);
+                goto ContinueInsWalk;
+#endif  // noB
+
+#ifndef  noU
+
+#ifndef  noINC
+//          If population increment is greater than..  (150):
+            if ((Pjpm->jpm_Pop0 - Pjpm->jpm_LastUPop0) > JU_BTOU_POP_INCREMENT)
+#endif  // noINC
+
             {
-// If population under the branch is greater than..  (135):
-                if (exppop1 > JU_BRANCHB_MIN_POP)
+
+// If total array efficency is greater than 3 words per Key, then convert
+
+#ifdef  JUDYL
+                if (((Pjpm->jpm_TotalMemWords + 512) * 100 / Pjpm->jpm_Pop0) < 300)
+#endif  // JUDYL
+
+#ifdef  JUDY1
+// If total array efficency is greater than 2 words per Key, then convert
+                if (((Pjpm->jpm_TotalMemWords + 512) * 100 / Pjpm->jpm_Pop0) < 200)
+#endif  // JUDY1
                 {
-                    if (j__udyCreateBranchU(Pjp, Pjpm) == -1)
-                        return (-1);
+
+// If population under the branch is greater than..  (135):
+
+//                    if (exppop1 > JU_BRANCHB_MIN_POP)
+//                    {
+                        if (j__udyCreateBranchU(Pjp, Pjpm) == -1) return(-1);
+
 // Save global population of last BranchU conversion:
-                    Pjpm->jpm_LastUPop0 = Pjpm->jpm_Pop0;
-                    goto ContinueInsWalk;
+
+                        Pjpm->jpm_LastUPop0 = Pjpm->jpm_Pop0;
+
+                        goto ContinueInsWalk;
+//                    }
                 }
             }
-        }
+#endif  // ! noU
+
 // CONTINUE TO USE BRANCHB:
 //
 // Get pointer to bitmap branch (JBB):
+
         PjbbRaw = (Pjbb_t) (Pjp->jp_Addr);
         Pjbb = P_JBB(PjbbRaw);
 // Form the Int32 offset, and Bit offset values:
@@ -567,7 +597,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
         {
             if ((offset) >= 0)
             {
-                (Pjpm)->jpm_PValue = (Pjv) + (offset);
+                Pjpm->jpm_PValue = (Pjv) + (offset);
                 return (0);
             }
             (offset) = ~(offset);
@@ -627,7 +657,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
             if ((offset) >= 0)
             {
 #ifdef JUDYL
-                (Pjpm)->jpm_PValue = (Pjv) + (offset);
+                Pjpm->jpm_PValue = (Pjv) + (offset);
 #endif /* JUDYL */
                 return (0);
             }
@@ -689,7 +719,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
             if ((offset) >= 0)
             {
 #ifdef JUDYL
-                (Pjpm)->jpm_PValue = (Pjv) + (offset);
+                Pjpm->jpm_PValue = (Pjv) + (offset);
 #endif /* JUDYL */
                 return (0);
             }
@@ -751,7 +781,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
             if ((offset) >= 0)
             {
 #ifdef JUDYL
-                (Pjpm)->jpm_PValue = (Pjv) + (offset);
+                Pjpm->jpm_PValue = (Pjv) + (offset);
 #endif /* JUDYL */
                 return (0);
             }
@@ -813,7 +843,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
             if ((offset) >= 0)
             {
 #ifdef JUDYL
-                (Pjpm)->jpm_PValue = (Pjv) + (offset);
+                Pjpm->jpm_PValue = (Pjv) + (offset);
 #endif /* JUDYL */
                 return (0);
             }
@@ -874,7 +904,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
         if ((offset) >= 0)
         {
 #ifdef JUDYL
-            (Pjpm)->jpm_PValue = (Pjv) + (offset);
+            Pjpm->jpm_PValue = (Pjv) + (offset);
 #endif /* JUDYL */
             return (0);
         }
@@ -935,7 +965,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
             if ((offset) >= 0)
             {
 #ifdef JUDYL
-                (Pjpm)->jpm_PValue = (Pjv) + (offset);
+                Pjpm->jpm_PValue = (Pjv) + (offset);
 #endif /* JUDYL */
                 return (0);
             }
@@ -1681,7 +1711,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
             if ((offset) >= 0)
             {
 #ifdef JUDYL
-                (Pjpm)->jpm_PValue = (Pjv) + (offset);
+                Pjpm->jpm_PValue = (Pjv) + (offset);
 #endif /* JUDYL */
                 return (0);
             }
@@ -1740,7 +1770,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
             if ((offset) >= 0)
             {
 #ifdef JUDYL
-                (Pjpm)->jpm_PValue = (Pjv) + (offset);
+                Pjpm->jpm_PValue = (Pjv) + (offset);
 #endif /* JUDYL */
                 return (0);
             }
@@ -1801,17 +1831,17 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
 #endif /* JUDYL */
         exppop1 = JU_JPTYPE(Pjp) - (cJU_JPIMMED_2_02) + 2;
 #ifdef JUDYL
-        offset = j__udySearchLeaf2((Pjll_t) Pjp->jp_LIndex1, exppop1, Index);
+        offset = j__udySearchLeaf2(Pjp->jp_LIndex2, exppop1, Index);
         PjvRaw = (Pjv_t) (Pjp->jp_Addr);
         Pjv = P_JV(PjvRaw);
 #else /* JUDY1 */
-        offset = j__udySearchLeaf2((Pjll_t) Pjp->jp_1Index2, exppop1, Index);
+        offset = j__udySearchLeaf2(Pjp->jp_1Index2, exppop1, Index);
 #endif /* JUDY1 */
         {
             if ((offset) >= 0)
             {
 #ifdef JUDYL
-                (Pjpm)->jpm_PValue = (Pjv) + (offset);
+                Pjpm->jpm_PValue = (Pjv) + (offset);
 #endif /* JUDYL */
                 return (0);
             }
@@ -1850,19 +1880,19 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
         Pjv_t     Pjvnew;
         PjvRaw = (Pjv_t) (Pjp->jp_Addr);
         Pjv = P_JV(PjvRaw);
-        offset = j__udySearchLeaf2((Pjll_t) Pjp->jp_LIndex2, (3), Index);
+        offset = j__udySearchLeaf2(Pjp->jp_LIndex2, 3, Index);
 #else /* JUDY1 */
-        offset = j__udySearchLeaf2((Pjll_t) Pjp->jp_1Index2, (7), Index);
+        offset = j__udySearchLeaf2(Pjp->jp_1Index2, 7, Index);
 #endif /* JUDY1 */
         {
             if ((offset) >= 0)
             {
 #ifdef JUDYL
-                (Pjpm)->jpm_PValue = (Pjv) + (offset);
+                Pjpm->jpm_PValue = Pjv + offset;
 #endif /* JUDYL */
                 return (0);
             }
-            (offset) = ~(offset);
+            offset = ~offset;
         }
 #ifdef JUDYL
         if ((PjllRaw = j__udyAllocJLL2((3) + 1, Pjpm)) == 0)
@@ -1898,7 +1928,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
         uint8_t  *Pjll;
         int       offset;
         exppop1 = JU_JPTYPE(Pjp) - (cJU_JPIMMED_3_02) + 2;
-        offset = j__udySearchLeaf3((Pjll_t) Pjp->jp_1Index1, exppop1, Index);
+        offset = j__udySearchLeaf3(Pjp->jp_1Index1, exppop1, Index);
         {
             if ((offset) >= 0)
                 return (0);
@@ -1922,15 +1952,15 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
         Pjv_t     Pjvnew;
         PjvRaw = (Pjv_t) (Pjp->jp_Addr);
         Pjv = P_JV(PjvRaw);
-        offset = j__udySearchLeaf3((Pjll_t) Pjp->jp_LIndex1, (2), Index);
+        offset = j__udySearchLeaf3(Pjp->jp_LIndex1, (2), Index);
 #else /* JUDY1 */
-        offset = j__udySearchLeaf3((Pjll_t) Pjp->jp_1Index1, (5), Index);
+        offset = j__udySearchLeaf3(Pjp->jp_1Index1, (5), Index);
 #endif /* JUDY1 */
         {
             if ((offset) >= 0)
             {
 #ifdef JUDYL
-                (Pjpm)->jpm_PValue = (Pjv) + (offset);
+                Pjpm->jpm_PValue = (Pjv) + (offset);
 #endif /* JUDYL */
                 return (0);
             }
@@ -1970,7 +2000,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
         uint32_t *Pjll;
         int       offset;
         exppop1 = JU_JPTYPE(Pjp) - (cJ1_JPIMMED_4_02) + 2;
-        offset = j__udySearchLeaf4((Pjll_t) Pjp->jp_1Index4, exppop1, Index);
+        offset = j__udySearchLeaf4(Pjp->jp_1Index4, exppop1, Index);
         {
             if ((offset) >= 0)
                 return (0);
@@ -1987,7 +2017,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
         Pjll_t    PjllRaw;
         Pjll_t    Pjll;
         int       offset;
-        offset = j__udySearchLeaf4((Pjll_t) Pjp->jp_1Index4, (3), Index);
+        offset = j__udySearchLeaf4(Pjp->jp_1Index4, (3), Index);
         {
             if ((offset) >= 0)
                 return (0);
@@ -2134,6 +2164,15 @@ FUNCTION int Judy1Set(PPvoid_t PPArray, // in which to insert.
     Pjpm_t    Pjpm;                     // array-global info.
     int       offset;                   // position in which to store new Index.
     Pjlw_t    Pjlw;
+
+#ifdef  TRACEJPI
+#ifdef JUDY1
+    printf("\nJudy1Set, Index = 0x%lx\n", (unsigned long)Index);
+#else /* JUDYL */
+    printf("\nJudyLIns, Index = 0x%lx\n", (unsigned long)Index);
+#endif /* JUDYL */
+#endif  // TRACEJPI
+
 // CHECK FOR NULL POINTER (error by caller):
     if (PPArray == (PPvoid_t) NULL)
     {
@@ -2307,7 +2346,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
 
   ContinueInsWalk:                     // for modifying state without recursing.
 
-#ifdef TRACEJP
+#ifdef TRACEJPI
         JudyPrintJP(Pjp, "i", __LINE__);
 #endif
 
@@ -2487,27 +2526,56 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
         digit = JU_DIGITATSTATE(Index, cJU_ROOTSTATE);
         exppop1 = Pjpm->jpm_Pop0;
         // fall through:
+
 // COMMON CODE FOR BITMAP BRANCHES:
 //
 // Come here with digit and exppop1 already set.
-      JudyBranchB:
-// If population increment is greater than..  (300):
-        if ((Pjpm->jpm_Pop0 - Pjpm->jpm_LastUPop0) > JU_BTOU_POP_INCREMENT)
-        {
-// If total population of array is greater than..  (750):
-            if (Pjpm->jpm_Pop0 > JU_BRANCHB_MAX_POP)
+
+JudyBranchB:
+
+#ifdef noB
+//           Convert branchB to branchU
+             if (j__udyCreateBranchU(Pjp, Pjpm) == -1) return(-1);
+                goto ContinueInsWalk;
+#endif  // noB
+
+#ifndef  noU
+
+#ifndef  noINC
+//          If population increment is greater than..  (150):
+            if ((Pjpm->jpm_Pop0 - Pjpm->jpm_LastUPop0) > JU_BTOU_POP_INCREMENT)
+#endif  // noINC
+
             {
-// If population under the branch is greater than..  (135):
-                if (exppop1 > JU_BRANCHB_MIN_POP)
+
+// If total array efficency is greater than 3 words per Key, then convert
+
+#ifdef  JUDYL
+                if (((Pjpm->jpm_TotalMemWords + 512) * 100 / Pjpm->jpm_Pop0) < 300)
+#endif  // JUDYL
+
+#ifdef  JUDY1
+// If total array efficency is greater than 2 words per Key, then convert
+                if (((Pjpm->jpm_TotalMemWords + 512) * 100 / Pjpm->jpm_Pop0) < 200)
+#endif  // JUDY1
                 {
-                    if (j__udyCreateBranchU(Pjp, Pjpm) == -1)
-                        return (-1);
+
+// If population under the branch is greater than..  (135):
+
+//                    if (exppop1 > JU_BRANCHB_MIN_POP)
+//                    {
+                        if (j__udyCreateBranchU(Pjp, Pjpm) == -1) return(-1);
+
 // Save global population of last BranchU conversion:
-                    Pjpm->jpm_LastUPop0 = Pjpm->jpm_Pop0;
-                    goto ContinueInsWalk;
+
+                        Pjpm->jpm_LastUPop0 = Pjpm->jpm_Pop0;
+
+                        goto ContinueInsWalk;
+//                    }
                 }
             }
-        }
+#endif  // ! noU
+
 // CONTINUE TO USE BRANCHB:
 //
 // Get pointer to bitmap branch (JBB):
@@ -2665,7 +2733,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
             if ((offset) >= 0)
             {
 #ifdef JUDYL
-                (Pjpm)->jpm_PValue = (Pjv) + (offset);
+                Pjpm->jpm_PValue = (Pjv) + (offset);
 #endif /* JUDYL */
                 return (0);
             }
@@ -2727,7 +2795,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
             if ((offset) >= 0)
             {
 #ifdef JUDYL
-                (Pjpm)->jpm_PValue = (Pjv) + (offset);
+                Pjpm->jpm_PValue = (Pjv) + (offset);
 #endif /* JUDYL */
                 return (0);
             }
@@ -2789,7 +2857,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
             if ((offset) >= 0)
             {
 #ifdef JUDYL
-                (Pjpm)->jpm_PValue = (Pjv) + (offset);
+                Pjpm->jpm_PValue = (Pjv) + (offset);
 #endif /* JUDYL */
                 return (0);
             }
@@ -3270,9 +3338,9 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
 #endif /* JUDYL */
         exppop1 = JU_JPTYPE(Pjp) - (cJU_JPIMMED_1_02) + 2;
 #ifdef JUDY1
-        offset = j__udySearchLeaf1((Pjll_t) Pjp->jp_1Index1, exppop1, Index);
+        offset = j__udySearchLeaf1(Pjp->jp_1Index1, exppop1, Index);
 #else /* JUDYL */
-        offset = j__udySearchLeaf1((Pjll_t) Pjp->jp_LIndex1, exppop1, Index);
+        offset = j__udySearchLeaf1(Pjp->jp_LIndex1, exppop1, Index);
         PjvRaw = (Pjv_t) (Pjp->jp_Addr);
         Pjv = P_JV(PjvRaw);
 #endif /* JUDYL */
@@ -3280,7 +3348,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
             if ((offset) >= 0)
             {
 #ifdef JUDYL
-                (Pjpm)->jpm_PValue = (Pjv) + (offset);
+                Pjpm->jpm_PValue = (Pjv) + (offset);
 #endif /* JUDYL */
                 return (0);
             }
@@ -3317,20 +3385,20 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
         Pjll_t    Pjll;
         int       offset;
 #ifdef JUDY1
-        offset = j__udySearchLeaf1((Pjll_t) Pjp->jp_1Index1, (7), Index);
+        offset = j__udySearchLeaf1(Pjp->jp_1Index1, (7), Index);
 #else /* JUDYL */
         Pjv_t     PjvRaw;
         Pjv_t     Pjv;
         Pjv_t     Pjvnew;
         PjvRaw = (Pjv_t) (Pjp->jp_Addr);
         Pjv = P_JV(PjvRaw);
-        offset = j__udySearchLeaf1((Pjll_t) Pjp->jp_LIndex1, (3), Index);
+        offset = j__udySearchLeaf1(Pjp->jp_LIndex1, (3), Index);
 #endif /* JUDYL */
         {
             if ((offset) >= 0)
             {
 #ifdef JUDYL
-                (Pjpm)->jpm_PValue = (Pjv) + (offset);
+                Pjpm->jpm_PValue = (Pjv) + (offset);
 #endif /* JUDYL */
                 return (0);
             }
@@ -3411,7 +3479,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
         Pjll_t    PjllRaw;
         Pjll_t    Pjll;
         int       offset;
-        offset = j__udySearchLeaf3((Pjll_t) Pjp->jp_1Index1, (2), Index);
+        offset = j__udySearchLeaf3(Pjp->jp_1Index1, (2), Index);
         {
             if ((offset) >= 0)
                 return (0);

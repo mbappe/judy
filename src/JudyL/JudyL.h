@@ -257,15 +257,26 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 
 
 // MAXIMUM POPULATIONS OF LINEAR LEAVES:
+// Note: Current malloc() uses a min of 4 words per allocation!.  This
+// means the 1,2,3 words malloced use the same amount of mmaped memory.
+// Also 2048 words is same as 2063 words and 1024 is same as 1027.
 
-#ifndef JU_64BIT // 32-bit
 
-#define J_L_MAXB                (sizeof(Word_t) * 64)
-#define ALLOCSIZES { 3, 5, 7, 11, 15, 23, 32, 47, 64, TERMINATOR } // in words.
-#define cJL_LEAF1_MAXWORDS               (32)   // max Leaf1 size in words.
+#define J_L_MAXB                (sizeof(Word_t) * 109) 
+//#define ALLOCSIZES { 3, 5, 7, 9, 11, 15, 23, 33, 47, 65, 95, 129, TERMINATOR } // in words.
 
-// Note:  cJL_LEAF1_MAXPOP1 is chosen such that the index portion is less than
-// 32 bytes -- the number of bytes the index takes in a bitmap leaf.
+
+//#define J_L_MAXB                (sizeof(Word_t) * 255)
+#define ALLOCSIZES { 1, 3, 5, 9, 15, 25, 41, 67, 109, 177, 255, TERMINATOR }
+
+//#define ALLOCSIZES { 1, 3, 5, 9, 15, 25, 41, 49, 57, 65, 109, 177, 255, TERMINATOR }
+//#define ALLOCSIZES { 3, 5, 7, 11, 15, 23, 32, 47, 64, 95, 129, TERMINATOR } // in words.
+//#define ALLOCSIZES { 1, 3, 5, 7, 13, 21, 35, 57, 93, 151, TERMINATOR }
+//#define ALLOCSIZES { 1, 3, 5, 9, 13, 17, 23, 29, 37, 45, 65, 85, 105, 129, TERMINATOR }
+//#define cJL_LEAF1_MAXWORDS       (15)   // max Leaf1 size in words.
+#define cJL_LEAF1_MAXWORDS               (9)   // max Leaf1 size in words.
+
+#ifndef JU_64BIT
 
 #define cJL_LEAF1_MAXPOP1 \
    ((cJL_LEAF1_MAXWORDS * cJU_BYTESPERWORD)/(1 + cJU_BYTESPERWORD))
@@ -276,9 +287,7 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 
 #else // 64-bit
 
-#define J_L_MAXB                (sizeof(Word_t) * 64)
-#define ALLOCSIZES { 3, 5, 7, 11, 15, 23, 32, 47, 64, TERMINATOR } // in words.
-#define cJL_LEAF1_MAXWORDS       (15)   // max Leaf1 size in words.
+//#define cJL_LEAF2_MAXPOP1       (L2LEN)    // or 7,12,20,32
 
 #define cJL_LEAF1_MAXPOP1 \
    ((cJL_LEAF1_MAXWORDS * cJU_BYTESPERWORD)/(1 + cJU_BYTESPERWORD))
@@ -323,12 +332,12 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // systems with smaller cache lines than the assumed value cJU_WORDSPERCL.
 
 #define JL_JLB_BITMAP(Pjlb, Subexp)  ((Pjlb)->jLlb_jLlbs[Subexp].jLlbs_Bitmap)
-#define JL_JLB_PVALUE(Pjlb, Subexp)  ((Pjlb)->jLlb_jLlbs[Subexp].jLlbs_PValue)
+#define JL_JLB_PVALUE(Pjlb, Subexp)  ((Pjlb)->jLlb_jLlbs[Subexp].jLlbs_PV_Raw)
 
 typedef struct J__UDYL_LEAF_BITMAP_SUBEXPANSE
 {
         BITMAPL_t jLlbs_Bitmap;
-        Pjv_t     jLlbs_PValue;
+        Word_t    jLlbs_PV_Raw;
 
 } jLlbs_t;
 
@@ -380,16 +389,16 @@ typedef struct J_UDYL_POPULATION_AND_MEMORY
 // object into wasted (rounded-up) memory in the chunk.  Note:  This violates
 // the hiddenness of the JudyMalloc code.
 
-extern const uint8_t j__L_Leaf1PopToWords[cJL_LEAF1_MAXPOP1 + 1];
-extern const uint8_t j__L_Leaf2PopToWords[cJL_LEAF2_MAXPOP1 + 1];
-extern const uint8_t j__L_Leaf3PopToWords[cJL_LEAF3_MAXPOP1 + 1];
+extern const uint8_t j__L_Leaf1PopToWords[cJL_LEAF1_MAXPOP1 + 2];
+extern const uint8_t j__L_Leaf2PopToWords[cJL_LEAF2_MAXPOP1 + 2];
+extern const uint8_t j__L_Leaf3PopToWords[cJL_LEAF3_MAXPOP1 + 2];
 #ifdef JU_64BIT
-extern const uint8_t j__L_Leaf4PopToWords[cJL_LEAF4_MAXPOP1 + 1];
-extern const uint8_t j__L_Leaf5PopToWords[cJL_LEAF5_MAXPOP1 + 1];
-extern const uint8_t j__L_Leaf6PopToWords[cJL_LEAF6_MAXPOP1 + 1];
-extern const uint8_t j__L_Leaf7PopToWords[cJL_LEAF7_MAXPOP1 + 1];
+extern const uint8_t j__L_Leaf4PopToWords[cJL_LEAF4_MAXPOP1 + 2];
+extern const uint8_t j__L_Leaf5PopToWords[cJL_LEAF5_MAXPOP1 + 2];
+extern const uint8_t j__L_Leaf6PopToWords[cJL_LEAF6_MAXPOP1 + 2];
+extern const uint8_t j__L_Leaf7PopToWords[cJL_LEAF7_MAXPOP1 + 2];
 #endif
-extern const uint8_t j__L_LeafWPopToWords[cJL_LEAFW_MAXPOP1 + 1];
+extern const uint8_t j__L_LeafWPopToWords[cJL_LEAFW_MAXPOP1 + 2];
 extern const uint8_t j__L_LeafVPopToWords[];
 
 // These tables indicate where value areas start:
@@ -424,9 +433,62 @@ extern const uint8_t j__L_LeafWOffset    [cJL_LEAFW_MAXPOP1 + 1];
         J__U_GROWCK(Pop1, cJL_LEAF7_MAXPOP1, j__L_Leaf7PopToWords)
 #endif
 #define JL_LEAFWGROWINPLACE(Pop1) \
-        J__U_GROWCK(Pop1, cJL_LEAFW_MAXPOP1, j__L_LeafWPopToWords)
-#define JL_LEAFVGROWINPLACE(Pop1)  \
-        J__U_GROWCK(Pop1, cJU_BITSPERSUBEXPL,  j__L_LeafVPopToWords)
+    J__U_GROWCK(Pop1, cJL_LEAFW_MAXPOP1, j__L_LeafWPopToWords)
+
+#define JL_LEAFVGROWINPLACE(Pop1) \
+    J__U_GROWCK(Pop1, cJU_BITSPERSUBEXPL,  j__L_LeafVPopToWords)
+
+#define JL_MAXCOMPRESSEDB1(POP1)                                        \
+   (j__L_LeafVPopToWords[POP1] == j__L_LeafVPopToWords[cJU_BITSPERSUBEXPL])
+
+
+#define JL_VACOUNT(POPINC)      ((Word_t)(POPINC) << (64 - 7))
+
+// From compressed to uncompressed -- add/delete Value after copy
+#define JL_COPYUNCOMPRESSED(PJVNEW,PJV,BITMAP)                  \
+{                                                               \
+    BITMAPL_t   _bitm = (BITMAP);                               \
+    int         _idx;                                           \
+    int         _digit;                                         \
+                                                                \
+    for (_idx = _digit = 0; _bitm != 0; _bitm >>= 1, _digit++)  \
+    {                                                           \
+        if (_bitm & 1)                                          \
+        {                                                       \
+            (PJVNEW)[_digit] = (PJV)[_idx++];                   \
+        }                                                       \
+    }                                                           \
+}
+
+// From uncompressed to compressed -- add/delete Value before copy
+#define JL_COPYCOMPRESSED(PJVNEW,PJV,BITMAP)                    \
+{                                                               \
+    BITMAPL_t   _bitm = (BITMAP);                               \
+    int         _idx;                                           \
+    int         _digit;                                         \
+                                                                \
+    for (_idx = _digit = 0; _bitm != 0; _bitm >>= 1, _digit++)  \
+    {                                                           \
+        if (_bitm & 1)                                          \
+        {                                                       \
+            (PJVNEW)[_idx++] = (PJV)[_digit];                   \
+        }                                                       \
+    }                                                           \
+}
+
+#ifdef NEVER
+static int JL_LEAFVGROWINPLACE(Word_t Pop1)
+{
+    int rtn;
+    if (Pop1 == 0) exit(-1);
+    rtn = J__U_GROWCK(Pop1, cJU_BITSPERSUBEXPL,  j__L_LeafVPopToWords);
+    fprintf(stderr, " VG=%d %d ", (int)Pop1, rtn);
+    return(rtn);
+}
+#endif  // NEVER
+
+
+// #define JL_LEAFVGROWINPLACE(Pop1)  ((((Pop1) != 0)) && (((Pop1) & 1) == 0))
 
 #define JL_LEAF1VALUEAREA(Pjv,Pop1)  (((PWord_t)(Pjv)) + j__L_Leaf1Offset[Pop1])
 #define JL_LEAF2VALUEAREA(Pjv,Pop1)  (((PWord_t)(Pjv)) + j__L_Leaf2Offset[Pop1])
@@ -474,7 +536,7 @@ Pjll_t  j__udyLAllocJLL7( Word_t, PjLpm_t);
 
 Pjlw_t  j__udyLAllocJLW(  Word_t         );             // no PjLpm_t needed.
 PjLlb_t j__udyLAllocJLB1(         PjLpm_t);             // constant size.
-Pjv_t   j__udyLAllocJV(   Word_t, PjLpm_t);
+Word_t  j__udyLAllocJV(   Word_t, PjLpm_t);
 
 
 // FUNCTIONS TO FREE OBJECTS:
@@ -499,7 +561,7 @@ void    j__udyLFreeJLL7( Pjll_t, Word_t, PjLpm_t);
 
 void    j__udyLFreeJLW(  Pjlw_t, Word_t, PjLpm_t);
 void    j__udyLFreeJLB1( PjLlb_t,        PjLpm_t);      // constant size.
-void    j__udyLFreeJV(   Pjv_t,  Word_t, PjLpm_t);
+void    j__udyLFreeJV(   Word_t, Word_t, PjLpm_t);
 void    j__udyLFreeSM(   Pjp_t,          PjLpm_t);      // everything below Pjp.
 
 #endif // ! _JUDYL_INCLUDED

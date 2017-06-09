@@ -267,13 +267,13 @@ Word_t JudyMalloc(
 
 #ifdef  GUARDBAND
 //      Put the ~Addr in that extra word
-        *((Word_t *)Addr + ((Bytes/sizeof(Word_t)) - 1)) = ~Addr;
+        *((Word_t *)Addr + ((Bytes/sizeof(Word_t))) - 1) = ~Addr;
 
 //      Verify that all mallocs are 2 word aligned
         if (Addr & ((sizeof(Word_t) * 2) - 1))
         {
-            fprintf(stderr, "\nmalloc() Addr not 2 word aligned = %p\n", Addr);
-            printf("\nmalloc() Addr not 2 word aligned = %p\n", Addr);
+            fprintf(stderr, "\nmalloc() Addr not 2 word aligned = %p\n", (void *)Addr);
+            printf("\nmalloc() Addr not 2 word aligned = %p\n", (void *)Addr);
             exit(-1);
         }
 #endif  // GUARDBAND
@@ -330,12 +330,12 @@ void JudyFree(
         Word_t GuardWord;
 
 //      Verify that the Word_t past the end is same as ~PWord freed
-        GuardWord = *((((Word_t *)PWord) + Words));
+        GuardWord = *(((Word_t *)PWord) + Words);
 
         if (~GuardWord != (Word_t)PWord)
         {
             printf("\n\nOops GuardWord = %p != PWord = %p\n", 
-                    GuardWord, (Word_t)PWord);
+                    (void *)GuardWord, (void *)PWord);
             exit(-1);
         }
     }

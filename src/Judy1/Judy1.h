@@ -334,8 +334,11 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // ALLOCSIZES is defined here, not there, for single-point control of these key
 // definitions.  See JudyTables.c for "TERMINATOR".
 
-#define J_1_MAXB   (sizeof(Word_t) * 32)
-#define ALLOCSIZES { 3, 5, 7, 11, 15, 23, 32, 47, 64, TERMINATOR } // in words.
+//#define J_1_MAXB   (sizeof(Word_t) * 67)
+//#define J_1_MAXB   (sizeof(Word_t) * 32)
+#define J_1_MAXB   (sizeof(Word_t) * 63)
+//#define ALLOCSIZES { 3, 5, 7, 11, 15, 23, 32, 47, 64, TERMINATOR } // in words.
+#define ALLOCSIZES { 3, 5, 9, 15, 25, 41, 67, 109, 177, TERMINATOR }
 #define cJ1_LEAF1_MAXWORDS  5           // Leaf1 max alloc size in words.
 
 // Under JRP (root-state leaves):
@@ -447,17 +450,17 @@ typedef struct J_UDY1_POPULATION_AND_MEMORY
 // Also define macros to hide the details in the code using these tables.
 
 #ifndef JU_64BIT
-extern const uint8_t j__1_Leaf1PopToWords[cJ1_LEAF1_MAXPOP1 + 1];
+extern const uint8_t j__1_Leaf1PopToWords[cJ1_LEAF1_MAXPOP1 + 2];
 #endif
-extern const uint8_t j__1_Leaf2PopToWords[cJ1_LEAF2_MAXPOP1 + 1];
-extern const uint8_t j__1_Leaf3PopToWords[cJ1_LEAF3_MAXPOP1 + 1];
+extern const uint8_t j__1_Leaf2PopToWords[cJ1_LEAF2_MAXPOP1 + 2];
+extern const uint8_t j__1_Leaf3PopToWords[cJ1_LEAF3_MAXPOP1 + 2];
 #ifdef JU_64BIT
-extern const uint8_t j__1_Leaf4PopToWords[cJ1_LEAF4_MAXPOP1 + 1];
-extern const uint8_t j__1_Leaf5PopToWords[cJ1_LEAF5_MAXPOP1 + 1];
-extern const uint8_t j__1_Leaf6PopToWords[cJ1_LEAF6_MAXPOP1 + 1];
-extern const uint8_t j__1_Leaf7PopToWords[cJ1_LEAF7_MAXPOP1 + 1];
+extern const uint8_t j__1_Leaf4PopToWords[cJ1_LEAF4_MAXPOP1 + 2];
+extern const uint8_t j__1_Leaf5PopToWords[cJ1_LEAF5_MAXPOP1 + 2];
+extern const uint8_t j__1_Leaf6PopToWords[cJ1_LEAF6_MAXPOP1 + 2];
+extern const uint8_t j__1_Leaf7PopToWords[cJ1_LEAF7_MAXPOP1 + 2];
 #endif
-extern const uint8_t j__1_LeafWPopToWords[cJ1_LEAFW_MAXPOP1 + 1];
+extern const uint8_t j__1_LeafWPopToWords[cJ1_LEAFW_MAXPOP1 + 2];
 
 // Check if increase of population will fit in same leaf:
 

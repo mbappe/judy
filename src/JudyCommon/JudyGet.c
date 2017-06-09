@@ -32,7 +32,7 @@
 
 #include "JudyPrivate1L.h"
 
-#ifdef TRACEJPR                 // different macro name, for "retrieval" only.
+#ifdef TRACEJPG                 // different macro name, for "retrieval" only.
 #include "JudyPrintJP.c"
 #endif
 
@@ -77,6 +77,15 @@ FUNCTION PPvoid_t JudyLGet (Pcvoid_t PArray,     // from which to retrieve.
     uint8_t   Digit;                    // byte just decoded from Index.
     Word_t    Pop1;                     // leaf population (number of indexes).
     Pjll_t    Pjll;                     // pointer to LeafL.
+
+#ifdef  TRACEJPG
+#ifdef JUDY1
+    printf("\nJudy1Test,Index = 0x%lx\n", (unsigned long)Index);
+#else /* JUDYL */
+    printf("\nJudyLGet, Index = 0x%lx\n", (unsigned long)Index);
+#endif  // JUDYL
+#endif  // TRACEJPG
+
     if (PArray == (Pcvoid_t) NULL)      // empty array.
     {
 #ifdef JUDY1
@@ -117,17 +126,18 @@ FUNCTION PPvoid_t JudyLGet (Pcvoid_t PArray,     // from which to retrieve.
 // ****************************************************************************
 // WALK THE JUDY TREE USING A STATE MACHINE:
   ContinueWalk:                        // for going down one level; come here with Pjp set.
-    switch (JU_JPTYPE(Pjp))
-    {
 
 // Trace is different with j__ entry points
-#ifdef  TRACEJPR
+#ifdef  TRACEJPG
 #ifdef  JUDYGETINLINE
         JudyPrintJP(Pjp, "_g", __LINE__);
 #else   // ! JUDYGETINLINE 
         JudyPrintJP(Pjp, "g", __LINE__);
 #endif  // ! JUDYGETINLINE 
-#endif  // TRACEJPR
+#endif  // TRACEJPG
+
+    switch (JU_JPTYPE(Pjp))
+    {
 
 // NOTE: The Judy 32Bit code is in the 2nd half of the file
 
@@ -501,43 +511,43 @@ FUNCTION PPvoid_t JudyLGet (Pcvoid_t PArray,     // from which to retrieve.
     case cJ1_JPIMMED_1_10:
         if (Pjp->jp_1Index1[10 - 1] == (uint8_t) Index) return (1);
     case cJ1_JPIMMED_1_09:
-        if (Pjp->jp_1Index1[9 - 1] == (uint8_t) Index) return (1);
+        if (Pjp->jp_1Index1[ 9 - 1] == (uint8_t) Index) return (1);
     case cJ1_JPIMMED_1_08:
-        if (Pjp->jp_1Index1[8 - 1] == (uint8_t) Index) return (1);
+        if (Pjp->jp_1Index1[ 8 - 1] == (uint8_t) Index) return (1);
 #endif /* ! JUDYL */
     case cJU_JPIMMED_1_07:
 #ifdef JUDY1
-        if (Pjp->jp_1Index1[7 - 1] == (uint8_t) Index) return (1);
+        if (Pjp->jp_1Index1[ 7 - 1] == (uint8_t) Index) return (1);
 #else /* JUDYL */
-        if (Pjp->jp_LIndex1[7 - 1] == (uint8_t) Index)
+        if (Pjp->jp_LIndex1[ 7 - 1] == (uint8_t) Index)
             return ((PPvoid_t) (P_JV((Pjp)->jp_Addr) + 7 - 1));
 #endif /* JUDYL */
     case cJU_JPIMMED_1_06:
 #ifdef JUDY1
-        if (Pjp->jp_1Index1[6 - 1] == (uint8_t) Index) return (1);
+        if (Pjp->jp_1Index1[ 6 - 1] == (uint8_t) Index) return (1);
 #else /* JUDYL */
-        if (Pjp->jp_LIndex1[6 - 1] == (uint8_t) Index)
+        if (Pjp->jp_LIndex1[ 6 - 1] == (uint8_t) Index)
             return ((PPvoid_t) (P_JV((Pjp)->jp_Addr) + 6 - 1));
 #endif /* JUDYL */
     case cJU_JPIMMED_1_05:
 #ifdef JUDY1
-        if (Pjp->jp_1Index1[5 - 1] == (uint8_t) Index) return (1);
+        if (Pjp->jp_1Index1[ 5 - 1] == (uint8_t) Index) return (1);
 #else /* JUDYL */
-        if (Pjp->jp_LIndex1[5 - 1] == (uint8_t) Index)
+        if (Pjp->jp_LIndex1[ 5 - 1] == (uint8_t) Index)
             return ((PPvoid_t) (P_JV((Pjp)->jp_Addr) + 5 - 1));
 #endif /* JUDYL */
     case cJU_JPIMMED_1_04:
 #ifdef JUDY1
-        if (Pjp->jp_1Index1[4 - 1] == (uint8_t) Index) return (1);
+        if (Pjp->jp_1Index1[ 4 - 1] == (uint8_t) Index) return (1);
 #else /* JUDYL */
-        if (Pjp->jp_LIndex1[4 - 1] == (uint8_t) Index)
+        if (Pjp->jp_LIndex1[ 4 - 1] == (uint8_t) Index)
             return ((PPvoid_t) (P_JV((Pjp)->jp_Addr) + 4 - 1));
 #endif /* JUDYL */
     case cJU_JPIMMED_1_03:
 #ifdef JUDY1
-        if (Pjp->jp_1Index1[3 - 1] == (uint8_t) Index) return (1);
+        if (Pjp->jp_1Index1[ 3 - 1] == (uint8_t) Index) return (1);
 #else /* JUDYL */
-        if (Pjp->jp_LIndex1[3 - 1] == (uint8_t) Index)
+        if (Pjp->jp_LIndex1[ 3 - 1] == (uint8_t) Index)
             return ((PPvoid_t) (P_JV((Pjp)->jp_Addr) + 3 - 1));
 #endif /* JUDYL */
     case cJU_JPIMMED_1_02:
@@ -566,19 +576,19 @@ FUNCTION PPvoid_t JudyLGet (Pcvoid_t PArray,     // from which to retrieve.
         if (Pjp->jp_1Index2[3 - 1] == (uint16_t) Index) return (1);
 #else /* JUDYL */
         if (Pjp->jp_LIndex2[3 - 1] == (uint16_t) Index)
-            return ((PPvoid_t) (P_JV((Pjp)->jp_Addr) + (3) - 1));
+            return ((PPvoid_t) (P_JV((Pjp)->jp_Addr) + 3 - 1));
 #endif /* JUDYL */
     case cJU_JPIMMED_2_02:
 #ifdef JUDY1
         if (Pjp->jp_1Index2[2 - 1] == (uint16_t) Index) return (1);
 #else /* JUDYL */
         if (Pjp->jp_LIndex2[2 - 1] == (uint16_t) Index)
-            return ((PPvoid_t) (P_JV((Pjp)->jp_Addr) + (2) - 1));
+            return ((PPvoid_t) (P_JV((Pjp)->jp_Addr) + 2 - 1));
 #endif /* JUDYL */
 #ifdef JUDY1
-        if (Pjp->jp_1Index2[0] == (uint16_t) Index) return (1);
+        if (Pjp->jp_1Index2[1 - 1] == (uint16_t) Index) return (1);
 #else /* JUDYL */
-        if (Pjp->jp_LIndex2[0] == (uint16_t) Index)
+        if (Pjp->jp_LIndex2[1 - 1] == (uint16_t) Index)
             return ((PPvoid_t) (P_JV(Pjp->jp_Addr) + 1 - 1));
 #endif /* JUDYL */
         break;
@@ -718,13 +728,13 @@ FUNCTION PPvoid_t JudyLGet (Pcvoid_t PArray,     // from which to retrieve.
 //    {
 
 // Trace is different with j__* entry points
-//#ifdef  TRACEJPR
+//#ifdef  TRACEJPG
 //#ifdef  JUDYGETINLINE
 //        JudyPrintJP(Pjp, "_g", __LINE__);
 //#else   // ! JUDYGETINLINE 
 //        JudyPrintJP(Pjp, "g", __LINE__);
 //#endif  // ! JUDYGETINLINE 
-//#endif  // TRACEJPR
+//#endif  // TRACEJPG
 
 #else   // JU_32BIT
 
