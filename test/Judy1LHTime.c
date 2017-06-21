@@ -997,7 +997,7 @@ main(int argc, char *argv[])
 
             BValue = oa2w(tok, NULL, 0, c);
 
-            if ((BValue > sizeof(Word_t) * 8) || (BValue < 15))
+            if ((BValue > sizeof(Word_t) * 8) || (BValue < 10))
             {
                 FAILURE("\n -B  is out of range, I.E. -B", BValue);
             }
@@ -1327,7 +1327,8 @@ main(int argc, char *argv[])
     if (StartSequent > MaxNumb)
     {
         printf("\nArgument in '-s %" PRIuPTR"' option is greater than %" PRIuPTR"\n", StartSequent, MaxNumb);
-        ErrorFlag++;
+        StartSequent = MaxNumb;
+        //ErrorFlag++;
     }
     if (StartSequent == 0 && (SValue == 0))
     {
