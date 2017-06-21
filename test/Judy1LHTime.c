@@ -504,6 +504,11 @@ GetNextKey(PSeed_t PSeed)
         do
         {
             Key = RandomNumb(PSeed, SValue);
+            if ((sizeof(Word_t) * 8) != BValue)
+            {
+                 assert((Key < (1 << BValue)) || SValue);
+                 Key %= (Word_t)1 << BValue;
+            }
         } while (Key > ExpanseM1);         // throw away of high keys
     }
    
@@ -518,9 +523,6 @@ GetNextKey(PSeed_t PSeed)
     }
     else
     {
-        if ((sizeof(Word_t) * 8) != BValue)
-            Key %= (Word_t)1 << BValue;
-        
         return (Key + Offset);         // add in Offset;
     }
 }
@@ -1816,7 +1818,7 @@ main(int argc, char *argv[])
         printf("# B1 = 0x%" PRIxPTR" = malloc(%" PRIuPTR")\n", (Word_t)B1, Bytes);
 #else   // ! USE_MALLOC
 
-        JudyMalloc((Word_t)10);       
+        JudyMalloc((Word_t)10); // get large page aligned
         B1 = (PWord_t)mmap(NULL, Bytes, (PROT_READ|PROT_WRITE), (MAP_PRIVATE|MAP_ANONYMOUS), -1, 0);
         if (B1 == (PWord_t)NULL)
         {
