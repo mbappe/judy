@@ -6,8 +6,6 @@
 // ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 // FITNESS FOR A PARTICULAR PURPOSE.
 
-// @(#) $Revision: 1.12 $ $Source: /home/doug/JudyL64A/src/JudyCommon/RCS/JudyMalloc.c,v $
-//
 // ********************************************************************** //
 //                    JUDY - Memory Allocater                             //
 //                              -by-					  //
@@ -35,7 +33,7 @@
 // Global in case anyone wants to know (kind of kludgy, but only for testing)
 
 #ifdef  RAMMETRICS
-Word_t    j__AllocWordsTOT;             // Best guess of words used by (dl)malloc()
+Word_t    j__AllocWordsTOT;             // words in buffers given by malloc
 Word_t    j__MalFreeCnt;                // keep track of total malloc() + free()
 Word_t    j__MFlag;                     // Print memory allocation on stderr
 Word_t    j__TotalBytesAllocated;       // from kernel from dlmalloc
@@ -227,22 +225,6 @@ Word_t JudyMalloc(
 
         Bytes = Words * sizeof(Word_t);
 
-#ifdef  RAMMETRICS
-        if (Words < 4) 
-        {
-            j__AllocWordsTOT += 4;
-        } 
-        else 
-        {
-            j__AllocWordsTOT += Words + 1;
-
-            if ( (Words & 1) == 0 )     // even?
-            {
-                j__AllocWordsTOT += 1;  // one more
-            }
-        }
-#endif  // RAMMETRICS
-
 //  Note: This define is only for DEBUGGING
 #ifdef  GUARDBAND
         if (Bytes == 0)
@@ -260,6 +242,10 @@ Word_t JudyMalloc(
 #else	// ! system libc
 	Addr = (Word_t) dlmalloc(Bytes);
 #endif	// ! LIBCMALLOC
+#ifdef  RAMMETRICS
+        // get # bytes in malloc buffer from preamble
+        j__AllocWordsTOT += (((Word_t *)Addr)[-1] & ~3) / sizeof(Word_t);
+#endif  // RAMMETRICS
 
 #ifdef  TRACEJM
         printf("%p = JudyMalloc(%lu)\n", (void *)Addr, Bytes / sizeof(Word_t));
@@ -297,19 +283,7 @@ void JudyFree(
 {
 
 #ifdef  RAMMETRICS
-        if (Words < 4) // Minimum size that malloc/dlmalloc allocates
-        {
-            j__AllocWordsTOT -= 4;
-        } 
-        else 
-        {
-            j__AllocWordsTOT -= Words + 1;      // dl/malloc usual overhead
-
-            if ( (Words & 1) == 0 )             // even?
-            {
-                j__AllocWordsTOT -= 1;          // one more
-            }
-        }
+        j__AllocWordsTOT -= (((Word_t *)PWord)[-1] & ~3) / sizeof(Word_t);
         j__MalFreeCnt++;        // keep track of total malloc() + free()
 #else
 
