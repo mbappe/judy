@@ -442,6 +442,7 @@ Word_t    hFlag = 0;                    // add "holes" into the insert code
 Word_t    PreStack = 0;                 // to test for TLB collisions with stack
 
 Word_t    Offset = 0;                   // Added to Key
+Word_t    bSplayKeyBitsFlag = 0;        // Splay key bits.
 
 Word_t    TValues = 1000000;            // Maximum numb retrieve timing tests
 Word_t    nElms = 10000000;             // Default population of arrays
@@ -504,9 +505,28 @@ GetNextKey(PSeed_t PSeed)
         do
         {
             Key = RandomNumb(PSeed, SValue);
+            if ((sizeof(Word_t) * 8) != BValue)
+            {
+                 assert((Key < ((Word_t)1 << BValue)) || SValue);
+                 Key %= (Word_t)1 << BValue; // wrap
+            }
         } while (Key > ExpanseM1);         // throw away of high keys
     }
    
+    if (bSplayKeyBitsFlag) {
+        // Splay the bits in the key.
+        // This is not subject to BValue.
+        if (pFlag) {
+            printf("Numb %016" PRIxPTR" Key ", Key);
+        }
+        Word_t wSplayedKey = 0;
+        for (unsigned uu = 0; uu < BValue; uu++) {
+            wSplayedKey |= ((Key & (1 << uu)) << (uu + 1));
+        }
+        Key = wSplayedKey;
+        // Key might be bigger than 1 << BValue -- by design.
+    }
+
     if (DFlag)
     {
         Word_t SwizzledKey;
@@ -518,9 +538,6 @@ GetNextKey(PSeed_t PSeed)
     }
     else
     {
-        if ((sizeof(Word_t) * 8) != BValue)
-            Key %= (Word_t)1 << BValue;
-        
         return (Key + Offset);         // add in Offset;
     }
 }
@@ -677,6 +694,7 @@ Usage(int argc, char **argv)
     printf("-S #  Key Generator skip amount, 0 = Random [0]\n");
     printf("-B #  Significant bits output (16..64) in Random Key Generator [32]\n");
     printf("-B #:#  Second # is percent expanse is limited [100]\n");
+    printf("-E,--splay-key-bits    Splay key bits\n");
     printf("-G #  Type (0..4) of random numbers 0 = flat spectrum, 1..4 = Gaussian [0]\n");
     printf("-l    Do not smooth data with iteration at low (<100) populations (Del/Unset not called)\n");
     printf("-F <filename>  Ascii file of Keys, zeros ignored -- must be last option!!!\n");
@@ -828,6 +846,9 @@ static struct option longopts[] = {
     // Long option "--BigOffset=<#>" is equivalent to short option '-O<#>".
     { "BigOffset",       required_argument, NULL,      'O' },
 
+    // Long option '--splay-key-bits' is equivalent to short option '-E'.
+    { "splay-key-bits",       required_argument, NULL,      'E' },
+
     // Last struct option in array must be filled with zeros.
     { NULL,              0,                 NULL,      0 }
 };
@@ -936,12 +957,22 @@ main(int argc, char *argv[])
     while (1)
     {
         c = getopt_long(argc, argv,
-                   "a:n:S:T:P:s:B:G:X:W:o:O:F:b:N:dDcC1LHvIltmpxVfgiyRMKh", longopts, NULL);
+                   "a:n:S:T:P:s:B:G:X:W:o:O:F:b:N:dDcC1LHvIltmpxVfgiyRMKhE",
+                // Optstring sorted:
+                // "1a:B:b:CcDdEF:fG:gHhIiKlLMmN:n:O:o:P:pRS:s:T:tVvW:XXxy",
+                // Gaps left for unused option characters:
+                // " 1         a:B:b:CcDdE F:fG:gHhIi  K LlMmN:n:O:o:P:p  R S:s:T:t:  VvW: Xx y  "
+                // Unused option characters:
+                // "0 23456789A           e          Jj k               Qq r        Uu    w  Y Zz"
+                   longopts, NULL);
         if (c == -1)
             break;
 
         switch (c)
         {
+        case 'E':
+            bSplayKeyBitsFlag = 1;
+            break;
         case 'a':                      // Max population of arrays
             PreStack = oa2w(optarg, NULL, 0, c);   // Size of PreStack
             break;
@@ -995,7 +1026,7 @@ main(int argc, char *argv[])
 
             BValue = oa2w(tok, NULL, 0, c);
 
-            if ((BValue > sizeof(Word_t) * 8) || (BValue < 15))
+            if ((BValue > sizeof(Word_t) * 8) || (BValue < 10))
             {
                 FAILURE("\n -B  is out of range, I.E. -B", BValue);
             }
@@ -1289,6 +1320,14 @@ main(int argc, char *argv[])
         printf("\n# Warning -- '-V' ignored, because '-R' is set\n");
         fprintf(stderr, "\n# Warning -- '-V' ignored, because '-R' is set\n");
     }
+
+    if (bSplayKeyBitsFlag && (BValue > (sizeof(Word_t) * 8 / 2)))
+    {
+        printf("\nError --- '-B%d' must be less than or equal to %d\n",
+               (int)BValue, (int)sizeof(Word_t) * 8 / 2);
+        ErrorFlag++;
+    }
+
 //  build the Random Number Generator starting seeds
     PStartSeed = RandomInit(BValue, GValue);
 
@@ -1325,7 +1364,8 @@ main(int argc, char *argv[])
     if (StartSequent > MaxNumb)
     {
         printf("\nArgument in '-s %" PRIuPTR"' option is greater than %" PRIuPTR"\n", StartSequent, MaxNumb);
-        ErrorFlag++;
+        StartSequent = MaxNumb;
+        //ErrorFlag++;
     }
     if (StartSequent == 0 && (SValue == 0))
     {
@@ -1396,7 +1436,8 @@ main(int argc, char *argv[])
 
 //            printf("%" PRIxPTR"\n", PrintKey);
 
-            printf("0x%" PRIxPTR", %2d %" PRIuPTR"\n", PrintKey, (int)log2((double)(PrintKey)) + 1, PrintKey);
+            printf("0x%016" PRIxPTR", %2d %" PRIuPTR"\n",
+                   PrintKey, (int)log2((double)(PrintKey)) + 1, PrintKey);
 
 #ifdef __LP64__
 //            printf("0x%016lx\n", PrintKey);
@@ -1816,7 +1857,7 @@ main(int argc, char *argv[])
         printf("# B1 = 0x%" PRIxPTR" = malloc(%" PRIuPTR")\n", (Word_t)B1, Bytes);
 #else   // ! USE_MALLOC
 
-        JudyMalloc((Word_t)10);       
+        JudyMalloc((Word_t)10); // get large page aligned
         B1 = (PWord_t)mmap(NULL, Bytes, (PROT_READ|PROT_WRITE), (MAP_PRIVATE|MAP_ANONYMOUS), -1, 0);
         if (B1 == (PWord_t)NULL)
         {

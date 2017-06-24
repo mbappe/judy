@@ -458,10 +458,6 @@ main(int argc, char *argv[])
 
         if (TotalPop)
         {
-            J1FA(Bytes, J1);    // Free the Judy1 Array
-            if (pFlag) printf("Judy1FreeArray  = %6.3f Bytes/Index\n",
-                   (double)Bytes / (double)Count1);
-
             JLFA(Bytes, JL);    // Free the JudyL Array
             if (pFlag) printf("JudyLFreeArray  = %6.3f Bytes/Index\n",
                    (double)Bytes / (double)CountL);
@@ -469,6 +465,13 @@ main(int argc, char *argv[])
             JHSFA(Bytes, JH);   // Free the JudyL Array
             if (pFlag) printf("JudyHSFreeArray = %6.3f Bytes/Index\n",
                    (double)Bytes / (double)TotalPop); // Count not available yet
+
+            // Free the Judy1 array last for Mikey.
+            // His Judy1FreeArray code assumes and asserts that there is no
+            // unfreed memory when it is done.
+            J1FA(Bytes, J1);    // Free the Judy1 Array
+            if (pFlag) printf("Judy1FreeArray  = %6.3f Bytes/Index\n",
+                   (double)Bytes / (double)Count1);
 
             TotalPop = 0;
         }
@@ -878,7 +881,7 @@ TestJudyNextEmpty(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
             break;
 
         if ((Rcode1 != 1) || (PValue == NULL)) {
-            printf("Rcode1 = %d, PValue = %p\n", Rcode1, PValue);
+            printf("Rcode1 = %d, PValue = %p\n", Rcode1, (void *)PValue);
             FAILURE("Judy1Next != JudyLNext return code at", elm);
         }
 
@@ -956,7 +959,7 @@ TestJudyPrevEmpty(void *J1, void *JL, Word_t HighIndex, Word_t Elements)
             break;
 
         if ((Rcode1 != 1) || (PValue == NULL)) {
-            printf("Rcode1 = %d, PValue = %p\n", Rcode1, PValue);
+            printf("Rcode1 = %d, PValue = %p\n", Rcode1, (void *)PValue);
             FAILURE("Judy1Prev != JudyLPrev return code at", elm);
         }
 
