@@ -1,5 +1,5 @@
 INCLUDES =  -I. -I..
-AM_CFLAGS = @CFLAGS@ @WARN_CFLAGS@ 
+AM_CFLAGS = @WARN_CFLAGS@ -Wno-unused-function -Wno-old-style-declaration -Wno-unknown-warning-option
 
 noinst_LTLIBRARIES = libJudyMalloc.la
 
