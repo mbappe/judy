@@ -217,7 +217,7 @@ pre_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
 // Allocate RAM.  This is the single location in Judy code that calls
 // malloc(3C).  Note:  JPM accounting occurs at a higher level.
 
-size_t JudyMalloc(
+RawP_t JudyMalloc(
 	int Words)
 {
 	size_t Addr;
@@ -278,19 +278,14 @@ size_t JudyMalloc(
 // J U D Y   F R E E
 
 void JudyFree(
-	size_t PWord,
+	RawP_t PWord,
 	int    Words)
 {
+	(void) Words;
 
 #ifdef  RAMMETRICS
         j__AllocWordsTOT -= (((Word_t *)PWord)[-1] & ~3) / sizeof(Word_t);
         j__MalFreeCnt++;        // keep track of total malloc() + free()
-#else
-
-#ifndef  GUARDBAND
-	(void) Words;
-#endif  // GUARDBAND
-
 #endif  // RAMMETRICS
 
 #ifdef  GUARDBAND
@@ -330,7 +325,7 @@ void JudyFree(
 
 
 
-size_t JudyMallocVirtual(
+RawP_t JudyMallocVirtual(
 	int Words)
 {
 	return(JudyMalloc(Words));
@@ -342,7 +337,7 @@ size_t JudyMallocVirtual(
 // J U D Y   F R E E
 
 void JudyFreeVirtual(
-	size_t PWord,
+	RawP_t PWord,
 	int    Words)
 {
         JudyFree(PWord, Words);

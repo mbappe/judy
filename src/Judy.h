@@ -91,8 +91,10 @@ typedef void ** PPvoid_t;
 
 #ifndef _WORD_T
 #define _WORD_T
-typedef uintptr_t Word_t, * PWord_t;  // expect 32-bit or 64-bit words.
+typedef size_t Word_t, * PWord_t;  // expect 32-bit or 64-bit words.
 #endif
+
+typedef size_t RawP_t; // printable pointer with other stuff crammed in it
 
 #ifndef NULL
 #define NULL 0
