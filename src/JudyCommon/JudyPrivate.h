@@ -224,8 +224,8 @@ typedef int bool_t;
 #endif
 
 #ifdef TRACE            // turn on all other tracing in the code:
-#define TRACEJP  1      // JP traversals in JudyIns.c and JudyDel.c.
-#define TRACEJPR 1      // JP traversals in retrieval code, JudyGet.c.
+#define TRACEJPI 1      // JP traversals in JudyIns.c and JudyDel.c.
+#define TRACEJPG 1      // JP traversals in retrieval code, JudyGet.c.
 #define TRACECF  1      // cache fills in JudyGet.c.
 #define TRACEMI  1      // malloc calls in JudyMallocIF.c.
 #define TRACEMF  1      // malloc calls at a lower level in JudyMalloc.c.
@@ -294,9 +294,7 @@ Word_t  j__DirectHits;
 // on a bucket basis
 #define  DIRECTHITS(_START, POS, KEY)                    \
     (j__DirectHits += (((_START) / KEYSPERBUCKET(KEY) == ((POS) / KEYSPERBUCKET(KEY)) ? 1 : 0)))
-
 #else  // DIRINWORDS
-
 // on a key basis
 #define  DIRECTHITS(_START, POS, KEY)  (j__DirectHits += 1)
 
@@ -503,10 +501,12 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 #define P_JBB(  ADDR) ((Pjbb_t) (ADDR))  // BranchB.
 #define P_JBU(  ADDR) ((Pjbu_t) (ADDR))  // BranchU.
 #define P_JLL(  ADDR) ((Pjll_t) (ADDR))  // LeafL.
-#define P_JLB2( ADDR) ((Pjlb2_t)(ADDR))  // LeafL2.
 #define P_JLB(  ADDR) ((Pjlb_t) (ADDR))  // LeafB1.
 #define P_JP(   ADDR) ((Pjp_t)  (ADDR))  // JP.
 
+#define P_JV(   ADDR) ((Pjv_t)  (ADDR))  // &value.
+
+#ifdef  LATER
 #ifdef JUDYL
 
 #ifdef  JU_64BIT
@@ -514,31 +514,13 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 #define P_JV(   ADDR) ((Pjv_t)  (((Word_t)(ADDR)) & 0x3FFFFFFFFFFFF0))  // &value.
 #endif  // JU_64BIT
 
-#ifdef  JU_32BIT
+#ifndef JU_64BIT
 // Strip low 3 bits
 #define P_JV(   ADDR) ((Pjv_t)  (((Word_t)(ADDR)) & 0xFFFFFFF8))  // &value.
 #endif  // JU_32BIT
 
 #endif  // JUDYL
-
-// Need a spare words in Leafs
-#ifdef  SUBEXPW
-#define cL1W    1
-#define cL2W    1
-#define cL3W    1
-#define cL4W    1
-#define cL5W    1
-#define cL6W    1
-#define cL7W    1
-#else   // ! SUBEXPW
-#define cL1W    0
-#define cL2W    0
-#define cL3W    0
-#define cL4W    0
-#define cL5W    0
-#define cL6W    0
-#define cL7W    0
-#endif  // ! SUBEXPW
+#endif  //   LATER
 
 // LEAST BYTES:
 //
@@ -570,24 +552,24 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 // A default aspect ratio is hardwired here if not overridden at compile time,
 // such as by "EXTCCOPTS=-DBITMAP_BRANCH16x16 make".
 
-#ifdef  JU_32BIT
-#if (! (defined(BITMAP_BRANCH8x32) || defined(BITMAP_BRANCH16x16) || defined(BITMAP_BRANCH32x8)))
+#ifndef JU_64BIT
+//////////////////////////////#if (! (defined(BITMAP_BRANCH8x32) || defined(BITMAP_BRANCH16x16) || defined(BITMAP_BRANCH32x8)))
 #define BITMAP_BRANCH32x8 1     // 32 bits per subexpanse, 8 subexpanses.
-#endif
+/////////////////////#endif
 #endif  // JU_32BIT
 
 #ifdef  JU_64BIT
-#if (! (defined(BITMAP_BRANCH8x32) || defined(BITMAP_BRANCH16x16) || defined(BITMAP_BRANCH32x8) || defined(BITMAP_BRANCH64x4)))
+////////////////#if (! (defined(BITMAP_BRANCH8x32) || defined(BITMAP_BRANCH16x16) || defined(BITMAP_BRANCH32x8) || defined(BITMAP_BRANCH64x4)))
 #define BITMAP_BRANCH64x4 1     // 64 bits per subexpanse, 4 subexpanses.
-#endif
+////////////////#endif
 #endif  // JU_64BIT
 
 #ifdef BITMAP_BRANCH8x32
-#define BITMAPB_t uint8_t
+//////////////////////#define BITMAPB_t uint8_t
 #endif
 
 #ifdef BITMAP_BRANCH16x16
-#define BITMAPB_t uint16_t
+//////////////////////#define BITMAPB_t uint16_t
 #endif
 
 #ifdef BITMAP_BRANCH32x8
@@ -605,24 +587,24 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 // BITMAP_LEAF* values choices varies, but correctness and performance are the
 // same.
 
-#ifdef  JU_32BIT
-#if (! (defined(BITMAP_LEAF8x32) || defined(BITMAP_LEAF16x16) || defined(BITMAP_LEAF32x8)))
+#ifndef JU_64BIT
+//////////////////////#if (! (defined(BITMAP_LEAF8x32) || defined(BITMAP_LEAF16x16) || defined(BITMAP_LEAF32x8)))
 #define BITMAP_LEAF32x8         // 32 bits per subexpanse, 8 subexpanses.
-#endif
+//////////////////////#endif
 #endif  // 32_BIT
 
 #ifdef  JU_64BIT
-#if (! (defined(BITMAP_LEAF8x32) || defined(BITMAP_LEAF16x16) || defined(BITMAP_LEAF32x8) || defined(BITMAP_LEAF64x4)))
+//////////////////////#if (! (defined(BITMAP_LEAF8x32) || defined(BITMAP_LEAF16x16) || defined(BITMAP_LEAF32x8) || defined(BITMAP_LEAF64x4)))
 #define BITMAP_LEAF64x4         // 64 bits per subexpanse, 4 subexpanses.
-#endif
+//////////////////////#endif
 #endif // JU_64BIT
 
 #ifdef BITMAP_LEAF8x32
-#define BITMAPL_t uint8_t
+//////////////////////#define BITMAPL_t uint8_t
 #endif
 
 #ifdef BITMAP_LEAF16x16
-#define BITMAPL_t uint16_t
+//////////////////////#define BITMAPL_t uint16_t
 #endif
 
 #ifdef BITMAP_LEAF32x8
@@ -642,7 +624,6 @@ extern const uint8_t j__1_BranchBJPPopToWords[];
 
 #ifdef JUDYL
 extern const uint8_t j__L_BranchBJPPopToWords[];
-extern const uint8_t j__L_BranchBLPopToWords[];
 #endif
 
 // Conversion size to Linear for a Binary Search
@@ -854,7 +835,7 @@ extern const uint8_t j__L_BranchBLPopToWords[];
                 if (__LeafKey == __Key)                         \
                 {                                               \
                     MISSCOMPARES(__pos - (START));              \
-                    DIRECTHITS((START), __pos, sizeof(__Key));  \
+            /*      DIRECTHITS((START), __pos, sizeof(__Key));*/\
                     return(__pos);                              \
                 }                                               \
                 break;                                          \
@@ -873,7 +854,7 @@ extern const uint8_t j__L_BranchBLPopToWords[];
                 if (__LeafKey == __Key)                         \
                 {                                               \
                     MISSCOMPARES((START) - __pos);              \
-                    DIRECTHITS((START), __pos, sizeof(__Key));  \
+             /*     DIRECTHITS((START), __pos, sizeof(__Key));*/\
                     return(__pos);                              \
                 }                                               \
                 __pos++;  /* advance to hole */                 \
@@ -913,7 +894,7 @@ extern const uint8_t j__L_BranchBLPopToWords[];
                 if (__LeafKey == __Key)                         \
                 {                                               \
                     MISSCOMPARES(__pos - (START));              \
-                    DIRECTHITS((START), __pos, sizeof(__Key));  \
+             /*     DIRECTHITS((START), __pos, sizeof(__Key));*/\
                     return(__pos);                              \
                 }                                               \
                 break;                                          \
@@ -932,7 +913,7 @@ extern const uint8_t j__L_BranchBLPopToWords[];
                 if (__LeafKey == __Key)                         \
                 {                                               \
                     MISSCOMPARES((START) - __pos);              \
-                    DIRECTHITS((START), __pos, sizeof(__Key));  \
+             /*     DIRECTHITS((START), __pos, sizeof(__Key));*/\
                     return(__pos);                              \
                 }                                               \
                 __pos++;  /* advance to hole */                 \
@@ -976,7 +957,7 @@ extern const uint8_t j__L_BranchBLPopToWords[];
             {                                                   \
                 if (__LeafKey == __Key)                         \
                 {                                               \
-                    DIRECTHITS((START), __pos, sizeof(__Key));  \
+             /*     DIRECTHITS((START), __pos, sizeof(__Key));*/\
                     return(__pos);                              \
                 }                                               \
                 break;                                          \
@@ -994,7 +975,7 @@ extern const uint8_t j__L_BranchBLPopToWords[];
             {                                                   \
                 if (__LeafKey == __Key)                         \
                 {                                               \
-                    DIRECTHITS((START), __pos, sizeof(__Key));  \
+             /*     DIRECTHITS((START), __pos, sizeof(__Key));*/\
                     return(__pos);                              \
                 }                                               \
                 __pos++;  /* advance to hole */                 \
@@ -1009,7 +990,7 @@ extern const uint8_t j__L_BranchBLPopToWords[];
 // The native searches (Leaf Key size = 1,2,4,8)
 #if (! defined(SEARCH_BINARY)) && (! defined(SEARCH_LINEAR)) && (! defined(SEARCH_PSPLIT))
 // default a search leaf method
-#define SEARCH_LINEAR 
+#define SEARCH_PSPLIT 
 #endif  // (! defined(SEARCH_BINARY)) && (! defined(SEARCH_LINEAR)) && (! defined(SEARCH_PSPLIT))
 
 
@@ -1102,7 +1083,7 @@ j__udyCount64Bits(uint64_t word64)
 
 // Always 32 bits or less for 32 and 64Bit machines
 
-#ifdef  JU_32BIT
+#ifndef JU_64BIT
 #define j__udyCountBitsL j__udyCount32Bits
 #define j__udyCountBitsB j__udyCount32Bits
 #endif  // JU_32BIT
@@ -1153,13 +1134,25 @@ j__udyCount64Bits(uint64_t word64)
 
 #define JU_JPTYPE(PJP)          ((PJP)->jp_Type)
 
-#define JU_JPLEAF_POP0(PJP)     ((PJP)->jp_DcdP0[cBPW - 2])
-#define JU_JPLEAF_POP0_L(PJP)                                           \
-    (((PJP)->jp_DcdP0[cBPW - 2] | ((Word_t)((PJP)->jp_DcdP0[cBPW - 3]) <<  8))
+#ifndef  SWAP
+#define JU_JPLEAF_POP0(PJP)     ((PJP)->jp_Addr1 & 0xFF)
+
+#ifdef  JU_LITTLE_ENDIAN        // ====================================
+#define JU_JPDCDPOP0(PJP)   JU_TRIMTODCDSIZE((PJP)->jp_Addr1)
+
+#define JU_JPSETADT(PJP,ADDR,DCDPOP0,TYPE)                              \
+{                                                                       \
+    (PJP)->jp_Addr  = (ADDR);                                           \
+    (PJP)->jp_Addr1 = (JU_TRIMTODCDSIZE(DCDPOP0)                        \
+            | (((Word_t)(TYPE) << ((sizeof(Word_t)-1) * 8))));          \
+}
+#endif  // LITTLE_ENDIAN =================================================
+
+#else   // SWAP
 
 // define the JU_SWAP macro
 
-#ifdef  JU_32BIT
+#ifndef JU_64BIT
 #define JU_SWAP(WORD)   ((Word_t)__builtin_bswap32(WORD))
 #endif  // JU_32BIT
 
@@ -1167,28 +1160,29 @@ j__udyCount64Bits(uint64_t word64)
 #define JU_SWAP(WORD)   ((Word_t)__builtin_bswap64(WORD))
 #endif  // JU_64BIT
 
+#define JU_JPLEAF_POP0(PJP)     ((PJP)->jp_DcdP0[cBPW - 2])
 
-// TEMP, should be in JudyPrivateBranch.c
-#define jp_Addr1   j_po.jpo_u.j_po_Addr1
-
-
-#ifdef  JU_LITTLE_ENDIAN
+#ifdef  JU_LITTLE_ENDIAN        // ====================================
 #define JU_JPDCDPOP0(PJP)  (JU_SWAP((PJP)->jp_Addr1) >> 8)
 
 #define JU_JPSETADT(PJP,ADDR,DCDPOP0,TYPE)                              \
 {                                                                       \
     (PJP)->jp_Addr  = (ADDR);                                           \
-    (PJP)->jp_Addr1 = JU_SWAP(((Word_t)(DCDPOP0) << 8) | (uint8_t)(TYPE)); \
+    (PJP)->jp_Addr1 = JU_SWAP(((DCDPOP0) << 8) | (uint8_t)(TYPE));      \
 }
-#else   // BIG_ENDIAN
+
+#else   // BIG_ENDIAN =================================================
+
 #define JU_JPDCDPOP0(PJP)  (((PJP)->jp_Addr1) >> 8)
 
 #define JU_JPSETADT(PJP,ADDR,DCDPOP0,TYPE)                              \
 {                                                                       \
     (PJP)->jp_Addr  = (ADDR);                                           \
-    (PJP)->jp_Addr1 = ((Word_t)(DCDPOP0) << 8) | (uint8_t)(TYPE);       \
+    (PJP)->jp_Addr1 = ((DCDPOP0) << 8) | (uint8_t)(TYPE);               \
 }
-#endif  // BIG_ENDIAN
+#endif  // BIG_ENDIAN =================================================
+
+#endif  // SWAP
 
 // NUMBER OF BITS IN A BRANCH OR LEAF BITMAP AND SUBEXPANSE:
 //
@@ -1944,15 +1938,15 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
 // Note:  Here jp_Addr is a value area itself and not an address, so P_JV() is
 // not needed:
 
-#define JU_RET_FOUND_IMM_01(PJP)  return((PPvoid_t) (&((PJP)->jp_Addr)))
+#define JU_RET_FOUND_IMM_01(PJP)  return((PPvoid_t) (&((PJP)->jp_PValue)))
 
 // Note:  Here jp_Addr is a pointer to a separately-mallocd value area, so
 // P_JV() is required; likewise for JL_JLB_PVALUE:
 
 #define JU_RET_FOUND_IMM(PJP,OFFSET) \
-            return((PPvoid_t) (P_JV((PJP)->jp_Addr) + (OFFSET)))
+            return((PPvoid_t) (P_JV((PJP)->jp_PValue) + (OFFSET)))
 
-#ifdef BMVALUE
+#ifndef BMVALUE
 
 #define JU_RET_FOUND_LEAF_B1(PJLB,SUBEXP,OFFSET) \
             return((PPvoid_t) (P_JV(JL_JLB_PVALUE(PJLB, SUBEXP)) + (OFFSET)))
@@ -2170,18 +2164,8 @@ static inline int j__udySearchLeafW(Pjlw_t Pjlw, int LeafPop1, Word_t Index)
 
 static inline int j__udySearchLeafW(Pjlw_t Pjlw, int LeafPop1, Word_t Index)
 {
-//    This is OK for small Leafs (~31)
-//    SEARCHLEAFNATIVE(Word_t,  Pjlw, LeafPop1, Index, LeafPop1 / 2); 
-
-//  This helps for very large leafs -- 100+
-//    int Start = NSPLIT(LeafPop1, Index, (cbPW - __builtin_clzl(Pjlw[0] ^ Pjlw[LeafPop1 - 1])));
-//    SEARCHBIDIRNATIVE(Word_t,  Pjlw, LeafPop1, Index, LeafPop1/2); 
-//    SEARCHBIDIRNATIVE(Word_t,  Pjlw, LeafPop1, Index, Start); 
-    
 //    SEARCHLINARNATIVE(Word_t,  Pjlw, LeafPop1, Index, 0); 
-
     SEARCHBINARYNATIVE(Word_t, Pjlw, LeafPop1, Index, 0); 
-//    SEARCHLEAFNATIVE(Word_t,  Pjlw, LeafPop1, Index, Start); 
 }
 #endif	// NSLEAFW
 #endif // ! _JUDYPRIVATE_INCLUDED

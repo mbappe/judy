@@ -28,7 +28,7 @@
 extern int j__udyCreateBranchL(Pjp_t, Pjp_t, uint8_t *, Word_t, Pjpm_t);
 extern int j__udyCreateBranchB(Pjp_t, Pjp_t, uint8_t *, Word_t, Pjpm_t);
 
-static const jbb_t StageJBBZero = {0};	// zeroed versions of namesake struct.
+static const jbb_t StageJBBZero;	// zeroed versions of namesake struct.
 
 // TBD:  There are multiple copies of (some of) these CopyWto3, Copy3toW,
 // CopyWto7 and Copy7toW functions in Judy1Cascade.c, JudyLCascade.c, and
@@ -237,13 +237,17 @@ static int j__udyStageJBBtoJBB(
 	uint8_t * PSubCount,	// count of JPs for each subexpanse.
 	Pjpm_t    Pjpm)		// the jpm_t for JudyAlloc*().
 {
-	Pjbb_t    PjbbRaw;	// pointer to new bitmap branch.
+	size_t    PjbbRaw;	// pointer to new bitmap branch.
 	Pjbb_t    Pjbb;
 	Word_t    subexp;
 
+#ifdef PCAS
+             printf("j__udyStageJBBtoJBB()\n");
+#endif  // PCAS
+
 // Get memory for new BranchB:
 
-	if ((PjbbRaw = j__udyAllocJBB(Pjpm)) == (Pjbb_t) NULL) return(-1);
+	if ((PjbbRaw = j__udyAllocJBB(Pjpm)) == 0) return(-1);
 	Pjbb = P_JBB(PjbbRaw);
 
 // Copy staged BranchB into just-allocated BranchB:
@@ -254,7 +258,7 @@ static int j__udyStageJBBtoJBB(
 
 	for (subexp = 0; subexp < cJU_NUMSUBEXPB; subexp++)
 	{
-	    Pjp_t  PjpRaw;
+	    size_t PjpRaw;
 	    Pjp_t  Pjp;
 	    Word_t NumJP;       // number of JPs in each subexpanse.
 
@@ -274,7 +278,7 @@ static int j__udyStageJBBtoJBB(
 
 // Out of memory, back out previous allocations:
 
-	    if ((PjpRaw = j__udyAllocJBBJP(NumJP, Pjpm)) == (Pjp_t) NULL)
+	    if ((PjpRaw = j__udyAllocJBBJP(NumJP, Pjpm)) == 0)
 	    {
 		while(subexp--)
 		{
@@ -299,8 +303,10 @@ static int j__udyStageJBBtoJBB(
 
 // Change the PjpLeaf from Leaf to BranchB:
 
-	PjpLeaf->jp_Addr  = (Word_t) PjbbRaw;
-	PjpLeaf->jp_Type += cJU_JPBRANCH_B2 - cJU_JPLEAF2;  // Leaf to BranchB.
+	PjpLeaf->jp_Addr  = PjbbRaw;
+
+//      Done by caller NOW.
+//	PjpLeaf->jp_Type += cJU_JPBRANCH_B2 - cJU_JPLEAF2;  // Leaf to BranchB.
 
 	return(1);
 
@@ -316,7 +322,7 @@ static int j__udyStageJBBtoJBB(
 //
 // NOTE:  Caller must release the Leaf2 that was passed in.
 
-FUNCTION static Pjlb_t j__udyJLL2toJLB1(
+FUNCTION static size_t j__udyJLL2toJLB1(
 	uint16_t * Pjll,	// array of 16-bit indexes.
 
 #ifdef JUDYL
@@ -326,7 +332,7 @@ FUNCTION static Pjlb_t j__udyJLL2toJLB1(
 	Word_t     LeafPop1,	// number of indexes/values.
 	Pjpm_t    Pjpm)	// jpm_t for JudyAlloc*()/JudyFree*().
 {
-	Pjlb_t     PjlbRaw;
+	size_t     PjlbRaw;
 	Pjlb_t     Pjlb;
 	int	   offset;
 #ifdef  JUDYL
@@ -334,8 +340,8 @@ FUNCTION static Pjlb_t j__udyJLL2toJLB1(
 #endif  // JUDYL
 
 //      Allocate the LeafB1:
-	if ((PjlbRaw = j__udyAllocJLB1(Pjpm)) == (Pjlb_t) NULL)
-            return((Pjlb_t) NULL);
+	if ((PjlbRaw = j__udyAllocJLB1(Pjpm)) == 0)
+            return(0);
 	Pjlb = P_JLB(PjlbRaw);
 
 // Copy Leaf2 indexes to LeafB1:
@@ -396,7 +402,7 @@ FUNCTION static Pjlb_t j__udyJLL2toJLB1(
 			}
 		    }
 		    j__udyFreeJLB1(PjlbRaw, Pjpm);
-		    return((Pjlb_t)NULL);
+		    return(0);
 		}
 
 		Pjvnew = P_JV(pv[subexp].pv_Pjv);
@@ -434,7 +440,7 @@ FUNCTION int j__udyCascade1(
 {
         Word_t     DcdP0;
 	uint8_t	 * PLeaf;
-	Pjlb_t	   PjlbRaw;
+	size_t	   PjlbRaw;
 	Pjlb_t	   Pjlb;
 	Word_t     Pop1;
 	Word_t     ii;		// temp for loop counter
@@ -450,7 +456,7 @@ FUNCTION int j__udyCascade1(
 	assert((JU_JPDCDPOP0(Pjp) & 0xFF) == (cJU_LEAF1_MAXPOP1-1));
 
 	PjlbRaw = j__udyAllocJLB1(Pjpm);
-	if (PjlbRaw == (Pjlb_t) NULL) return(-1);
+	if (PjlbRaw == 0) return(-1);
 
 	Pjlb  = P_JLB(PjlbRaw);
 	PLeaf = (uint8_t *) P_JLL(Pjp->jp_Addr);
@@ -485,7 +491,7 @@ FUNCTION int j__udyCascade1(
 
 #endif /* BMVALUE */
 	    {
-		Word_t PjvnewRaw;	// value area of new leaf.
+		size_t PjvnewRaw;	// value area of new leaf.
 		Pjv_t  Pjvnew;
 
 		PjvnewRaw = j__udyLAllocJV(Pop1, Pjpm);
@@ -527,7 +533,7 @@ FUNCTION int j__udyCascade1(
 #endif // JUDYL
 
 	DcdP0 = JU_JPDCDPOP0(Pjp) | (PLeaf[0] & cJU_DCDMASK(1));
-        JU_JPSETADT(Pjp, (Word_t)PjlbRaw, DcdP0, cJU_JPLEAF_B1);
+        JU_JPSETADT(Pjp, PjlbRaw, DcdP0, cJU_JPLEAF_B1);
 
 	return(1);	// return success
 
@@ -585,17 +591,17 @@ FUNCTION int j__udyCascade2(
 	{
 //	cJU_JPLEAF_B1
                 Word_t DcdP0;
-		Pjlb_t PjlbRaw;
+		size_t PjlbRaw;
 		PjlbRaw = j__udyJLL2toJLB1(PLeaf,
 #ifdef JUDYL
 				     Pjv,
 #endif
 				     cJU_LEAF2_MAXPOP1, Pjpm);
-		if (PjlbRaw == (Pjlb_t)NULL) return(-1);  // out of memory
+		if (PjlbRaw == 0) return(-1);  // out of memory
 
 //		Merge in another Dcd byte because compressing
 		DcdP0 = (CIndex & cJU_DCDMASK(1)) | JU_JPDCDPOP0(Pjp);
-                JU_JPSETADT(Pjp, (Word_t)PjlbRaw, DcdP0, cJU_JPLEAF_B1);
+                JU_JPSETADT(Pjp, PjlbRaw, DcdP0, cJU_JPLEAF_B1);
 
 		return(1);
 	}
@@ -651,7 +657,7 @@ FUNCTION int j__udyCascade2(
 //		cJL_JPIMMED_1_02..7:  JudyL 64
 //		cJ1_JPIMMED_1_02..15: Judy1 64
 #ifdef JUDYL
-				Word_t PjvnewRaw;	// value area of leaf.
+				size_t PjvnewRaw;	// value area of leaf.
 				Pjv_t  Pjvnew;
 
 //				Allocate Value area for Immediate Leaf
@@ -663,7 +669,7 @@ FUNCTION int j__udyCascade2(
 
 //				Copy to Values to Value Leaf
 				JU_COPYMEM(Pjvnew, Pjv + Start, Pop1);
-				PjpJP->jp_Addr = PjvnewRaw;
+				PjpJP->jp_PValue = PjvnewRaw;
 
 //				Copy to JP as an immediate Leaf
 //		                j__udyCopy2to1(PjpJP->jp_LIndex1, PLeaf + Start, Pop1);
@@ -685,7 +691,7 @@ FUNCTION int j__udyCascade2(
 			{
 //		cJU_JPLEAF1
                                 Word_t  DcdP0;
-				Pjll_t PjllRaw;	 // pointer to new leaf.
+				size_t PjllRaw;	 // pointer to new leaf.
 				Pjll_t Pjll;
 #ifdef  JUDYL
 		                Pjv_t  Pjvnew; 	 // value area of new leaf.
@@ -693,7 +699,7 @@ FUNCTION int j__udyCascade2(
 
 //				Get a new Leaf
 				PjllRaw = j__udyAllocJLL1(Pop1, Pjpm);
-				if (PjllRaw == (Pjll_t)NULL)
+				if (PjllRaw == 0)
 					FREEALLEXIT(ExpCnt, StageJP, Pjpm);
 
 				Pjll = P_JLL(PjllRaw);
@@ -712,7 +718,7 @@ FUNCTION int j__udyCascade2(
                                                 |
                                         (Pop1 - 1);
 
-                                JU_JPSETADT(PjpJP, (Word_t)PjllRaw, DcdP0,
+                                JU_JPSETADT(PjpJP, PjllRaw, DcdP0,
                                         cJU_JPLEAF1);
 			}
 #endif //  (!(JUDY1 && JU_64BIT)) // Not 64Bit Judy1
@@ -721,10 +727,7 @@ FUNCTION int j__udyCascade2(
 			{
 //		cJU_JPLEAF_B1
                                 Word_t  DcdP0;
-				Pjlb_t PjlbRaw;
-#ifdef PCAS
-                                printf("j__udyJLL2toJLB1()\n");
-#endif  // PCAS
+				size_t PjlbRaw;
 
 				PjlbRaw = j__udyJLL2toJLB1(
 						PLeaf + Start,
@@ -732,7 +735,7 @@ FUNCTION int j__udyCascade2(
 						Pjv + Start,
 #endif
 						Pop1, Pjpm);
-				if (PjlbRaw == (Pjlb_t)NULL)
+				if (PjlbRaw == 0)
 					FREEALLEXIT(ExpCnt, StageJP, Pjpm);
 
                                 DcdP0 = (JU_JPDCDPOP0(Pjp) & cJU_DCDMASK(2)) 
@@ -741,7 +744,7 @@ FUNCTION int j__udyCascade2(
                                                 |
                                         (Pop1 - 1);
 
-                                JU_JPSETADT(PjpJP, (Word_t)PjlbRaw, DcdP0,
+                                JU_JPSETADT(PjpJP, PjlbRaw, DcdP0,
                                         cJU_JPLEAF_B1);
 			}
 			ExpCnt++;
@@ -764,13 +767,9 @@ FUNCTION int j__udyCascade2(
 	}
 	else
 	{
-
-#ifdef PCAS
-             printf("j__udyStageJBBtoJBB()\n");
-#endif  // PCAS
-
 	    if (j__udyStageJBBtoJBB(Pjp, &StageJBB, StageJP, SubJPCount, Pjpm)
 		== -1) FREEALLEXIT(ExpCnt, StageJP, Pjpm);
+	    Pjp->jp_Type = cJU_JPBRANCH_B2;
 	}
 	return(1);
 
@@ -798,7 +797,6 @@ FUNCTION int j__udyCascade3(
 	jp_t	   StageJP   [cJU_LEAF3_MAXPOP1];  // JPs of new leaves
 	Word_t	   StageA    [cJU_LEAF3_MAXPOP1];
 	uint8_t	   StageExp  [cJU_LEAF3_MAXPOP1];  // Expanses of new leaves
-//	uint8_t	   SubJPCount[cJU_NUMSUBEXPB];     // JPs in each subexpanse
 	uint8_t	   SubJPCount[cJU_NUMSUBEXPB];     // JPs in each subexpanse
 	jbb_t      StageJBB;                       // staged bitmap branch
 
@@ -827,7 +825,7 @@ FUNCTION int j__udyCascade3(
 	if (!JU_DIGITATSTATE(CIndex ^ StageA[cJU_LEAF3_MAXPOP1-1], 3))
 	{
                 Word_t DcdP0;
-		Pjll_t PjllRaw;	 // pointer to new leaf.
+		size_t PjllRaw;	 // pointer to new leaf.
 		Pjll_t Pjll;
 #ifdef  JUDYL
 		Pjv_t  Pjvnew;	 // value area of new leaf.
@@ -835,7 +833,7 @@ FUNCTION int j__udyCascade3(
 
 //		Alloc a 2 byte Index Leaf
 		PjllRaw	= j__udyAllocJLL2(cJU_LEAF3_MAXPOP1, Pjpm);
-		if (PjllRaw == (Pjlb_t)NULL) return(-1);  // out of memory
+		if (PjllRaw == 0) return(-1);  // out of memory
 
 		Pjll = P_JLL(PjllRaw);
 
@@ -851,7 +849,7 @@ FUNCTION int j__udyCascade3(
 //		Add in another Dcd byte because compressing
                 DcdP0 = (CIndex & cJU_DCDMASK(2)) | JU_JPDCDPOP0(Pjp);
 
-                JU_JPSETADT(Pjp, (Word_t) PjllRaw, DcdP0, cJU_JPLEAF2);
+                JU_JPSETADT(Pjp, PjllRaw, DcdP0, cJU_JPLEAF2);
 
 		return(1); // Success
 	}
@@ -908,7 +906,7 @@ FUNCTION int j__udyCascade3(
 //		cJ1_JPIMMED_2_02..7:  Judy1 64
 #ifdef JUDYL
 //				Alloc is 1st in case of malloc fail
-				Word_t PjvnewRaw;  // value area of new leaf.
+				size_t PjvnewRaw;  // value area of new leaf.
 				Pjv_t  Pjvnew;
 
 //				Allocate Value area for Immediate Leaf
@@ -921,7 +919,7 @@ FUNCTION int j__udyCascade3(
 //				Copy to Values to Value Leaf
 				JU_COPYMEM(Pjvnew, Pjv + Start, Pop1);
 
-				PjpJP->jp_Addr = PjvnewRaw;
+				PjpJP->jp_PValue = PjvnewRaw;
 
 //				Copy to Index to JP as an immediate Leaf
 //		                j__udyCopyWto2(PjpJP->jp_LIndex2, StageA+Start, Pop1);
@@ -942,14 +940,14 @@ FUNCTION int j__udyCascade3(
 			{
 //		cJU_JPLEAF2
                                 Word_t  DcdP0;
-				Pjll_t PjllRaw;	 // pointer to new leaf.
+				size_t PjllRaw;	 // pointer to new leaf.
 				Pjll_t Pjll;
 #ifdef  JUDYL
 		                Pjv_t  Pjvnew; 	 // value area of new leaf.
 #endif  // JUDYL
 
 				PjllRaw = j__udyAllocJLL2(Pop1, Pjpm);
-				if (PjllRaw == (Pjll_t) NULL)
+				if (PjllRaw == 0)
 					FREEALLEXIT(ExpCnt, StageJP, Pjpm);
 
 				Pjll = P_JLL(PjllRaw);
@@ -969,7 +967,7 @@ FUNCTION int j__udyCascade3(
                                                 |
                                         (Pop1 - 1);
 
-                                JU_JPSETADT(PjpJP, (Word_t)PjllRaw, DcdP0,
+                                JU_JPSETADT(PjpJP, PjllRaw, DcdP0,
                                         cJU_JPLEAF2);
 			}
 			ExpCnt++;
@@ -995,6 +993,7 @@ FUNCTION int j__udyCascade3(
 	{
 	    if (j__udyStageJBBtoJBB(Pjp, &StageJBB, StageJP, SubJPCount, Pjpm)
 		== -1) FREEALLEXIT(ExpCnt, StageJP, Pjpm);
+	    Pjp->jp_Type = cJU_JPBRANCH_B3;
 	}
 	return(1);
 
@@ -1059,7 +1058,7 @@ FUNCTION int j__udyCascade4(
 	if (!JU_DIGITATSTATE(CIndex ^ StageA[cJU_LEAF4_MAXPOP1-1], 4))
 	{
                 Word_t DcdP0;
-		Pjll_t PjllRaw;	 // pointer to new leaf.
+		size_t PjllRaw;	 // pointer to new leaf.
 		Pjll_t Pjll;
 #ifdef  JUDYL
                 Pjv_t  Pjvnew;	 // value area of new Leaf.
@@ -1067,7 +1066,7 @@ FUNCTION int j__udyCascade4(
 
 //		Alloc a 3 byte Index Leaf
 		PjllRaw = j__udyAllocJLL3(cJU_LEAF4_MAXPOP1, Pjpm);
-		if (PjllRaw == (Pjlb_t)NULL) return(-1);  // out of memory
+		if (PjllRaw == 0) return(-1);  // out of memory
 
 		Pjll = P_JLL(PjllRaw);
 
@@ -1079,7 +1078,7 @@ FUNCTION int j__udyCascade4(
 		JU_COPYMEM(Pjvnew, Pjv, cJU_LEAF4_MAXPOP1);
 #endif
 	        DcdP0 = JU_JPDCDPOP0(Pjp) | (CIndex & cJU_DCDMASK(3));
-                JU_JPSETADT(Pjp, (Word_t)PjllRaw, DcdP0, cJU_JPLEAF3);
+                JU_JPSETADT(Pjp, PjllRaw, DcdP0, cJU_JPLEAF3);
 
 		return(1);
 	}
@@ -1133,7 +1132,7 @@ FUNCTION int j__udyCascade4(
 
 #ifdef JUDYL
 //				Alloc is 1st in case of malloc fail
-				Word_t PjvnewRaw;  // value area of new leaf.
+				size_t PjvnewRaw;  // value area of new leaf.
 				Pjv_t  Pjvnew;
 
 //				Allocate Value area for Immediate Leaf
@@ -1145,7 +1144,7 @@ FUNCTION int j__udyCascade4(
 
 //				Copy to Values to Value Leaf
 				JU_COPYMEM(Pjvnew, Pjv + Start, Pop1);
-				PjpJP->jp_Addr = PjvnewRaw;
+				PjpJP->jp_PValue = PjvnewRaw;
 
 //				Copy to Index to JP as an immediate Leaf
 				j__udyCopyWto3(PjpJP->jp_LIndex1,
@@ -1161,14 +1160,14 @@ FUNCTION int j__udyCascade4(
 			{
 //		cJU_JPLEAF3
                                 Word_t  DcdP0;
-				Pjll_t PjllRaw;	 // pointer to new leaf.
+				size_t PjllRaw;	 // pointer to new leaf.
 				Pjll_t Pjll;
 #ifdef  JUDYL
 		                Pjv_t  Pjvnew;	 // value area of new leaf.
 #endif  // JUDYL
 
 				PjllRaw = j__udyAllocJLL3(Pop1, Pjpm);
-				if (PjllRaw == (Pjll_t)NULL)
+				if (PjllRaw == 0)
 					FREEALLEXIT(ExpCnt, StageJP, Pjpm);
 
 				Pjll = P_JLL(PjllRaw);
@@ -1187,7 +1186,7 @@ FUNCTION int j__udyCascade4(
                                                 |
                                         (Pop1 - 1);
 
-                                JU_JPSETADT(PjpJP, (Word_t)PjllRaw, DcdP0,
+                                JU_JPSETADT(PjpJP, PjllRaw, DcdP0,
                                         cJU_JPLEAF3);
 			}
 			ExpCnt++;
@@ -1212,6 +1211,7 @@ FUNCTION int j__udyCascade4(
 	{
 	    if (j__udyStageJBBtoJBB(Pjp, &StageJBB, StageJP, SubJPCount, Pjpm)
 		== -1) FREEALLEXIT(ExpCnt, StageJP, Pjpm);
+	    Pjp->jp_Type = cJU_JPBRANCH_B4;
 	}
 	return(1);
 
@@ -1273,7 +1273,7 @@ FUNCTION int j__udyCascade5(
 	if (!JU_DIGITATSTATE(CIndex ^ StageA[cJU_LEAF5_MAXPOP1-1], 5))
 	{
                 Word_t DcdP0;
-		Pjll_t PjllRaw;	 // pointer to new leaf.
+		size_t PjllRaw;	 // pointer to new leaf.
 		Pjll_t Pjll;
 #ifdef  JUDYL
                 Pjv_t  Pjvnew;	 // value area of new leaf.
@@ -1281,7 +1281,7 @@ FUNCTION int j__udyCascade5(
 
 //		Alloc a 4 byte Index Leaf
 		PjllRaw = j__udyAllocJLL4(cJU_LEAF5_MAXPOP1, Pjpm);
-		if (PjllRaw == (Pjlb_t)NULL) return(-1);  // out of memory
+		if (PjllRaw == 0) return(-1);  // out of memory
 
 		Pjll = P_JLL(PjllRaw);
 
@@ -1294,7 +1294,7 @@ FUNCTION int j__udyCascade5(
 #endif
 
 	        DcdP0 = JU_JPDCDPOP0(Pjp) | (CIndex & cJU_DCDMASK(4));
-                JU_JPSETADT(Pjp, (Word_t)PjllRaw, DcdP0, cJU_JPLEAF4);
+                JU_JPSETADT(Pjp, PjllRaw, DcdP0, cJU_JPLEAF4);
 
 		return(1);
 	}
@@ -1359,7 +1359,7 @@ FUNCTION int j__udyCascade5(
 			{
 //		cJU_JPLEAF4
                                 Word_t  DcdP0;
-				Pjll_t PjllRaw;	 // pointer to new leaf.
+				size_t PjllRaw;	 // pointer to new leaf.
 				Pjll_t Pjll;
 #ifdef  JUDYL
 		                Pjv_t  Pjvnew; 	 // value area of new leaf.
@@ -1367,7 +1367,7 @@ FUNCTION int j__udyCascade5(
 
 //				Get a new Leaf
 				PjllRaw = j__udyAllocJLL4(Pop1, Pjpm);
-				if (PjllRaw == (Pjll_t)NULL)
+				if (PjllRaw == 0)
 					FREEALLEXIT(ExpCnt, StageJP, Pjpm);
 
 				Pjll = P_JLL(PjllRaw);
@@ -1387,7 +1387,7 @@ FUNCTION int j__udyCascade5(
                                                 |
                                         (Pop1 - 1);
 
-                                JU_JPSETADT(PjpJP, (Word_t)PjllRaw, DcdP0,
+                                JU_JPSETADT(PjpJP, PjllRaw, DcdP0,
                                         cJU_JPLEAF4);
 			}
 			ExpCnt++;
@@ -1412,6 +1412,7 @@ FUNCTION int j__udyCascade5(
 	{
 	    if (j__udyStageJBBtoJBB(Pjp, &StageJBB, StageJP, SubJPCount, Pjpm)
 		== -1) FREEALLEXIT(ExpCnt, StageJP, Pjpm);
+	    Pjp->jp_Type = cJU_JPBRANCH_B5;
 	}
 	return(1);
 
@@ -1474,7 +1475,7 @@ FUNCTION int j__udyCascade6(
 	if (!JU_DIGITATSTATE(CIndex ^ StageA[cJU_LEAF6_MAXPOP1-1], 6))
 	{
                 Word_t DcdP0;
-		Pjll_t PjllRaw;	 // pointer to new leaf.
+		size_t PjllRaw;	 // pointer to new leaf.
 		Pjll_t Pjll;
 #ifdef  JUDYL
                 Pjv_t  Pjvnew; 	 // value area of new leaf.
@@ -1482,7 +1483,7 @@ FUNCTION int j__udyCascade6(
 
 //		Alloc a 5 byte Index Leaf
 		PjllRaw = j__udyAllocJLL5(cJU_LEAF6_MAXPOP1, Pjpm);
-		if (PjllRaw == (Pjlb_t)NULL) return(-1);  // out of memory
+		if (PjllRaw == 0) return(-1);  // out of memory
 
 		Pjll = P_JLL(PjllRaw);
 
@@ -1494,7 +1495,7 @@ FUNCTION int j__udyCascade6(
 		JU_COPYMEM(Pjvnew, Pjv, cJU_LEAF6_MAXPOP1);
 #endif  // JUDYL
 	        DcdP0 = JU_JPDCDPOP0(Pjp) | (CIndex & cJU_DCDMASK(5));
-                JU_JPSETADT(Pjp, (Word_t)PjllRaw, DcdP0, cJU_JPLEAF5);
+                JU_JPSETADT(Pjp, PjllRaw, DcdP0, cJU_JPLEAF5);
 
 		return(1);
 	}
@@ -1558,7 +1559,7 @@ FUNCTION int j__udyCascade6(
 			{
 //		cJU_JPLEAF5
                                 Word_t  DcdP0;
-				Pjll_t PjllRaw;	 // pointer to new leaf.
+				size_t PjllRaw;	 // pointer to new leaf.
 				Pjll_t Pjll;
 #ifdef  JUDYL
 		                Pjv_t  Pjvnew; 	 // value area of new leaf.
@@ -1566,7 +1567,7 @@ FUNCTION int j__udyCascade6(
 
 //				Get a new Leaf
 				PjllRaw = j__udyAllocJLL5(Pop1, Pjpm);
-				if (PjllRaw == (Pjll_t)NULL)
+				if (PjllRaw == 0)
 					FREEALLEXIT(ExpCnt, StageJP, Pjpm);
 
 				Pjll = P_JLL(PjllRaw);
@@ -1587,7 +1588,7 @@ FUNCTION int j__udyCascade6(
                                                 |
                                         (Pop1 - 1);
 
-                                JU_JPSETADT(PjpJP, (Word_t)PjllRaw, DcdP0,
+                                JU_JPSETADT(PjpJP, PjllRaw, DcdP0,
                                         cJU_JPLEAF5);
 			}
 			ExpCnt++;
@@ -1612,6 +1613,7 @@ FUNCTION int j__udyCascade6(
 	{
 	    if (j__udyStageJBBtoJBB(Pjp, &StageJBB, StageJP, SubJPCount, Pjpm)
 		== -1) FREEALLEXIT(ExpCnt, StageJP, Pjpm);
+	    Pjp->jp_Type = cJU_JPBRANCH_B6;
 	}
 	return(1);
 
@@ -1674,7 +1676,7 @@ FUNCTION int j__udyCascade7(
 	if (!JU_DIGITATSTATE(CIndex ^ StageA[cJU_LEAF7_MAXPOP1-1], 7))
 	{
                 Word_t DcdP0;
-		Pjll_t PjllRaw;	 // pointer to new leaf.
+		size_t PjllRaw;	 // pointer to new leaf.
 		Pjll_t Pjll;
 #ifdef  JUDYL
                 Pjv_t  Pjvnew; 	 // value area of new leaf.
@@ -1682,7 +1684,7 @@ FUNCTION int j__udyCascade7(
 
 //		Alloc a 6 byte Index Leaf
 		PjllRaw = j__udyAllocJLL6(cJU_LEAF7_MAXPOP1, Pjpm);
-		if (PjllRaw == (Pjlb_t)NULL) return(-1);  // out of memory
+		if (PjllRaw == 0) return(-1);  // out of memory
 
 		Pjll = P_JLL(PjllRaw);
 
@@ -1695,7 +1697,7 @@ FUNCTION int j__udyCascade7(
 #endif
 
 	        DcdP0 = JU_JPDCDPOP0(Pjp) | (CIndex & cJU_DCDMASK(6));
-                JU_JPSETADT(Pjp, (Word_t)PjllRaw, DcdP0, cJU_JPLEAF6);
+                JU_JPSETADT(Pjp, PjllRaw, DcdP0, cJU_JPLEAF6);
 
 		return(1);
 	}
@@ -1763,7 +1765,7 @@ FUNCTION int j__udyCascade7(
 			{
 //		cJU_JPLEAF6
                                 Word_t  DcdP0;
-				Pjll_t PjllRaw;	 // pointer to new leaf.
+				size_t PjllRaw;	 // pointer to new leaf.
 				Pjll_t Pjll;
 #ifdef  JUDYL
 		                Pjv_t  Pjvnew; 	 // value area of new leaf.
@@ -1771,7 +1773,7 @@ FUNCTION int j__udyCascade7(
 
 //				Get a new Leaf
 				PjllRaw = j__udyAllocJLL6(Pop1, Pjpm);
-				if (PjllRaw == (Pjll_t)NULL)
+				if (PjllRaw == 0)
 					FREEALLEXIT(ExpCnt, StageJP, Pjpm);
 				Pjll = P_JLL(PjllRaw);
 
@@ -1790,7 +1792,7 @@ FUNCTION int j__udyCascade7(
                                                 |
                                         (Pop1 - 1);
 
-                                JU_JPSETADT(PjpJP, (Word_t)PjllRaw, DcdP0,
+                                JU_JPSETADT(PjpJP, PjllRaw, DcdP0,
                                         cJU_JPLEAF6);
 			}
 			ExpCnt++;
@@ -1815,6 +1817,7 @@ FUNCTION int j__udyCascade7(
 	{
 	    if (j__udyStageJBBtoJBB(Pjp, &StageJBB, StageJP, SubJPCount, Pjpm)
 		== -1) FREEALLEXIT(ExpCnt, StageJP, Pjpm);
+	    Pjp->jp_Type = cJU_JPBRANCH_B7;
 	}
 	return(1);
 
@@ -1879,7 +1882,7 @@ FUNCTION int j__udyCascadeL(
 	if (!JU_DIGITATSTATE(CIndex ^ Pjlw[cJU_LEAFW_MAXPOP1 - 1],
 			     cJU_ROOTSTATE))
 	{
-		Pjll_t PjllRaw;		// pointer to new leaf.
+		size_t PjllRaw;		// pointer to new leaf.
 		Pjll_t Pjll;
 #ifdef  JUDYL
                 Pjv_t  Pjvnew; 		// value area of new leaf.
@@ -1891,7 +1894,7 @@ FUNCTION int j__udyCascadeL(
 //		Alloc a 3[7] byte Index Leaf
 #ifdef JU_64BIT
 		PjllRaw	= j__udyAllocJLL7(cJU_LEAFW_MAXPOP1, Pjpm);
-		if (PjllRaw == (Pjlb_t)NULL) return(-1);  // out of memory
+		if (PjllRaw == 0) return(-1);  // out of memory
 
 		Pjll = P_JLL(PjllRaw);
 
@@ -1905,7 +1908,7 @@ FUNCTION int j__udyCascadeL(
 
 #else // 32 Bit
 		PjllRaw	= j__udyAllocJLL3(cJU_LEAFW_MAXPOP1, Pjpm);
-		if (PjllRaw == (Pjll_t) NULL) return(-1);
+		if (PjllRaw == 0) return(-1);
 
 		Pjll = P_JLL(PjllRaw);
 
@@ -1922,10 +1925,10 @@ FUNCTION int j__udyCascadeL(
 //		Following not needed because cJU_DCDMASK(3[7]) is == 0
 //////		StageJP[0].jp_DcdPopO	|= (CIndex & cJU_DCDMASK(3[7]));
 #ifdef JU_64BIT
-                JU_JPSETADT(&(StageJP[0]), (Word_t)PjllRaw, cJU_LEAFW_MAXPOP1-1,
+                JU_JPSETADT(&(StageJP[0]), PjllRaw, cJU_LEAFW_MAXPOP1-1,
                                 cJU_JPLEAF7);
 #else   // 32BIT
-                JU_JPSETADT(&(StageJP[0]), (Word_t)PjllRaw, cJU_LEAFW_MAXPOP1-1,
+                JU_JPSETADT(&(StageJP[0]), PjllRaw, cJU_LEAFW_MAXPOP1-1,
                                 cJU_JPLEAF3);
 #endif  // 32BIT
 //		Create a 1 element Linear branch
@@ -2015,14 +2018,14 @@ FUNCTION int j__udyCascadeL(
 			else // Linear Leaf JPLEAF3[7]
 			{
 //		cJU_JPLEAF3[7]
-				Pjll_t PjllRaw;	 // pointer to new leaf.
+				size_t PjllRaw;	 // pointer to new leaf.
 				Pjll_t Pjll;
 #ifdef  JUDYL
 		                Pjv_t  Pjvnew; 	 // value area of new leaf.
 #endif  // JUDYL
 #ifdef JU_64BIT
 				PjllRaw = j__udyAllocJLL7(Pop1, Pjpm);
-				if (PjllRaw == (Pjll_t) NULL) return(-1);
+				if (PjllRaw == 0) return(-1);
 				Pjll = P_JLL(PjllRaw);
 
 				j__udyCopyWto7((uint8_t *) Pjll, Pjlw + Start,
@@ -2034,7 +2037,7 @@ FUNCTION int j__udyCascadeL(
 
 #else // JU_64BIT - 32 Bit
 				PjllRaw = j__udyAllocJLL3(Pop1, Pjpm);
-				if (PjllRaw == (Pjll_t) NULL) return(-1);
+				if (PjllRaw == 0) return(-1);
 				Pjll = P_JLL(PjllRaw);
 
 				j__udyCopyWto3((uint8_t *) Pjll, Pjlw + Start,
@@ -2047,10 +2050,10 @@ FUNCTION int j__udyCascadeL(
 #endif // 32 Bit
 
 #ifdef JU_64BIT
-                                JU_JPSETADT(PjpJP, (Word_t)PjllRaw, Pop1 - 1,
+                                JU_JPSETADT(PjpJP, PjllRaw, Pop1 - 1,
                                         cJU_JPLEAF7);
 #else // JU_64BIT - 32 Bit
-                                JU_JPSETADT(PjpJP, (Word_t)PjllRaw, Pop1 - 1,
+                                JU_JPSETADT(PjpJP, PjllRaw, Pop1 - 1,
                                         cJU_JPLEAF3);
 #endif // 32 Bit
 			}
@@ -2076,7 +2079,6 @@ FUNCTION int j__udyCascadeL(
 	{
 	    if (j__udyStageJBBtoJBB(Pjp, &StageJBB, StageJP, SubJPCount, Pjpm)
 		== -1) FREEALLEXIT(ExpCnt, StageJP, Pjpm);
-
 	    Pjp->jp_Type = cJU_JPBRANCH_B;  // cJU_LEAFW is out of sequence
 	}
 	return(1);

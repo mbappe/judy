@@ -426,7 +426,7 @@ insStrJudyLTree(uint8_t * String,      // string to add to tree of JudyL arrays
 
 //          free the string buffer (ls_t)
 
-            JudyFree((Pvoid_t)Pls, FreeLen);
+            JudyFree((size_t)Pls, FreeLen);
             PPValue = JudyLIns(PPsplit, Index, PJError);
             if (PPValue == PPJERR)
             {
@@ -528,7 +528,7 @@ delStrJudyLTree(uint8_t * String,      // delete from tree of JudyL arrays
     {
         Pls_t     Pls;
         Pls = (Pls_t) CLEAR_PLS(*PPValue);      // demangle pointer
-        JudyFree((Pvoid_t)Pls, LS_WORDLEN(Len));        // free the ls_t
+        JudyFree((size_t)Pls, LS_WORDLEN(Len));        // free the ls_t
 
         *PPValue = (Pvoid_t)NULL;       // clean pointer
         return (1);                     // successfully deleted
@@ -679,7 +679,7 @@ delJudyLTree(PPvoid_t PPValue,                 // ^ to JudyL root pointer
             Pls = (Pls_t)CLEAR_PLS(*PPValue);   // demangle pointer
 
 //        *PPValue = (Pvoid_t)NULL;               // clean pointer
-           JudyFree((Pvoid_t)Pls, freewords);   // free the ls_t
+           JudyFree((size_t)Pls, freewords);   // free the ls_t
 
             return(freewords * WORDSIZE);
         }

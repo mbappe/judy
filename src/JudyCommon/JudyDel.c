@@ -156,11 +156,11 @@ FUNCTION static int j__udyDelWalk(
         Word_t  pop1;           // of a leaf.
         Word_t  level;          // of a leaf.
         uint8_t digit;          // from Index, in current branch.
-        Pjll_t  PjllnewRaw;     // address of newly allocated leaf.
+        size_t  PjllnewRaw;     // address of newly allocated leaf.
         Pjll_t  Pjllnew;
         int     offset;         // within a branch.
         int     retcode;        // return code: -1, 0, 1, 2.
-JUDYLCODE(Pjv_t PjvRaw;)        // value area.
+JUDYLCODE(size_t PjvRaw;)        // value area.
 JUDYLCODE(Pjv_t Pjv;)
 
         DBGCODE(level = 0;)
@@ -219,7 +219,7 @@ ContinueDelWalk:                // for modifying state without recursing.
         if (JU_JPTYPE(Pjp) == cJU_JPIMMED_1_01 + (cLevel) - 2)  \
         {                                                       \
             *Pleaf++ = JU_JPDCDPOP0(Pjp);                       \
-  JUDYLCODE(*Pjv++   = (Pjp)->jp_Addr;)                         \
+  JUDYLCODE(*Pjv++   = (Pjp)->jp_PValue;)                         \
             continue;   /* for-loop */                          \
         }
 
@@ -228,7 +228,7 @@ ContinueDelWalk:                // for modifying state without recursing.
         {                                                       \
             CopyIndex(Pleaf, (Word_t) (JU_JPDCDPOP0(Pjp)));     \
             Pleaf += (cLevel);  /* index size = level */        \
-  JUDYLCODE(*Pjv++ = (Pjp)->jp_Addr;)                           \
+  JUDYLCODE(*Pjv++ = (Pjp)->jp_PValue;)                           \
             continue;   /* for-loop */                          \
         }
 
@@ -245,16 +245,16 @@ ContinueDelWalk:                // for modifying state without recursing.
                             CopyImmed,CopyIndex)                        \
         {                                                               \
             LeafType Pleaf;                                             \
-            Pjbl_t   PjblRaw;                                           \
+            size_t   PjblRaw;                                           \
             Pjbl_t   Pjbl;                                              \
-            Word_t   numJPs;                                            \
+            int   numJPs;                                            \
                                                                         \
             if ((PjllnewRaw = Alloc(MaxPop1, Pjpm)) == 0) return(-1);   \
             Pjllnew = P_JLL(PjllnewRaw);                                \
             Pleaf   = (LeafType) Pjllnew;                               \
   JUDYLCODE(Pjv     = ValueArea(Pleaf, MaxPop1);)                       \
                                                                         \
-            PjblRaw = (Pjbl_t) (Pjp->jp_Addr);                          \
+            PjblRaw = Pjp->jp_Addr;                          \
             Pjbl    = P_JBL(PjblRaw);                                   \
             numJPs  = Pjbl->jbl_NumJPs;                                 \
                                                                         \
@@ -276,7 +276,7 @@ ContinueDelWalk:                // for modifying state without recursing.
             j__udyFreeJBL(PjblRaw, Pjpm);                               \
                                                                         \
             Pjp->jp_Type = (NewJPType);                                 \
-            Pjp->jp_Addr = (Word_t) PjllnewRaw;                         \
+            Pjp->jp_Addr = PjllnewRaw;                         \
             goto ContinueDelWalk;       /* delete from new leaf */      \
         }
 
@@ -424,11 +424,11 @@ BranchLKeep:
                             CopyImmed,CopyIndex)                        \
         {                                                               \
             LeafType  Pleaf;                                            \
-            Pjbb_t    PjbbRaw;  /* BranchB to compress */               \
+            size_t    PjbbRaw;  /* BranchB to compress */               \
             Pjbb_t    Pjbb;                                             \
             Word_t    subexp;   /* current subexpanse number    */      \
             BITMAPB_t bitmap;   /* portion for this subexpanse  */      \
-            Pjp_t     Pjp2Raw;  /* one subexpanses subarray     */      \
+            size_t    Pjp2Raw;  /* one subexpanses subarray     */      \
             Pjp_t     Pjp2;                                             \
                                                                         \
             if ((PjllnewRaw = Alloc(MaxPop1, Pjpm)) == 0) return(-1);   \
@@ -436,7 +436,7 @@ BranchLKeep:
             Pleaf   = (LeafType) Pjllnew;                               \
   JUDYLCODE(Pjv     = ValueArea(Pleaf, MaxPop1);)                       \
                                                                         \
-            PjbbRaw = (Pjbb_t) (Pjp->jp_Addr);                          \
+            PjbbRaw = Pjp->jp_Addr;                          \
             Pjbb    = P_JBB(PjbbRaw);                                   \
                                                                         \
             for (subexp = 0; subexp < cJU_NUMSUBEXPB; ++subexp)         \
@@ -474,7 +474,7 @@ BranchLKeep:
             j__udyFreeJBB(PjbbRaw, Pjpm);                               \
                                                                         \
             Pjp->jp_Type = (NewJPType);                                 \
-            Pjp->jp_Addr = (Word_t) PjllnewRaw;                         \
+            Pjp->jp_Addr = PjllnewRaw;                         \
             goto ContinueDelWalk;       /* delete from new leaf */      \
         }
 
@@ -553,7 +553,7 @@ BranchLKeep:
             Word_t    subexp2;          // in second-level loop.
             BITMAPB_t bitmap;           // portion for this subexpanse.
             BITMAPB_t bitmask;          // with digits bit set.
-            Pjp_t     Pjp2Raw;          // one subexpanses subarray.
+            size_t    Pjp2Raw;          // one subexpanses subarray.
             Pjp_t     Pjp2;
             Word_t    numJPs;           // in one subexpanse.
 
@@ -606,7 +606,7 @@ BranchBKeep:
             if ((numJPs = j__udyCountBitsB(bitmap)) == 1)
             {
                 j__udyFreeJBBJP(Pjp2Raw, /* pop1 = */ 1, Pjpm);
-                JU_JBB_PJP(Pjbb, subexp) = (Pjp_t) NULL;
+                JU_JBB_PJP(Pjbb, subexp) = 0;
             }
 
 // Shrink JP array in-place:
@@ -621,11 +621,11 @@ BranchBKeep:
 
             else
             {
-                Pjp_t PjpnewRaw;
+                size_t PjpnewRaw;
                 Pjp_t Pjpnew;
 
-                if ((PjpnewRaw = j__udyAllocJBBJP(numJPs - 1, Pjpm))
-                 == (Pjp_t) NULL) return(-1);
+                PjpnewRaw = j__udyAllocJBBJP(numJPs - 1, Pjpm);
+                if (PjpnewRaw == 0) return(-1);
                 Pjpnew = P_JP(PjpnewRaw);
 
                 JU_DELETECOPY(Pjpnew, Pjp2, numJPs, offset, ignore);
@@ -708,7 +708,7 @@ BranchBKeep:
                             LeafToLeaf,Alloc,ValueArea,CopyImmed,CopyIndex) \
         {                                                               \
             LeafType Pleaf;                                             \
-            Pjbu_t PjbuRaw = (Pjbu_t) (Pjp->jp_Addr);                   \
+            size_t PjbuRaw = Pjp->jp_Addr;                   \
             Pjp_t  Pjp2    = JU_JBU_PJP0(Pjp);                          \
             Word_t ldigit;      /* larger than uint8_t */               \
                                                                         \
@@ -736,7 +736,7 @@ BranchBKeep:
             j__udyFreeJBU(PjbuRaw, Pjpm);                               \
                                                                         \
             Pjp->jp_Type = (NewJPType);                                 \
-            Pjp->jp_Addr = (Word_t) PjllnewRaw;                         \
+            Pjp->jp_Addr = PjllnewRaw;                         \
             goto ContinueDelWalk;       /* delete from new leaf */      \
         }
 
@@ -912,7 +912,7 @@ BranchBKeep:
             DBGCODE(JudyCheckSorted(Pjllnew, MaxPop1, cIS + 1);)        \
                                                                         \
             D_cdP0 = (~cJU_MASKATSTATE((cIS) + 1)) & JU_JPDCDPOP0(Pjp); \
-            JU_JPSETADT(Pjp, (Word_t)PjllnewRaw, D_cdP0, NewJPType);    \
+            JU_JPSETADT(Pjp, PjllnewRaw, D_cdP0, NewJPType);    \
             goto ContinueDelWalk;       /* delete from new leaf */      \
         }
 
@@ -995,7 +995,7 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
                                                                 \
         if ((pop1 - 1) == (MaxPop1))    /* hysteresis = 0 */    \
         {                                                       \
-            Pjll_t PjllRaw = (Pjll_t) (Pjp->jp_Addr);           \
+            size_t PjllRaw = Pjp->jp_Addr;           \
             DeleteCopy((LeafType) (Pjp->jp_1Index1), Pleaf, pop1, offset, cIS); \
             DBGCODE(JudyCheckSorted((Pjll_t) (Pjp->jp_1Index1),  pop1-1, cIS);) \
             Pjp->jp_Type = (BaseJPType) - 1 + (MaxPop1) - 1;    \
@@ -1015,19 +1015,19 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
                                                                 \
         if ((pop1 - 1) == (MaxPop1))    /* hysteresis = 0 */    \
         {                                                       \
-            Pjll_t PjllRaw = (Pjll_t) (Pjp->jp_Addr);           \
-            Pjv_t  PjvnewRaw;                                   \
+            size_t PjllRaw = Pjp->jp_Addr;           \
+            size_t PjvnewRaw;                                   \
             Pjv_t  Pjvnew;                                      \
                                                                 \
             if ((PjvnewRaw = j__udyLAllocJV(pop1 - 1, Pjpm))    \
-                == (Pjv_t) NULL) return(-1);                    \
+                == 0) return(-1);                    \
    JUDYLCODE(Pjvnew = P_JV(PjvnewRaw);)                         \
                                                                 \
             DeleteCopy((LeafType) (Pjp->jp_LIndex1), Pleaf, pop1, offset, cIS); \
             JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, cIS);      \
             DBGCODE(JudyCheckSorted((Pjll_t) (Pjp->jp_LIndex1),  pop1-1, cIS);) \
             FreeLeaf(PjllRaw, pop1, Pjpm);                      \
-            Pjp->jp_Addr = (Word_t) PjvnewRaw;                  \
+            Pjp->jp_PValue = PjvnewRaw;                  \
             Pjp->jp_Type = (BaseJPType) - 2 + (MaxPop1);        \
             return(1);                                          \
         }
@@ -1049,7 +1049,7 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
                                                                         \
         if ((pop1 - 1) == (MaxPop1))    /* hysteresis = 0 */            \
         {                                                               \
-            Pjll_t PjllRaw = (Pjll_t) (Pjp->jp_Addr);                   \
+            size_t PjllRaw = Pjp->jp_Addr;                   \
             ToImmed(cIS, SearchLeaf, CopyPIndex);                       \
             FreeLeaf(PjllRaw, pop1, Pjpm);                              \
             Pjp->jp_Type = (Immed01JPType);                             \
@@ -1132,7 +1132,7 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
         DeleteCopy((LeafType) Pjllnew, Pleaf, pop1, offset, cIS);        \
         DBGCODE(JudyCheckSorted(Pjllnew, pop1 - 1, cIS);)                \
         FreeLeaf(PleafRaw, pop1, Pjpm);                                  \
-        Pjp->jp_Addr = (Word_t) PjllnewRaw;                              \
+        Pjp->jp_Addr = PjllnewRaw;                              \
         return(1)
 
 #else // JUDYL
@@ -1148,7 +1148,7 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
 /**/        JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, cIS);              \
             DBGCODE(JudyCheckSorted(Pjllnew, pop1 - 1, cIS);)           \
             FreeLeaf(PleafRaw, pop1, Pjpm);                             \
-            Pjp->jp_Addr = (Word_t) PjllnewRaw;                         \
+            Pjp->jp_Addr = PjllnewRaw;                         \
             return(1);                                                  \
         }
 #endif // JUDYL
@@ -1173,13 +1173,13 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
                   SearchLeaf,GrowInPlace,DeleteInPlace,DeleteCopy,      \
                   Alloc,FreeLeaf,ValueArea)                             \
         {                                                               \
-            Pjll_t   PleafRaw;                                          \
+            size_t   PleafRaw;                                          \
             LeafType Pleaf;                                             \
                                                                         \
             assert(! JU_DCDNOTMATCHINDEX(Index, Pjp, cIS));             \
             assert(ParentLevel > (cIS));                                \
                                                                         \
-            PleafRaw = (Pjll_t) (Pjp->jp_Addr);                         \
+            PleafRaw = Pjp->jp_Addr;                         \
             Pleaf    = (LeafType) P_JLL(PleafRaw);                      \
             pop1     = JU_JPLEAF_POP0(Pjp) + 1;                         \
                                                                         \
@@ -1329,7 +1329,7 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
         case cJU_JPLEAF_B1:
         {
 #ifdef JUDYL
-            Pjv_t     PjvnewRaw;        // new value area.
+            size_t    PjvnewRaw;        // new value area.
             Pjv_t     Pjvnew;
             Word_t    subexp;           // 1 of 8 subexpanses in bitmap.
             Pjlb_t    Pjlb;             // pointer to bitmap part of the leaf.
@@ -1358,12 +1358,12 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
 
             if ((pop1 - 1) == cJU_IMMED1_MAXPOP1)       // hysteresis = 0.
             {
-                Pjlb_t    PjlbRaw;      // bitmap in old leaf.
+                size_t    PjlbRaw;      // bitmap in old leaf.
                 Pjlb_t    Pjlb;
                 uint8_t * Pleafnew;     // JPIMMED as a pointer.
                 Word_t    ldigit;       // larger than uint8_t.
 
-                PjlbRaw  = (Pjlb_t) (Pjp->jp_Addr);
+                PjlbRaw  = Pjp->jp_Addr;
                 Pjlb     = P_JLB(PjlbRaw);
                 Pleafnew = Pjp->jp_1Index1;
 
@@ -1447,7 +1447,7 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
             {
                 j__udyLFreeJV(PjvRaw, 1, Pjpm);
 
-                JL_JLB_PVALUE(Pjlb, subexp) = (Pjv_t) NULL;
+                JL_JLB_PVALUE(Pjlb, subexp) = 0;
                 JU_JLB_BITMAP(Pjlb, subexp) = 0;
 
                 return(1);
@@ -1462,12 +1462,12 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
             else
             {
                 if ((PjvnewRaw = j__udyLAllocJV(pop1 - 1, Pjpm))
-                    == (Pjv_t) NULL) return(-1);
+                    == 0) return(-1);
                 Pjvnew = P_JV(PjvnewRaw);
 
                 JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, ignore);
                 j__udyLFreeJV(PjvRaw, pop1, Pjpm);
-                JL_JLB_PVALUE(Pjlb, subexp) = (Pjv_t) PjvnewRaw;
+                JL_JLB_PVALUE(Pjlb, subexp) = PjvnewRaw;
             }
 
             JU_JLB_BITMAP(Pjlb, subexp) ^= bitmask;     // clear Indexs bit.
@@ -1491,14 +1491,14 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
 
         case cJ1_JPFULLPOPU1:
         {
-            Pjlb_t PjlbRaw;
+            size_t PjlbRaw;
             Pjlb_t Pjlb;
             Word_t subexp;
 
             assert(! JU_DCDNOTMATCHINDEX(Index, Pjp, 2));
             assert(ParentLevel > 1);    // see above.
 
-            if ((PjlbRaw = j__udyAllocJLB1(Pjpm)) == (Pjlb_t) NULL)
+            if ((PjlbRaw = j__udyAllocJLB1(Pjpm)) == 0)
                 return(-1);
             Pjlb = P_JLB(PjlbRaw);
 
@@ -1509,7 +1509,7 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
 
             JU_BITMAPCLEARL(Pjlb, Index);
 
-            Pjp->jp_Addr = (Word_t) PjlbRaw;
+            Pjp->jp_Addr = PjlbRaw;
             Pjp->jp_Type = cJU_JPLEAF_B1;
 
             return(1);
@@ -1557,7 +1557,7 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
             assert((ParentLevel - 1) == (cIS));         \
   JUDY1CODE(Pleaf  = (LeafType) (Pjp->jp_1Index1);)      \
   JUDYLCODE(Pleaf  = (LeafType) (Pjp->jp_LIndex1);)      \
-  JUDYLCODE(PjvRaw = (Pjv_t) (Pjp->jp_Addr);)           \
+  JUDYLCODE(PjvRaw = Pjp->jp_PValue;)           \
   JUDYLCODE(Pjv    = P_JV(PjvRaw);)                     \
             JU_TOIMMED_01_EVEN(cIS, ignore, ignore);    \
   JUDYLCODE(j__udyLFreeJV(PjvRaw, 2, Pjpm);)            \
@@ -1579,7 +1579,7 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
             assert((ParentLevel - 1) == (cIS));                 \
   JUDY1CODE(Pleaf  = (uint8_t *) (Pjp->jp_1Index1);)             \
   JUDYLCODE(Pleaf  = (uint8_t *) (Pjp->jp_LIndex1);)             \
-  JUDYLCODE(PjvRaw = (Pjv_t) (Pjp->jp_Addr);)                   \
+  JUDYLCODE(PjvRaw = Pjp->jp_PValue;)                   \
   JUDYLCODE(Pjv    = P_JV(PjvRaw);)                             \
             JU_TOIMMED_01_ODD(cIS, SearchLeaf, CopyPIndex);     \
   JUDYLCODE(j__udyLFreeJV(PjvRaw, 2, Pjpm);)                    \
@@ -1612,11 +1612,11 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
         }                                                       \
         else                                                    \
         {                                                       \
-            Pjv_t PjvnewRaw;                                    \
+            size_t PjvnewRaw;                                    \
             Pjv_t Pjvnew;                                       \
                                                                 \
             if ((PjvnewRaw = j__udyLAllocJV(pop1 - 1, Pjpm))    \
-                == (Pjv_t) NULL) return(-1);                    \
+                == 0) return(-1);                    \
             Pjvnew = P_JV(PjvnewRaw);                           \
                                                                 \
             DeleteInPlace(Pleaf, pop1, offset, cIS);            \
@@ -1624,7 +1624,7 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
             DBGCODE(JudyCheckSorted(Pleaf, pop1 - 1, cIS);)     \
             j__udyLFreeJV(PjvRaw, pop1, Pjpm);                  \
                                                                 \
-            (Pjp->jp_Addr) = (Word_t) PjvnewRaw;                \
+            Pjp->jp_PValue = PjvnewRaw;                \
         }
 #endif // JUDYL
 
@@ -1639,7 +1639,7 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
             assert((ParentLevel - 1) == (cIS));                         \
   JUDY1CODE(Pleaf  = (LeafType) (Pjp->jp_1Index1);)                      \
   JUDYLCODE(Pleaf  = (LeafType) (Pjp->jp_LIndex1);)                      \
-  JUDYLCODE(PjvRaw = (Pjv_t) (Pjp->jp_Addr);)                           \
+  JUDYLCODE(PjvRaw = Pjp->jp_PValue;)                           \
   JUDYLCODE(Pjv    = P_JV(PjvRaw);)                                     \
             pop1   = (JU_JPTYPE(Pjp)) - (BaseJPType) + 2;               \
             offset = SearchLeaf(Pleaf, pop1, Index);                    \
@@ -1791,7 +1791,7 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
             }
             case 2:     // collapse BranchL to single JP; see above:
                 {
-                    Pjbl_t PjblRaw = (Pjbl_t) (Pjp->jp_Addr);
+                    size_t PjblRaw = Pjp->jp_Addr;
                     Pjbl_t Pjbl    = P_JBL(PjblRaw);
 
                     *Pjp = Pjbl->jbl_jp[0];
@@ -2007,7 +2007,7 @@ JUDYLCODE(PPvoid_t PPvalue;)  // pointer from JudyLGet().
 
             case cJU_JPBRANCH_L:
             {
-                Pjbl_t PjblRaw = (Pjbl_t) (Pjp->jp_Addr);
+                size_t PjblRaw = Pjp->jp_Addr;
                 Pjbl_t Pjbl    = P_JBL(PjblRaw);
 
                 for (offset = 0; offset < Pjbl->jbl_NumJPs; ++offset)
@@ -2031,11 +2031,11 @@ JUDYLCODE(PPvoid_t PPvalue;)  // pointer from JudyLGet().
 
             case cJU_JPBRANCH_B:
             {
-                Pjbb_t    PjbbRaw = (Pjbb_t) (Pjp->jp_Addr);
+                size_t    PjbbRaw = Pjp->jp_Addr;
                 Pjbb_t    Pjbb    = P_JBB(PjbbRaw);
                 Word_t    subexp;       // current subexpanse number.
                 BITMAPB_t bitmap;       // portion for this subexpanse.
-                Pjp_t     Pjp2Raw;      // one subexpanses subarray.
+                size_t    Pjp2Raw;      // one subexpanses subarray.
                 Pjp_t     Pjp2;
 
                 for (subexp = 0; subexp < cJU_NUMSUBEXPB; ++subexp)
@@ -2079,7 +2079,7 @@ JUDYLCODE(PPvoid_t PPvalue;)  // pointer from JudyLGet().
 
             case cJU_JPBRANCH_U:
             {
-                Pjbu_t  PjbuRaw = (Pjbu_t) (Pjp->jp_Addr);
+                size_t  PjbuRaw = Pjp->jp_Addr;
                 Pjbu_t  Pjbu    = P_JBU(PjbuRaw);
                 Word_t  ldigit;         // larger than uint8_t.
 
@@ -2105,7 +2105,7 @@ JUDYLCODE(PPvoid_t PPvalue;)  // pointer from JudyLGet().
                         *Pjlwnew++ = JU_DIGITTOSTATE(ldigit, cJU_BYTESPERWORD)
                                    | JU_JPDCDPOP0(Pjp); // rebuild Index.
 #ifdef JUDYL
-                        *Pjv++ = Pjp->jp_Addr;  // copy value area.
+                        *Pjv++ = Pjp->jp_PValue;  // copy value area.
 #endif
                         continue;
                     }

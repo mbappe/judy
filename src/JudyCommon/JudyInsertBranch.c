@@ -124,7 +124,11 @@ FUNCTION int j__udyInsertBranch(
 
 //	Set old JP to a BranchL at correct level
 
-	Pjp->jp_Type = cJU_JPBRANCH_L2 - 2 + BranchLevel;
+
+	Pjp->jp_Type = cJU_JPBRANCH_L2 - (2 * 2) + (BranchLevel * 2);
+
+// printf("\n =======================BranchLevel = %d, jp_Type = %d\n", (int)BranchLevel, (int)Pjp->jp_Type);
+
 	DCDMask		^= cJU_DCDMASK(BranchLevel);
 	DCDMask		 = ~DCDMask & JU_JPDCDPOP0(Pjp);
         JP = *Pjp;

@@ -358,7 +358,7 @@ const	Pjpm_t	Pjpm)		// for returning error info.
 	Pjbu_t	Pjbu;
 	Pjll_t	Pjll;		// a Judy lower-level linear leaf.
 
-	Word_t	digit;		// next digit to decode from Index.
+	size_t	digit;		// next digit to decode from Index.
 	long	jpnum;		// JP number in a branch (base 0).
 	int	offset;		// index ordinal within a leaf, base 0.
 	Word_t	pop1;		// total population of an expanse.
@@ -497,7 +497,7 @@ BranchB:
 	    long   findsub;	// subexpanse containing   Index (digit).
 	    Word_t findbit;	// bit	      representing Index (digit).
 	    Word_t lowermask;	// bits for indexes at or below Index.
-	    Word_t jpcount;	// JPs in a subexpanse.
+	    size_t jpcount;	// JPs in a subexpanse.
 	    Word_t clbelow;	// cache lines below digits cache line.
 	    Word_t clabove;	// cache lines above digits cache line.
 
@@ -537,7 +537,7 @@ BranchB:
 
 // Count cache lines below/above for each subexpanse:
 
-	    for (subexp = 0; subexp < cJU_NUMSUBEXPB; ++subexp)
+	    for (subexp = 0; subexp < (int)cJU_NUMSUBEXPB; ++subexp)
 	    {
 		jpcount = j__udyCountBitsB(JU_JBB_BITMAP(Pjbb, subexp));
 
@@ -617,7 +617,7 @@ BranchB:
 		    assert(   jpcount  || (BMPJP0(subexp) == (Pjp_t) NULL));
 		    assert((! jpcount) || (BMPJP0(subexp) != (Pjp_t) NULL));
 
-		    for (jpnum = 0; jpnum < jpcount; ++jpnum)
+		    for (jpnum = 0; jpnum < (long)jpcount; ++jpnum)
 		    {
 			if ((pop1 = j__udyJPPop1(BMPJP(subexp, jpnum)))
 			    == cJU_ALLONES)
@@ -742,7 +742,7 @@ BranchU:
 #ifdef SMARTMETRICS
 		++jbu_upward;
 #endif
-		for (jpnum = 0; jpnum <= digit; ++jpnum)
+		for (jpnum = 0; jpnum <= (long)digit; ++jpnum)
 		{
 		    if ((Pjbu->jbu_jp[jpnum].jp_Type) <= cJU_JPNULLMAX)
 			continue;	// shortcut, save a function call.
@@ -769,7 +769,7 @@ BranchU:
 #endif
 		pop1above = 0;			// add JPs above Index.
 
-		for (jpnum = cJU_BRANCHUNUMJPS - 1; jpnum > digit; --jpnum)
+		for (jpnum = cJU_BRANCHUNUMJPS - 1; jpnum > (long)digit; --jpnum)
 		{
 		    if ((Pjbu->jbu_jp[jpnum].jp_Type) <= cJU_JPNULLMAX)
 			continue;	// shortcut, save a function call.
@@ -982,9 +982,9 @@ const	Word_t	Pop1,		// Population of whole leaf.
 const	Word_t	Index)		// to which to count.
 {
 	Pjlb_t	Pjlb	= (Pjlb_t) Pjll;	// to proper type.
-	Word_t	digit   = Index & cJU_MASKATSTATE(1);
-	Word_t	findsub = digit / cJU_BITSPERSUBEXPL;
-	Word_t	findbit = digit % cJU_BITSPERSUBEXPL;
+	size_t	digit   = Index & cJU_MASKATSTATE(1);
+	size_t	findsub = digit / cJU_BITSPERSUBEXPL;
+	size_t	findbit = digit % cJU_BITSPERSUBEXPL;
 	int	count;		// in leaf through Index.
 	long	subexp;		// for stepping through subexpanses.
 
@@ -1004,7 +1004,7 @@ const	Word_t	Index)		// to which to count.
 #endif
 	    count = 0;
 
-	    for (subexp = 0; subexp < findsub; ++subexp)
+	    for (subexp = 0; subexp < (long)findsub; ++subexp)
 	    {
 		count += ((JU_JLB_BITMAP(Pjlb, subexp) == cJU_FULLBITMAPL) ?
 			  cJU_BITSPERSUBEXPL :
@@ -1033,7 +1033,7 @@ const	Word_t	Index)		// to which to count.
 #endif
 	count = Pop1;			// base-1 for now.
 
-	for (subexp = cJU_NUMSUBEXPL - 1; subexp > findsub; --subexp)
+	for (subexp = cJU_NUMSUBEXPL - 1; subexp > (long)findsub; --subexp)
 	{
 	    count -= ((JU_JLB_BITMAP(Pjlb, subexp) == cJU_FULLBITMAPL) ?
 		      cJU_BITSPERSUBEXPL :

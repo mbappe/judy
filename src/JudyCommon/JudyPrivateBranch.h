@@ -56,7 +56,10 @@ typedef struct J_UDY_POINTER_OTHERS      // JPO.
             Word_t      j_po_Addr;       // first word:  Pjp_t, Word_t, etc.
             union {
                 Word_t  j_po_Addr1;
+#ifdef SWAP
                 uint8_t j_po_DcdP0[sizeof(Word_t) - 1];
+#endif  // ! SWAP
+
                 uint8_t j_po_Bytes[sizeof(Word_t)];     // last byte = jp_Type.
             } jpo_u;
         } jpo_t;
@@ -120,21 +123,29 @@ typedef union J_UDY_POINTER             // JP.
         } jp_t, *Pjp_t;
 
 // For coding convenience:
-#define jp_1Index  j_p1.j_p1_1Index     // for storing Indexes in first  word.
-#define jp_LIndex  j_pL.j_pL_LIndex     // for storing Indexes in second word.
+//#define jp_1Index  j_p1.j_p1_1Index     // for storing Indexes in first  word.
+//#define jp_LIndex  j_pL.j_pL_LIndex     // for storing Indexes in second word.
+#ifdef  JUDY1
 #define jp_1Index1 j_pi.j_pi_1Index1    // for storing uint8_t  Indexes in first  word.
 #define jp_1Index2 j_pi.j_pi_1Index2    // for storing uint16_t Indexes in first  word.
 #define jp_1Index4 j_pi.j_pi_1Index4    // for storing uint32_t Indexes in first  word.
+#endif  //JUDY1
+
+#ifdef  JUDYL
 #define jp_LIndex1 j_pi.j_pi_LIndex1    // for storing Indexes in second word.
 #define jp_LIndex2 j_pi.j_pi_LIndex2    // for storing uint16_t Indexes in first  word.
+#define jp_PValue  j_po.j_po_Addr
+#endif  // JUDYL
+
 #define jp_Addr    j_po.j_po_Addr
 #define jp_Addr1   j_po.jpo_u.j_po_Addr1
 //#define       jp_DcdPop0 j_po.jpo_u.j_po_DcdPop0
-#define jp_Addr1   j_po.jpo_u.j_po_Addr1
 //#define jp_Type    j_po.jpo_u.j_po_Bytes[sizeof(Word_t) - 1]
 #define jp_Type    j_po.jpo_u.j_po_Bytes[sizeof(Word_t) - 1]
-#define jp_DcdP0   j_po.jpo_u.j_po_DcdP0
 
+#ifdef SWAP
+#define jp_DcdP0   j_po.jpo_u.j_po_DcdP0
+#endif  // ! SWAP
 
 // ****************************************************************************
 // JUDY POINTER (JP) -- RELATED MACROS AND CONSTANTS
@@ -185,12 +196,12 @@ typedef union J_UDY_POINTER             // JP.
 
 // DETERMINE IF AN INDEX IS (NOT) IN A JPS EXPANSE:
 
-#ifdef  noDCDCHECK
+#ifdef  noDCD
 #define JU_DCDNOTMATCHINDEX(INDEX,PJP,POP0BYTES) (0)
 #else   // DCDCHECK
-#define JU_DCDNOTMATCHINDEX(INDEX,PJP,POP0BYTES) \
+#define JU_DCDNOTMATCHINDEX(INDEX,PJP,POP0BYTES)                \
     (((INDEX) ^ JU_JPDCDPOP0(PJP)) & cJU_DCDMASK(POP0BYTES))
-#endif  // DCDCHECK
+#endif  // DCD
 
 // NUMBER OF JPs IN AN UNCOMPRESSED BRANCH:
 //
@@ -287,7 +298,7 @@ typedef struct J__UDY_BRANCH_LINEAR
 typedef struct J__UDY_BRANCH_BITMAP_SUBEXPANSE
         {
             BITMAPB_t jbbs_Bitmap;
-            Pjp_t     jbbs_Pjp;
+            size_t    jbbs_Pjp;
 
         } jbbs_t;
 
@@ -296,10 +307,11 @@ typedef struct J__UDY_BRANCH_BITMAP
             jbbs_t jbb_jbbs   [cJU_NUMSUBEXPB];
 
 #ifdef  BBSEARCH
-            Word_t jbb_Pop1;
+            size_t jbb_Pop1;
 #endif  // BBSEARCH
 
-//            Pjp_t  jbbs_Pjp[];
+//            size_t jbbs_Pjp[];
+            size_t jbb_numPtrs;         // number of pointers in jp_t s
 
         } jbb_t, * Pjbb_t;
 
@@ -331,6 +343,7 @@ typedef struct J__UDY_BRANCH_UNCOMPRESSED
 {
 //        Word_t  jbu_headr[2];         // MUST! be an even number of words
         jp_t   jbu_jp     [cJU_BRANCHUNUMJPS];  // JPs for populated exp.
+        size_t jbu_numPtrs;             // number of Pointers in jp_t s
 //        jp_t   jbu_jp[0];                       // JPs for populated exp.
 } jbu_t, * Pjbu_t;
 
@@ -354,7 +367,7 @@ typedef struct J__UDY_BRANCH_UNCOMPRESSED
 // Define populations at which a BranchL or BranchB must convert to BranchU.
 // Earlier conversion is possible with good memory efficiency -- see below.
 
-#ifndef NO_BRANCHU
+#ifndef noU
 
 // Max population below BranchL, then convert to BranchU:
 
@@ -374,7 +387,7 @@ typedef struct J__UDY_BRANCH_UNCOMPRESSED
 #define JU_BRANCHB_MIN_POP       135
 #define JU_BRANCHB_MAX_POP       750
 
-#else // NO_BRANCHU
+#else // noU
 
 // These are set up to have conservative conversion schedules to BranchU:
 
@@ -383,7 +396,7 @@ typedef struct J__UDY_BRANCH_UNCOMPRESSED
 #define JU_BRANCHB_MIN_POP        1000
 #define JU_BRANCHB_MAX_POP      ((Word_t)-1)
 
-#endif // NO_BRANCHU
+#endif // noU
 
 
 // MISCELLANEOUS MACROS:

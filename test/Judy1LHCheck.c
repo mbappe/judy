@@ -539,6 +539,8 @@ TestJudyIns(void **J1, void **JL, void **JH, Word_t Seed, Word_t Elements)
         PValue1 = (PWord_t)JudyLIns(JL, TstIndex, NULL);
         if (PValue != PValue1)
         {
+//            printf("JudyLIns DUP PValue = %p != PValue1 = %p\n", (void *)PValue, (void *)PValue1);
+
             if (*PValue1 != TstIndex)
             {
                FAILURE("JudyLIns failed - Index missing, population =", TotalPop);

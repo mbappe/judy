@@ -182,7 +182,7 @@ FUNCTION int JudyLInsArray
 #endif
         (
         PPvoid_t  PPArray,      // in which to insert, initially empty.
-        Word_t    Count,        // number of indexes (and values) to insert.
+        size_t    Count,        // number of indexes (and values) to insert.
 const   Word_t *  const PIndex, // list of indexes to insert.
 #ifdef JUDYL
 const   Word_t *  const PValue, // list of corresponding values.
@@ -272,7 +272,7 @@ const   Word_t *  const PValue, // list of corresponding values.
 //
 // First ensure indexes are in sorted order:
 
-        for (offset = 1; offset < Count; ++offset)
+        for (offset = 1; offset < (int)Count; ++offset)
         {
             if (PIndex[offset - 1] >= PIndex[offset])
             { JU_SET_ERRNO(PJError, JU_ERRNO_UNSORTED); return(JERRI); }
@@ -350,7 +350,7 @@ FUNCTION static bool_t j__udyInsArray(
         uint8_t JPtype;                 // current JP type.
         uint8_t JPtype_null;            // precomputed value for new branch.
         jp_t    JPnull;                 // precomputed for speed.
-        Pjbu_t  PjbuRaw;                // constructed BranchU.
+        size_t  PjbuRaw;                // constructed BranchU.
         Pjbu_t  Pjbu;
         int     digit;                  // in BranchU.
         Word_t  digitmask;              // for a digit in a BranchU.
@@ -359,8 +359,11 @@ FUNCTION static bool_t j__udyInsArray(
         int     offset;                 // in PIndex, or a bitmap subexpanse.
         int     numJPs;                 // number non-null in a BranchU.
         bool_t  retval;                 // to return from this func.
-JUDYLCODE(Pjv_t PjvRaw);                // destination value area.
-JUDYLCODE(Pjv_t Pjv);
+
+#ifdef  JUDYL
+        size_t PjvRaw;                  // destination value area.
+        Pjv_t  Pjv;
+#endif  // JUDYL
 
 
 // MACROS FOR COMMON CODE:
@@ -412,7 +415,7 @@ JUDYLCODE(Pjv_t Pjv);
 // Allocate a Leaf1-N and save the address in Pjll; in case of failure, NOMEM:
 
 #define ALLOCLEAF(AllocLeaf) \
-        if ((PjllRaw = AllocLeaf(pop1, Pjpm)) == (Pjll_t) NULL) NOMEM; \
+        if ((PjllRaw = AllocLeaf(pop1, Pjpm)) == 0) NOMEM; \
         Pjll = P_JLL(PjllRaw);
 
 // Copy indexes smaller than words (and values which are whole words) from
@@ -486,7 +489,7 @@ JUDYLCODE(Pjv_t Pjv);
         Word_t D_cdP0;                                                  \
         assert(pop1 - 1 <= cJU_POP0MASK(cLevel));                       \
         D_cdP0 = (*PIndex & cJU_DCDMASK(cLevel)) | (pop1 - 1);          \
-        JU_JPSETADT(PjpParent, (Word_t)PjllRaw, D_cdP0, JPType);        \
+        JU_JPSETADT(PjpParent, PjllRaw, D_cdP0, JPType);                \
 }
 
 
@@ -514,7 +517,7 @@ JUDYLCODE(Pjv_t Pjv);
 
 #define CHECKLEAFORDER                                                  \
         {                                                               \
-            for (offset = 1; offset < pop1; ++offset)                   \
+            for (offset = 1; offset < (int)pop1; ++offset)              \
             {                                                           \
                 if (PIndex[offset - 1] >= PIndex[offset])               \
                 {                                                       \
@@ -573,9 +576,9 @@ JUDYLCODE(Pjv_t Pjv);
             CHECKLEAFORDER;             // indexes to be stored are sorted.
 
 #ifdef JUDYL
-            if ((PjvRaw = j__udyLAllocJV(pop1, Pjpm)) == (Pjv_t) NULL)
+            if ((PjvRaw = j__udyLAllocJV(pop1, Pjpm)) == 0)
                 NOMEM;
-            (PjpParent->jp_Addr) = (Word_t) PjvRaw;
+            PjpParent->jp_PValue = PjvRaw;
             Pjv = P_JV(PjvRaw);
 #endif
 
@@ -632,7 +635,7 @@ JUDYLCODE(Pjv_t Pjv);
 
         for (levelsub = Level; levelsub >= 1; --levelsub)
         {
-            Pjll_t PjllRaw;
+            size_t PjllRaw;
             Pjll_t Pjll;
 
 // Check if pop1 is too large to fit in a leaf at levelsub; if so, try the next
@@ -703,7 +706,7 @@ JUDYLCODE(Pjv_t Pjv);
 
         if ((Level == 1) || SAMESUBEXP(1))      // same until last digit.
         {
-            Pjlb_t PjlbRaw;                     // for bitmap leaf.
+            size_t PjlbRaw;                     // for bitmap leaf.
             Pjlb_t Pjlb;
 
             assert(pop1 <= cJU_JPFULLPOPU1_POP0 + 1);
@@ -726,11 +729,11 @@ JUDYLCODE(Pjv_t Pjv);
 
 // JPLEAF_B1:
 
-            if ((PjlbRaw = j__udyAllocJLB1(Pjpm)) == (Pjlb_t) NULL)
+            if ((PjlbRaw = j__udyAllocJLB1(Pjpm)) == 0)
                 NOMEM;
             Pjlb = P_JLB(PjlbRaw);
 
-            for (offset = 0; offset < pop1; ++offset)
+            for (offset = 0; offset < (int)pop1; ++offset)
                 JU_BITMAPSETL(Pjlb, PIndex[offset]);
 
             retval = TRUE;              // default.
@@ -739,7 +742,7 @@ JUDYLCODE(Pjv_t Pjv);
 
 // Build subexpanse values-only leaves (LeafVs) under LeafB1:
 
-            for (offset = 0; offset < cJU_NUMSUBEXPL; ++offset)
+            for (offset = 0; offset < (int)cJU_NUMSUBEXPL; ++offset)
             {
                 if (! (pop1sub = j__udyCountBitsL(JU_JLB_BITMAP(Pjlb, offset))))
                     continue;           // skip empty subexpanse.
@@ -747,10 +750,9 @@ JUDYLCODE(Pjv_t Pjv);
 // Allocate one LeafV = JP subarray; if out of memory, clear bitmaps for higher
 // subexpanses and adjust *PPop1:
 
-                if ((PjvRaw = j__udyLAllocJV(pop1sub, Pjpm))
-                 == (Pjv_t) NULL)
+                if ((PjvRaw = j__udyLAllocJV(pop1sub, Pjpm)) == 0)
                 {
-                    for (/* null */; offset < cJU_NUMSUBEXPL; ++offset)
+                    for (/* null */; offset < (int)cJU_NUMSUBEXPL; ++offset)
                     {
                         *PPop1 -= j__udyCountBitsL(JU_JLB_BITMAP(Pjlb, offset));
                         JU_JLB_BITMAP(Pjlb, offset) = 0;
@@ -773,7 +775,7 @@ JUDYLCODE(Pjv_t Pjv);
 
 // Attach new LeafB1 to parent JP; note use of *PPop1 possibly < pop1:
 
-            JU_JPSETADT(PjpParent, (Word_t) PjlbRaw, 
+            JU_JPSETADT(PjpParent, PjlbRaw, 
                     (*PIndex & cJU_DCDMASK(1)) | (*PPop1 - 1), cJU_JPLEAF_B1);
 
             return(retval);
@@ -840,7 +842,7 @@ BuildBranch2:   // come here directly for Level = levelsub = cJU_ROOTSTATE.
 // (hence cache lines) to scan in the PIndex array to determine the fanout
 // (number of JPs) needed.
 
-        if ((PjbuRaw = j__udyAllocJBU(Pjpm)) == (Pjbu_t) NULL) NOMEM;
+        if ((PjbuRaw = j__udyAllocJBU(Pjpm)) == 0) NOMEM;
         Pjbu = P_JBU(PjbuRaw);
 
         JPtype_null       = cJU_JPNULL1 + levelsub - 2;  // in new BranchU.
@@ -981,7 +983,7 @@ ClearBranch:
 // Pjpm.  Either way, PIndex points to an index within the expanse just
 // handled.
 
-        Pjbany = (Word_t) PjbuRaw;              // default = use this BranchU.
+        Pjbany = PjbuRaw;              // default = use this BranchU.
         JPtype = branchU_JPtype[levelsub];
 
 // Check for complete failure above:
@@ -1034,11 +1036,11 @@ ClearBranch:
 
         if (numJPs <= cJU_BRANCHLMAXJPS)        // JPs fit in a BranchL.
         {
-            Pjbl_t PjblRaw = (Pjbl_t) NULL;     // new BranchL; init for cc.
+            size_t PjblRaw = 0;                 // new BranchL; init for cc.
             Pjbl_t Pjbl;
 
             if ((*PPop1 > JU_BRANCHL_MAX_POP)   // pop too high.
-             || ((PjblRaw = j__udyAllocJBL(Pjpm)) == (Pjbl_t) NULL))
+             || ((PjblRaw = j__udyAllocJBL(Pjpm)) == 0))
             {                                   // cant alloc BranchL.
                 goto SetParent;                 // just keep BranchU.
             }
@@ -1064,7 +1066,7 @@ ClearBranch:
 
             j__udyFreeJBU(PjbuRaw, Pjpm);
 
-            Pjbany = (Word_t) PjblRaw;
+            Pjbany = PjblRaw;
             JPtype = branchL_JPtype[levelsub];
 
         } // compress to BranchL
@@ -1081,12 +1083,12 @@ ClearBranch:
 
         else
         {
-            Pjbb_t PjbbRaw = (Pjbb_t) NULL;     // new BranchB; init for cc.
+            size_t PjbbRaw = 0;     // new BranchB; init for cc.
             Pjbb_t Pjbb;
             Pjp_t  Pjp2;                        // in BranchU.
 
             if ((*PPop1 > JU_BRANCHB_MAX_POP)   // pop too high.
-             || ((PjbbRaw = j__udyAllocJBB(Pjpm)) == (Pjbb_t) NULL))
+             || ((PjbbRaw = j__udyAllocJBB(Pjpm)) == 0))
             {                                   // cant alloc BranchB.
                 goto SetParent;                 // just keep BranchU.
             }
@@ -1103,10 +1105,10 @@ ClearBranch:
 
 // Copy non-null JPs to BranchB JP subarrays:
 
-            for (offset = 0; offset < cJU_NUMSUBEXPB; ++offset)
+            for (offset = 0; offset < (int)cJU_NUMSUBEXPB; ++offset)
             {
-                Pjp_t PjparrayRaw;
-                Pjp_t Pjparray;
+                size_t PjparrayRaw;
+                Pjp_t  Pjparray;
 
                 if (! (numJPs = j__udyCountBitsB(JU_JBB_BITMAP(Pjbb, offset))))
                     continue;                   // skip empty subexpanse.
@@ -1114,12 +1116,11 @@ ClearBranch:
 // If unable to allocate a JP subarray, free all BranchB memory so far and
 // continue to use the BranchU:
 
-                if ((PjparrayRaw = j__udyAllocJBBJP(numJPs, Pjpm))
-                    == (Pjp_t) NULL)
+                if ((PjparrayRaw = j__udyAllocJBBJP(numJPs, Pjpm)) == 0)
                 {
                     while (offset-- > 0)
                     {
-                        if (JU_JBB_PJP(Pjbb, offset) == (Pjp_t) NULL) continue;
+                        if (JU_JBB_PJP(Pjbb, offset) == 0) continue;
 
                         j__udyFreeJBBJP(JU_JBB_PJP(Pjbb, offset),
                                  j__udyCountBitsB(JU_JBB_BITMAP(Pjbb, offset)),
@@ -1151,7 +1152,7 @@ ClearBranch:
 
             j__udyFreeJBU(PjbuRaw, Pjpm);
 
-            Pjbany = (Word_t) PjbbRaw;
+            Pjbany = PjbbRaw;
             JPtype = branchB_JPtype[levelsub];
 
         } // compress to BranchB
@@ -1166,7 +1167,7 @@ SetParent:
         (PjpParent->jp_Addr) = Pjbany;
         (PjpParent->jp_Type) = JPtype;
 
-        if (Level < cJU_ROOTSTATE)              // PjpParent not in JPM:
+        if (Level < (int)cJU_ROOTSTATE)              // PjpParent not in JPM:
         {
             Word_t DcdP0 = (*PIndex & cJU_DCDMASK(levelsub)) | (*PPop1 - 1);
 

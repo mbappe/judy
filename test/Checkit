@@ -41,8 +41,8 @@ echo "===  $RET Failed: $CC -O -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIB
 exit $RET
 fi
 
-echo "$CC -O -I../src Judy1LHCheck.c -o Judy1LHCheck $LIBJUDY -lm"
-      $CC -O -I../src Judy1LHCheck.c -o Judy1LHCheck $LIBJUDY -lm
+echo "$CC -O -I../src -g Judy1LHCheck.c -o Judy1LHCheck $LIBJUDY -lm"
+      $CC -O -I../src -g Judy1LHCheck.c -o Judy1LHCheck $LIBJUDY -lm
       #clang -m32 -O -I../src Judy1LHCheck.c -o Judy1LHCheck ../src/obj/.libs/libJudy.a -lm
       #c++ -std=c++14 -O -I../src Judy1LHCheck.c -o Judy1LHCheck ../src/obj/.libs/libJudy.a -lm
       #c++ -std=c++14 -m32 -O -I../src Judy1LHCheck.c -o Judy1LHCheck ../src/obj/.libs/libJudy.a -lm
@@ -53,8 +53,8 @@ exit $RET
 fi
 
 
-echo "$CC -O -I../src Judy1LHTime.c -DNOINLINE  -o Judy1LHTime  $LIBJUDY -lm"
-      $CC -O -I../src Judy1LHTime.c -DNOINLINE  -o Judy1LHTime  $LIBJUDY -lm
+echo "$CC -O -I../src -g Judy1LHTime.c -DNOINLINE  -o Judy1LHTime  $LIBJUDY -lm"
+      $CC -O -I../src -g Judy1LHTime.c -DNOINLINE  -o Judy1LHTime  $LIBJUDY -lm
       #$CC -m32 -O -I../src Judy1LHTime.c -DRAMMETRICS -DNOINLINE -o Judy1LHTime  $LIBJUDY -lm
       #clang -m32 -O -I../src Judy1LHTime.c -DRAMMETRICS -DNOINLINE -o Judy1LHTime  ../src/obj/.libs/libJudy.a -lm
       #c++ -std=c++14 -m32 -O -I../src Judy1LHTime.c -DRAMMETRICS -DNOINLINE -o Judy1LHTime  ../src/obj/.libs/libJudy.a -lm

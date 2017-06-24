@@ -505,7 +505,7 @@ JudySLIns(PPvoid_t PPArray, const uint8_t * Index, PJError_t PJError)
                 }
 //              old SCL no longer needed.
 
-                JudyFree((void *)Pscl, scl2);
+                JudyFree((size_t)Pscl, scl2);
 
                 Pscl = (Pscl_t) NULL;
             }
@@ -644,7 +644,7 @@ JudySLDelSub(PPvoid_t PPArray,          // in which to delete.
             return (0);                 // incorrect index.
 
         words = SCLSIZE(STRLEN(Pscll->scl_Index));
-        JudyFree((void *)Pscll, words);
+        JudyFree((size_t)Pscll, words);
 
         *PPArray = (Pvoid_t)NULL;
         return (1);                     // correct index deleted.
@@ -1082,7 +1082,7 @@ JudySLFreeArray(PPvoid_t PPArray, PJError_t PJError)    // optional, for returni
 
         freewords = SCLSIZE(STRLEN(Pscl->scl_Index));
 
-        JudyFree((void *)Pscl, freewords);
+        JudyFree((size_t)Pscl, freewords);
 
         *PPArray = (Pvoid_t)NULL;
 
