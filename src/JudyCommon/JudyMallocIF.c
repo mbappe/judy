@@ -141,10 +141,10 @@ static Word_t j__udyMemSequence = 0;   // event sequence number.
 #define MALLOCBITS_MASK  0x7    // note: matches mask__ in JudyPrivate.h.
 
 #define MALLOCBITS_SET( Type,Addr) \
-        ((Addr) = (Type) ((Word_t) (Addr) |  MALLOCBITS_VALUE))
+        ((Addr) = (Addr) |  MALLOCBITS_VALUE)
 #define MALLOCBITS_TEST(Type,Addr) \
-        assert((((Word_t) (Addr)) & MALLOCBITS_MASK) == MALLOCBITS_VALUE); \
-        ((Addr) = (Type) ((Word_t) (Addr) & ~MALLOCBITS_VALUE))
+        assert(((Addr) & MALLOCBITS_MASK) == MALLOCBITS_VALUE); \
+        ((Addr) = (Addr) & ~MALLOCBITS_VALUE)
 #else
 #define MALLOCBITS_SET( Type,Addr)  // null.
 #define MALLOCBITS_TEST(Type,Addr)  // null.

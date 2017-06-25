@@ -467,7 +467,7 @@ JudyBranchB:
 // New JP subarray; point to cJU_JPIMMED_*_01 and place it:
             else
             {
-                assert(JU_JBB_PJP(Pjbb, subexp) == (Pjp_t) NULL);
+                assert(JU_JBB_PJP(Pjbb, subexp) == 0);
                 Pjp = Pjpnew;
                 *Pjp = newJP;           // copy to new memory.
 #ifdef JUDYL
