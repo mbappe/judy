@@ -362,6 +362,8 @@ FUNCTION void j__udyFreeSM(
 
 } // j__udyFreeSM()
 
+// Dump the jp path to the subtree specified by wKeyPrefix and
+// nBitsLeft and the entire subtree below.
 FUNCTION void
 #ifdef JUDY1
 Judy1Dump
