@@ -361,3 +361,18 @@ FUNCTION void j__udyFreeSM(
 	} // switch (JU_JPTYPE(Pjp))
 
 } // j__udyFreeSM()
+
+FUNCTION void
+#ifdef JUDY1
+Judy1Dump
+#else
+JudyLDump
+#endif
+    (
+    Word_t wRoot,     // root word of array
+    int nBitsLeft,    // level of subtree to dump
+    Word_t wKeyPrefix // prefix of subtree to dump
+    )
+{
+    // later
+}
