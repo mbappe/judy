@@ -1509,6 +1509,8 @@ main(int argc, char *argv[])
         printf("M");
     if (KFlag)
         printf("K");
+    if (bSplayKeyBitsFlag)
+        printf("E");
 
 //  print more options - default, adjusted or otherwise
     printf(" -n%" PRIuPTR" -T%" PRIuPTR" -P%" PRIuPTR" -X%d", nElms, TValues, PtsPdec, XScale);

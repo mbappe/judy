@@ -358,3 +358,20 @@ FUNCTION void j__udyFreeSM(
 	} // switch (JU_JPTYPE(Pjp))
 
 } // j__udyFreeSM()
+
+// Dump the jp path to the subtree specified by wKeyPrefix and
+// nBitsLeft and the entire subtree below.
+FUNCTION void
+#ifdef JUDY1
+Judy1Dump
+#else
+JudyLDump
+#endif
+    (
+    Word_t wRoot,     // root word of array
+    int nBitsLeft,    // level of subtree to dump
+    Word_t wKeyPrefix // prefix of subtree to dump
+    )
+{
+    // later
+}

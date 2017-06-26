@@ -241,11 +241,10 @@ extern int      Judy1FirstEmpty( Pcvoid_t  PArray, Word_t * PIndex,  P_JE);
 extern int      Judy1NextEmpty(  Pcvoid_t  PArray, Word_t * PIndex,  P_JE);
 extern int      Judy1LastEmpty(  Pcvoid_t  PArray, Word_t * PIndex,  P_JE);
 extern int      Judy1PrevEmpty(  Pcvoid_t  PArray, Word_t * PIndex,  P_JE);
-
+extern void     Judy1Dump(Word_t wRoot, int nBitsLeft, Word_t wKeyPrefix);
 
 // ****************************************************************************
 // JUDYL FUNCTIONS:
-
 
 extern PPvoid_t JudyLGet(        Pcvoid_t  PArray, Word_t    Index,  P_JE);
 extern PPvoid_t JudyLIns(        PPvoid_t PPArray, Word_t    Index,  P_JE);
@@ -270,6 +269,7 @@ extern int      JudyLFirstEmpty( Pcvoid_t  PArray, Word_t * PIndex,  P_JE);
 extern int      JudyLNextEmpty(  Pcvoid_t  PArray, Word_t * PIndex,  P_JE);
 extern int      JudyLLastEmpty(  Pcvoid_t  PArray, Word_t * PIndex,  P_JE);
 extern int      JudyLPrevEmpty(  Pcvoid_t  PArray, Word_t * PIndex,  P_JE);
+extern void     JudyLDump(Word_t wRoot, int nBitsLeft, Word_t wKeyPrefix);
 
 // ****************************************************************************
 // JUDYSL FUNCTIONS:
