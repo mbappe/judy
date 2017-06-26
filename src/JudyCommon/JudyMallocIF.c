@@ -93,19 +93,22 @@ Word_t j__uMaxWords = ~(size_t)0;
 
 #include <stdio.h>
 
-static Word_t j__udyMemSequence = 0;   // event sequence number.
+static size_t j__udyMemSequence = 0;   // event sequence number.
 
-#define TRACE_ALLOC5(a,b,c,d,e)   (void) printf(a, (b), c, d)
-#define TRACE_FREE5( a,b,c,d,e)   (void) printf(a, (b), c, d)
-#define TRACE_ALLOC6(a,b,c,d,e,f) (void) printf(a, (b), c, d, e)
-#define TRACE_FREE6( a,b,c,d,e,f) (void) printf(a, (b), c, d, e)
+#define TRACE_ALLOC4(a,b,c,d)     (void) printf((a), (b), (c), (d))
+#define TRACE_ALLOC5(a,b,c,d,e)   (void) printf((a), (b), (c), (d), (e))
+#define TRACE_FREE5( a,b,c,d,e)   (void) printf((a), (b), (c), (d), (e))
+#define TRACE_ALLOC6(a,b,c,d,e,f) (void) printf((a), (b), (c), (d), (e), (f))
+#define TRACE_FREE6( a,b,c,d,e,f) (void) printf((a), (b), (c), (d), (e), (f))
 
 #else
 
 #ifdef TRACEMI2
 
+
 #include <stdio.h>
 
+// not implemented yet
 #define b_pw cJU_BYTESPERWORD
 
 #define TRACE_ALLOC5(a,b,c,d,e)   \
@@ -117,10 +120,11 @@ static Word_t j__udyMemSequence = 0;   // event sequence number.
 #define TRACE_FREE6( a,b,c,d,e,f)         \
             (void) printf("f %lx %lx %lx\n", (b), (e) * b_pw, f)
 
-static Word_t j__udyMemSequence = 0;   // event sequence number.
+static size_t j__udyMemSequence = 0;   // event sequence number.
 
 #else
 
+#define TRACE_ALLOC4(a,b,c,d)     // null.
 #define TRACE_ALLOC5(a,b,c,d,e)   // null.
 #define TRACE_FREE5( a,b,c,d,e)   // null.
 #define TRACE_ALLOC6(a,b,c,d,e,f) // null.
@@ -132,22 +136,17 @@ static Word_t j__udyMemSequence = 0;   // event sequence number.
 
 // MALLOC NAMESPACE SUPPORT:
 
-#if (defined(DEBUG) && (! defined(MALLOCBITS))) // for now, DEBUG => MALLOCBITS:
-#define MALLOCBITS 1
-#endif
-
 #ifdef MALLOCBITS
 #define MALLOCBITS_VALUE 0x3    // bit pattern to use.
 #define MALLOCBITS_MASK  0x7    // note: matches mask__ in JudyPrivate.h.
 
-#define MALLOCBITS_SET( Type,Addr) \
-        ((Addr) = (Addr) |  MALLOCBITS_VALUE)
-#define MALLOCBITS_TEST(Type,Addr) \
+#define MALLOCBITS_SET(Addr)    ((Addr) |= MALLOCBITS_VALUE)
+#define MALLOCBITS_TEST(Addr)                                   \
         assert(((Addr) & MALLOCBITS_MASK) == MALLOCBITS_VALUE); \
-        ((Addr) = (Addr) & ~MALLOCBITS_VALUE)
+        ((Addr) &= ~MALLOCBITS_VALUE)
 #else
-#define MALLOCBITS_SET( Type,Addr)  // null.
-#define MALLOCBITS_TEST(Type,Addr)  // null.
+#define MALLOCBITS_SET(Addr)    // null.
+#define MALLOCBITS_TEST(Addr)   // null.
 #endif
 
 
@@ -221,8 +220,8 @@ FUNCTION Pjpm_t j__udyAllocJPM(void)
 
         }
 
-        TRACE_ALLOC5("%p %8lu = j__udyAllocJPM(), Words = %d\n",
-                     (void *)Pjpm, (U_t)j__udyMemSequence++, (int)Words, cJU_LEAFW_MAXPOP1 + 1);
+        TRACE_ALLOC4("\n%p %8zd = j__udyAllocJPM(%d)\n", 
+                (void *)Pjpm, j__udyMemSequence++, (int)Words);
         // MALLOCBITS_SET(Pjpm_t, Pjpm);  // see above.
         return(Pjpm);
 
@@ -232,8 +231,7 @@ FUNCTION Pjpm_t j__udyAllocJPM(void)
 FUNCTION size_t j__udyAllocJBL(Pjpm_t Pjpm)
 {
         Word_t Words   = sizeof(jbl_t) / cJU_BYTESPERWORD;
-        size_t PjblRaw = MALLOC(JudyMallocVirtual,
-                                         Pjpm->jpm_TotalMemWords, Words);
+        size_t PjblRaw = MALLOC(JudyMallocVirtual, Pjpm->jpm_TotalMemWords, Words);
 
         assert((Words * cJU_BYTESPERWORD) == sizeof(jbl_t));
 
@@ -249,9 +247,9 @@ FUNCTION size_t j__udyAllocJBL(Pjpm_t Pjpm)
         }
         else { J__UDYSETALLOCERROR(PjblRaw); }
 
-        TRACE_ALLOC5("%p %8lu = j__udyAllocJBL(), Words = %zd\n", (void *)PjblRaw,
-                     (U_t)j__udyMemSequence++, (int)Words, (size_t)(Pjpm->jpm_Pop0) + 2);
-        MALLOCBITS_SET(Pjbl_t, PjblRaw);
+        TRACE_ALLOC5("\n%p %8zd = j__udyAllocJBL(), Words = %d, TotPop1 = %zd\n", 
+                (void *)PjblRaw, j__udyMemSequence++, (int)Words, Pjpm->jpm_Pop0 + 2);
+        MALLOCBITS_SET(PjblRaw);
         return(PjblRaw);
 
 } // j__udyAllocJBL()
@@ -277,9 +275,9 @@ FUNCTION size_t j__udyAllocJBB(Pjpm_t Pjpm)
         }
         else { J__UDYSETALLOCERROR(PjbbRaw); }
 
-        TRACE_ALLOC5("%p %8lu = j__udyAllocJBB(), (int)Words = %zd\n", (void *)PjbbRaw,
-                     (U_t)j__udyMemSequence++, (int)Words, (size_t)(Pjpm->jpm_Pop0) + 2);
-        MALLOCBITS_SET(Pjbb_t, PjbbRaw);
+        TRACE_ALLOC5("\n%p %8zd = j__udyAllocJBB(), (int)Words = %d, TotPop1 = %zd\n", 
+                (void *)PjbbRaw, j__udyMemSequence++, (int)Words, Pjpm->jpm_Pop0 + 2);
+        MALLOCBITS_SET(PjbbRaw);
         return(PjbbRaw);
 
 } // j__udyAllocJBB()
@@ -303,9 +301,9 @@ FUNCTION size_t j__udyAllocJBBJP(int NumJPs, Pjpm_t Pjpm)
         }
         else { J__UDYSETALLOCERROR(PjpRaw); }
 
-        TRACE_ALLOC6("%p %8lu = j__udyAllocJBBJP(%d), Words = %zd\n", (void *)PjpRaw,
-                     (U_t)j__udyMemSequence++, (int)NumJPs, (int)Words, (size_t)(Pjpm->jpm_Pop0) + 2);
-        MALLOCBITS_SET(Pjp_t, PjpRaw);
+        TRACE_ALLOC6("\n%p %8zd = j__udyAllocJBBJP(%d), Words = %d, TotPop1 = %zd\n",
+                (void *)PjpRaw, j__udyMemSequence++, (int)NumJPs, (int)Words, Pjpm->jpm_Pop0 + 2);
+        MALLOCBITS_SET(PjpRaw);
         return(PjpRaw);
 
 } // j__udyAllocJBBJP()
@@ -330,9 +328,9 @@ FUNCTION size_t j__udyAllocJBU(Pjpm_t Pjpm)
         }
         else { J__UDYSETALLOCERROR(PjbuRaw); }
 
-        TRACE_ALLOC5("%p %8lu = j__udyAllocJBU(), Words = %zd\n", (void *)PjbuRaw,
-                     (U_t)j__udyMemSequence++, (int)Words, (size_t)(Pjpm->jpm_Pop0) + 2);
-        MALLOCBITS_SET(Pjbu_t, PjbuRaw);
+        TRACE_ALLOC5("\n%p %8zd = j__udyAllocJBU(), Words = %d, TotPop1 = %zd\n", 
+                (void *)PjbuRaw, j__udyMemSequence++, (int)Words, Pjpm->jpm_Pop0 + 2);
+        MALLOCBITS_SET(PjbuRaw);
         return(PjbuRaw);
 
 } // j__udyAllocJBU()
@@ -358,9 +356,9 @@ FUNCTION size_t j__udyAllocJLL1(int Pop1, Pjpm_t Pjpm)
         }
         else { J__UDYSETALLOCERROR(PjllRaw); }
 
-        TRACE_ALLOC6("%p %8lu = j__udyAllocJLL1(%d), Words = %zd\n", (void *)PjllRaw,
-                     (U_t)j__udyMemSequence++, Pop1, (int)Words, (size_t)(Pjpm->jpm_Pop0) + 2);
-        MALLOCBITS_SET(Pjll_t, PjllRaw);
+        TRACE_ALLOC6("\n%p %8zd = j__udyAllocJLL1(%d), Words = %d, TotPop1 = %zd\n", 
+                (void *)PjllRaw, j__udyMemSequence++, Pop1, (int)Words, Pjpm->jpm_Pop0 + 2);
+        MALLOCBITS_SET(PjllRaw);
         return(PjllRaw);
 
 } // j__udyAllocJLL1()
@@ -386,9 +384,9 @@ FUNCTION size_t j__udyAllocJLL2(int Pop1, Pjpm_t Pjpm)
         }
         else { J__UDYSETALLOCERROR(PjllRaw); }
 
-        TRACE_ALLOC6("%p %8lu = j__udyAllocJLL2(%d), Words = %zd\n", (void *)PjllRaw,
-                     (U_t)j__udyMemSequence++, Pop1, (int)Words, (size_t)(Pjpm->jpm_Pop0) + 2);
-        MALLOCBITS_SET(Pjll_t, PjllRaw);
+        TRACE_ALLOC6("\n%p %8zd = j__udyAllocJLL2(%d), Words = %d, TotPop1 = %zd\n", 
+                (void *)PjllRaw, j__udyMemSequence++, Pop1, (int)Words, Pjpm->jpm_Pop0 + 2);
+        MALLOCBITS_SET(PjllRaw);
         return(PjllRaw);
 
 } // j__udyAllocJLL2()
@@ -412,9 +410,9 @@ FUNCTION size_t j__udyAllocJLL3(int Pop1, Pjpm_t Pjpm)
         }
         else { J__UDYSETALLOCERROR(PjllRaw); }
 
-        TRACE_ALLOC6("%p %8lu = j__udyAllocJLL3(%d), Words = %zd\n", (void *)PjllRaw,
-                     (U_t)j__udyMemSequence++, Pop1, (int)Words, (size_t)(Pjpm->jpm_Pop0) + 2);
-        MALLOCBITS_SET(Pjll_t, PjllRaw);
+        TRACE_ALLOC6("\n%p %8zd = j__udyAllocJLL3(%d), Words = %d, TotPop1 = %zd\n",
+                (void *)PjllRaw, j__udyMemSequence++, Pop1, (int)Words, Pjpm->jpm_Pop0 + 2);
+        MALLOCBITS_SET(PjllRaw);
         return(PjllRaw);
 
 } // j__udyAllocJLL3()
@@ -440,9 +438,9 @@ FUNCTION size_t j__udyAllocJLL4(int Pop1, Pjpm_t Pjpm)
         }
         else { J__UDYSETALLOCERROR(PjllRaw); }
 
-        TRACE_ALLOC6("%p %8lu = j__udyAllocJLL4(%d), Words = %zd\n", (void *)PjllRaw,
-                     (U_t)j__udyMemSequence++, Pop1, (int)Words, (size_t)(Pjpm->jpm_Pop0) + 2);
-        MALLOCBITS_SET(Pjll_t, PjllRaw);
+        TRACE_ALLOC6("\n%p %8zd = j__udyAllocJLL4(%d), Words = %d, TotPop1 = %zd\n", 
+                (void *)PjllRaw, j__udyMemSequence++, Pop1, (int)Words, Pjpm->jpm_Pop0 + 2);
+        MALLOCBITS_SET(PjllRaw);
         return(PjllRaw);
 
 } // j__udyAllocJLL4()
@@ -466,9 +464,9 @@ FUNCTION size_t j__udyAllocJLL5(int Pop1, Pjpm_t Pjpm)
         }
         else { J__UDYSETALLOCERROR(PjllRaw); }
 
-        TRACE_ALLOC6("%p %8lu = j__udyAllocJLL5(%d), Words = %zd\n", (void *)PjllRaw,
-                     (U_t)j__udyMemSequence++, Pop1, (int)Words, (size_t)(Pjpm->jpm_Pop0) + 2);
-        MALLOCBITS_SET(Pjll_t, PjllRaw);
+        TRACE_ALLOC6("\n%p %8zd = j__udyAllocJLL5(%d), Words = %d, TotPop1 = %zd\n", 
+                (void *)PjllRaw, j__udyMemSequence++, Pop1, (int)Words, Pjpm->jpm_Pop0 + 2);
+        MALLOCBITS_SET(PjllRaw);
         return(PjllRaw);
 
 } // j__udyAllocJLL5()
@@ -492,9 +490,9 @@ FUNCTION size_t j__udyAllocJLL6(int Pop1, Pjpm_t Pjpm)
         }
         else { J__UDYSETALLOCERROR(PjllRaw); }
 
-        TRACE_ALLOC6("%p %8lu = j__udyAllocJLL6(%d), Words = %zd\n", (void *)PjllRaw,
-                     (U_t)j__udyMemSequence++, Pop1, (int)Words, (size_t)(Pjpm->jpm_Pop0) + 2);
-        MALLOCBITS_SET(Pjll_t, PjllRaw);
+        TRACE_ALLOC6("\n%p %8zd = j__udyAllocJLL6(%d), Words = %d, TotPop1 = %zd\n", 
+                (void *)PjllRaw, j__udyMemSequence++, Pop1, (int)Words, Pjpm->jpm_Pop0 + 2);
+        MALLOCBITS_SET(PjllRaw);
         return(PjllRaw);
 
 } // j__udyAllocJLL6()
@@ -518,9 +516,9 @@ FUNCTION size_t j__udyAllocJLL7(int Pop1, Pjpm_t Pjpm)
         }
         else { J__UDYSETALLOCERROR(PjllRaw); }
 
-        TRACE_ALLOC6("%p %8lu = j__udyAllocJLL7(%d), Words = %zd\n", (void *)PjllRaw,
-                     (U_t)j__udyMemSequence++, Pop1, (int)Words, (size_t)(Pjpm->jpm_Pop0) + 2);
-        MALLOCBITS_SET(Pjll_t, PjllRaw);
+        TRACE_ALLOC6("\n%p %8zd = j__udyAllocJLL7(%d), Words = %d, TotPop1 = %zd\n", 
+                (void *)PjllRaw, j__udyMemSequence++, Pop1, (int)Words, Pjpm->jpm_Pop0 + 2);
+        MALLOCBITS_SET(PjllRaw);
         return(PjllRaw);
 
 } // j__udyAllocJLL7()
@@ -542,8 +540,8 @@ FUNCTION Pjlw_t j__udyAllocJLW(int Pop1)
             j__AllocWordsJLLW += Words;
 #endif // RAMMETRICS
 
-        TRACE_ALLOC6("%p %8lu = j__udyAllocJLW(%d), Words = %d\n", (void *)Pjlw,
-                     (U_t)j__udyMemSequence++, Pop1, (int)Words, Pop1);
+        TRACE_ALLOC6("\n%p %8zd = j__udyAllocJLW(%d), Words = %d, TotPop1 = %d\n", 
+                (void *)Pjlw, j__udyMemSequence++, Pop1, (int)Words, Pop1);
         // MALLOCBITS_SET(Pjlw_t, Pjlw);  // see above.
         return(Pjlw);
 
@@ -571,9 +569,9 @@ FUNCTION size_t j__udyAllocJLB1(Pjpm_t Pjpm)
         }
         else { J__UDYSETALLOCERROR(PjlbRaw); }
 
-        TRACE_ALLOC5("%p %8lu = j__udyAllocJLB1(), Words = %zd\n", (void *)PjlbRaw,
-                     (U_t)j__udyMemSequence++, (int)Words, (size_t)(Pjpm->jpm_Pop0) + 2);
-        MALLOCBITS_SET(Pjlb_t, PjlbRaw);
+        TRACE_ALLOC5("\n%p %8zd = j__udyAllocJLB1(), Words = %d, TotPop1 = %zd\n", 
+                (void *)PjlbRaw, j__udyMemSequence++, (int)Words, Pjpm->jpm_Pop0 + 2);
+        MALLOCBITS_SET(PjlbRaw);
         return(PjlbRaw);
 
 } // j__udyAllocJLB1()
@@ -600,9 +598,9 @@ FUNCTION size_t j__udyLAllocJV(int Pop1, Pjpm_t Pjpm)
         }
         else { J__UDYSETALLOCERROR(PjvRaw); }
 
-        TRACE_ALLOC6("%p %8lu = j__udyLAllocJV(%d), Words = %zd\n", (void *)PjvRaw,
-                     (U_t)j__udyMemSequence++, Pop1, (int)Words, (size_t)(Pjpm->jpm_Pop0) + 2);
-        MALLOCBITS_SET(Pjv_t, PjvRaw);
+        TRACE_ALLOC6("\n%p %8zd = j__udyLAllocJV(%d), Words = %d, TotPop1 = %zd\n", 
+                (void *)PjvRaw, j__udyMemSequence++, Pop1, (int)Words, Pjpm->jpm_Pop0 + 2);
+        MALLOCBITS_SET(PjvRaw);
         return(PjvRaw);
 
 } // j__udyLAllocJV()
@@ -628,7 +626,6 @@ FUNCTION void j__udyFreeJPM(Pjpm_t PjpmFree, Pjpm_t PjpmStats)
         j__AllocWordsJLLW -= Words;
 #endif // RAMMETRICS
 
-
         if (PjpmStats != (Pjpm_t) NULL) PjpmStats->jpm_TotalMemWords -= Words;
 
 // Note:  Log PjpmFree->jpm_Pop0, similar to other j__udyFree*() functions, not
@@ -636,8 +633,8 @@ FUNCTION void j__udyFreeJPM(Pjpm_t PjpmFree, Pjpm_t PjpmStats)
 // Judy*FreeArray(), jpm_Pop0 is set to 0, and the population after the free
 // really will be 0, not cJU_LEAFW_MAXPOP1.
 
-        TRACE_FREE6("%p %8lu =  j__udyFreeJPM(%d), Words = %d\n", (void *)PjpmFree,
-                    (U_t)j__udyMemSequence++, (int)Words, (int)Words, PjpmFree->jpm_Pop0);
+        TRACE_FREE5("\n%p %8zd =  j__udyFreeJPM(), Words = %d, TotPop1 = %zd\n", 
+                (void *)PjpmFree, j__udyMemSequence++, (int)Words, PjpmFree->jpm_Pop0);
 
         // MALLOCBITS_TEST(Pjpm_t, PjpmFree);   // see above.
         JudyFree((size_t) PjpmFree, Words);
@@ -649,7 +646,7 @@ FUNCTION void j__udyFreeJBL(size_t Pjbl, Pjpm_t Pjpm)
 {
         Word_t Words = sizeof(jbl_t) / cJU_BYTESPERWORD;
 
-        MALLOCBITS_TEST(Pjbl_t, Pjbl);
+        MALLOCBITS_TEST(Pjbl);
 
         Pjpm->jpm_TotalMemWords -= Words;
 
@@ -657,8 +654,8 @@ FUNCTION void j__udyFreeJBL(size_t Pjbl, Pjpm_t Pjpm)
         j__AllocWordsJBL -= Words;
 #endif // RAMMETRICS
 
-        TRACE_FREE5("%p %8lu =  j__udyFreeJBL(), Words = %zd\n", (void *)Pjbl,
-                    (U_t)j__udyMemSequence++, (int)Words, (size_t)Pjpm->jpm_Pop0);
+        TRACE_FREE5("\n%p %8zd =  j__udyFreeJBL(), Words = %d, TotPop1 = %zd\n", 
+                (void *)Pjbl, j__udyMemSequence++, (int)Words, Pjpm->jpm_Pop0);
 
         JudyFreeVirtual(Pjbl, Words);
 
@@ -669,7 +666,7 @@ FUNCTION void j__udyFreeJBB(size_t Pjbb, Pjpm_t Pjpm)
 {
         int Words = sizeof(jbb_t) / cJU_BYTESPERWORD;
 
-        MALLOCBITS_TEST(Pjbb_t, Pjbb);
+        MALLOCBITS_TEST(Pjbb);
 
         Pjpm->jpm_TotalMemWords -= Words;
 
@@ -677,8 +674,8 @@ FUNCTION void j__udyFreeJBB(size_t Pjbb, Pjpm_t Pjpm)
         j__AllocWordsJBB -= Words;
 #endif // RAMMETRICS
 
-        TRACE_FREE5("%p %8lu =  j__udyFreeJBB(), Words = %zd\n", (void *)Pjbb,
-                    (U_t)j__udyMemSequence++, (int)Words, (size_t)Pjpm->jpm_Pop0);
+        TRACE_FREE5("\n%p %8zd =  j__udyFreeJBB(), Words = %d, TotPop1 = %zd\n", 
+                (void *)Pjbb, j__udyMemSequence++, (int)Words, Pjpm->jpm_Pop0);
 
         JudyFreeVirtual(Pjbb, Words);
 
@@ -689,7 +686,7 @@ FUNCTION void j__udyFreeJBBJP(size_t Pjp, int NumJPs, Pjpm_t Pjpm)
 {
         Word_t Words = JU_BRANCHJP_NUMJPSTOWORDS(NumJPs);
 
-        MALLOCBITS_TEST(Pjp_t, Pjp);
+        MALLOCBITS_TEST(Pjp);
 
         Pjpm->jpm_TotalMemWords -= Words;
 
@@ -697,8 +694,8 @@ FUNCTION void j__udyFreeJBBJP(size_t Pjp, int NumJPs, Pjpm_t Pjpm)
         j__AllocWordsJBB -= Words;
 #endif // RAMMETRICS
 
-        TRACE_FREE6("%p %8lu =  j__udyFreeJBBJP(%d), Words = %zd\n", (void *)Pjp,
-                    (U_t)j__udyMemSequence++, (int)NumJPs, (int)Words, (size_t)Pjpm->jpm_Pop0);
+        TRACE_FREE6("\n%p %8zd =  j__udyFreeJBBJP(%d), Words = %d, TotPop1 = %zd\n", 
+                (void *)Pjp, j__udyMemSequence++, NumJPs, (int)Words, Pjpm->jpm_Pop0);
 
         JudyFree(Pjp, Words);
 
@@ -709,7 +706,7 @@ FUNCTION void j__udyFreeJBU(size_t Pjbu, Pjpm_t Pjpm)
 {
         int Words = sizeof(jbu_t) / cJU_BYTESPERWORD;
 
-        MALLOCBITS_TEST(Pjbu_t, Pjbu);
+        MALLOCBITS_TEST(Pjbu);
 
         Pjpm->jpm_TotalMemWords -= Words;
 
@@ -717,8 +714,8 @@ FUNCTION void j__udyFreeJBU(size_t Pjbu, Pjpm_t Pjpm)
         j__AllocWordsJBU -= Words;
 #endif // RAMMETRICS
 
-        TRACE_FREE5("%p %8lu =  j__udyFreeJBU(), Words = %zd\n", (void *)Pjbu,
-                    (U_t)j__udyMemSequence++, (int)Words, (size_t)Pjpm->jpm_Pop0);
+        TRACE_FREE5("\n%p %8zd =  j__udyFreeJBU(), Words = %d, TotPop1 = %zd\n", 
+                (void *)Pjbu, j__udyMemSequence++, (int)Words, Pjpm->jpm_Pop0);
 
         JudyFreeVirtual(Pjbu, Words);
 
@@ -731,7 +728,7 @@ FUNCTION void j__udyFreeJLL1(size_t Pjll, int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF1POPTOWORDS(Pop1);
 
-        MALLOCBITS_TEST(Pjll_t, Pjll);
+        MALLOCBITS_TEST(Pjll);
 
         Pjpm->jpm_TotalMemWords -= Words;
 
@@ -739,8 +736,8 @@ FUNCTION void j__udyFreeJLL1(size_t Pjll, int Pop1, Pjpm_t Pjpm)
         j__AllocWordsJLL1 -= Words;
 #endif // RAMMETRICS
 
-        TRACE_FREE6("%p %8lu =  j__udyFreeJLL1(%d), Words = %zd\n", (void *)Pjll,
-                    (U_t)j__udyMemSequence++, Pop1, (int)Words, (size_t)Pjpm->jpm_Pop0);
+        TRACE_FREE6("\n%p %8zd =  j__udyFreeJLL1(%d), Words = %d, TotPop1 = %zd\n", 
+                (void *)Pjll, j__udyMemSequence++, Pop1, (int)Words, Pjpm->jpm_Pop0);
 
         JudyFree(Pjll, Words);
 
@@ -753,7 +750,7 @@ FUNCTION void j__udyFreeJLL2(size_t Pjll, int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF2POPTOWORDS(Pop1);
 
-        MALLOCBITS_TEST(Pjll_t, Pjll);
+        MALLOCBITS_TEST(Pjll);
 
         Pjpm->jpm_TotalMemWords -= Words;
 
@@ -761,8 +758,8 @@ FUNCTION void j__udyFreeJLL2(size_t Pjll, int Pop1, Pjpm_t Pjpm)
         j__AllocWordsJLL2 -= Words;
 #endif // RAMMETRICS
 
-        TRACE_FREE6("%p %8lu =  j__udyFreeJLL2(%d), Words = %zd\n", (void *)Pjll,
-                    (U_t)j__udyMemSequence++, Pop1, (int)Words, (size_t)Pjpm->jpm_Pop0);
+        TRACE_FREE6("\n%p %8zd =  j__udyFreeJLL2(%d), Words = %d, TotPop1 = %zd\n", 
+                (void *)Pjll, j__udyMemSequence++, Pop1, (int)Words, Pjpm->jpm_Pop0);
 
         JudyFree(Pjll, Words);
 
@@ -773,7 +770,7 @@ FUNCTION void j__udyFreeJLL3(size_t Pjll, int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF3POPTOWORDS(Pop1);
 
-        MALLOCBITS_TEST(Pjll_t, Pjll);
+        MALLOCBITS_TEST(Pjll);
 
         Pjpm->jpm_TotalMemWords -= Words;
 
@@ -781,8 +778,8 @@ FUNCTION void j__udyFreeJLL3(size_t Pjll, int Pop1, Pjpm_t Pjpm)
         j__AllocWordsJLL3 -= Words;
 #endif // RAMMETRICS
 
-        TRACE_FREE6("%p %8lu =  j__udyFreeJLL3(%d), Words = %zd\n", (void *)Pjll,
-                    (U_t)j__udyMemSequence++, Pop1, (int)Words, (size_t)Pjpm->jpm_Pop0);
+        TRACE_FREE6("\n%p %8zd =  j__udyFreeJLL3(%d), Words = %d, TotPop1 = %zd\n", 
+                (void *)Pjll, j__udyMemSequence++, Pop1, (int)Words, Pjpm->jpm_Pop0);
 
         JudyFree(Pjll, Words);
 
@@ -795,7 +792,7 @@ FUNCTION void j__udyFreeJLL4(size_t Pjll, int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF4POPTOWORDS(Pop1);
 
-        MALLOCBITS_TEST(Pjll_t, Pjll);
+        MALLOCBITS_TEST(Pjll);
 
         Pjpm->jpm_TotalMemWords -= Words;
 
@@ -803,8 +800,8 @@ FUNCTION void j__udyFreeJLL4(size_t Pjll, int Pop1, Pjpm_t Pjpm)
         j__AllocWordsJLL4 -= Words;
 #endif // RAMMETRICS
 
-        TRACE_FREE6("%p %8lu =  j__udyFreeJLL4(%d), Words = %zd\n", (void *)Pjll,
-                    (U_t)j__udyMemSequence++, Pop1, (int)Words, (size_t)Pjpm->jpm_Pop0);
+        TRACE_FREE6("\n%p %8zd =  j__udyFreeJLL4(%d), Words = %d, TotPop1 = %zd\n", 
+                (void *)Pjll, j__udyMemSequence++, Pop1, (int)Words, Pjpm->jpm_Pop0);
 
         JudyFree(Pjll, Words);
 
@@ -816,7 +813,7 @@ FUNCTION void j__udyFreeJLL5(size_t Pjll, int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF5POPTOWORDS(Pop1);
 
-        MALLOCBITS_TEST(Pjll_t, Pjll);
+        MALLOCBITS_TEST(Pjll);
 
         Pjpm->jpm_TotalMemWords -= Words;
 
@@ -824,8 +821,8 @@ FUNCTION void j__udyFreeJLL5(size_t Pjll, int Pop1, Pjpm_t Pjpm)
         j__AllocWordsJLL5 -= Words;
 #endif // RAMMETRICS
 
-        TRACE_FREE6("%p %8lu =  j__udyFreeJLL5(%d), Words = %zd\n", (void *)Pjll,
-                    (U_t)j__udyMemSequence++, Pop1, (int)Words, (size_t)Pjpm->jpm_Pop0);
+        TRACE_FREE6("\n%p %8zd =  j__udyFreeJLL5(%d), Words = %d, TotPop1 = %zd\n", 
+                (void *)Pjll, j__udyMemSequence++, Pop1, (int)Words, Pjpm->jpm_Pop0);
 
         JudyFree(Pjll, Words);
 
@@ -836,7 +833,7 @@ FUNCTION void j__udyFreeJLL6(size_t Pjll, int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF6POPTOWORDS(Pop1);
 
-        MALLOCBITS_TEST(Pjll_t, Pjll);
+        MALLOCBITS_TEST(Pjll);
 
         Pjpm->jpm_TotalMemWords -= Words;
 
@@ -844,8 +841,8 @@ FUNCTION void j__udyFreeJLL6(size_t Pjll, int Pop1, Pjpm_t Pjpm)
         j__AllocWordsJLL6 -= Words;
 #endif // RAMMETRICS
 
-        TRACE_FREE6("%p %8lu =  j__udyFreeJLL6(%d), Words = %zd\n", (void *)Pjll,
-                    (U_t)j__udyMemSequence++, Pop1, (int)Words, (size_t)Pjpm->jpm_Pop0);
+        TRACE_FREE6("\n%p %8zd =  j__udyFreeJLL6(%d), Words = %d, TotPop1 = %zd\n", 
+                (void *)Pjll, j__udyMemSequence++, Pop1, (int)Words, Pjpm->jpm_Pop0);
 
         JudyFree(Pjll, Words);
 
@@ -856,7 +853,7 @@ FUNCTION void j__udyFreeJLL7(size_t Pjll, int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF7POPTOWORDS(Pop1);
 
-        MALLOCBITS_TEST(Pjll_t, Pjll);
+        MALLOCBITS_TEST(Pjll);
 
         Pjpm->jpm_TotalMemWords -= Words;
 
@@ -864,8 +861,8 @@ FUNCTION void j__udyFreeJLL7(size_t Pjll, int Pop1, Pjpm_t Pjpm)
         j__AllocWordsJLL7 -= Words;
 #endif // RAMMETRICS
 
-        TRACE_FREE6("%p %8lu =  j__udyFreeJLL7(%d), Words = %zd\n", (void *)Pjll,
-                    (U_t)j__udyMemSequence++, Pop1, (int)Words, (size_t)Pjpm->jpm_Pop0);
+        TRACE_FREE6("\n%p %8zd =  j__udyFreeJLL7(%d), Words = %d, TotPop1 = %zd\n", 
+                (void *)Pjll, j__udyMemSequence++, Pop1, (int)Words, Pjpm->jpm_Pop0);
 
         JudyFree(Pjll, Words);
 
@@ -889,8 +886,8 @@ FUNCTION void j__udyFreeJLW(Pjlw_t Pjlw, int Pop1, Pjpm_t Pjpm)
         j__AllocWordsJLLW -= Words;
 #endif // RAMMETRICS
 
-        TRACE_FREE6("%p %8lu =  j__udyFreeJLW(%d), Words = %d\n", (void *)Pjlw,
-                    (U_t)j__udyMemSequence++, Pop1, (int)Words, Pop1 - 1);
+        TRACE_FREE6("\n%p %8zd =  j__udyFreeJLW(%d), Words = %d, TotPop1 = %d\n", 
+                (void *)Pjlw, j__udyMemSequence++, Pop1, (int)Words, Pop1 - 1);
 
         JudyFree((size_t)Pjlw, Words);
 
@@ -901,7 +898,7 @@ FUNCTION void j__udyFreeJLB1(size_t Pjlb, Pjpm_t Pjpm)
 {
         Word_t Words = sizeof(jlb_t) / cJU_BYTESPERWORD;
 
-        MALLOCBITS_TEST(Pjlb_t, Pjlb);
+        MALLOCBITS_TEST(Pjlb);
 
         Pjpm->jpm_TotalMemWords -= Words;
 
@@ -909,8 +906,8 @@ FUNCTION void j__udyFreeJLB1(size_t Pjlb, Pjpm_t Pjpm)
         j__AllocWordsJLB1 -= Words;
 #endif // RAMMETRICS
 
-        TRACE_FREE5("%p %8lu =  j__udyFreeJLB1(), Words = %zd\n", (void *)Pjlb,
-                    (U_t)j__udyMemSequence++, (int)Words, (size_t)Pjpm->jpm_Pop0);
+        TRACE_FREE5("\n%p %8zd =  j__udyFreeJLB1(), Words = %d, TotPop1 = %zd\n", 
+                (void *)Pjlb, j__udyMemSequence++, (int)Words, Pjpm->jpm_Pop0);
 
         JudyFree(Pjlb, Words);
 
@@ -923,7 +920,7 @@ FUNCTION void j__udyLFreeJV(size_t Pjv, int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JL_LEAFVPOPTOWORDS(Pop1);
 
-        MALLOCBITS_TEST(Pjv_t, Pjv);
+        MALLOCBITS_TEST(Pjv);
 
         Pjpm->jpm_TotalMemWords -= Words;
 
@@ -932,8 +929,8 @@ FUNCTION void j__udyLFreeJV(size_t Pjv, int Pop1, Pjpm_t Pjpm)
         j__NumbJV--;
 #endif // RAMMETRICS
 
-        TRACE_FREE6("%p %8lu = j__udyLFreeJV(%d), Words = %zd\n", (void *)Pjv,
-                    (U_t)j__udyMemSequence++, Pop1, (int)Words, (size_t)Pjpm->jpm_Pop0);
+        TRACE_FREE6("\n%p %8zd = j__udyLFreeJV(%d), Words = %d, TotPop1 = %zd\n", 
+                (void *)Pjv, j__udyMemSequence++, Pop1, (int)Words, Pjpm->jpm_Pop0);
 
         JudyFree(Pjv, Words);
 

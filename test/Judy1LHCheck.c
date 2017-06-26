@@ -407,7 +407,7 @@ main(int argc, char *argv[])
 //      Test JLI, J1S -dup
         LowIndex = TestJudyDup(&J1, &JL, &JH, Seed, Delta);
 
-//      Test JLC, J1C
+//      Test Judy1Count, JudyLCount
         if (!CFlag)
         {
             TestJudyCount(J1, JL, LowIndex, Delta);
@@ -435,9 +435,11 @@ main(int argc, char *argv[])
             Word_t Count1, CountL;
 
 //          Print the number of bytes used per Index
-            J1C(Count1, J1, 0, ~0);
+//            J1C(Count1, J1, 0, ~0);
+            Count1 = Judy1Count(J1, 0, ~0, NULL);
             printf(" %6.3f", (double)Judy1MemUsed(J1) / (double)Count1);
-            JLC(CountL, JL, 0, ~0);
+//            JLC(CountL, JL, 0, ~0);
+            CountL = JudyLCount(JL, 0, ~0, NULL);
             printf(" %6.3f", (double)JudyLMemUsed(JL) / (double)CountL);
         }
         printf("\n");
@@ -447,8 +449,10 @@ main(int argc, char *argv[])
         Word_t Count1, CountL;
         Word_t Bytes;
 
-        JLC(CountL, JL, 0, ~0);
-        J1C(Count1, J1, 0, ~0);
+//        JLC(CountL, JL, 0, ~0);
+        CountL = JudyLCount(JL, 0, ~0, NULL);
+//        J1C(Count1, J1, 0, ~0);
+        Count1 = Judy1Count(J1, 0, ~0, NULL);
 
         if (CountL != TotalPop)
             FAILURE("JudyLCount wrong", CountL);
@@ -458,18 +462,30 @@ main(int argc, char *argv[])
 
         if (TotalPop)
         {
-            JLFA(Bytes, JL);    // Free the JudyL Array
+//            JLFA(Bytes, JL);    // Free the JudyL Array
+            Bytes = JudyLFreeArray(&JL, NULL);
+            if (Bytes == (Word_t)JERR)
+                FAILURE("JudyLFreeArray ret Bytes", Bytes);
+
             if (pFlag) printf("JudyLFreeArray  = %6.3f Bytes/Index\n",
                    (double)Bytes / (double)CountL);
 
-            JHSFA(Bytes, JH);   // Free the JudyL Array
+//            JHSFA(Bytes, JH);   // Free the JudyL Array
+            Bytes = JudyHSFreeArray(&JH, NULL);
+            if (Bytes == (Word_t)JERR)
+                FAILURE("JudyHSFreeArray ret Bytes", Bytes);
+
             if (pFlag) printf("JudyHSFreeArray = %6.3f Bytes/Index\n",
                    (double)Bytes / (double)TotalPop); // Count not available yet
 
             // Free the Judy1 array last for Mikey.
             // His Judy1FreeArray code assumes and asserts that there is no
             // unfreed memory when it is done.
-            J1FA(Bytes, J1);    // Free the Judy1 Array
+//            J1FA(Bytes, J1);    // Free the Judy1 Array
+            Bytes = Judy1FreeArray(&J1, NULL);
+            if (Bytes == (Word_t)JERR)
+                FAILURE("Judy1FreeArray ret Bytes", Bytes);
+
             if (pFlag) printf("Judy1FreeArray  = %6.3f Bytes/Index\n",
                    (double)Bytes / (double)Count1);
 
@@ -698,36 +714,41 @@ TestJudyCount(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
     for (elm = 0; elm < Elements; elm++)
     {
 
-        J1C(Count1, J1, LowIndex, TstIndex);
+//        J1C(Count1, J1, LowIndex, TstIndex);
+        Count1 = Judy1Count(J1, LowIndex, TstIndex, NULL);
 
-        if (pFlag) { printf("JudyLCount: Count=%" PRIuPTR" Low=%p High=%p\n", Count1, (void *)LowIndex, (void *)TstIndex); }
+        if (pFlag) { printf("Judy1Count: Count=%" PRIuPTR" Low=%p High=%p\n", Count1, (void *)LowIndex, (void *)TstIndex); }
 
-        if (Count1 == JERR)
+        if (Count1 == (Word_t)JERR)
             FAILURE("Judy1Count ret JERR", Count1);
 
         if (Count1 != (elm + 1))
         {
-            J1C(Count1, J1, 0, -1);
-            printf("J1C(%" PRIuPTR", J1, 0, -1)\n", Count1);
+//            J1C(Count1, J1, 0, -1);
+            Count1 = Judy1Count(J1,  0, ~0, NULL);
+            printf("Judy1Count(%" PRIuPTR", J1, 0, ~0)\n", Count1);
 
-            JLC(CountL, JL, 0, -1);
-            printf("JLC(%" PRIuPTR", JL, 0, -1)\n", CountL);
+//            JLC(CountL, JL, 0, -1);
+            CountL = JudyLCount(JL, 0, ~0, NULL);
+            printf("JudyLCount(%" PRIuPTR", JL, 0, ~0)\n", CountL);
 
             printf("LowIndex = 0x%" PRIxPTR", TstIndex = 0x%" PRIxPTR", diff = %" PRIuPTR"\n", LowIndex,
                    TstIndex, TstIndex - LowIndex);
-            JLC(CountL, JL, LowIndex, TstIndex);
+//            JLC(CountL, JL, LowIndex, TstIndex);
+            CountL = JudyLCount(JL, LowIndex, TstIndex, NULL);
             printf("CountL = %" PRIuPTR", Count1 = %" PRIuPTR", should be: elm + 1 = %" PRIuPTR"\n", CountL, Count1, elm + 1);
-            FAILURE("J1C at", elm);
+            FAILURE("JudyLCount at", elm);
         }
 
-        JLC(CountL, JL, LowIndex, TstIndex);
-        if (CountL == JERR)
+//        JLC(CountL, JL, LowIndex, TstIndex);
+        CountL = JudyLCount(JL, LowIndex, TstIndex, NULL);
+        if (CountL == (Word_t)JERR)
             FAILURE("JudyLCount ret JERR", CountL);
 
         if (CountL != (elm + 1)) 
         {
             printf("CountL = %" PRIuPTR", elm +1 = %" PRIuPTR"\n", CountL, elm + 1);
-            FAILURE("JLC at", elm);
+            FAILURE("JudyLCount at", elm);
         }
 
         J1N(Rcode, J1, TstIndex);
@@ -749,7 +770,11 @@ Word_t TestJudyNext(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
     J1index = JLindex = LowIndex;
 
     PValue = (PWord_t)JudyLFirst(JL, &JLindex, NULL);
-    J1F(Rcode, J1, J1index);
+//    J1F(Rcode, J1, J1index);
+    Rcode = Judy1First(J1, &J1index, NULL); // Get next one
+
+    if (JLindex != J1index)
+        FAILURE("JudyLFirst & Judy1First ret different PIndex at", 0);
 
     for (elm = 0; elm < Elements; elm++)
     {
@@ -764,6 +789,7 @@ Word_t TestJudyNext(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
 
         PValue = (PWord_t)JudyLNext(JL, &JLindex, NULL); // Get next one
         J1N(Rcode, J1, J1index);        // Get next one
+//        Rcode = Judy1Next(J1, &J1index, NULL); // Get next one
     }
 
     if (PValue != NULL)

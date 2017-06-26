@@ -33,8 +33,6 @@
 
 #include "JudyPrivate1L.h"
 
-DBGCODE(extern void JudyCheckPop(Pvoid_t PArray);)
-
 
 // ****************************************************************************
 // J U D Y   1   F R E E   A R R A Y
@@ -65,7 +63,6 @@ FUNCTION Word_t JudyLFreeArray
 	    return(JERR);
 	}
 
-	DBGCODE(JudyCheckPop(*PPArray);)
 
 // Zero jpm.jpm_Pop0 (meaning the array will be empty in a moment) for accurate
 // logging in TRACEMI2.

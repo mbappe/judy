@@ -64,9 +64,6 @@
 
 #include "JudyPrivate1L.h"
 
-DBGCODE(extern void JudyCheckPop(Pvoid_t PArray);)
-DBGCODE(extern void JudyCheckSorted(Pjll_t Pjll, Word_t Pop1, long IndexSize);)
-
 #ifdef TRACEJP
 #include "JudyPrintJP.c"
 #endif
@@ -145,7 +142,7 @@ extern Word_t   j__udyLLeaf7ToLeafW(Pjlw_t,     Pjv_t, Pjp_t, Word_t, Pjpm_t);
 //    single JP, which should be compressed into the parent branch (if there
 //    is one, which is not the case for a top-level branch under a JPM)
 
-DBGCODE(static uint8_t parentJPtype;)          // parent branch JP type.
+ DBGCODE(static uint8_t parentJPtype;)          // parent branch JP type.
 
 FUNCTION static int j__udyDelWalk(
         Pjp_t   Pjp,            // current JP under which to delete.
@@ -271,7 +268,6 @@ ContinueDelWalk:                // for modifying state without recursing.
             }                                                           \
             assert(((((Word_t) Pleaf) - ((Word_t) Pjllnew)) / (cLevel)) == (MaxPop1)); \
   JUDYLCODE(assert((Pjv - ValueArea(Pjllnew, MaxPop1)) == (MaxPop1));)  \
-            DBGCODE(JudyCheckSorted(Pjllnew, MaxPop1, cLevel);)         \
                                                                         \
             j__udyFreeJBL(PjblRaw, Pjpm);                               \
                                                                         \
@@ -389,9 +385,6 @@ BranchLKeep:
             JU_DELETEINPLACE(Pjbl->jbl_Expanse, numJPs, offset, ignore);
             JU_DELETEINPLACEJP(Pjbl->jbl_jp,      numJPs, offset, ignore);
 
-            DBGCODE(JudyCheckSorted((Pjll_t) (Pjbl->jbl_Expanse),
-                                    numJPs - 1, 1);)
-
 // If only one index left in the BranchL, indicate this to the caller:
 
             return ((--(Pjbl->jbl_NumJPs) <= 1) ? 2 : 1);
@@ -469,7 +462,6 @@ BranchLKeep:
             }                                                           \
             assert(((((Word_t) Pleaf) - ((Word_t) Pjllnew)) / (cLevel)) == (MaxPop1)); \
   JUDYLCODE(assert((Pjv - ValueArea(Pjllnew, MaxPop1)) == (MaxPop1));)  \
-            DBGCODE(JudyCheckSorted(Pjllnew, MaxPop1, cLevel);)         \
                                                                         \
             j__udyFreeJBB(PjbbRaw, Pjpm);                               \
                                                                         \
@@ -731,7 +723,6 @@ BranchBKeep:
             }                                                           \
             assert(((((Word_t) Pleaf) - ((Word_t) Pjllnew)) / (cLevel)) == (MaxPop1)); \
   JUDYLCODE(assert((Pjv - ValueArea(Pjllnew, MaxPop1)) == (MaxPop1));)  \
-            DBGCODE(JudyCheckSorted(Pjllnew, MaxPop1, cLevel);)         \
                                                                         \
             j__udyFreeJBU(PjbuRaw, Pjpm);                               \
                                                                         \
@@ -908,8 +899,7 @@ BranchBKeep:
                                                                         \
             (void) LeafToLeaf((LeafType) Pjllnew, JU_PVALUEPASS Pjp,    \
                               Index & cJU_DCDMASK(cIS), /* TBD, Doug says */ \
-                              Pjpm);                          \
-            DBGCODE(JudyCheckSorted(Pjllnew, MaxPop1, cIS + 1);)        \
+                              Pjpm);                                    \
                                                                         \
             D_cdP0 = (~cJU_MASKATSTATE((cIS) + 1)) & JU_JPDCDPOP0(Pjp); \
             JU_JPSETADT(Pjp, PjllnewRaw, D_cdP0, NewJPType);    \
@@ -997,7 +987,6 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
         {                                                       \
             size_t PjllRaw = Pjp->jp_Addr;           \
             DeleteCopy((LeafType) (Pjp->jp_1Index1), Pleaf, pop1, offset, cIS); \
-            DBGCODE(JudyCheckSorted((Pjll_t) (Pjp->jp_1Index1),  pop1-1, cIS);) \
             Pjp->jp_Type = (BaseJPType) - 1 + (MaxPop1) - 1;    \
             FreeLeaf(PjllRaw, pop1, Pjpm);                      \
             return(1);                                          \
@@ -1025,7 +1014,6 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
                                                                 \
             DeleteCopy((LeafType) (Pjp->jp_LIndex1), Pleaf, pop1, offset, cIS); \
             JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, cIS);      \
-            DBGCODE(JudyCheckSorted((Pjll_t) (Pjp->jp_LIndex1),  pop1-1, cIS);) \
             FreeLeaf(PjllRaw, pop1, Pjpm);                      \
             Pjp->jp_PValue = PjvnewRaw;                  \
             Pjp->jp_Type = (BaseJPType) - 2 + (MaxPop1);        \
@@ -1105,7 +1093,6 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
         if (GrowInPlace(pop1 - 1))      /* hysteresis = 0 */    \
         {                                                       \
             DeleteInPlace(Pleaf, pop1, offset, cIS);            \
-            DBGCODE(JudyCheckSorted(Pleaf, pop1 - 1, cIS);)     \
             return(1);                                          \
         }
 #else
@@ -1114,7 +1101,6 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
         {                                                       \
             DeleteInPlace(Pleaf, pop1, offset, cIS);            \
 /**/        JU_DELETEINPLACE(Pjv, pop1, offset, ignore);        \
-            DBGCODE(JudyCheckSorted(Pleaf, pop1 - 1, cIS);)     \
             return(1);                                          \
         }
 #endif
@@ -1130,7 +1116,6 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
         if ((PjllnewRaw = Alloc(pop1 - 1, Pjpm)) == 0) return(-1);       \
         Pjllnew = P_JLL(PjllnewRaw);                                     \
         DeleteCopy((LeafType) Pjllnew, Pleaf, pop1, offset, cIS);        \
-        DBGCODE(JudyCheckSorted(Pjllnew, pop1 - 1, cIS);)                \
         FreeLeaf(PleafRaw, pop1, Pjpm);                                  \
         Pjp->jp_Addr = PjllnewRaw;                              \
         return(1)
@@ -1146,7 +1131,6 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
 /**/        Pjvnew  = ValueArea(Pjllnew, pop1 - 1);                     \
             DeleteCopy((LeafType) Pjllnew, Pleaf, pop1, offset, cIS);   \
 /**/        JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, cIS);              \
-            DBGCODE(JudyCheckSorted(Pjllnew, pop1 - 1, cIS);)           \
             FreeLeaf(PleafRaw, pop1, Pjpm);                             \
             Pjp->jp_Addr = PjllnewRaw;                         \
             return(1);                                                  \
@@ -1381,8 +1365,6 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
                     }
                 }
 
-                DBGCODE(JudyCheckSorted((Pjll_t) (Pjp->jp_1Index1),
-                                        cJU_IMMED1_MAXPOP1, 1);)
                 j__udyFreeJLB1(PjlbRaw, Pjpm);
 
                 Pjp->jp_Type = cJ1_JPIMMED_1_15;
@@ -1595,8 +1577,7 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
 
 #ifdef JUDY1
 #define JU_IMMED_DEL(cIS,DeleteInPlace)                 \
-        DeleteInPlace(Pleaf, pop1, offset, cIS);        \
-        DBGCODE(JudyCheckSorted(Pleaf, pop1 - 1, cIS);)
+        DeleteInPlace(Pleaf, pop1, offset, cIS);
 
 #else // JUDYL
 
@@ -1608,7 +1589,6 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
         {                                                       \
             DeleteInPlace(   Pleaf,  pop1, offset, cIS);        \
             JU_DELETEINPLACE(Pjv, pop1, offset, ignore);        \
-            DBGCODE(JudyCheckSorted(Pleaf, pop1 - 1, cIS);)     \
         }                                                       \
         else                                                    \
         {                                                       \
@@ -1621,7 +1601,6 @@ JUDYLCODE(A_ddr = Pjv[offset];)                                         \
                                                                 \
             DeleteInPlace(Pleaf, pop1, offset, cIS);            \
             JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, ignore);   \
-            DBGCODE(JudyCheckSorted(Pleaf, pop1 - 1, cIS);)     \
             j__udyLFreeJV(PjvRaw, pop1, Pjpm);                  \
                                                                 \
             Pjp->jp_PValue = PjvnewRaw;                \
@@ -1900,10 +1879,7 @@ JUDYLCODE(PPvoid_t PPvalue;)  // pointer from JudyLGet().
 #ifdef JUDYL // also delete from value area:
                 JU_DELETEINPLACE(Pjv,      pop1, offset, ignore);
 #endif
-                DBGCODE(JudyCheckSorted((Pjll_t) (Pjlw + 1), pop1 - 1,
-                                        cJU_ROOTSTATE);)
                 --(Pjlw[0]);                    // decrement population.
-                DBGCODE(JudyCheckPop(*PPArray);)
                 return(1);
             }
 
@@ -1923,13 +1899,11 @@ JUDYLCODE(PPvoid_t PPvalue;)  // pointer from JudyLGet().
             Pjvnew = JL_LEAFWVALUEAREA(Pjlwnew, pop1 - 1);
             JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, ignore);
 #endif
-            DBGCODE(JudyCheckSorted(Pjlwnew + 1, pop1 - 1, cJU_ROOTSTATE);)
 
             j__udyFreeJLW(Pjlw, pop1, (Pjpm_t) NULL);
 
 ////        *PPArray = (Pvoid_t)  Pjlwnew | cJU_LEAFW);
             *PPArray = (Pvoid_t)  Pjlwnew; 
-            DBGCODE(JudyCheckPop(*PPArray);)
             return(1);
 
         }
@@ -1980,7 +1954,6 @@ JUDYLCODE(PPvoid_t PPvalue;)  // pointer from JudyLGet().
 
             if ((Pjpm->jpm_Pop0 + 1) != cJU_LEAFW_MAXPOP1)
             {
-                DBGCODE(JudyCheckPop(*PPArray);)
                 return(1);
             }
 
@@ -2131,13 +2104,10 @@ JUDYLCODE(PPvoid_t PPvalue;)  // pointer from JudyLGet().
 
             } // end switch on sub-JP type.
 
-            DBGCODE(JudyCheckSorted((Pjll_t) Pjlwnew_orig, cJU_LEAFW_MAXPOP1,
-                                    cJU_ROOTSTATE);)
 
 // FREE JPM (no longer needed):
 
             j__udyFreeJPM(Pjpm, (Pjpm_t) NULL);
-            DBGCODE(JudyCheckPop(*PPArray);)
             return(1);
 
         } 

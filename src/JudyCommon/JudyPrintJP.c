@@ -62,8 +62,7 @@ Word_t j__udyPopulation;        // Indexes in array, optional from caller.
 
 static Word_t startindex = 0;           // see usage below.
 static Word_t startpop   = 0;
-//static bool_t enabled    = FALSE;       // by default, unless env params set.
-static bool_t enabled    = TRUE;       // by default, unless env params set.
+static bool_t enabled    = FALSE;       // by default, unless env params set.
 
 // Shorthand for announcing JP addresses, Desc (in context), and JP types:
 //
@@ -146,7 +145,8 @@ FUNCTION static void JudyPrintJP(
 static  bool_t checked = FALSE; // set upon first entry and check for params.
         char * value;           // for getenv().
 
-
+//        printf("\n=====JudyPrintJP, enabled = %d, checked = %d, startpop = %lu, startindex = %lu\n", enabled, checked, startpop, startindex);
+//        printf("=====j__udyPopulation = %lu, j__udyIndex = 0x%lx\n", j__udyPopulation, j__udyIndex);
 // CHECK FOR EXTERNAL ENABLING:
 //
 // If a parameter is set, report the value, even if it is null or otherwise
@@ -167,8 +167,8 @@ static  bool_t checked = FALSE; // set upon first entry and check for params.
         {
             checked = TRUE;
 
-            GETENV ("STARTINDEX", startindex, 16);
-            GETENV ("STARTPOP",   startpop,   10);
+            GETENV ("STARTPOP",   startpop,   0);
+            GETENV ("STARTINDEX", startindex, 0);
 
             (void) printf ("JudyPrintJP(\"%s\"): Tracing present %s\n", Desc,
                            enabled ? "and immediately enabled" :
@@ -177,7 +177,7 @@ static  bool_t checked = FALSE; // set upon first entry and check for params.
                            "but not enabled by env parameter");
         }
 
-        if (! enabled)  // check repeatedly until latched enabled:
+        if (enabled == 0)  // check repeatedly until latched enabled:
         {
             if (startindex && (startindex == j__udyIndex))
             {
@@ -185,7 +185,7 @@ static  bool_t checked = FALSE; // set upon first entry and check for params.
                                 "startindex = 0x%lx\n", Desc, startindex);
                  enabled = TRUE;
             }
-            else if (startpop && (startpop == j__udyPopulation))
+            else if (startpop && (startpop <= j__udyPopulation))
             {
                  (void) printf ("=== TRACING ENABLED (\"%s\"), "
                                 "startpop = %lu\n", Desc, startpop);
@@ -394,9 +394,10 @@ static  bool_t checked = FALSE; // set upon first entry and check for params.
         default:  printf("Unknown Type = %d", JU_JPTYPE(Pjp));          OOPS;
         }
 
-        if (j__udyIndex)        printf("Index = 0x%lx", j__udyIndex);
-        if (j__udyPopulation)   printf("Pop = %lu",     j__udyPopulation);
+        if (j__udyIndex)        printf(" Index = 0x%lx", j__udyIndex);
+        if (j__udyPopulation)   printf(" Pop = %lu",     j__udyPopulation);
 
-        printf("line = %d\n", Line);
+        printf("\n");
+//        printf(" line = %d\n", Line);
 
 } // JudyPrintJP()

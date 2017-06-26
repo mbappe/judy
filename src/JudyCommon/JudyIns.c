@@ -19,10 +19,6 @@
 // Judy1Set() and JudyLIns() functions for Judy1 and JudyL.
 // Compile with one of -DJUDY1 or -DJUDYL.
 //
-// TBD:  Should some of the assertions here be converted to product code that
-// returns JU_ERRNO_CORRUPT?
-// Note:  Call JudyCheckPop() even before "already inserted" returns, to catch
-// population errors; see fix in 4.84:
 // These are defined to generic values in JudyCommon/JudyPrivateTypes.h:
 //
 // TBD:  These should be exported from a header file, but perhaps not, as they
@@ -33,6 +29,7 @@
 #if (defined(JUDY1) == defined(JUDYL))
 #error:  EXACTLY one of -DJUDY1 and -DJUDYL must be specified.
 #endif
+
 
 #ifdef JUDY1
 #include "Judy1.h"
@@ -146,37 +143,37 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
     case cJU_JPBRANCH_L2:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 2))
             return (j__udyInsertBranch(Pjp, Index, 2, Pjpm));
-        (digit) = JU_DIGITATSTATE(Index, 2);
+        digit = JU_DIGITATSTATE(Index, 2);
         (exppop1) = JU_JPBRANCH_POP0(Pjp, 2);
         goto JudyBranchL;
     case cJU_JPBRANCH_L3:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 3))
             return (j__udyInsertBranch(Pjp, Index, 3, Pjpm));
-        (digit) = JU_DIGITATSTATE(Index, 3);
+        digit = JU_DIGITATSTATE(Index, 3);
         (exppop1) = JU_JPBRANCH_POP0(Pjp, 3);
         goto JudyBranchL;
     case cJU_JPBRANCH_L4:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 4))
             return (j__udyInsertBranch(Pjp, Index, 4, Pjpm));
-        (digit) = JU_DIGITATSTATE(Index, 4);
+        digit = JU_DIGITATSTATE(Index, 4);
         (exppop1) = JU_JPBRANCH_POP0(Pjp, 4);
         goto JudyBranchL;
     case cJU_JPBRANCH_L5:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 5))
             return (j__udyInsertBranch(Pjp, Index, 5, Pjpm));
-        (digit) = JU_DIGITATSTATE(Index, 5);
+        digit = JU_DIGITATSTATE(Index, 5);
         (exppop1) = JU_JPBRANCH_POP0(Pjp, 5);
         goto JudyBranchL;
     case cJU_JPBRANCH_L6:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 6))
             return (j__udyInsertBranch(Pjp, Index, 6, Pjpm));
-        (digit) = JU_DIGITATSTATE(Index, 6);
+        digit = JU_DIGITATSTATE(Index, 6);
         (exppop1) = JU_JPBRANCH_POP0(Pjp, 6);
         goto JudyBranchL;
     case cJU_JPBRANCH_L7:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 7))
             return (j__udyInsertBranch(Pjp, Index, 7, Pjpm));
-        (digit) = JU_DIGITATSTATE(Index, 7);
+        digit = JU_DIGITATSTATE(Index, 7);
         (exppop1) = JU_JPBRANCH_POP0(Pjp, 7);
         goto JudyBranchL;
 // Similar to common code above, but no outlier check is needed, and the Immed
@@ -298,37 +295,37 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
     case cJU_JPBRANCH_B2:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 2))
             return (j__udyInsertBranch(Pjp, Index, 2, Pjpm));
-        (digit) = JU_DIGITATSTATE(Index, 2);
+        digit = JU_DIGITATSTATE(Index, 2);
         (exppop1) = JU_JPBRANCH_POP0(Pjp, 2);
         goto JudyBranchB;
     case cJU_JPBRANCH_B3:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 3))
             return (j__udyInsertBranch(Pjp, Index, 3, Pjpm));
-        (digit) = JU_DIGITATSTATE(Index, 3);
+        digit = JU_DIGITATSTATE(Index, 3);
         (exppop1) = JU_JPBRANCH_POP0(Pjp, 3);
         goto JudyBranchB;
     case cJU_JPBRANCH_B4:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 4))
             return (j__udyInsertBranch(Pjp, Index, 4, Pjpm));
-        (digit) = JU_DIGITATSTATE(Index, 4);
+        digit = JU_DIGITATSTATE(Index, 4);
         (exppop1) = JU_JPBRANCH_POP0(Pjp, 4);
         goto JudyBranchB;
     case cJU_JPBRANCH_B5:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 5))
             return (j__udyInsertBranch(Pjp, Index, 5, Pjpm));
-        (digit) = JU_DIGITATSTATE(Index, 5);
+        digit = JU_DIGITATSTATE(Index, 5);
         (exppop1) = JU_JPBRANCH_POP0(Pjp, 5);
         goto JudyBranchB;
     case cJU_JPBRANCH_B6:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 6))
             return (j__udyInsertBranch(Pjp, Index, 6, Pjpm));
-        (digit) = JU_DIGITATSTATE(Index, 6);
+        digit = JU_DIGITATSTATE(Index, 6);
         (exppop1) = JU_JPBRANCH_POP0(Pjp, 6);
         goto JudyBranchB;
     case cJU_JPBRANCH_B7:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 7))
             return (j__udyInsertBranch(Pjp, Index, 7, Pjpm));
-        (digit) = JU_DIGITATSTATE(Index, 7);
+        digit = JU_DIGITATSTATE(Index, 7);
         (exppop1) = JU_JPBRANCH_POP0(Pjp, 7);
         goto JudyBranchB;
     case cJU_JPBRANCH_B:
@@ -496,8 +493,8 @@ JudyBranchB:
             uint8_t   digit = JU_DIGITATSTATE(Index, 2);
             Pjbu_t    P_jbu = P_JBU((Pjp)->jp_Addr);
             (Pjp) = &(P_jbu->jbu_jp[digit]);
+            break;
         }
-        break;
     case cJU_JPBRANCH_U3:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 3))
             return (j__udyInsertBranch(Pjp, Index, 3, Pjpm));
@@ -505,8 +502,8 @@ JudyBranchB:
             uint8_t   digit = JU_DIGITATSTATE(Index, 3);
             Pjbu_t    P_jbu = P_JBU((Pjp)->jp_Addr);
             (Pjp) = &(P_jbu->jbu_jp[digit]);
+            break;
         }
-        break;
     case cJU_JPBRANCH_U4:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 4))
             return (j__udyInsertBranch(Pjp, Index, 4, Pjpm));
@@ -514,8 +511,8 @@ JudyBranchB:
             uint8_t   digit = JU_DIGITATSTATE(Index, 4);
             Pjbu_t    P_jbu = P_JBU((Pjp)->jp_Addr);
             (Pjp) = &(P_jbu->jbu_jp[digit]);
+            break;
         }
-        break;
     case cJU_JPBRANCH_U5:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 5))
             return (j__udyInsertBranch(Pjp, Index, 5, Pjpm));
@@ -523,8 +520,8 @@ JudyBranchB:
             uint8_t   digit = JU_DIGITATSTATE(Index, 5);
             Pjbu_t    P_jbu = P_JBU((Pjp)->jp_Addr);
             (Pjp) = &(P_jbu->jbu_jp[digit]);
+            break;
         }
-        break;
     case cJU_JPBRANCH_U6:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 6))
             return (j__udyInsertBranch(Pjp, Index, 6, Pjpm));
@@ -532,22 +529,22 @@ JudyBranchB:
             uint8_t   digit = JU_DIGITATSTATE(Index, 6);
             Pjbu_t    P_jbu = P_JBU((Pjp)->jp_Addr);
             (Pjp) = &(P_jbu->jbu_jp[digit]);
+            break;
         }
-        break;
     case cJU_JPBRANCH_U7:
     {
         uint8_t   digit = JU_DIGITATSTATE(Index, 7);
         Pjbu_t    P_jbu = P_JBU((Pjp)->jp_Addr);
         (Pjp) = &(P_jbu->jbu_jp[digit]);
-    }
         break;
+    }
     case cJU_JPBRANCH_U:
     {
         uint8_t   digit = JU_DIGITATSTATE(Index, cJU_ROOTSTATE);
         Pjbu_t    P_jbu = P_JBU((Pjp)->jp_Addr);
         (Pjp) = &(P_jbu->jbu_jp[digit]);
-    }
         break;
+    }
 // ****************************************************************************
 // JPLEAF*:
 //
@@ -2144,13 +2141,13 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
     case cJU_JPBRANCH_L2:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 2))
             return (j__udyInsertBranch(Pjp, Index, 2, Pjpm));
-        (digit) = JU_DIGITATSTATE(Index, 2);
+        digit = JU_DIGITATSTATE(Index, 2);
         (exppop1) = JU_JPBRANCH_POP0(Pjp, 2);
         goto JudyBranchL;
     case cJU_JPBRANCH_L3:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 3))
             return (j__udyInsertBranch(Pjp, Index, 3, Pjpm));
-        (digit) = JU_DIGITATSTATE(Index, 3);
+        digit = JU_DIGITATSTATE(Index, 3);
         (exppop1) = JU_JPBRANCH_POP0(Pjp, 3);
         goto JudyBranchL;
 // Similar to common code above, but no outlier check is needed, and the Immed
@@ -2269,13 +2266,13 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
     case cJU_JPBRANCH_B2:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 2))
             return (j__udyInsertBranch(Pjp, Index, 2, Pjpm));
-        (digit) = JU_DIGITATSTATE(Index, 2);
+        digit = JU_DIGITATSTATE(Index, 2);
         (exppop1) = JU_JPBRANCH_POP0(Pjp, 2);
         goto JudyBranchB;
     case cJU_JPBRANCH_B3:
         if (JU_DCDNOTMATCHINDEX(Index, Pjp, 3))
             return (j__udyInsertBranch(Pjp, Index, 3, Pjpm));
-        (digit) = JU_DIGITATSTATE(Index, 3);
+        digit = JU_DIGITATSTATE(Index, 3);
         (exppop1) = JU_JPBRANCH_POP0(Pjp, 3);
         goto JudyBranchB;
     case cJU_JPBRANCH_B:
@@ -3434,6 +3431,13 @@ FUNCTION PPvoid_t JudyLIns(PPvoid_t PPArray,    // in which to insert.
         *PPArray = (Pvoid_t)Pjpm;
     }                                   // JU_LEAFW
 // ****************************************************************************
+
+#ifdef TRACEJPI
+        Pjpm = P_JPM(*PPArray);
+        j__udyIndex = Index;
+        j__udyPopulation = Pjpm->jpm_Pop0;
+#endif
+
 // BRANCH:
     {
         int       retcode;              // really only needed for Judy1, but free for JudyL.

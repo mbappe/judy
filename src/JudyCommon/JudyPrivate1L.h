@@ -411,10 +411,6 @@
 
 #define	j__uMaxWords		j__u1MaxWords
 
-#ifdef DEBUG
-#define	JudyCheckPop		Judy1CheckPop
-#endif
-
 #else // JUDYL ****************************************************************
 
 #define	cJU_LEAFW_MAXPOP1	cJL_LEAFW_MAXPOP1
@@ -533,10 +529,6 @@
 //				j__udyLFreeJV
 
 #define	j__uMaxWords		j__uLMaxWords
-
-#ifdef DEBUG
-#define	JudyCheckPop		JudyLCheckPop
-#endif
 
 #endif // JUDYL
 

@@ -242,14 +242,17 @@ extern int      Judy1NextEmpty(  Pcvoid_t  PArray, Word_t * PIndex,  P_JE);
 extern int      Judy1LastEmpty(  Pcvoid_t  PArray, Word_t * PIndex,  P_JE);
 extern int      Judy1PrevEmpty(  Pcvoid_t  PArray, Word_t * PIndex,  P_JE);
 
+
+// ****************************************************************************
+// JUDYL FUNCTIONS:
+
+
 extern PPvoid_t JudyLGet(        Pcvoid_t  PArray, Word_t    Index,  P_JE);
 extern PPvoid_t JudyLIns(        PPvoid_t PPArray, Word_t    Index,  P_JE);
 extern int      JudyLInsArray(   PPvoid_t PPArray, Word_t    Count,
                                              const Word_t * const PIndex,
                                              const Word_t * const PValue,
 
-// ****************************************************************************
-// JUDYL FUNCTIONS:
                                                                      P_JE);
 extern int      JudyLDel(        PPvoid_t PPArray, Word_t    Index,  P_JE);
 extern Word_t   JudyLCount(      Pcvoid_t  PArray, Word_t    Index1,

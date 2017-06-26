@@ -40,8 +40,6 @@
 
 #include "JudyPrivate1L.h"
 
-DBGCODE(extern void JudyCheckSorted(Pjll_t Pjll, Word_t Pop1, long IndexSize);)
-
 
 // ****************************************************************************
 // __ J U D Y   C O P Y   2   T O   3
@@ -276,7 +274,6 @@ FUNCTION int j__udyBranchBToBranchL(
 	JU_COPYMEM(Pjbl->jbl_Expanse, Expanse, NumJPs);
 
 	Pjbl->jbl_NumJPs = NumJPs;
-	DBGCODE(JudyCheckSorted((Pjll_t) (Pjbl->jbl_Expanse), NumJPs, 1);)
 
 // Copy JPs from each BranchB subexpanse subarray:
 

@@ -42,8 +42,6 @@
 
 #include "JudyPrivate1L.h"
 
-DBGCODE(extern void JudyCheckPop(Pvoid_t PArray);)
-
 
 // IMMED AND LEAF SIZE AND BRANCH TYPE ARRAYS:
 //
@@ -258,11 +256,9 @@ const   Word_t *  const PValue, // list of corresponding values.
                     *PPArray = (Pvoid_t) NULL;
                 }
 
-                DBGCODE(JudyCheckPop(*PPArray);)
                 return(JERRI);
             }
 
-            DBGCODE(JudyCheckPop(*PPArray);)
             return(1);
 
         } // large count
@@ -293,7 +289,6 @@ const   Word_t *  const PValue, // list of corresponding values.
           JU_COPYMEM(Pjlwindex,                      PIndex, Count);
 JUDYLCODE(JU_COPYMEM(JL_LEAFWVALUEAREA(Pjlw, Count), PValue, Count));
 
-        DBGCODE(JudyCheckPop(*PPArray);)
         return(1);
 
 } // Judy1SetArray() / JudyLInsArray()
@@ -864,7 +859,7 @@ BuildBranch2:   // come here directly for Level = levelsub = cJU_ROOTSTATE.
              digit < cJU_BRANCHUNUMJPS;
              ++digit, digitshifted += digitshincr, ++Pjp)
         {
-            DBGCODE(Word_t pop1subprev;)
+    DBGCODE(Word_t pop1subprev;)
             assert(pop1 != 0);          // end of indexes is handled elsewhere.
 
 // Count indexes in digits subexpanse:
