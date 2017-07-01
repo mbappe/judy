@@ -700,8 +700,8 @@ Usage(int argc, char **argv)
     printf("-l    Do not smooth data with iteration at low (<100) populations (Del/Unset not called)\n");
     printf("-F <filename>  Ascii file of Keys, zeros ignored -- must be last option!!!\n");
 //    printf("-b #:#:# ... 1st number required [1] where each number is next level of tree\n");
-    printf("-b    Time a BITMAP array  (-B # specifies size == 2^#) [-B32]\n");
-    printf("-y    Time a BYTEMAP array (-B # specifies size == 2^#) [-B32]\n");
+    printf("-b    Time a BITMAP array  (-B # specifies size == 2^# bits) [-B32]\n");
+    printf("-y    Time a BYTEMAP array (-B # specifies size == 2^# bytes) [-B32]\n");
     printf("-1    Time Judy1\n");
     printf("-L    Time JudyL\n");
     printf("-R    Time JudyL using *PValue as next TstKey\n");
@@ -958,13 +958,17 @@ main(int argc, char *argv[])
     while (1)
     {
         c = getopt_long(argc, argv,
-                   "a:n:S:T:P:s:B:G:X:W:o:O:F:b:N:dDcC1LHvIltmpxVfgiyRMKhE",
+                   "a:n:S:T:P:s:B:G:X:W:o:O:F:b"
+#ifdef FANCY_b_flag
+                                              ":"
+#endif // FANCY_b_flag
+                                              "N:dDcC1LHvIltmpxVfgiyRMKhE",
                 // Optstring sorted:
-                // "1a:B:b:CcDdEF:fG:gHhIiKlLMmN:n:O:o:P:pRS:s:T:tVvW:XXxy",
+                // "1a:B:bCcDdEF:fG:gHhIiKlLMmN:n:O:o:P:pRS:s:T:tVvW:XXxy",
                 // Gaps left for unused option characters:
-                // " 1         a:B:b:CcDdE F:fG:gHhIi  K LlMmN:n:O:o:P:p  R S:s:T:t:  VvW: Xx y  "
+                // " 1         a:B:bCcDdE F:fG:gHhIi  K LlMmN:n:O:o:P:p  R S:s:T:t:  VvW: Xx y  "
                 // Unused option characters:
-                // "0 23456789A           e          Jj k               Qq r        Uu    w  Y Zz"
+                // "0 23456789A          e          Jj k               Qq r        Uu    w  Y Zz"
                    longopts, NULL);
         if (c == -1)
             break;
@@ -1082,6 +1086,7 @@ main(int argc, char *argv[])
 
         case 'b':                      // Turn on REAL bitmap testing
         {
+#ifdef FANCY_b_FLAG
             char *str, *tok;
             char *saveptr;
             int ii      = 0;
@@ -1140,6 +1145,7 @@ main(int argc, char *argv[])
             }
 
             }
+#endif // FANCY_b_FLAG
             bFlag = 1;
             break;
         }
@@ -1470,6 +1476,8 @@ main(int argc, char *argv[])
 
     if (bFlag)
         printf("b");
+    if (yFlag)
+        printf("y");
     if (J1Flag)
         printf("1");
     if (JLFlag)
@@ -1480,6 +1488,8 @@ main(int argc, char *argv[])
         printf("H");
     if (tFlag)
         printf("t");
+    if (bSplayKeyBitsFlag)
+        printf("E");
     if (DFlag)
         printf("D");
     if (dFlag)
@@ -1510,8 +1520,6 @@ main(int argc, char *argv[])
         printf("M");
     if (KFlag)
         printf("K");
-    if (bSplayKeyBitsFlag)
-        printf("E");
 
 //  print more options - default, adjusted or otherwise
     printf(" -n%" PRIuPTR" -T%" PRIuPTR" -P%" PRIuPTR" -X%d", nElms, TValues, PtsPdec, XScale);
@@ -1557,7 +1565,7 @@ main(int argc, char *argv[])
             printf
                 (" ========================================================\n");
             printf
-                (" Sorry, '-m' measurements compatable with only ONE of -1LRHb.\n");
+                (" Sorry, '-m' measurements compatable with exactly ONE of -1LRHby.\n");
             printf
                 (" This is because Judy object measurements include RAM sum of all.\n");
             printf
