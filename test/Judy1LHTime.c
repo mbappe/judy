@@ -539,8 +539,13 @@ GetNextKey(PSeed_t PSeed)
         Word_t SwizzledKey;
 
 //      move the mirror bits into the least bits determined -B# and -E
-        SwizzledKey = Swizzle(Key)
-            >> ((sizeof(Word_t) * 8) - (BValue << bSplayKeyBitsFlag));
+        SwizzledKey = Swizzle(Key);
+        if (bSplayKeyBitsFlag) {
+#define LOG(_x) ((Word_t)63 - __builtin_clzll(_x))
+            SwizzledKey >>= (sizeof(Word_t) * 8) - LOG(wSplayMask) - 1;
+        } else {
+            SwizzledKey >>= (sizeof(Word_t) * 8) - BValue;
+        }
 
         return (SwizzledKey + Offset);
     }
@@ -865,7 +870,16 @@ int
 main(int argc, char *argv[])
 {
 //  Names of Judy Arrays
+#ifdef DEBUG
+    // Make sure the word before J1's root word is zero and is not changed.
+    // Its pretty easy to introduce a bug in Mikey's code that clobbers the
+    // word so his code depends on this word staying zero so it can verify
+    // that the word is not getting clobbered by a bug.
+    struct { void *pv0, *pv1; } sj1 = { 0 };
+#define J1 (sj1.pv1)
+#else // DEBUG
     void     *J1 = NULL;                // Judy1
+#endif // DEBUG
     void     *JL = NULL;                // JudyL
     void     *JH = NULL;                // JudyHS
 
@@ -1853,7 +1867,6 @@ main(int argc, char *argv[])
         printf("# COLHEAD %2d B1  - Bitmap Leaf 1 Bit Key/Key\n", Col++);
         printf("# COLHEAD %2d VA  - Value area Words/Key\n", Col++);
 
-
         printf("# COLHEAD %2d MsCmp  - Average number missed Compares Per Leaf Search\n", Col++);
         printf("# COLHEAD %2d %%DiHt - %% of Direct Hits per Leaf Search\n", Col++);
 
@@ -2622,6 +2635,7 @@ main(int argc, char *argv[])
 //         printf("\n# %" PRIuPTR" Duplicate Keys were found with -G%" PRIuPTR"\n", BitmapDups, GValue);
 
     exit(0);
+#undef J1
 }
 
 #ifdef DEADCODE
@@ -2772,6 +2786,7 @@ TestJudyIns(void **J1, void **JL, void **JH, PSeed_t PSeed, Word_t Elements)
                             else
                             {
                                 printf("\nTstKey = 0x%" PRIxPTR"\n", TstKey);
+                                Judy1Dump((Word_t)J1, sizeof(Word_t) * 8, 0);
                                 FAILURE("Judy1Set failed - DUP Key at elm", elm);
                             }
                         }
@@ -4007,14 +4022,16 @@ TestJudyNextEmpty(void *J1, void *JL, PSeed_t PSeed, Word_t Elements)
                 J1Key = GetNextKey(&WorkingSeed);
                 if (Tit)
                 {
+                    Word_t J1KeyBefore = J1Key;
 #ifdef SKIPMACRO
                     Rc = Judy1NextEmpty(J1, &J1Key, PJE0);
 #else
                     J1NE(Rc, J1, J1Key);
 #endif // SKIPMACRO
-
-                    if (Rc != 1)
-                        FAILURE("Judy1NextEmpty Rcode != 1 =", Rc);
+                    if (Rc != 1) {
+                        Judy1Dump((Word_t)J1, sizeof(Word_t) * 8, 0);
+                        FAILURE("Judy1NextEmpty Rcode != 1 Key", J1KeyBefore);
+                    }
                 }
             }
             ENDTm(DeltanSec1);
@@ -4047,14 +4064,14 @@ TestJudyNextEmpty(void *J1, void *JL, PSeed_t PSeed, Word_t Elements)
                 JLKey = GetNextKey(&WorkingSeed);
                 if (Tit)
                 {
+                    Word_t JLKeyBefore = JLKey;
 #ifdef SKIPMACRO
                     Rc = JudyLNextEmpty(JL, &JLKey, PJE0);
 #else
                     JLNE(Rc, JL, JLKey);
 #endif // SKIPMACRO
-
                     if (Rc != 1)
-                        FAILURE("JudyLNextEmpty Rcode != 1 =", Rc);
+                        FAILURE("JudyLNextEmpty Rcode != 1 Key", JLKeyBefore);
                 }
             }
             ENDTm(DeltanSecL);
@@ -4110,16 +4127,19 @@ TestJudyPrevEmpty(void *J1, void *JL, PSeed_t PSeed, Word_t Elements)
                 J1Key = GetNextKey(&WorkingSeed);
                 if (Tit)
                 {
+                    Word_t J1KeyBefore = J1Key;
 #ifdef SKIPMACRO
                     Rc = Judy1PrevEmpty(J1, &J1Key, PJE0);
 #else
                     J1PE(Rc, J1, J1Key);
 #endif // SKIPMACRO
-
-                    if (Rc != 1)
-                        FAILURE("Judy1PrevEmpty Rc != 1 =", Rc);
+                    if (Rc != 1) {
+                        Word_t wCount = Judy1Count(J1, 0, J1KeyBefore, PJE0);
+                        if (wCount < J1KeyBefore + 1) {
+                            FAILURE("Judy1PrevEmpty Rc != 1 Key", J1KeyBefore);
+                        }
+                    }
                 }
-
             }
             ENDTm(DeltanSec1);
 
@@ -4151,14 +4171,18 @@ TestJudyPrevEmpty(void *J1, void *JL, PSeed_t PSeed, Word_t Elements)
                 JLKey = GetNextKey(&WorkingSeed);
                 if (Tit)
                 {
+                    Word_t JLKeyBefore = JLKey;
 #ifdef SKIPMACRO
                     Rc = JudyLPrevEmpty(JL, &JLKey, PJE0);
 #else
                     JLPE(Rc, JL, JLKey);
 #endif // SKIPMACRO
-
-                    if (Rc != 1)
-                        FAILURE("JudyLPrevEmpty Rcode != 1 =", Rc);
+                    if (Rc != 1) {
+                        Word_t wCount = JudyLCount(JL, 0, JLKeyBefore, PJE0);
+                        if (wCount < JLKeyBefore + 1) {
+                            FAILURE("JudyLPrevEmpty Rc != 1 Key", JLKeyBefore);
+                        }
+                    }
                 }
             }
             ENDTm(DeltanSecL);
