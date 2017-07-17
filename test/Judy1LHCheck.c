@@ -7,6 +7,7 @@
 #include <unistd.h>             // getopt()
 #include <math.h>               // pow()
 #include <stdio.h>              // printf()
+#include <assert.h>
 
 #include <Judy.h>
 
@@ -44,15 +45,17 @@ Word_t TestJudyGet(void *J1, void *JL, void *JH, Word_t Seed, Word_t Elements);
 
 int TestJudyCount(void *J1, void *JL, Word_t LowIndex, Word_t Elements);
 
+#if ! defined(NO_TEST_NEXT)
+
 Word_t TestJudyNext(void *J1, void *JL, Word_t LowIndex, Word_t Elements);
 
 int TestJudyPrev(void *J1, void *JL, Word_t HighIndex, Word_t Elements);
 
-int
-TestJudyNextEmpty(void *J1, void *JL, Word_t LowIndex, Word_t Elements);
+int TestJudyNextEmpty(void *J1, void *JL, Word_t LowIndex, Word_t Elements);
 
-int
-TestJudyPrevEmpty(void *J1, void *JL, Word_t HighIndex, Word_t Elements);
+int TestJudyPrevEmpty(void *J1, void *JL, Word_t HighIndex, Word_t Elements);
+
+#endif // ! defined(NO_TEST_NEXT)
 
 Word_t MagicList[] =
 {
@@ -114,6 +117,8 @@ Word_t MagicList[] =
     0x146c3     // 64
 };
 
+Word_t BValue    = sizeof(Word_t) * 8;
+
 // Routine to "mirror" the input data word
 static Word_t
 Swizzle(Word_t word)
@@ -142,6 +147,8 @@ Swizzle(Word_t word)
     word = ((word & 0x55555555) << 1) | ((word & 0xaaaaaaaa) >> 1);
 #endif // __LP64__
 
+    word = word >> ((sizeof(Word_t) * 8) - BValue);
+
     return(word);
 }
 
@@ -158,7 +165,6 @@ Word_t TotalDel = 0;
 
 // Stuff for LFSR (pseudo random number generator)
 Word_t RandomBit = (Word_t)~0 / 2 + 1;
-Word_t BValue    = sizeof(Word_t) * 8;
 Word_t Magic;
 Word_t StartSeed = 0xc1fc;      // default beginning number
 Word_t FirstSeed;
@@ -201,11 +207,21 @@ GetNextIndex(Word_t Index)
 #undef __FUNCTI0N__
 #define __FUNCTI0N__ "main"
 
+
 int
 main(int argc, char *argv[])
 {
 //  Names of Judy Arrays
-    void *J1 = NULL;            // Judy1
+#ifdef DEBUG
+    // Make sure the word before J1's root word is zero and is not changed.
+    // Its pretty easy to introduce a bug in Mikey's code that clobbers the
+    // word so his code depends on this word staying zero so it can verify
+    // that the word is not getting clobbered by a bug.
+    struct { void *pv0, *pv1; } sj1 = { 0, 0 };
+#define J1 (sj1.pv1)
+#else // DEBUG
+    void     *J1 = NULL;                // Judy1
+#endif // DEBUG
     void *JL = NULL;            // JudyL
     void *JH = NULL;            // JudyHS
 
@@ -392,7 +408,7 @@ main(int argc, char *argv[])
 
     for (grp = 0; grp < Groups; grp++)
     {
-        Word_t LowIndex, HighIndex;
+        Word_t LowIndex;
         Word_t Delta;
         Word_t NewSeed;
 
@@ -412,6 +428,8 @@ main(int argc, char *argv[])
         {
             TestJudyCount(J1, JL, LowIndex, Delta);
         }
+#if ! defined(NO_TEST_NEXT)
+        Word_t HighIndex;
 //      Test JLN, J1N
         HighIndex = TestJudyNext(J1, JL, (Word_t)0, TotalPop);
 
@@ -423,6 +441,7 @@ main(int argc, char *argv[])
 
 //      Test JLPE, J1PE
         TestJudyPrevEmpty(J1, JL, HighIndex, Delta);
+#endif // ! defined(NO_TEST_NEXT)
 
 //      Test JLD, J1U
         if (dFlag)
@@ -494,6 +513,7 @@ main(int argc, char *argv[])
     }
     printf("Passed Judy1, JudyL, JudyHS tests for %" PRIuPTR" numbers with <= %" PRIdPTR" bits\n", nElms, BValue);
     exit(0);
+#undef J1
 }
 
 #undef __FUNCTI0N__
@@ -546,7 +566,13 @@ TestJudyIns(void **J1, void **JL, void **JH, Word_t Seed, Word_t Elements)
         if (PValue == PJERR)
             FAILURE("JudyLIns failed at", elm);
         if (*PValue == TstIndex)
-            FAILURE("JudyLIns failed - DUP Index, population =", TotalPop);
+        {
+            if (TstIndex != 0)
+            {
+                printf("TstIndex %zu 0x%zx\n", TstIndex, TstIndex);
+                FAILURE("JudyLIns failed - DUP Index, population =", TotalPop);
+            }
+        }
 
 //      Save Index in Value
         *PValue = TstIndex;
@@ -572,7 +598,12 @@ TestJudyIns(void **J1, void **JL, void **JH, Word_t Seed, Word_t Elements)
         if (PValue == PJERR)
             FAILURE("JudyHSIns failed at", elm);
         if (*PValue == TstIndex)
-            FAILURE("JudyHSIns failed - DUP Index, population =", TotalPop);
+        {
+            if (TstIndex != 0)
+            {
+                FAILURE("JudyHSIns failed - DUP Index, population =", TotalPop);
+            }
+        }
 
 //      Save Index in Value
         *PValue = TstIndex;
@@ -714,31 +745,42 @@ TestJudyCount(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
         if (Count1 == (Word_t)JERR)
             FAILURE("Judy1Count ret JERR", Count1);
 
+        if (pFlag) {
+            printf("Judy1Count: Count=%" PRIuPTR" Low=%p High=%p\n",
+                   Count1, (void *)LowIndex, (void *)TstIndex);
+        }
+
         CountL = JudyLCount(JL, LowIndex, TstIndex, NULL);
         if (CountL == (Word_t)JERR)
             FAILURE("JudyLCount ret JERR", CountL);
+
+        if (pFlag) {
+            printf("JudyLCount: Count=%" PRIuPTR" Low=%p High=%p\n",
+                   CountL, (void *)LowIndex, (void *)TstIndex);
+        }
 
         if ((Count1 != (elm + 1)) || (CountL != (elm + 1)))
         {
             printf("Count1 = %" PRIuPTR", CountL = %" PRIuPTR
                    ", should be: elm + 1 = %" PRIuPTR"\n",
                    Count1, CountL, elm + 1);
-            if (Count1 != (elm + 1)) 
+            if (Count1 != (elm + 1))
             {
                 Judy1Dump((Word_t)J1, sizeof(Word_t) * 8, 0);
             }
             FAILURE("Count at", elm);
         }
 
-        Word_t TstIndex1 = TstIndex;
-        Judy1Next(J1, &TstIndex1, NULL);
+        Word_t TstIndex1 = TstIndex; (void)TstIndex1;
         JudyLNext(JL, &TstIndex, NULL);
-        if (TstIndex != TstIndex1) 
-        {
+#if ! defined(NO_TEST_NEXT)
+        Judy1Next(J1, &TstIndex1, NULL);
+        if (TstIndex != TstIndex1) {
             printf("Next TstIndex = %zd != TstIndex1 = %zd\n",
                    TstIndex, TstIndex1);
             FAILURE("Count at", elm);
         }
+#endif // ! defined(NO_TEST_NEXT)
     }
     return(0);
 }
@@ -760,9 +802,6 @@ Word_t TestJudyNext(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
 //    J1F(Rcode, J1, J1index);
     Rcode = Judy1First(J1, &J1index, NULL); // Get next one
 
-    if (JLindex != J1index)
-        FAILURE("JudyLFirst & Judy1First ret different PIndex at", 0);
-
     for (elm = 0; elm < Elements; elm++)
     {
         if (PValue == NULL)
@@ -770,13 +809,16 @@ Word_t TestJudyNext(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
         if (Rcode != 1)
             FAILURE("Judy1Next Rcode != 1 =", Rcode);
         if (JLindex != J1index)
+        {
+            printf("JudyLNext = %zx Judy1Next = %zx\n", JLindex, J1index);
             FAILURE("JudyLNext & Judy1Next ret different PIndex at", elm);
+        }
 
         JPindex = J1index;              // save the last found index
 
         PValue = (PWord_t)JudyLNext(JL, &JLindex, NULL); // Get next one
-        J1N(Rcode, J1, J1index);        // Get next one
-//        Rcode = Judy1Next(J1, &J1index, NULL); // Get next one
+//        J1N(Rcode, J1, J1index);        // Get next one
+        Rcode = Judy1Next(J1, &J1index, NULL); // Get next one
     }
 
     if (PValue != NULL)
@@ -811,9 +853,12 @@ TestJudyPrev(void *J1, void *JL, Word_t HighIndex, Word_t Elements)
         if (PValue == NULL)
             FAILURE("JudyLPrev ret NULL PValue at", elm);
         if (Rcode != 1)
-            FAILURE("Judy1Prev Rcode != 1 =", Rcode);
+            FAILURE("Judy1Prev Rcode != 1 at elm", elm);
         if (JLindex != J1index)
+        {
+            printf("JLindex %zx J1index %zx\n", JLindex, J1index);
             FAILURE("JudyLPrev & Judy1Prev ret different PIndex at", elm);
+        }
 
         PValue = (PWord_t)JudyLPrev(JL, &JLindex, NULL); // Get previous one
         J1P(Rcode, J1, J1index);        // Get previous one
@@ -931,13 +976,26 @@ TestJudyPrevEmpty(void *J1, void *JL, Word_t HighIndex, Word_t Elements)
         if (pFlag) { printf("JudyPrevEmpty: %8" PRIuPTR"\t%p\n", elm, (void *)J1index); }
 
 //      Find Previous Empty Index, JLindex/J1index is modified by J[1L]PE
+        assert(JLindex == J1index);
         J1PE(Rcode1, J1, J1index);      // Rcode = Judy1PrevEmpty(J1, &J1index, PJE0)
         JLPE(RcodeL, JL, JLindex);      // RcodeL = JudyLPrevEmpty(JL, &JLindex, PJE0)
         if ((RcodeL != 1) || (Rcode1 != 1))
         {
-            printf("RcodeL = %d, Rcode1 = %d, Index1 = 0x%" PRIxPTR", IndexL = 0x%" PRIxPTR"\n",
-                    RcodeL, Rcode1, J1index, JLindex);
-            FAILURE("Judy[1L]PrevEmpty Rcode* != 1 =", RcodeL);
+            if (PrevKey != 0)
+            {
+                printf("RcodeL %d Rcode1 %d Index1 0x%zx IndexL 0x%zx J*PE(0x%zx)\n",
+                        RcodeL, Rcode1, J1index, JLindex, PrevKey);
+                Judy1Dump((Word_t)J1, sizeof(Word_t) * 8, 0);
+                FAILURE("Judy[1L]PrevEmpty Rcode* != 1 =", RcodeL);
+            }
+            if ((RcodeL != 0) || (Rcode1 != 0))
+            {
+                printf("RcodeL %d Rcode1 %d Index1 0x%zx IndexL 0x%zx J*PE(0x%zx)\n",
+                        RcodeL, Rcode1, J1index, JLindex, PrevKey);
+                Judy1Dump((Word_t)J1, sizeof(Word_t) * 8, 0);
+                FAILURE("Judy[1L]PrevEmpty Rcode* != 0 =", RcodeL);
+            }
+            break;
         }
         if (J1index != JLindex)
             FAILURE("JLPE != J1PE returned index at", elm);
