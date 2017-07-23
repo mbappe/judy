@@ -470,7 +470,7 @@ Leaf4Exit:
         }
         case cJU_JPLEAF5:
         {
-//                if (JU_DCDNOTMATCHINDEX(Index, Pjp, 5)) break;
+            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 5)) break;
             Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
             Pjll = P_JLL(Pjp->jp_Addr);
 
