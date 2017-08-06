@@ -36,24 +36,6 @@
 #include "JudyPrintJP.c"
 #endif
 
-#ifdef  SEARCHMETRICS
-Word_t  j__MissCompares;
-Word_t  j__SearchPopulation;
-Word_t  j__SearchGets;
-Word_t  j__DirectHits;
-Word_t  j__SkippedLevels;
-
-#define  SEARCHPOPULATION(CNT)  (j__SearchPopulation += (Word_t)(CNT))
-
-#define  SEARCHGETS(CNT)        (j__SearchGets       += (Word_t)(CNT))
-//#define  SKIPPEDLEVELS(CNT)     (j__SkippedLevels    += (Word_t)(CNT))
-#else
-#define SEARCHPOPULATION(CNT)   // null
-#define SEARCHGETS(CNT)         // null
-#endif  // SEARCHMETRICS
-
-
-
 // ****************************************************************************
 // J U D Y   1   T E S T
 // J U D Y   L   G E T
@@ -103,8 +85,6 @@ FUNCTION PPvoid_t JudyLGet (Pcvoid_t PArray,     // from which to retrieve.
 
     (void) PJError;
 
-        SEARCHGETS(1);         
-
         if (PArray == (Pcvoid_t) NULL)  // empty array.
             goto NotFoundExit;
 
@@ -129,8 +109,6 @@ FUNCTION PPvoid_t JudyLGet (Pcvoid_t PArray,     // from which to retrieve.
 
             if ((posidx = j__udySearchLeafW(Pjlw + 1, Pop1, Index)) < 0)
                 goto NotFoundExit;              // no jump to middle of switch
-
-            SEARCHPOPULATION(Pop1);
 
 #ifdef  JUDY1
             return(1);
@@ -236,10 +214,9 @@ ContinueWalk:           // for going down one level; come here with Pjp set.
 JudyBranchL:
             Pjbl = P_JBL(Pjp->jp_Addr);
 
-// change to || search   if ((posidx = j__udySearchBranchL((Pjll_t)(Pjbl->jbl_Expanse),
-//                      Pjbl->jbl_NumJPs, Digit)) < 0) break;
-            if ((posidx = j__udySearchBranchL(Pjbl->jbl_Expanse,
-                            Pjbl->jbl_NumJPs, Digit)) < 0) 
+            posidx = j__udySearchBranchL(Pjbl->jbl_Expanse, Pjbl->jbl_NumJPs, Digit);
+
+            if (posidx < 0)
                 break;
 
             Pjp = Pjbl->jbl_jp + posidx;
@@ -420,7 +397,6 @@ CommonLeafExit:
 
 ////////            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 2)) break;
 
-            SEARCHPOPULATION(Pop1);
 
 #ifdef  JUDY1
             return(1);
@@ -548,9 +524,6 @@ Leaf7Exit:
             if (! (BitMap & BitMsk)) 
                 break;
 
-//          This may cost a lot in performance
-            SEARCHPOPULATION(JU_JPLEAF_POP0(Pjp) + 1);
-
 #ifdef  JUDY1
             return(1);
 #endif  // JUDY1
@@ -595,8 +568,6 @@ Leaf7Exit:
 
         case cJ1_JPFULLPOPU1:
         {
-//            SEARCHPOPULATION(256);
-//            DIRECTHITS(1); 
             return(1);
         }
 #endif // JUDY1
@@ -617,7 +588,7 @@ Leaf7Exit:
         case cJU_JPIMMED_7_01:          // 7 byte decode
 #endif  // JU_64BIT
 
-            SEARCHPOPULATION(1);
+//            SEARCHPOPULATION(1);
 //            DIRECTHITS(1);
 
             if (JU_JPDCDPOP0(Pjp) != JU_TRIMTODCDSIZE(Index)) 

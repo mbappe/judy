@@ -68,7 +68,7 @@
 Word_t    j__MissCompares;            // number times LGet/1Test called
 Word_t    j__SearchPopulation;          // Population of Searched object
 Word_t    j__DirectHits;                // Number of direct hits -- no search
-Word_t    j__SearchGets;                // Number of object calls
+//Word_t    j__SearchGets;                // Number of object calls
 //Word_t    j__TreeDepth;                 // number time Branch_U called
 
 Word_t    j__AllocWordsTOT;
@@ -927,7 +927,6 @@ main(int argc, char *argv[])
 
 //    double    SearchPopulation = 0;     // Population of Searched object
     double    DirectHits = 0;           // Number of direct hits
-    double    SearchGets = 0;           // Number of object calls
 
     Word_t    MaxNumb;
     int       Col;
@@ -2208,7 +2207,6 @@ main(int argc, char *argv[])
 //            TreeDepth        = j__TreeDepth;
 //            SearchPopulation = j__SearchPopulation;
             DirectHits      = j__DirectHits;           // Number of direct hits
-            SearchGets       = j__SearchGets;           // Number of object calls
 
             if (J1Flag)
             {
@@ -2268,7 +2266,6 @@ main(int argc, char *argv[])
 
 //            SearchPopulation = j__SearchPopulation;
             DirectHits       = j__DirectHits;           // Number of direct hits
-            SearchGets       = j__SearchGets;           // Number of object calls
 
             if (tFlag)
                 PRINT6_1f(DeltaGenL);
@@ -2529,7 +2526,7 @@ main(int argc, char *argv[])
             
 //          Calc average compares done in Leaf for this measurement interval
 //            AveSrcCmp = SearchCompares / (double)Meas;
-//            AveSrcCmp = DirectHits / SearchGets;
+//            AveSrcCmp = DirectHits / Meas;
 
 //          Calc average percent of Leaf searched
 //            if (SearchPopulation == 0)
@@ -2537,10 +2534,7 @@ main(int argc, char *argv[])
 //            else
 //                PercentLeafWithDirectHits = SearchCompares / SearchPopulation * 100.0;
 //
-            if (SearchGets == 0)
-                PercentLeafWithDirectHits = 0.0;
-            else
-                PercentLeafWithDirectHits = DirectHits / SearchGets * 100.0;
+            PercentLeafWithDirectHits = (double)DirectHits / (double)Meas * 100.0;
 
             PRINT5_2f((double)j__AllocWordsJBB   / (double)Pop1);       // 256 node branch
             PRINT5_2f((double)j__AllocWordsJBU   / (double)Pop1);       // 256 node branch
@@ -2575,16 +2569,10 @@ main(int argc, char *argv[])
 
 //          print average number of Branches traversed per lookup
 //            printf(" %5.1f", TreeDepth / (double)Meas);
-//
-            if (j__SearchGets == 0)
-                printf(" %5.1f", 0.0);
-            else
-                printf(" %5.1f", (double)j__SearchPopulation / (double)j__SearchGets);
+            printf(" %5.1f", (double)j__SearchPopulation / (double)Meas);
 
 //          reset for next measurement
-//            j__SearchPopulation = j__TreeDepth = j__MissCompares = j__DirectHits = j__SearchGets = 0;
-            j__SearchPopulation = j__MissCompares = j__DirectHits = j__SearchGets = 0;
-
+            j__SearchPopulation = j__MissCompares = j__DirectHits = 0;
 
 // SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSss
 
@@ -3452,8 +3440,7 @@ TestJudyGet(void *J1, void *JL, void *JH, PSeed_t PSeed, Word_t Elements)
             WorkingSeed = *PSeed;
 
 //          reset for next measurement
-//            j__SearchPopulation = j__TreeDepth = j__MissCompares = j__DirectHits = j__SearchGets = 0;
-            j__SearchPopulation = j__MissCompares = j__DirectHits = j__SearchGets = 0;
+            j__SearchPopulation = j__MissCompares = j__DirectHits = 0;
 
             STARTTm;
             for (elm = 0; elm < Elements; elm++)
@@ -3522,8 +3509,7 @@ TestJudyGet(void *J1, void *JL, void *JH, PSeed_t PSeed, Word_t Elements)
             WorkingSeed = *PSeed;
 
 //          reset for next measurement
-//            j__SearchPopulation = j__TreeDepth = j__MissCompares = j__DirectHits = j__SearchGets = 0;
-            j__SearchPopulation = j__MissCompares = j__DirectHits = j__SearchGets = 0;
+            j__SearchPopulation = j__MissCompares = j__DirectHits = 0;
 
             STARTTm;
             for (elm = 0; elm < Elements; elm++)
@@ -3588,8 +3574,7 @@ TestJudyGet(void *J1, void *JL, void *JH, PSeed_t PSeed, Word_t Elements)
         {
             WorkingSeed = *PSeed;
 
-//            j__SearchPopulation = j__TreeDepth = j__MissCompares = j__DirectHits = j__SearchGets = 0;
-            j__SearchPopulation = j__MissCompares = j__DirectHits = j__SearchGets = 0;
+            j__SearchPopulation = j__MissCompares = j__DirectHits = 0;
 
             STARTTm;
             for (elm = 0; elm < Elements; elm++)
@@ -3649,8 +3634,7 @@ TestJudyLGet(void *JL, PSeed_t PSeed, Word_t Elements)
         WorkingSeed = *PSeed;
 
 //      reset for next measurement
-//        j__SearchPopulation = j__TreeDepth = j__MissCompares = j__DirectHits = j__SearchGets = 0;
-            j__SearchPopulation = j__MissCompares = j__DirectHits = j__SearchGets = 0;
+        j__SearchPopulation = j__MissCompares = j__DirectHits = 0;
 
         TstKey = GetNextKey(&WorkingSeed);      // Get 1st Key
         STARTTm;

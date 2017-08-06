@@ -275,8 +275,7 @@ typedef int bool_t;
 
 #ifdef  SEARCHMETRICS
 Word_t  j__MissCompares;
-// Word_t  j__SearchPopulation;
-Word_t  j__SearchGets;
+Word_t  j__SearchPopulation;
 Word_t  j__DirectHits;
 
 // if BUCKETSIZE not defined, default to one word
@@ -300,12 +299,11 @@ Word_t  j__DirectHits;
 
 #endif  // DIRINWORDS
 
-// #define  SEARCHPOPULATION(CNT)  (j__SearchPopulation += (Word_t)(CNT))
+#define  SEARCHPOPULATION(CNT)  (j__SearchPopulation += (Word_t)(CNT))
 #else
-#define STARTSEARCH             // null
 #define  MISSCOMPARES(CNT)      // null
 #define  DIRECTHITS(_START, POS, KEY)   // null
-// #define  SEARCHPOPULATION(CNT)  // null
+#define  SEARCHPOPULATION(CNT)  // null
 #endif  // ! SEARCHMETRICS
 
 #include <assert.h>
@@ -802,70 +800,6 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
 // cache-line hits to few as possible.  Measurements show the
 // typical accesses to RAM are about 3 adjacent elements.
 
-#ifdef  EXPERMENT1
-//             posidx = j__udySearchLeaf1IMM(Pjll, Pop1, Index)
-//
-#define LEAFKEY(LEAF, POS) (((LEAF) >> ((POS) * 8)) & 0xff)
-
-#define SEARCHBIDIRNATIVEI(LEAFSIZE_t, PLEAF, POP1, KEY, START) \
-{                                                               \
-    Word_t      __Array;        /* up to 7 byte immed_01 */     \
-    Word_t      __LeafKey;      /* current Key in Leaf */       \
-    LEAFSIZE_t  __Key;          /* Key to search for */         \
-    int         __pos;          /* starting pos of search */    \
-                                                                \
-    assert((Word_t)(START) < (Word_t)(POP1));                   \
-    __Array  = *((PWord_t)(PLEAF));                             \
-    __pos    = (int)(START);                                    \
-    __Key    = (LEAFSIZE_t)(KEY);                               \
-    __LeafKey = LEAFKEY(__Array,__pos);                         \
-                                                                \
-    if (__Key >= __LeafKey)     /* Search forward */            \
-    {                                                           \
-        if (__LeafKey == __Key) /* 1st check if direct hit */   \
-        {                                                       \
-            DIRECTHITS(START, __pos, sizeof(__Key));            \
-            return(__pos);      /* Nailed it */                 \
-        }                                                       \
-        for (__pos++; __pos < (POP1); __pos++)                  \
-        {                                                       \
-            __LeafKey = LEAFKEY(__Array,__pos);                 \
-            if (__LeafKey >= __Key)                             \
-            {                                                   \
-                if (__LeafKey == __Key)                         \
-                {                                               \
-                    MISSCOMPARES(__pos - (START));              \
-            /*      DIRECTHITS((START), __pos, sizeof(__Key));*/\
-                    return(__pos);                              \
-                }                                               \
-                break;                                          \
-            }                                                   \
-        }                                                       \
-    }                                                           \
-    else                /* Search in reverse */                 \
-    {                                                           \
-        while (__pos)                                           \
-        {                                                       \
-            __pos--;                                            \
-            __LeafKey = LEAFKEY(__Array,__pos);                 \
-                                                                \
-            if (__LeafKey <= __Key)                             \
-            {                                                   \
-                if (__LeafKey == __Key)                         \
-                {                                               \
-                    MISSCOMPARES((START) - __pos);              \
-             /*     DIRECTHITS((START), __pos, sizeof(__Key));*/\
-                    return(__pos);                              \
-                }                                               \
-                __pos++;  /* advance to hole */                 \
-                break;                                          \
-            }                                                   \
-        }                                                       \
-    }                                                           \
-    return (~__pos);       /* ones comp location of hole */     \
-}
-#endif  // EXPERMENT1 
-
 #define SEARCHBIDIRNATIVE(LEAFSIZE_t, PLEAF, POP1, KEY, START)  \
 {                                                               \
     Word_t      __LeafKey;      /* current Key in Leaf */       \
@@ -879,13 +813,13 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
     __PLeaf  = (LEAFSIZE_t *)(PLEAF);                           \
     __LeafKey = (Word_t)__PLeaf[__pos];                         \
                                                                 \
-    if (__Key >= __LeafKey)     /* Search forward */            \
+    if (__LeafKey == __Key) /* 1st check if direct hit */       \
     {                                                           \
-        if (__LeafKey == __Key) /* 1st check if direct hit */   \
-        {                                                       \
-            DIRECTHITS((START), __pos, sizeof(__Key));          \
-            return(__pos);  /* Nailed it */                     \
-        }                                                       \
+        DIRECTHITS((START), __pos, sizeof(__Key));              \
+        return(__pos);  /* Nailed it */                         \
+    }                                                           \
+    if (__Key > __LeafKey)     /* Search forward */             \
+    {                                                           \
         for (__pos++; __pos < (POP1); __pos++)                  \
         {                                                       \
             __LeafKey = __PLeaf[__pos];                         \
@@ -894,7 +828,6 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
                 if (__LeafKey == __Key)                         \
                 {                                               \
                     MISSCOMPARES(__pos - (START));              \
-             /*     DIRECTHITS((START), __pos, sizeof(__Key));*/\
                     return(__pos);                              \
                 }                                               \
                 break;                                          \
@@ -913,7 +846,6 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
                 if (__LeafKey == __Key)                         \
                 {                                               \
                     MISSCOMPARES((START) - __pos);              \
-             /*     DIRECTHITS((START), __pos, sizeof(__Key));*/\
                     return(__pos);                              \
                 }                                               \
                 __pos++;  /* advance to hole */                 \
@@ -943,11 +875,8 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
     if (__LeafKey == __Key)                                     \
     {                                                           \
         DIRECTHITS((START), __pos, sizeof(__Key));              \
-                                                                \
         return(__pos);  /* Nailed it */                         \
     }                                                           \
-    MISSCOMPARES(1);                                            \
-                                                                \
     if (__Key > __LeafKey)                                      \
     {                   /* Search forward */                    \
         for (__pos++; __pos < (POP1); __pos++)                  \
@@ -957,12 +886,11 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
             {                                                   \
                 if (__LeafKey == __Key)                         \
                 {                                               \
-             /*     DIRECTHITS((START), __pos, sizeof(__Key));*/\
+                    MISSCOMPARES(__pos - (START));              \
                     return(__pos);                              \
                 }                                               \
                 break;                                          \
             }                                                   \
-            MISSCOMPARES(1);                                    \
         }                                                       \
     }                                                           \
     else                /* Search in reverse */                 \
@@ -975,7 +903,7 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
             {                                                   \
                 if (__LeafKey == __Key)                         \
                 {                                               \
-             /*     DIRECTHITS((START), __pos, sizeof(__Key));*/\
+                    MISSCOMPARES((START) - __pos);              \
                     return(__pos);                              \
                 }                                               \
                 __pos++;  /* advance to hole */                 \
@@ -2083,6 +2011,7 @@ static inline int  FSPLIT(Word_t FIRST, Word_t LAST, Word_t KEY, Word_t POP1)
 static inline int j__udySearchLeaf1(Pjll_t Pjll, int LeafPop1, Word_t Index)
 {
     int Start;
+    SEARCHPOPULATION(LeafPop1);
 
 //    Start = NSPLIT(LeafPop1, Index, (cbPW - __builtin_clzl(((uint8_t *)Pjll)[0] ^ ((uint8_t *)Pjll)[LeafPop1 - 1])));
 
@@ -2094,6 +2023,7 @@ static inline int j__udySearchLeaf1(Pjll_t Pjll, int LeafPop1, Word_t Index)
 static inline int j__udySearchLeaf2(Pjll_t Pjll, int LeafPop1, Word_t Index)
 {
     int Start;
+    SEARCHPOPULATION(LeafPop1);
 
 //    Start = NSPLIT(LeafPop1, Index, (cbPW - __builtin_clzl(((uint16_t *)Pjll)[0] ^ ((uint16_t *)Pjll)[LeafPop1 - 1])));
 
@@ -2103,6 +2033,7 @@ static inline int j__udySearchLeaf2(Pjll_t Pjll, int LeafPop1, Word_t Index)
 
 static inline int j__udySearchLeaf3(Pjll_t Pjll, int LeafPop1, Word_t Index)
 {
+    SEARCHPOPULATION(LeafPop1);
 //  The vast majority of these are == 24, so hard code 24 
     int Start = NSPLIT(LeafPop1, JU_LEASTBYTES(Index, 3), 3 * 8); 
     SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 3, JU_COPY3_PINDEX_TO_LONG, Start); 
@@ -2111,24 +2042,28 @@ static inline int j__udySearchLeaf3(Pjll_t Pjll, int LeafPop1, Word_t Index)
 #ifdef JU_64BIT
 static inline int j__udySearchLeaf4(Pjll_t Pjll, int LeafPop1, Word_t Index)
 {
+    SEARCHPOPULATION(LeafPop1);
     int Start = NSPLIT(LeafPop1, (uint32_t)Index, 4 * 8); 
     SEARCHLEAFNATIVE(uint32_t,  Pjll, LeafPop1, Index, Start); 
 }
 
 static inline int j__udySearchLeaf5(Pjll_t Pjll, int LeafPop1, Word_t Index)
 {
+    SEARCHPOPULATION(LeafPop1);
     int Start = NSPLIT(LeafPop1, JU_LEASTBYTES(Index, 5), 5 * 8); 
     SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 5, JU_COPY5_PINDEX_TO_LONG, Start); 
 }
 
 static inline int j__udySearchLeaf6(Pjll_t Pjll, int LeafPop1, Word_t Index)
 {
+    SEARCHPOPULATION(LeafPop1);
     int Start = NSPLIT(LeafPop1, JU_LEASTBYTES(Index, 6), 6 * 8); 
     SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 6, JU_COPY6_PINDEX_TO_LONG, Start); 
 }
 
 static inline int j__udySearchLeaf7(Pjll_t Pjll, int LeafPop1, Word_t Index)
 {
+    SEARCHPOPULATION(LeafPop1);
     int Start = NSPLIT(LeafPop1, JU_LEASTBYTES(Index, 7), 7 * 8); 
     SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 7, JU_COPY7_PINDEX_TO_LONG, Start); 
 }
@@ -2139,6 +2074,7 @@ static inline int j__udySearchLeaf7(Pjll_t Pjll, int LeafPop1, Word_t Index)
 
 static inline int j__udySearchLeafW(Pjlw_t Pjlw, int LeafPop1, Word_t Index)
 {
+    SEARCHPOPULATION(LeafPop1);
 
       if (LeafPop1 > 16)
       {
@@ -2164,6 +2100,7 @@ static inline int j__udySearchLeafW(Pjlw_t Pjlw, int LeafPop1, Word_t Index)
 
 static inline int j__udySearchLeafW(Pjlw_t Pjlw, int LeafPop1, Word_t Index)
 {
+    SEARCHPOPULATION(LeafPop1);
 //    SEARCHLINARNATIVE(Word_t,  Pjlw, LeafPop1, Index, 0); 
     SEARCHBINARYNATIVE(Word_t, Pjlw, LeafPop1, Index, 0); 
 }
