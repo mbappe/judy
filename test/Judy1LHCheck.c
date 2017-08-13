@@ -11,6 +11,28 @@
 
 #include <Judy.h>
 
+#if defined(RAMMETRICS)
+Word_t    j__AllocWordsTOT;
+
+Word_t    j__AllocWordsJBB;
+Word_t    j__AllocWordsJBU;
+Word_t    j__AllocWordsJBL;
+Word_t    j__AllocWordsJLB1;
+Word_t    j__AllocWordsJLL1;
+Word_t    j__AllocWordsJLL2;
+Word_t    j__AllocWordsJLL3;
+Word_t    j__AllocWordsJLL4;
+Word_t    j__AllocWordsJLL5;
+Word_t    j__AllocWordsJLL6;
+Word_t    j__AllocWordsJLL7;
+Word_t    j__AllocWordsJLLW;
+Word_t    j__AllocWordsJV;
+
+Word_t    j__MFlag;                     // Print memory allocation on stderr
+Word_t    j__TotalBytesAllocated;       //
+Word_t    j__MalFreeCnt;                // JudyMalloc() + Judyfree() count
+#endif // defined(RAMMETRICS)
+
 // Compile:
 // # cc -O Judy1LHCheck.c -lm -lJudy -o Judy1LHCheck
 
@@ -549,11 +571,7 @@ TestJudyIns(void **J1, void **JL, void **JH, Word_t Seed, Word_t Elements)
         if (Rcode == 0)
             FAILURE("Judy1Set failed - DUP Index, population =", TotalPop);
 
-#ifdef SKIPMACRO
         Rcode = Judy1Test(*J1, TstIndex, NULL);
-#else
-        J1T(Rcode, *J1, TstIndex);
-#endif // SKIPMACRO
         if (Rcode != 1)
             FAILURE("Judy1Test failed - Index missing, population =", TotalPop);
 
@@ -656,11 +674,7 @@ TestJudyGet(void *J1, void *JL, void *JH, Word_t Seed, Word_t Elements)
             LowIndex = TstIndex;
 
 
-#ifdef SKIPMACRO
-        Rcode = Judy1Test(J1, TstIndex);
-#else
-        J1T(Rcode, J1, TstIndex);
-#endif // SKIPMACRO
+        Rcode = Judy1Test(J1, TstIndex, NULL);
 
         if (pFlag) { printf("Judy1Test: elm=%8" PRIuPTR"\t%p\n", elm, (void *)TstIndex); }
 
@@ -918,11 +932,7 @@ TestJudyNextEmpty(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
                 printf("JudyLNextEmpty:skipped %" PRIuPTR" sequential Keys\n", SeqKeys);
         }
 
-#ifdef SKIPMACRO
-        Rcode1 = Judy1Test(J1, J1index);
-#else
-        J1T(Rcode1, J1, J1index);
-#endif // SKIPMACRO
+        Rcode1 = Judy1Test(J1, J1index, NULL);
 
         if (Rcode1 != 0)
             FAILURE("J1NE returned non-empty Index =", J1index);
@@ -1008,11 +1018,7 @@ TestJudyPrevEmpty(void *J1, void *JL, Word_t HighIndex, Word_t Elements)
                 printf("J[1L]PE:skipped %" PRIuPTR" sequential Keys\n", SeqKeys);
         }
 
-#ifdef SKIPMACRO
-        Rcode1 = Judy1Test(J1, J1index);
-#else
-        J1T(Rcode1, J1, J1index);
-#endif // SKIPMACRO
+        Rcode1 = Judy1Test(J1, J1index, NULL);
 
         if (Rcode1 != 0)
             FAILURE("J1PE returned non-empty Index =", J1index);
