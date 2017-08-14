@@ -1952,36 +1952,36 @@ main(int argc, char *argv[])
     if (FileKeys == NULL)
     {
         Word_t wKeysP1 = wMaxEndDeltaKeys + 1;
-
+        // round up to 2MB so we can align it later
+        Word_t wBytes = ((wKeysP1 * sizeof(Word_t)) + 0x1fffff) & ~0x1fffff;
 #ifdef USE_MALLOC
-        FileKeys = (PWord_t)malloc(wKeysP1 * sizeof(Word_t));
+        FileKeys = (PWord_t)malloc(wBytes);
         if (FileKeys == NULL)
         {
-            FAILURE("FileKeys malloc failure, Bytes =",
-                    wKeysP1 * sizeof(Word_t));
+            FAILURE("FileKeys malloc failure, Bytes =", wBytes);
         }
         printf("# malloc %zd bytes at %p for GetNextKey array.\n",
-               wKeysP1 * sizeof(Word_t), (void *)FileKeys);
+               wBytes, (void *)FileKeys);
 #else // USE_MALLOC
         Word_t wOne = JudyMalloc((Word_t)1); // To get large page from subsequent mmap.
-        // round up to 2MB
-        Word_t wBytes = ((wKeysP1 * sizeof(Word_t)) + 0x1fffff) & ~0x1fffff;
         FileKeys = (Word_t *)mmap(NULL, wBytes,
                                   (PROT_READ|PROT_WRITE),
                                   (MAP_PRIVATE|MAP_ANONYMOUS), -1, 0);
+        JudyFree(wOne, (Word_t)1);
         if (FileKeys == MAP_FAILED)
         {
             FAILURE("FileKeys mmap failure, Bytes =", wBytes);
         }
-        if ((Word_t)FileKeys & 0x1fffff)
-        {
-            printf("FileKeys %p wBytes 0x%zx\n", (void *)FileKeys, wBytes);
-            FAILURE("FileKeys mmap is unaligned, Bytes =", wBytes);
-        }
         printf("# mmap 0x%zx bytes at %p for GetNextKey array.\n",
                wBytes, (void *)FileKeys);
-        JudyFree(wOne, (Word_t)1);
+        if ((Word_t)FileKeys & 0x1fffff)
+        {
+            printf("# Warning - mmap is unaligned.\n");
+        }
 #endif // USE_MALLOC
+        // align the buffer
+        FileKeys = (Word_t *)(((Word_t)FileKeys + 0x1fffff) & ~0x1fffff);
+        printf("# FileKeys is %p after alignment.\n", (void *)FileKeys);
 
         Seed_t WorkingSeed = *PInitSeed;
 
@@ -2402,6 +2402,7 @@ main(int argc, char *argv[])
             DeltaKeys[ww] = CalcNextKey(&TempSeed);
         }
         InsertSeed = DeltaKeys;
+        BitmapSeed = DeltaKeys;
 #endif // CALC_NEXT_KEY
 
         if (J1Flag || JLFlag || JHFlag)
