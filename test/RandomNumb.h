@@ -107,12 +107,6 @@ static Word_t MagicList[] = {
 // Caution: the order of the fields impacts timing
 typedef struct RANDOM_GENERATOR_SEEDS
 {
-#ifndef NO_SVALUE
-  #ifndef IF_SVALUE
-    int s_bSValue;
-  #endif // IF_SVALUE
-    Word_t    OutputMask;               // Max number output
-#endif // NO_SVALUE
     Word_t    FeedBTap;                 // Feedback taps (from MagicList)
 #ifdef GAUSS
     Word_t    Seeds[8];                 // Seeds for each order
@@ -120,18 +114,18 @@ typedef struct RANDOM_GENERATOR_SEEDS
 #else // GAUSS
     Word_t    Seeds[1];
 #endif // GAUSS
+#ifndef NO_SVALUE
+  #ifndef IF_SVALUE
+    int s_bSValue;
+  #endif // IF_SVALUE
+    Word_t    OutputMask;               // Max number output
+#endif // NO_SVALUE
 //    Word_t    Count[8];                 // temp!!!!!
 
 } Seed_t , *PSeed_t;
 
 static Seed_t InitialSeeds =            // used to Init CurrentSeeds
 {
-#ifndef NO_SVALUE
-  #ifndef IF_SVALUE
-    0,                                  // s_bSValue
-  #endif // IF_SVALUE
-    0xffffffff,                         // Output mask
-#endif // NO_SVALUE
     0x13aab,                            // FeedBTap; White noise is default
     {
      0xc1fc,                            // Seed 0
@@ -148,6 +142,12 @@ static Seed_t InitialSeeds =            // used to Init CurrentSeeds
 #ifdef GAUSS
     0,                                  // Order
 #endif // GAUSS
+#ifndef NO_SVALUE
+  #ifndef IF_SVALUE
+    0,                                  // s_bSValue
+  #endif // IF_SVALUE
+    0xffffffff,                         // Output mask
+#endif // NO_SVALUE
 };
 
 static Seed_t CurrentSeeds;
