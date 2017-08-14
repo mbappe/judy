@@ -1952,8 +1952,8 @@ main(int argc, char *argv[])
     if (FileKeys == NULL)
     {
         Word_t wKeysP1 = wMaxEndDeltaKeys + 1;
-        // round up to 2MB so we can align it later
-        Word_t wBytes = ((wKeysP1 * sizeof(Word_t)) + 0x1fffff) & ~0x1fffff;
+        // request 2MB-1 extra so we can align it later
+        Word_t wBytes = (wKeysP1 * sizeof(Word_t)) + 0x1fffff;
 #ifdef USE_MALLOC
         FileKeys = (PWord_t)malloc(wBytes);
         if (FileKeys == NULL)
