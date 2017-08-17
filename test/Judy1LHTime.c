@@ -33,6 +33,17 @@
 
 #include <Judy.h>                       // for Judy macros J*()
 
+#ifdef LFSR_ONLY
+#define CALC_NEXT_KEY
+#define NO_FVALUE
+#define NO_TRIM_EXPANSE
+#define NO_SPLAY_KEY_BITS
+#define NO_DFLAG
+#define NO_OFFSET
+#define NO_SVALUE
+#define NO_GAUSS
+#endif // LFSR_ONLY
+
 #include "RandomNumb.h"                 // Random Number Generators
 
 // Be careful.
