@@ -1952,8 +1952,8 @@ main(int argc, char *argv[])
     if (FileKeys == NULL)
     {
         Word_t wKeysP1 = wMaxEndDeltaKeys + 1;
-        // request 2MB-1 extra so we can align it later
-        Word_t wBytes = (wKeysP1 * sizeof(Word_t)) + 0x1fffff;
+        // align wBytes and add an extra huge page so align after alloc is ok
+        Word_t wBytes = ((wKeysP1 * sizeof(Word_t)) + 0x3fffff) & ~0x1fffff;
 #ifdef USE_MALLOC
         FileKeys = (PWord_t)malloc(wBytes);
         if (FileKeys == NULL)
@@ -1963,21 +1963,15 @@ main(int argc, char *argv[])
         printf("# malloc %zd bytes at %p for GetNextKey array.\n",
                wBytes, (void *)FileKeys);
 #else // USE_MALLOC
-        Word_t wOne = JudyMalloc((Word_t)1); // To get large page from subsequent mmap.
         FileKeys = (Word_t *)mmap(NULL, wBytes,
                                   (PROT_READ|PROT_WRITE),
                                   (MAP_PRIVATE|MAP_ANONYMOUS), -1, 0);
-        JudyFree(wOne, (Word_t)1);
         if (FileKeys == MAP_FAILED)
         {
             FAILURE("FileKeys mmap failure, Bytes =", wBytes);
         }
         printf("# mmap 0x%zx bytes at %p for GetNextKey array.\n",
                wBytes, (void *)FileKeys);
-        if ((Word_t)FileKeys & 0x1fffff)
-        {
-            printf("# Warning - mmap is unaligned.\n");
-        }
 #endif // USE_MALLOC
         // align the buffer
         FileKeys = (Word_t *)(((Word_t)FileKeys + 0x1fffff) & ~0x1fffff);
