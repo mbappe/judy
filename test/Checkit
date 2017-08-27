@@ -8,57 +8,56 @@ echo "=== +++++++++ This test runs in 15 seconds on a PIII 750Mhz +++++++"
 LIBJUDY=`find ../ -name libJudy.a`
 JUDY_H=`find ../ -name Judy.h`
 
-echo "$CC -O $WARN_CFLAGS SLcompare.c -DHASHMETHOD -o SL_Hash"
-      $CC -O $WARN_CFLAGS SLcompare.c -DHASHMETHOD -o SL_Hash
-      #clang -m32 -O $WARN_CFLAGS SLcompare.c -DHASHMETHOD -o SL_Hash
-      #c++ -std=c++14 -O $WARN_CFLAGS SLcompare.c -DHASHMETHOD -o SL_Hash
-      #c++ -std=c++14 -m32 -O $WARN_CFLAGS SLcompare.c -DHASHMETHOD -o SL_Hash
+echo "$CC -O2 $WARN_CFLAGS SLcompare.c -DHASHMETHOD -o SL_Hash"
+      $CC -O2 $WARN_CFLAGS SLcompare.c -DHASHMETHOD -o SL_Hash
+      #clang -m32 -O2 $WARN_CFLAGS SLcompare.c -DHASHMETHOD -o SL_Hash
+      #c++ -std=c++14 -O2 $WARN_CFLAGS SLcompare.c -DHASHMETHOD -o SL_Hash
+      #c++ -std=c++14 -m32 -O2 $WARN_CFLAGS SLcompare.c -DHASHMETHOD -o SL_Hash
 
-echo "$CC -O $WARN_CFLAGS SLcompare.c -DSPLAYMETHOD -o SL_Splay"
-      $CC -O $WARN_CFLAGS SLcompare.c -DSPLAYMETHOD -o SL_Splay
-      #clang -m32 -O $WARN_CFLAGS SLcompare.c -DSPLAYMETHOD -o SL_Splay
-      #c++ -std=c++14 -O $WARN_CFLAGS SLcompare.c -DSPLAYMETHOD -o SL_Splay
-      #c++ -std=c++14 -m32 -O $WARN_CFLAGS SLcompare.c -DSPLAYMETHOD -o SL_Splay
+echo "$CC -O2 $WARN_CFLAGS SLcompare.c -DSPLAYMETHOD -o SL_Splay"
+      $CC -O2 $WARN_CFLAGS SLcompare.c -DSPLAYMETHOD -o SL_Splay
+      #clang -m32 -O2 $WARN_CFLAGS SLcompare.c -DSPLAYMETHOD -o SL_Splay
+      #c++ -std=c++14 -O2 $WARN_CFLAGS SLcompare.c -DSPLAYMETHOD -o SL_Splay
+      #c++ -std=c++14 -m32 -O2 $WARN_CFLAGS SLcompare.c -DSPLAYMETHOD -o SL_Splay
 
-echo "$CC -O $WARN_CFLAGS SLcompare.c -DREDBLACKMETHOD -o SL_Redblack"
-      $CC -O $WARN_CFLAGS SLcompare.c -DREDBLACKMETHOD -o SL_Redblack
-      #clang cc -m32 -O $WARN_CFLAGS SLcompare.c -DREDBLACKMETHOD -o SL_Redblack
-      #cc++ -std=c++14 -O $WARN_CFLAGS SLcompare.c -DREDBLACKMETHOD -o SL_Redblack
-      #cc++ -std=c++14 -m32 -O $WARN_CFLAGS SLcompare.c -DREDBLACKMETHOD -o SL_Redblack
+echo "$CC -O2 $WARN_CFLAGS SLcompare.c -DREDBLACKMETHOD -o SL_Redblack"
+      $CC -O2 $WARN_CFLAGS SLcompare.c -DREDBLACKMETHOD -o SL_Redblack
+      #clang cc -m32 -O2 $WARN_CFLAGS SLcompare.c -DREDBLACKMETHOD -o SL_Redblack
+      #cc++ -std=c++14 -O2 $WARN_CFLAGS SLcompare.c -DREDBLACKMETHOD -o SL_Redblack
+      #cc++ -std=c++14 -m32 -O2 $WARN_CFLAGS SLcompare.c -DREDBLACKMETHOD -o SL_Redblack
 
 echo
 echo Compiling with Judy library: $LIBJUDY
 echo
 
-echo "$CC -O $WARN_CFLAGS -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIBJUDY -lm"
-      $CC -O $WARN_CFLAGS -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIBJUDY -lm
-      #clang -m32 -O $WARN_CFLAGS -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy ../src/obj/.libs/libJudy.a -lm
-      #c++ -std=c++14 -O $WARN_CFLAGS -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy ../src/obj/.libs/libJudy.a -lm
-      #c++ -std=c++14 -m32 -O $WARN_CFLAGS -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy ../src/obj/.libs/libJudy.a -lm
+echo "$CC -O2 $WARN_CFLAGS -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIBJUDY -lm"
+      $CC -O2 $WARN_CFLAGS -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIBJUDY -lm
+      #clang -m32 -O2 $WARN_CFLAGS -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy ../src/obj/.libs/libJudy.a -lm
+      #c++ -std=c++14 -O2 $WARN_CFLAGS -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy ../src/obj/.libs/libJudy.a -lm
+      #c++ -std=c++14 -m32 -O2 $WARN_CFLAGS -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy ../src/obj/.libs/libJudy.a -lm
 RET=$?
 if [ $RET -ne 0 ] ; then
-echo "===  $RET Failed: $CC SLcompare.c -DJUDYMETHOD"
-echo "===  $RET Failed: $CC -O -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIBJUDY -lm"
+echo "===  $RET Failed: $CC -O2 SLcompare.c -DJUDYMETHOD"
+echo "===  $RET Failed: $CC -O2 -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIBJUDY -lm"
 exit $RET
 fi
 
-echo "$CC -O $WARN_CFLAGS -I../src -g Judy1LHCheck.c -o Judy1LHCheck $LIBJUDY -lm"
-      $CC -O $WARN_CFLAGS -I../src -g Judy1LHCheck.c -o Judy1LHCheck $LIBJUDY -lm
-      #clang -m32 -O $WARN_CFLAGS -I../src Judy1LHCheck.c -o Judy1LHCheck ../src/obj/.libs/libJudy.a -lm
-      #c++ -std=c++14 $WARN_CFLAGS -O -I../src Judy1LHCheck.c -o Judy1LHCheck ../src/obj/.libs/libJudy.a -lm
-      #c++ -std=c++14 -m32 $WARN_CFLAGS -O -I../src Judy1LHCheck.c -o Judy1LHCheck ../src/obj/.libs/libJudy.a -lm
+echo "$CC -O2 $WARN_CFLAGS -I../src -g Judy1LHCheck.c -o Judy1LHCheck $LIBJUDY -lm"
+      $CC -O2 $WARN_CFLAGS -I../src -g Judy1LHCheck.c -o Judy1LHCheck $LIBJUDY -lm
+      #clang -m32 -O2 $WARN_CFLAGS -I../src Judy1LHCheck.c -o Judy1LHCheck ../src/obj/.libs/libJudy.a -lm
+      #c++ -std=c++14 $WARN_CFLAGS -O2 -I../src Judy1LHCheck.c -o Judy1LHCheck ../src/obj/.libs/libJudy.a -lm
+      #c++ -std=c++14 -m32 $WARN_CFLAGS -O2 -I../src Judy1LHCheck.c -o Judy1LHCheck ../src/obj/.libs/libJudy.a -lm
 RET=$?
 if [ $RET -ne 0 ] ; then
 echo "===  $RET Failed: $CC Judy1LHCheck.c"
 exit $RET
 fi
 
-
-echo "$CC -O $WARN_CFLAGS -I../src -g Judy1LHTime.c -DNOINLINE  -o Judy1LHTime  $LIBJUDY -lm"
-      $CC -O $WARN_CFLAGS -I../src -g Judy1LHTime.c -DNOINLINE  -o Judy1LHTime  $LIBJUDY -lm
-      #$CC -m32 -O $WARN_CFLAGS -I../src Judy1LHTime.c -DRAMMETRICS -DNOINLINE -o Judy1LHTime  $LIBJUDY -lm
-      #clang -m32 -O $WARN_CFLAGS -I../src Judy1LHTime.c -DRAMMETRICS -DNOINLINE -o Judy1LHTime  ../src/obj/.libs/libJudy.a -lm
-      #c++ -std=c++14 -m32 -O $WARN_CFLAGS -I../src Judy1LHTime.c -DRAMMETRICS -DNOINLINE -o Judy1LHTime  ../src/obj/.libs/libJudy.a -lm
+echo "$CC -O2 $WARN_CFLAGS -I../src -g Judy1LHTime.c -o Judy1LHTime  $LIBJUDY -lm"
+      $CC -O2 $WARN_CFLAGS -I../src -g Judy1LHTime.c -o Judy1LHTime  $LIBJUDY -lm
+      #$CC -m32 -O2 $WARN_CFLAGS -I../src Judy1LHTime.c -DRAMMETRICS -DNOINLINE -o Judy1LHTime  $LIBJUDY -lm
+      #clang -m32 -O2 $WARN_CFLAGS -I../src Judy1LHTime.c -DRAMMETRICS -DNOINLINE -o Judy1LHTime  ../src/obj/.libs/libJudy.a -lm
+      #c++ -std=c++14 -m32 -O2 $WARN_CFLAGS -I../src Judy1LHTime.c -DRAMMETRICS -DNOINLINE -o Judy1LHTime  ../src/obj/.libs/libJudy.a -lm
 RET=$?
 if [ $RET -ne 0 ] ; then
 echo "===  $RET Failed: $CC Judy1LHTime.c"
@@ -66,9 +65,9 @@ exit $RET
 fi
 
 #  -OR-    if Judy is installed, these can be compiled from anywhere:
-#cc -O SLcompare.c -DJUDYMETHOD      -o SL_Judy      -lJudy -lm 
-#cc -O Judy1LHCheck.c                -o Judy1LHCheck -lJudy -lm
-#cc -O Judy1LHTime.c                 -o Judy1LHTime  -lJudy -lm
+#cc -O2 SLcompare.c -DJUDYMETHOD      -o SL_Judy      -lJudy -lm
+#cc -O2 Judy1LHCheck.c                -o Judy1LHCheck -lJudy -lm
+#cc -O2 Judy1LHTime.c                 -o Judy1LHTime  -lJudy -lm
 echo "===  Pass: Compile of tests"
 
 echo
