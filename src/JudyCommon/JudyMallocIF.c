@@ -164,27 +164,23 @@ static size_t j__udyMemSequence = 0;   // event sequence number.
             return(0);                                                  \
         }
 
-#ifdef RAMMETRICS
-Word_t    j__AllocWordsJBB;
-Word_t    j__AllocWordsJBU;
-Word_t    j__AllocWordsJBL;
-Word_t    j__AllocWordsJLB1;
-// Word_t    j__AllocWordsJLB2;
-Word_t    j__AllocWordsJLL1;
-Word_t    j__AllocWordsJLL2;
-Word_t    j__AllocWordsJLL3;
-
-#ifdef JU_64BIT
-Word_t    j__AllocWordsJLL4;
-Word_t    j__AllocWordsJLL5;
-Word_t    j__AllocWordsJLL6;
-Word_t    j__AllocWordsJLL7;
-#endif // JU_64BIT
-
-Word_t    j__AllocWordsJLLW;
-Word_t    j__AllocWordsJV;
-Word_t    j__NumbJV;
-#endif // RAMMETRICS
+// These globals are defined in JudyMalloc.c so we don't define them
+// in more than one place, i.e. Judy1MallocIFc. and JudyLMallocIF.c.
+extern Word_t    j__AllocWordsJBB;
+extern Word_t    j__AllocWordsJBU;
+extern Word_t    j__AllocWordsJBL;
+extern Word_t    j__AllocWordsJLB1;
+// extern Word_t    j__AllocWordsJLB2;
+extern Word_t    j__AllocWordsJLL1;
+extern Word_t    j__AllocWordsJLL2;
+extern Word_t    j__AllocWordsJLL3;
+extern Word_t    j__AllocWordsJLL4;
+extern Word_t    j__AllocWordsJLL5;
+extern Word_t    j__AllocWordsJLL6;
+extern Word_t    j__AllocWordsJLL7;
+extern Word_t    j__AllocWordsJLLW;
+extern Word_t    j__AllocWordsJV;
+extern Word_t    j__NumbJV;
 
 // ****************************************************************************
 // ALLOCATION FUNCTIONS:
