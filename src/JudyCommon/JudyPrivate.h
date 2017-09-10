@@ -1407,8 +1407,8 @@ j__udyCount64Bits(uint64_t word64)
         assert((Word_t) (OFFSET) <= (Word_t) (POP1));           \
         {                                                       \
             size_t n = ((POP1)-(OFFSET)) * sizeof(*(PARRAY));   \
-            void   *src  = (void *)((PARRAY) + (OFFSET));       \
-            void   *dest = src + sizeof(*(PARRAY));             \
+            void *src  = (PARRAY) + (OFFSET);                   \
+            void *dest = (PARRAY) + (OFFSET) + 1;               \
             memmove(dest, src, n);                              \
             (PARRAY)[OFFSET] = (INDEX);                         \
         }
@@ -1436,8 +1436,8 @@ j__udyCount64Bits(uint64_t word64)
 #define JU_INSERTINPLACE3(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
     size_t n = ((POP1)-(OFFSET)) * 3;                           \
-    void   *src  = (void *)((PBYTE) + ((OFFSET) * 3));          \
-    void   *dest = src + 3;                                     \
+    void   *src  = (PBYTE) + ((OFFSET) * 3);                    \
+    void   *dest = (PBYTE) + ((OFFSET) * 3) + 3;                \
     memmove(dest, src, n);                                      \
     JU_COPY3_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 3]), INDEX);   \
 }
@@ -1463,8 +1463,8 @@ j__udyCount64Bits(uint64_t word64)
 #define JU_INSERTINPLACE5(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
     size_t n = ((POP1)-(OFFSET)) * 5;                           \
-    void   *src  = (void *)((PBYTE) + ((OFFSET) * 5));          \
-    void   *dest = src + 5;                                     \
+    void   *src  = (PBYTE) + ((OFFSET) * 5);                    \
+    void   *dest = (PBYTE) + ((OFFSET) * 5) + 5;                \
     memmove(dest, src, n);                                      \
     JU_COPY5_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 5]), INDEX);   \
 }
@@ -1490,8 +1490,8 @@ j__udyCount64Bits(uint64_t word64)
 #define JU_INSERTINPLACE6(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
     size_t n = ((POP1)-(OFFSET)) * 6;                           \
-    void   *src  = (void *)((PBYTE) + ((OFFSET) * 6));          \
-    void   *dest = src + 6;                                     \
+    void   *src  = (PBYTE) + ((OFFSET) * 6);                    \
+    void   *dest = (PBYTE) + ((OFFSET) * 6) + 6;                \
     memmove(dest, src, n);                                      \
     JU_COPY6_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 6]), INDEX);   \
 }
@@ -1518,8 +1518,8 @@ j__udyCount64Bits(uint64_t word64)
 #define JU_INSERTINPLACE7(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
     size_t n = ((POP1)-(OFFSET)) * 7;                           \
-    void   *src  = (void *)((PBYTE) + ((OFFSET) * 7));          \
-    void   *dest = src + 7;                                     \
+    void   *src  = (PBYTE) + ((OFFSET) * 7);                    \
+    void   *dest = (PBYTE) + ((OFFSET) * 7) + 7;                \
     memmove(dest, src, n);                                      \
     JU_COPY7_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 7]), INDEX);   \
 }
@@ -1942,7 +1942,7 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
         {                                                       \
             if (PJError)                                        \
             {                                                   \
-                JU_ERRNO(PJError) = (uint8_t)JU_ERRNO(Pjpm);    \
+                JU_ERRNO(PJError) = JU_ERRNO(Pjpm);             \
                 JU_ERRID(PJError) = JU_ERRID(Pjpm);             \
             }                                                   \
         }

@@ -415,7 +415,7 @@ typedef struct J_UDYL_POPULATION_AND_MEMORY
 /* 4 */ Word_t     jpm_LastUPop0;       // last jpm_Pop0 when convert to BranchU
 /* 7 */ Pjv_t      jpm_PValue;          // pointer to value to return.
 // Note:  Field names match PJError_t for convenience in macros:
-/* 8 */ char       je_Errno;            // one of the enums in Judy.h.
+/* 8 */ JU_Errno_t je_Errno;            // one of the enums in Judy.h.
 /* 8/9  */ int     je_ErrID;            // often an internal source line number.
 /* 9/10 */ Word_t  jpm_TotalMemWords;   // words allocated in array.
 } jLpm_t, *PjLpm_t;

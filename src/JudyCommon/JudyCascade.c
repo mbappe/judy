@@ -28,7 +28,7 @@
 extern int j__udyCreateBranchL(Pjp_t, Pjp_t, uint8_t *, Word_t, Pjpm_t);
 extern int j__udyCreateBranchB(Pjp_t, Pjp_t, uint8_t *, Word_t, Pjpm_t);
 
-static const jbb_t StageJBBZero;	// zeroed versions of namesake struct.
+static const jbb_t StageJBBZero = {};	// zeroed versions of namesake struct.
 
 // TBD:  There are multiple copies of (some of) these CopyWto3, Copy3toW,
 // CopyWto7 and Copy7toW functions in Judy1Cascade.c, JudyLCascade.c, and
