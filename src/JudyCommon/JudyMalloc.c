@@ -270,7 +270,7 @@ RawP_t JudyMalloc(
 #endif  // RAMMETRICS
 
 #ifdef  TRACEJM
-        printf("%p = JudyMalloc(%u)\n", (void *)Addr, (int)Bytes / sizeof(Word_t));
+        printf("%p = JudyMalloc(%zu)\n", (void *)Addr, Bytes / sizeof(Word_t));
 #endif  // TRACEJM
 
 #ifdef  GUARDBAND

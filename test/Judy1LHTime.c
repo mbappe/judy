@@ -2007,7 +2007,7 @@ main(int argc, char *argv[])
 #ifdef CALC_NEXT_KEY
     StartSeed = *PInitSeed;
 #else // CALC_NEXT_KEY
-    Seed_t TValuesSeed = { 0 }; // unnecessary init to make gcc happy
+    Seed_t TValuesSeed;
     if (bLfsrOnly)
     {
         StartSeed = (NewSeed_t)PInitSeed->Seeds[0];
@@ -2053,7 +2053,7 @@ main(int argc, char *argv[])
         }
         StartSeed = FileKeys;
     }
-    Seed_t DeltaSeed = { 0 }; // unnecessary init to make gcc happy
+    Seed_t DeltaSeed;
 #endif // CALC_NEXT_KEY
 
 // ============================================================
