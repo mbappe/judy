@@ -490,8 +490,13 @@ Word_t    PreStack = 0;                 // to test for TLB collisions with stack
 
 Word_t    Offset = 0;                   // Added to Key
 Word_t    bSplayKeyBitsFlag = 0;        // Splay key bits.
-Word_t    wSplayMask = 0x55555555;      // Revisit in main for 64-bit init.
-//Word_t    wSplayMask = 0xff00ffff;      // Revisit in main for 64-bit init.
+#if defined(__LP64__) || defined(_WIN64)
+Word_t wSplayMask = 0x5555555555555555; // default splay mask
+//Word_t wSplayMask = 0xeeee00804020aaff;
+#else // defined(__LP64__) || defined(_WIN64)
+Word_t wSplayMask = 0x55555555;         // default splay mask
+//Word_t wSplayMask = 0xff00ffff;
+#endif // defined(__LP64__) || defined(_WIN64)
 Word_t    wCheckBit = 0;                // Bit for narrow ptr testing.
 
 Word_t    TValues = 1000000;            // Maximum numb retrieve timing tests
@@ -504,6 +509,7 @@ Word_t    ErrorFlag = 0;
 //Word_t    PtsPdec = 25;               // 9.65% spacing
 //Word_t    PtsPdec = 40;               // 5.93% spacing
 Word_t    PtsPdec = 50;                 // 4.71% spacing - default
+//Word_t    PtsPdec = 231;              // 1% spacing
 
 // For LFSR (Linear-Feedback-Shift-Register) pseudo random Number Generator
 //
@@ -609,16 +615,17 @@ CalcNextKey(PSeed_t PSeed)
 #endif // NO_TRIM_EXPANSE
     }
 
+#ifdef DEBUG
+    if (pFlag)
+    {
+        printf("Numb %016" PRIxPTR" ", Key);
+    }
+#endif // DEBUG
+
 #ifndef NO_SPLAY_KEY_BITS
     if (bSplayKeyBitsFlag) {
         // Splay the bits in the key.
         // This is not subject to BValue.
-#ifdef DEBUG
-        if (pFlag)
-        {
-            printf("Numb %016" PRIxPTR" ", Key);
-        }
-#endif // DEBUG
         Key = MyPDEP(Key, wSplayMask);
 #ifdef DEBUG
         if (pFlag)
@@ -639,7 +646,7 @@ CalcNextKey(PSeed_t PSeed)
 #ifdef DEBUG
         if (pFlag)
         {
-            printf("Swizzle %016" PRIxPTR" ", Key);
+            printf("BitReverse %016" PRIxPTR" ", Key);
         }
 #endif // DEBUG
 //      move the mirror bits into the least bits determined -B# and -E
@@ -1055,17 +1062,6 @@ main(int argc, char *argv[])
 #endif // DEBUG
     void     *JL = NULL;                // JudyL
     void     *JH = NULL;                // JudyHS
-
-    // wSplayMask = 0x5555555555555555.
-    // wSplayMask = 0xeeee00804020aaff.
-    // Is there a better way to initialize wSplayMask to a 64-bit value
-    // on a 64-bit system that won't cause compiler complaints on a 32-bit
-    // system?
-    if (sizeof(Word_t) == 8) {
-        wSplayMask
-            = (((((0x5555UL << 16) | 0x5555) << 16) | 0x5555) << 16) | 0x5555;
-            //= (((((0xeeeeUL << 16) | 0x0080) << 16) | 0x4020) << 16) | 0xaaff;
-    }
 
 #ifdef DEADCODE                         // see TimeNumberGen()
     void     *TestRan = NULL;           // Test Random generator
@@ -1748,21 +1744,6 @@ main(int argc, char *argv[])
     {
         Word_t ii;
 // 1      Word_t PrevPrintKey = 0;
-#ifdef DEBUG
-        printf("FeedBTap 0x%zx\n", PInitSeed->FeedBTap);
-        if (bSplayKeyBitsFlag && DFlag) {
-            printf("PDEP(0x%zx 0x%zx) 0x%zx\n",
-                   (((Word_t)1 << (BValue - 1)) * 2) - 1,
-                   wSplayMask,
-                   MyPDEP((((Word_t)1 << (BValue - 1)) * 2) - 1, wSplayMask));
-            printf("LOG %d\n",
-                   (int)LOG(MyPDEP((((Word_t)1 << (BValue - 1)) * 2) - 1, wSplayMask)));
-            printf("Shift %d\n",
-                   (int)((sizeof(Word_t) * 8) - 1
-                       - LOG(MyPDEP((((Word_t)1 << (BValue - 1)) * 2) - 1, wSplayMask))));
-        }
-#endif // DEBUG
-
         for (ii = 0; ii < nElms; ii++)
         {
             Word_t PrintKey;
@@ -2450,7 +2431,7 @@ main(int argc, char *argv[])
                 size_t    BMsize;
 
                 // add one cache line for sister cache line read
-                BMsize = (1UL << (BValue - 3));
+                BMsize = ((Word_t)1 << (BValue - 3));
                 if (posix_memalign((void **)&B1, 4096, BMsize) == 0)
                 {
                     FAILURE("malloc failure, Bytes =", BMsize);
@@ -2876,14 +2857,14 @@ main(int argc, char *argv[])
             Tit = 0;
             BeginSeed = StartSeed;      // reset at beginning
             WaitForContextSwitch(Meas);
-            TestJudyPrev(J1, JL, &BeginSeed, ~0UL, Meas);
+            TestJudyPrev(J1, JL, &BeginSeed, ~(Word_t)0, Meas);
             DeltaGen1 = DeltanSec1;     // save measurement overhead
             DeltaGenL = DeltanSecL;
 
             Tit = 1;
             BeginSeed = StartSeed;      // reset at beginning
             WaitForContextSwitch(Meas);
-            TestJudyPrev(J1, JL, &BeginSeed, ~0UL, Meas);
+            TestJudyPrev(J1, JL, &BeginSeed, ~(Word_t)0, Meas);
             if (J1Flag)
                 PRINT6_1f(DeltanSec1);
             if (JLFlag)
