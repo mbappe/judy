@@ -103,7 +103,6 @@
 
 #define LASTWORD_BY_VALUE(WORD) (! ((WORD) & 0xffL))
 
-#ifdef JU_64BIT
 
 // copy from 1..7 bytes from string to Word_t and test if \0 bytes
 //
@@ -146,37 +145,6 @@
     } while(0);                                                 \
 }
 
-#else  // JU_32BIT
-
-// copy from 1..4 bytes from string to Word_t and test if \0 bytes
-
-#define        COPYSTRINGtoWORD(WORD,STR)               \
-{                                                       \
-    do                                                  \
-    {                                                   \
-        uint8_t chr;                                    \
-        WORD =       (STR)[0] << 24;                    \
-        if (WORD == 0) break;                           \
-        if (!(chr  = (STR)[1])) break;                  \
-        WORD += (Word_t)(chr << 16);                    \
-        if (!(chr  = (STR)[2])) break;                  \
-        WORD += (Word_t)(chr << 8) + (STR)[3];          \
-    } while(0);                                         \
-}
-
-// copy Word_t from 1..4 bytes to string and test of \0 bytes
-
-#define        COPYWORDtoSTRING(STR,WORD)                       \
-{                                                               \
-    do                                                          \
-    {                                                           \
-        if (!((STR)[0] = (uint8_t)((WORD) >> 24))) break;       \
-        if (!((STR)[1] = (uint8_t)((WORD) >> 16))) break;       \
-        if (!((STR)[2] = (uint8_t)((WORD) >>  8))) break;       \
-        (STR)[3]       = (uint8_t)(WORD);                       \
-    } while(0);                                                 \
-}
-#endif // JU_32BIT
 
 
 // SUPPORT FOR SINGLE-INDEX SHORTCUT LEAVES:

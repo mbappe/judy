@@ -56,6 +56,10 @@ FUNCTION int j__udyCreateBranchL(
 
 	assert(ExpCnt <= cJU_BRANCHLMAXJPS);
 
+#ifdef  PCAS
+        printf("\n=========== j__udyCreateBranchL(ExpCnt = %d)\n", (int)ExpCnt);
+#endif  //  PCAS
+
 	PjblRaw	= j__udyAllocJBL(Pjpm);
 	if (PjblRaw == 0) return(-1);
         Pjbl    = P_JBL(PjblRaw);
@@ -67,8 +71,24 @@ FUNCTION int j__udyCreateBranchL(
 	JU_COPYMEM(Pjbl->jbl_Expanse, Exp,  ExpCnt);
 	JU_COPYMEM(Pjbl->jbl_jp,      PJPs, ExpCnt);
 
+////printf("Create BranchL: S Type = %d\n", ju_Type(&PJPs[0]));
+////printf("Create BranchL: D Type = %d\n", ju_Type(&Pjbl->jbl_jp[0]));
+
+////        for (int ii = 0; ii < ExpCnt; ii++)
+////        {
+////	     Pjbl->jbl_Expanse[ii] = Exp[ii];
+////	     Pjbl->jbl_jp[ii] = PJPs[ii];
+
+////printf("Create BranchL: S Type = %d\n", ju_Type(&PJPs[ii]));
+////printf("Create BranchL: D Type = %d\n", ju_Type(&Pjbl->jbl_jp[ii]));
+////printf("Create BranchL: S BaL = 0x%lx\n", ju_BaLPntr(PJPs + ii));
+////printf("Create BranchL: D BaL = 0x%lx\n", ju_BaLPntr(Pjbl->jbl_jp + ii));
+
+////        }
+
 //	Pass back new pointer to the Linear branch in JP
-	Pjp->jp_Addr = PjblRaw;
+//	Pjp->Jp_Addr0 = PjblRaw;
+        ju_SetBaLPntr(Pjp, PjblRaw);
 
 	return(1);
 
@@ -183,7 +203,8 @@ FUNCTION int j__udyCreateBranchB(
 
 // Pass back some of the JP to the new Bitmap branch:
 
-	Pjp->jp_Addr = PjbbRaw;
+//	Pjp->Jp_Addr0 = PjbbRaw;
+        ju_SetBaLPntr(Pjp, PjbbRaw);
 
 	return(1);
 
@@ -216,22 +237,26 @@ FUNCTION int j__udyCreateBranchU(
 	jbu_t	  BranchU;	// Staged uncompressed branch
 #else
 
-#ifdef  PCAS
-        printf("\n=========== j__udyCreateBranchU()\n");
-#endif  // PCAS
-
 // Allocate memory for a BranchU:
 
 	PjbuRaw = j__udyAllocJBU(Pjpm);
 	if (PjbuRaw == 0) return(-1);
         Pjbu = P_JBU(PjbuRaw);
 #endif
-        jpLevel = (JU_JPTYPE(Pjp) - cJU_JPBRANCH_B2) / 2;
-        JU_JPSETADT(&JPNull, 0, 0, cJU_JPNULL1 + jpLevel);
+
+//        jpLevel = JU_JPTYPE(Pjp) - cJU_JPBRANCH_B2;
+        jpLevel = ju_Type(Pjp) - cJU_JPBRANCH_B2;
+
+#ifdef  PCAS
+        printf("\n==========1 j__udyCreateBranchU(%d)\n", jpLevel);
+#endif  // PCAS
+
+//        JU_JPSETADT(&JPNull, 0, 0, cJU_JPNULL1 + jpLevel);
+        ju_SetIMM01(&JPNull, 0, 0, cJU_JPNULL1 + jpLevel);
 
 // Get the pointer to the BranchB:
 
-	PjbbRaw	= Pjp->jp_Addr;
+	PjbbRaw	= ju_BaLPntr(Pjp);
 	Pjbb	= P_JBB(PjbbRaw);
 
 //	Set the pointer to the Uncompressed branch
@@ -317,10 +342,13 @@ FUNCTION int j__udyCreateBranchU(
 
 	j__udyFreeJBB(PjbbRaw, Pjpm);
 
-	Pjp->jp_Addr  = PjbuRaw;
+//	Pjp->Jp_Addr0  = PjbuRaw;
+        ju_SetBaLPntr(Pjp, PjbuRaw);
 
-        jpLevel = JU_JPTYPE(Pjp) - cJU_JPBRANCH_B2;
-	Pjp->jp_Type = cJU_JPBRANCH_U2 + jpLevel;
+//        jpLevel = JU_JPTYPE(Pjp) - cJU_JPBRANCH_B2;
+//        jpLevel = ju_Type(Pjp) - cJU_JPBRANCH_B2;
+//	  Pjp->jp_Type = cJU_JPBRANCH_U2 + jpLevel;
+        ju_SetJpType(Pjp, cJU_JPBRANCH_U2 + jpLevel);
 
 	return(1);
 

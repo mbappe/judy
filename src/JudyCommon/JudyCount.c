@@ -197,8 +197,12 @@ JUDYLCODE(PPvoid_t PPvalue);	// from JudyLFirst() calls.
 	    Pjlw_t Pjlw	   = P_JLW(PArray);	// first word of leaf.
 	    Pjpm	   = & fakejpm;
 	    Pjp		   = & fakejp;
-	    Pjp->jp_Addr   = (Word_t) Pjlw;
-	    Pjp->jp_Type   = cJU_LEAFW;
+
+//	    Pjp->Jp_Addr0   = (Word_t) Pjlw;
+            ju_SetBaLPntr(Pjp, (Word_t)Pjlw);
+//	    Pjp->jp_Type   = cJU_LEAFW;
+            ju_SetJpType(Pjp, cJU_LEAFW);
+
 	    Pjpm->jpm_Pop0 = Pjlw[0];		// from first word of leaf.
 	    pop1	   = Pjpm->jpm_Pop0 + 1;
 	}
@@ -208,21 +212,7 @@ JUDYLCODE(PPvoid_t PPvalue);	// from JudyLFirst() calls.
 	    Pjp	 = &(Pjpm->jpm_JP);
 	    pop1 = (Pjpm->jpm_Pop0) + 1;	// note: can roll over to 0.
 
-#if (defined(JUDY1) && (! defined(JU_64BIT)))
-	    if (pop1 == 0)		// rare special case of full array:
-	    {
-		Word_t count = Index2 - Index1 + 1;	// can roll over again.
-
-		if (count == 0)
-		{
-		    JU_SET_ERRNO(PJError, JU_ERRNO_FULL);
-		    return(C_JERR);
-		}
-		return(count);
-	    }
-#else
 	    assert(pop1);	// JudyL or 64-bit cannot create a full array!
-#endif
 	}
 
 
@@ -353,7 +343,7 @@ const	Pjp_t	Pjp,		// top of Judy (sub)SM.
 const	Word_t	Index,		// count at or above this Index.
 const	Pjpm_t	Pjpm)		// for returning error info.
 {
-	Pjbl_t	Pjbl;		// Pjp->jp_Addr masked and cast to types:
+	Pjbl_t	Pjbl;		// Pjp->Jp_Addr0 masked and cast to types:
 	Pjbb_t	Pjbb;
 	Pjbu_t	Pjbu;
 	Pjll_t	Pjll;		// a Judy lower-level linear leaf.
@@ -397,7 +387,7 @@ const	Pjpm_t	Pjpm)		// for returning error info.
 
 #define	PREPB(Pjp,cState,Next)				\
 	digit = JU_DIGITATSTATE(Index, cState);		\
-	pop1  = JU_JPBRANCH_POP0(Pjp, (cState)) + 1;    \
+	pop1  = ju_BranchPop0(Pjp, (cState)) + 1;       \
 	goto Next
 
 
@@ -406,21 +396,18 @@ const	Pjpm_t	Pjpm)		// for returning error info.
 // WARNING:  For run-time efficiency the following cases replicate code with
 // varying constants, rather than using common code with variable values!
 
-	switch (JU_JPTYPE(Pjp))
+	switch (ju_Type(Pjp))
 	{
-
-
 // ----------------------------------------------------------------------------
 // ROOT-STATE LEAF that starts with a Pop0 word; just count within the leaf:
 
 	case cJU_LEAFW:
 	{
-	    Pjlw_t Pjlw = P_JLW(Pjp->jp_Addr);		// first word of leaf.
+//	      Pjlw_t Pjlw = P_JLW(Pjp->Jp_Addr0);		// first word of leaf.
+	    Pjlw_t Pjlw = P_JLW(ju_BaLPntr(Pjp));	// first word of leaf.
 
 	    assert((Pjpm->jpm_Pop0) + 1 == Pjlw[0] + 1);  // sent correctly.
 	    offset = j__udySearchLeafW(Pjlw + 1, Pjpm->jpm_Pop0 + 1, Index);
-	    assert(offset >= 0);			// Index must exist.
-	    assert(offset < (Pjpm->jpm_Pop0) + 1);	// Index be in range.
 	    return((Pjpm->jpm_Pop0) + 1 - offset);	// INCLUSIVE of Index.
 	}
 
@@ -436,19 +423,18 @@ const	Pjpm_t	Pjpm)		// for returning error info.
 	case cJU_JPBRANCH_L2:  CHECKDCD(Pjp, 2); PREPB(Pjp, 2, BranchL);
 	case cJU_JPBRANCH_L3:  CHECKDCD(Pjp, 3); PREPB(Pjp, 3, BranchL);
 
-#ifdef JU_64BIT
 	case cJU_JPBRANCH_L4:  CHECKDCD(Pjp, 4); PREPB(Pjp, 4, BranchL);
 	case cJU_JPBRANCH_L5:  CHECKDCD(Pjp, 5); PREPB(Pjp, 5, BranchL);
 	case cJU_JPBRANCH_L6:  CHECKDCD(Pjp, 6); PREPB(Pjp, 6, BranchL);
 	case cJU_JPBRANCH_L7:  CHECKDCD(Pjp, 7); PREPB(Pjp, 7, BranchL);
-#endif
 	case cJU_JPBRANCH_L:   PREPB_ROOT(Pjp, BranchL);
 
 // Common code (state-independent) for all cases of linear branches:
 
 BranchL:
 
-	Pjbl      = P_JBL(Pjp->jp_Addr);
+//	Pjbl      = P_JBL(Pjp->Jp_Addr0);
+	Pjbl      = P_JBL(ju_BaLPntr(Pjp));
 	jpnum     = Pjbl->jbl_NumJPs;			// above last JP.
 	pop1above = 0;
 
@@ -481,12 +467,10 @@ BranchL:
 
 	case cJU_JPBRANCH_B2:  CHECKDCD(Pjp, 2); PREPB(Pjp, 2, BranchB);
 	case cJU_JPBRANCH_B3:  CHECKDCD(Pjp, 3); PREPB(Pjp, 3, BranchB);
-#ifdef JU_64BIT
 	case cJU_JPBRANCH_B4:  CHECKDCD(Pjp, 4); PREPB(Pjp, 4, BranchB);
 	case cJU_JPBRANCH_B5:  CHECKDCD(Pjp, 5); PREPB(Pjp, 5, BranchB);
 	case cJU_JPBRANCH_B6:  CHECKDCD(Pjp, 6); PREPB(Pjp, 6, BranchB);
 	case cJU_JPBRANCH_B7:  CHECKDCD(Pjp, 7); PREPB(Pjp, 7, BranchB);
-#endif
 	case cJU_JPBRANCH_B:   PREPB_ROOT(Pjp, BranchB);
 
 // Common code (state-independent) for all cases of bitmap branches:
@@ -501,7 +485,8 @@ BranchB:
 	    Word_t clbelow;	// cache lines below digits cache line.
 	    Word_t clabove;	// cache lines above digits cache line.
 
-	    Pjbb      = P_JBB(Pjp->jp_Addr);
+//	    Pjbb      = P_JBB(Pjp->Jp_Addr0);
+	    Pjbb      = P_JBB(ju_BaLPntr(Pjp));
 	    findsub   = digit / cJU_BITSPERSUBEXPB;
 	    findbit   = digit % cJU_BITSPERSUBEXPB;
 	    lowermask = JU_MASKLOWERINC(JU_BITPOSMASKB(findbit));
@@ -715,18 +700,17 @@ BranchB:
 
 	case cJU_JPBRANCH_U2:  CHECKDCD(Pjp, 2); PREPB(Pjp, 2, BranchU);
 	case cJU_JPBRANCH_U3:  CHECKDCD(Pjp, 3); PREPB(Pjp, 3, BranchU);
-#ifdef JU_64BIT
 	case cJU_JPBRANCH_U4:  CHECKDCD(Pjp, 4); PREPB(Pjp, 4, BranchU);
 	case cJU_JPBRANCH_U5:  CHECKDCD(Pjp, 5); PREPB(Pjp, 5, BranchU);
 	case cJU_JPBRANCH_U6:  CHECKDCD(Pjp, 6); PREPB(Pjp, 6, BranchU);
 	case cJU_JPBRANCH_U7:  CHECKDCD(Pjp, 7); PREPB(Pjp, 7, BranchU);
-#endif
 	case cJU_JPBRANCH_U:   PREPB_ROOT(Pjp, BranchU);
 
 // Common code (state-independent) for all cases of uncompressed branches:
 
 BranchU:
-	    Pjbu = P_JBU(Pjp->jp_Addr);
+//	    Pjbu = P_JBU(Pjp->Jp_Addr0);
+	    Pjbu = P_JBU(ju_BaLPntr(Pjp));
 
 #ifndef NOSMARTJBU  // enable to turn off smart code for comparison purposes.
 
@@ -744,7 +728,7 @@ BranchU:
 #endif
 		for (jpnum = 0; jpnum <= (long)digit; ++jpnum)
 		{
-		    if ((Pjbu->jbu_jp[jpnum].jp_Type) <= cJU_JPNULLMAX)
+		    if (ju_Type(Pjbu->jbu_jp + jpnum) <= cJU_JPNULLMAX)
 			continue;	// shortcut, save a function call.
 
 		    if ((pop1 = j__udyJPPop1(Pjbu->jbu_jp + jpnum))
@@ -771,7 +755,7 @@ BranchU:
 
 		for (jpnum = cJU_BRANCHUNUMJPS - 1; jpnum > (long)digit; --jpnum)
 		{
-		    if ((Pjbu->jbu_jp[jpnum].jp_Type) <= cJU_JPNULLMAX)
+		    if (ju_Type(Pjbu->jbu_jp + jpnum) <= cJU_JPNULLMAX)
 			continue;	// shortcut, save a function call.
 
 		    if ((pop1 = j__udyJPPop1(Pjbu->jbu_jp + jpnum))
@@ -791,70 +775,49 @@ BranchU:
 	    assert(pop1above + pop1);
 	    return(pop1above + pop1);
 
+#ifdef JUDYL
+	case cJU_JPLEAF1:
+	    Pjll = P_JLL(ju_BaLPntr(Pjp));
+	    pop1 = ju_LeafPop0(Pjp) + 1;
+	    offset = j__udySearchLeaf1(Pjll, pop1, Index);
+	    return(pop1 - offset);
+#endif  // JUDYL
 
-// ----------------------------------------------------------------------------
-// LEAF COUNT MACROS:
-//
-// LEAF*ABOVE() are common code for different JP types (linear leaves, bitmap
-// leaves, and immediates) and different leaf Index Sizes, which result in
-// calling different leaf search functions.  Linear leaves get the leaf address
-// from jp_Addr and the Population from jp_DcdPopO, while immediates use Pjp
-// itself as the leaf address and get Population from jp_Type.
+	case cJU_JPLEAF2:
+	    Pjll = P_JLL(ju_BaLPntr(Pjp));
+	    pop1 = ju_LeafPop0(Pjp) + 1;
+	    offset = j__udySearchLeaf2(Pjll, pop1, Index);
+	    return(pop1 - offset);
 
-#define	LEAFLABOVE(Func)				\
-	Pjll = P_JLL(Pjp->jp_Addr);			\
-	pop1 = JU_JPLEAF_POP0(Pjp) + 1;	                \
-	LEAFABOVE(Func, Pjll, pop1)
+	case cJU_JPLEAF3:
+	    Pjll = P_JLL(ju_BaLPntr(Pjp));
+	    pop1 = ju_LeafPop0(Pjp) + 1;
+	    offset = j__udySearchLeaf3(Pjll, pop1, Index);
+	    return(pop1 - offset);
 
-#define	LEAFB1ABOVE(Func) LEAFLABOVE(Func)  // different Func, otherwise same.
+	case cJU_JPLEAF4:
+	    Pjll = P_JLL(ju_BaLPntr(Pjp));
+	    pop1 = ju_LeafPop0(Pjp) + 1;
+	    offset = j__udySearchLeaf4(Pjll, pop1, Index);
+	    return(pop1 - offset);
 
-#ifdef JUDY1
-#define	IMMABOVE(Func,Pop1)	\
-	Pjll = (Pjll_t) Pjp;	\
-	LEAFABOVE(Func, Pjll, Pop1)
-#else
-// Note:  For JudyL immediates with >= 2 Indexes, the index bytes are in a
-// different place than for Judy1:
+	case cJU_JPLEAF5:
+	    Pjll = P_JLL(ju_BaLPntr(Pjp));
+	    pop1 = ju_LeafPop0(Pjp) + 1;
+	    offset = j__udySearchLeaf5(Pjll, pop1, Index);
+	    return(pop1 - offset);
 
-#define	IMMABOVE(Func,Pop1) \
-	LEAFABOVE(Func, (Pjll_t) (Pjp->jp_LIndex1), Pop1)
-#endif
+	case cJU_JPLEAF6:
+	    Pjll = P_JLL(ju_BaLPntr(Pjp));
+	    pop1 = ju_LeafPop0(Pjp) + 1;
+	    offset = j__udySearchLeaf6(Pjll, pop1, Index);
+	    return(pop1 - offset);
 
-// For all leaf types, the population AT OR ABOVE is the total pop1 less the
-// offset of Index; and Index should always be found:
-
-#define	LEAFABOVE(Func,Pjll,Pop1)		\
-	offset = Func(Pjll, Pop1, Index);	\
-	assert(offset >= 0);			\
-	assert(offset < (Pop1));		\
-	return((Pop1) - offset)
-
-// IMMABOVE_01 handles the special case of an immediate JP with 1 index, which
-// the search functions arent used for anyway:
-//
-// The target Index should be the one in this Immediate, in which case the
-// count above (inclusive) is always 1.
-
-#define	IMMABOVE_01						\
-	assert((JU_JPDCDPOP0(Pjp)) == JU_TRIMTODCDSIZE(Index));	\
-	return(1)
-
-
-// ----------------------------------------------------------------------------
-// LINEAR LEAF; search the leaf for Index; size is computed from jp_Type:
-
-#if (defined(JUDYL) || (! defined(JU_64BIT)))
-	case cJU_JPLEAF1:  LEAFLABOVE(j__udySearchLeaf1);
-#endif
-	case cJU_JPLEAF2:  LEAFLABOVE(j__udySearchLeaf2);
-	case cJU_JPLEAF3:  LEAFLABOVE(j__udySearchLeaf3);
-
-#ifdef JU_64BIT
-	case cJU_JPLEAF4:  LEAFLABOVE(j__udySearchLeaf4);
-	case cJU_JPLEAF5:  LEAFLABOVE(j__udySearchLeaf5);
-	case cJU_JPLEAF6:  LEAFLABOVE(j__udySearchLeaf6);
-	case cJU_JPLEAF7:  LEAFLABOVE(j__udySearchLeaf7);
-#endif
+	case cJU_JPLEAF7:
+	    Pjll = P_JLL(ju_BaLPntr(Pjp));
+	    pop1 = ju_LeafPop0(Pjp) + 1;
+	    offset = j__udySearchLeaf7(Pjll, pop1, Index);
+	    return(pop1 - offset);
 
 
 // ----------------------------------------------------------------------------
@@ -863,8 +826,11 @@ BranchU:
 // Since the bitmap describes Indexes digitally rather than linearly, this is
 // not really a search, but just a count.
 
-	case cJU_JPLEAF_B1:  LEAFB1ABOVE(j__udyCountLeafB1);
-
+	case cJU_JPLEAF_B1:
+	    Pjll = P_JLL(ju_BaLPntr(Pjp));
+	    pop1 = ju_LeafPop0(Pjp) + 1;
+	    offset = j__udyCountLeafB1(Pjll, pop1, Index);
+	    return(pop1 - offset);
 
 #ifdef JUDY1
 // ----------------------------------------------------------------------------
@@ -887,64 +853,92 @@ BranchU:
 // ----------------------------------------------------------------------------
 // IMMEDIATE:
 
-	case cJU_JPIMMED_1_01:  IMMABOVE_01;
-	case cJU_JPIMMED_2_01:  IMMABOVE_01;
-	case cJU_JPIMMED_3_01:  IMMABOVE_01;
-#ifdef JU_64BIT
-	case cJU_JPIMMED_4_01:  IMMABOVE_01;
-	case cJU_JPIMMED_5_01:  IMMABOVE_01;
-	case cJU_JPIMMED_6_01:  IMMABOVE_01;
-	case cJU_JPIMMED_7_01:  IMMABOVE_01;
-#endif
+	case cJU_JPIMMED_1_01:
+	case cJU_JPIMMED_2_01:
+	case cJU_JPIMMED_3_01:
+	case cJU_JPIMMED_4_01:
+	case cJU_JPIMMED_5_01:
+	case cJU_JPIMMED_6_01:
+	case cJU_JPIMMED_7_01:
+	return(1);
 
-	case cJU_JPIMMED_1_02:  IMMABOVE(j__udySearchLeaf1,  2);
-	case cJU_JPIMMED_1_03:  IMMABOVE(j__udySearchLeaf1,  3);
-#if (defined(JUDY1) || defined(JU_64BIT))
-	case cJU_JPIMMED_1_04:  IMMABOVE(j__udySearchLeaf1,  4);
-	case cJU_JPIMMED_1_05:  IMMABOVE(j__udySearchLeaf1,  5);
-	case cJU_JPIMMED_1_06:  IMMABOVE(j__udySearchLeaf1,  6);
-	case cJU_JPIMMED_1_07:  IMMABOVE(j__udySearchLeaf1,  7);
+	case cJU_JPIMMED_1_02:
+	case cJU_JPIMMED_1_03:
+	case cJU_JPIMMED_1_04:
+	case cJU_JPIMMED_1_05:
+	case cJU_JPIMMED_1_06:
+	case cJU_JPIMMED_1_07:
+#ifdef  JUDY1
+	case cJ1_JPIMMED_1_08:
+	case cJ1_JPIMMED_1_09:
+	case cJ1_JPIMMED_1_10:
+	case cJ1_JPIMMED_1_11:
+	case cJ1_JPIMMED_1_12:
+	case cJ1_JPIMMED_1_13:
+	case cJ1_JPIMMED_1_14:
+	case cJ1_JPIMMED_1_15:
 #endif
-#if (defined(JUDY1) && defined(JU_64BIT))
-	case cJ1_JPIMMED_1_08:  IMMABOVE(j__udySearchLeaf1,  8);
-	case cJ1_JPIMMED_1_09:  IMMABOVE(j__udySearchLeaf1,  9);
-	case cJ1_JPIMMED_1_10:  IMMABOVE(j__udySearchLeaf1, 10);
-	case cJ1_JPIMMED_1_11:  IMMABOVE(j__udySearchLeaf1, 11);
-	case cJ1_JPIMMED_1_12:  IMMABOVE(j__udySearchLeaf1, 12);
-	case cJ1_JPIMMED_1_13:  IMMABOVE(j__udySearchLeaf1, 13);
-	case cJ1_JPIMMED_1_14:  IMMABOVE(j__udySearchLeaf1, 14);
-	case cJ1_JPIMMED_1_15:  IMMABOVE(j__udySearchLeaf1, 15);
+	    Pjll = P_JLL(ju_PImmed1(Pjp));
+            pop1 = ju_Type(Pjp) - cJU_JPIMMED_1_02 + 2;
+	    offset = j__udySearchLeaf1(Pjll, pop1, Index);
+	    return(pop1 - offset);
+
+	case cJU_JPIMMED_2_02:
+	case cJU_JPIMMED_2_03:
+#ifdef  JUDY1
+	case cJ1_JPIMMED_2_04:
+        case cJ1_JPIMMED_2_05:
+	case cJ1_JPIMMED_2_06:
+	case cJ1_JPIMMED_2_07:
 #endif
+            pop1 = ju_Type(Pjp) - cJU_JPIMMED_2_02 + 2;
+	    Pjll = P_JLL(ju_PImmed2(Pjp));
 
-#if (defined(JUDY1) || defined(JU_64BIT))
-	case cJU_JPIMMED_2_02:  IMMABOVE(j__udySearchLeaf2,  2);
-	case cJU_JPIMMED_2_03:  IMMABOVE(j__udySearchLeaf2,  3);
-#endif
-#if (defined(JUDY1) && defined(JU_64BIT))
-	case cJ1_JPIMMED_2_04:  IMMABOVE(j__udySearchLeaf2,  4);
-	case cJ1_JPIMMED_2_05:  IMMABOVE(j__udySearchLeaf2,  5);
-	case cJ1_JPIMMED_2_06:  IMMABOVE(j__udySearchLeaf2,  6);
-	case cJ1_JPIMMED_2_07:  IMMABOVE(j__udySearchLeaf2,  7);
-#endif
+	    offset = j__udySearchLeaf2(Pjll, pop1, Index);
+	    return(pop1 - offset);
 
-#if (defined(JUDY1) || defined(JU_64BIT))
-	case cJU_JPIMMED_3_02:  IMMABOVE(j__udySearchLeaf3,  2);
-#endif
-#if (defined(JUDY1) && defined(JU_64BIT))
-	case cJ1_JPIMMED_3_03:  IMMABOVE(j__udySearchLeaf3,  3);
-	case cJ1_JPIMMED_3_04:  IMMABOVE(j__udySearchLeaf3,  4);
-	case cJ1_JPIMMED_3_05:  IMMABOVE(j__udySearchLeaf3,  5);
+// exclude JudyL, 32Bit
+	case cJU_JPIMMED_3_02:
 
-	case cJ1_JPIMMED_4_02:  IMMABOVE(j__udySearchLeaf4,  2);
-	case cJ1_JPIMMED_4_03:  IMMABOVE(j__udySearchLeaf4,  3);
+#ifdef  JUDY1
+	case cJ1_JPIMMED_3_03:
+	case cJ1_JPIMMED_3_04:
+	case cJ1_JPIMMED_3_05:
+#endif  // JUDY1
 
-	case cJ1_JPIMMED_5_02:  IMMABOVE(j__udySearchLeaf5,  2);
-	case cJ1_JPIMMED_5_03:  IMMABOVE(j__udySearchLeaf5,  3);
+// exclude JudyL, 32Bit
+            pop1 = ju_Type(Pjp) - cJU_JPIMMED_3_02 + 2;
+	    Pjll = P_JLL(ju_PImmed1(Pjp));
+	    offset = j__udySearchLeaf3(Pjll, pop1, Index);
+	    return(pop1 - offset);
 
-	case cJ1_JPIMMED_6_02:  IMMABOVE(j__udySearchLeaf6,  2);
+#ifdef  JUDY1
+	case cJ1_JPIMMED_4_02:
+	case cJ1_JPIMMED_4_03:
+            pop1 = ju_Type(Pjp) - cJ1_JPIMMED_4_02 + 2;
+	    Pjll = P_JLL(ju_PImmed4(Pjp));
+	    offset = j__udySearchLeaf4(Pjll, pop1, Index);
+	    return(pop1 - offset);
 
-	case cJ1_JPIMMED_7_02:  IMMABOVE(j__udySearchLeaf7,  2);
-#endif
+	case cJ1_JPIMMED_5_02:
+	case cJ1_JPIMMED_5_03:
+            pop1 = ju_Type(Pjp) - cJ1_JPIMMED_5_02 + 2;
+	    Pjll = P_JLL(ju_PImmed1(Pjp));
+	    offset = j__udySearchLeaf5(Pjll, pop1, Index);
+	    return(pop1 - offset);
+
+	case cJ1_JPIMMED_6_02:
+            pop1 = 2;
+	    Pjll = P_JLL(ju_PImmed1(Pjp));
+	    offset = j__udySearchLeaf6(Pjll, pop1, Index);
+	    return(pop1 - offset);
+
+	case cJ1_JPIMMED_7_02:
+            pop1 = 2;
+	    Pjll = P_JLL(ju_PImmed1(Pjp));
+	    offset = j__udySearchLeaf7(Pjll, pop1, Index);
+	    return(pop1 - offset);
+#endif  // JUDY1
 
 
 // ----------------------------------------------------------------------------
@@ -996,29 +990,19 @@ const	Word_t	Index)		// to which to count.
 // bitmap.
 
 #ifndef NOSMARTJLB  // enable to turn off smart code for comparison purposes.
-
 	if (findsub < (cJU_NUMSUBEXPL / 2))
 	{
 #ifdef SMARTMETRICS
 	    ++jlb_upward;
 #endif
-	    count = 0;
-
-	    for (subexp = 0; subexp < (long)findsub; ++subexp)
-	    {
-		count += ((JU_JLB_BITMAP(Pjlb, subexp) == cJU_FULLBITMAPL) ?
-			  cJU_BITSPERSUBEXPL :
-			  j__udyCountBitsL(JU_JLB_BITMAP(Pjlb, subexp)));
-	    }
+	    for (count = subexp = 0; subexp < (long)findsub; ++subexp)
+		count += j__udyCountBitsL(JU_JLB_BITMAP(Pjlb, subexp));
 
 // This count includes findbit, which should be set, resulting in a base-1
 // offset:
 
 	    count += j__udyCountBitsL(JU_JLB_BITMAP(Pjlb, findsub)
 				& JU_MASKLOWERINC(JU_BITPOSMASKL(findbit)));
-
-	    DBGCODE(if (! JU_BITMAPTESTL(Pjlb, digit)) return(~count);)
-	    assert(count >= 1);
 	    return(count - 1);		// convert to base-0 offset.
 	}
 #endif // NOSMARTJLB
@@ -1034,20 +1018,13 @@ const	Word_t	Index)		// to which to count.
 	count = Pop1;			// base-1 for now.
 
 	for (subexp = cJU_NUMSUBEXPL - 1; subexp > (long)findsub; --subexp)
-	{
-	    count -= ((JU_JLB_BITMAP(Pjlb, subexp) == cJU_FULLBITMAPL) ?
-		      cJU_BITSPERSUBEXPL :
-		      j__udyCountBitsL(JU_JLB_BITMAP(Pjlb, subexp)));
-	}
+	    count -= j__udyCountBitsL(JU_JLB_BITMAP(Pjlb, subexp));
 
 // This count includes findbit, which should be set, resulting in a base-0
 // offset:
 
 	count -= j__udyCountBitsL(JU_JLB_BITMAP(Pjlb, findsub)
 				& JU_MASKHIGHERINC(JU_BITPOSMASKL(findbit)));
-
-	DBGCODE(if (! JU_BITMAPTESTL(Pjlb, digit)) return(~count);)
-	assert(count >= 0);		// should find Index itself.
 	return(count);			// is already a base-0 offset.
 
 } // j__udyCountLeafB1()
@@ -1070,111 +1047,107 @@ const	Word_t	Index)		// to which to count.
 FUNCTION Word_t j__udyJPPop1(
 const	Pjp_t Pjp)		// JP to count.
 {
-	switch (JU_JPTYPE(Pjp))
+	switch (ju_Type(Pjp))
 	{
 #ifdef notdef // caller should shortcut and not even call with these:
 
 	case cJU_JPNULL1:
 	case cJU_JPNULL2:
 	case cJU_JPNULL3:  return(0);
-#ifdef JU_64BIT
 	case cJU_JPNULL4:
 	case cJU_JPNULL5:
 	case cJU_JPNULL6:
 	case cJU_JPNULL7:  return(0);
-#endif
 #endif // notdef
 
 	case cJU_JPBRANCH_L2:
 	case cJU_JPBRANCH_B2:
-	case cJU_JPBRANCH_U2: return(JU_JPBRANCH_POP0(Pjp,2) + 1);
+	case cJU_JPBRANCH_U2:
+            return(ju_BranchPop0(Pjp, 2) + 1);
 
 	case cJU_JPBRANCH_L3:
 	case cJU_JPBRANCH_B3:
-	case cJU_JPBRANCH_U3: return(JU_JPBRANCH_POP0(Pjp,3) + 1);
+	case cJU_JPBRANCH_U3:
+            return(ju_BranchPop0(Pjp, 3) + 1);
 
-#ifdef JU_64BIT
 	case cJU_JPBRANCH_L4:
 	case cJU_JPBRANCH_B4:
-	case cJU_JPBRANCH_U4: return(JU_JPBRANCH_POP0(Pjp,4) + 1);
+	case cJU_JPBRANCH_U4: 
+            return(ju_BranchPop0(Pjp, 4) + 1);
 
 	case cJU_JPBRANCH_L5:
 	case cJU_JPBRANCH_B5:
-	case cJU_JPBRANCH_U5: return(JU_JPBRANCH_POP0(Pjp,5) + 1);
+	case cJU_JPBRANCH_U5: 
+            return(ju_BranchPop0(Pjp, 5) + 1);
 
 	case cJU_JPBRANCH_L6:
 	case cJU_JPBRANCH_B6:
-	case cJU_JPBRANCH_U6: return(JU_JPBRANCH_POP0(Pjp,6) + 1);
+	case cJU_JPBRANCH_U6: 
+            return(ju_BranchPop0(Pjp, 6) + 1);
 
 	case cJU_JPBRANCH_L7:
 	case cJU_JPBRANCH_B7:
-	case cJU_JPBRANCH_U7: return(JU_JPBRANCH_POP0(Pjp,7) + 1);
-#endif
+	case cJU_JPBRANCH_U7: 
+            return(ju_BranchPop0(Pjp, 7) + 1);
 
-#if (defined(JUDYL) || (! defined(JU_64BIT)))
+#ifdef  JUDYL
 	case cJU_JPLEAF1:
 #endif
 	case cJU_JPLEAF2:
 	case cJU_JPLEAF3:
-#ifdef JU_64BIT
 	case cJU_JPLEAF4:
 	case cJU_JPLEAF5:
 	case cJU_JPLEAF6:
 	case cJU_JPLEAF7:
-#endif
-	case cJU_JPLEAF_B1:	return(JU_JPLEAF_POP0(Pjp) + 1);
+	case cJU_JPLEAF_B1:
+             return(ju_LeafPop0(Pjp) + 1);
 
 #ifdef JUDY1
-	case cJ1_JPFULLPOPU1:	return(cJU_JPFULLPOPU1_POP0 + 1);
+	case cJ1_JPFULLPOPU1:	
+           return(cJU_JPFULLPOPU1_POP0 + 1);
 #endif
 
 	case cJU_JPIMMED_1_01:
 	case cJU_JPIMMED_2_01:
-	case cJU_JPIMMED_3_01:	return(1);
-#ifdef JU_64BIT
+	case cJU_JPIMMED_3_01:
 	case cJU_JPIMMED_4_01:
 	case cJU_JPIMMED_5_01:
 	case cJU_JPIMMED_6_01:
-	case cJU_JPIMMED_7_01:	return(1);
+	case cJU_JPIMMED_7_01:	
+            return(1);
+
+	case cJU_JPIMMED_1_02:  return(2);
+	case cJU_JPIMMED_1_03:  return(3);
+	case cJU_JPIMMED_1_04:  return(4);
+	case cJU_JPIMMED_1_05:  return(5);
+	case cJU_JPIMMED_1_06:  return(6);
+	case cJU_JPIMMED_1_07:  return(7);
+#ifdef  JUDY1
+	case cJ1_JPIMMED_1_08:  return(8);
+	case cJ1_JPIMMED_1_09:  return(9);
+	case cJ1_JPIMMED_1_10:  return(10);
+	case cJ1_JPIMMED_1_11:  return(11);
+	case cJ1_JPIMMED_1_12:  return(12);
+	case cJ1_JPIMMED_1_13:  return(13);
+	case cJ1_JPIMMED_1_14:  return(14);
+	case cJ1_JPIMMED_1_15:  return(15);
 #endif
 
-	case cJU_JPIMMED_1_02:	return(2);
-	case cJU_JPIMMED_1_03:	return(3);
-#if (defined(JUDY1) || defined(JU_64BIT))
-	case cJU_JPIMMED_1_04:	return(4);
-	case cJU_JPIMMED_1_05:	return(5);
-	case cJU_JPIMMED_1_06:	return(6);
-	case cJU_JPIMMED_1_07:	return(7);
-#endif
-#if (defined(JUDY1) && defined(JU_64BIT))
-	case cJ1_JPIMMED_1_08:	return(8);
-	case cJ1_JPIMMED_1_09:	return(9);
-	case cJ1_JPIMMED_1_10:	return(10);
-	case cJ1_JPIMMED_1_11:	return(11);
-	case cJ1_JPIMMED_1_12:	return(12);
-	case cJ1_JPIMMED_1_13:	return(13);
-	case cJ1_JPIMMED_1_14:	return(14);
-	case cJ1_JPIMMED_1_15:	return(15);
+	case cJU_JPIMMED_2_02:  return(2);
+	case cJU_JPIMMED_2_03:  return(3);
+#ifdef  JUDY1
+	case cJ1_JPIMMED_2_04:  return(4);
+	case cJ1_JPIMMED_2_05:  return(5);
+	case cJ1_JPIMMED_2_06:  return(6);
+	case cJ1_JPIMMED_2_07:  return(7);
 #endif
 
-#if (defined(JUDY1) || defined(JU_64BIT))
-	case cJU_JPIMMED_2_02:	return(2);
-	case cJU_JPIMMED_2_03:	return(3);
-#endif
-#if (defined(JUDY1) && defined(JU_64BIT))
-	case cJ1_JPIMMED_2_04:	return(4);
-	case cJ1_JPIMMED_2_05:	return(5);
-	case cJ1_JPIMMED_2_06:	return(6);
-	case cJ1_JPIMMED_2_07:	return(7);
-#endif
-
-#if (defined(JUDY1) || defined(JU_64BIT))
-	case cJU_JPIMMED_3_02:	return(2);
-#endif
-#if (defined(JUDY1) && defined(JU_64BIT))
-	case cJ1_JPIMMED_3_03:	return(3);
-	case cJ1_JPIMMED_3_04:	return(4);
-	case cJ1_JPIMMED_3_05:	return(5);
+// exclude JudyL, 32Bit
+	case cJU_JPIMMED_3_02:  return(2);
+#ifdef  JUDY1
+	case cJ1_JPIMMED_3_03:  return(3);
+	case cJ1_JPIMMED_3_04:  return(4);
+	case cJ1_JPIMMED_3_05:  return(5);
 
 	case cJ1_JPIMMED_4_02:	return(2);
 	case cJ1_JPIMMED_4_03:	return(3);

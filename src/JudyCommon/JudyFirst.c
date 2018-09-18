@@ -87,10 +87,11 @@ FUNCTION PPvoid_t JudyLFirst
 // See the manual entry for details.
 
 #ifdef JUDY1
-FUNCTION int	  Judy1Last(
+FUNCTION int	  Judy1Last
 #else
-FUNCTION PPvoid_t JudyLLast(
+FUNCTION PPvoid_t JudyLLast
 #endif
+(
 	Pcvoid_t  PArray,	// Judy array to search.
 	Word_t *  PIndex,	// starting point and result.
 	PJError_t PJError)	// optional, for returning error info.

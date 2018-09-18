@@ -52,99 +52,84 @@
 #define	cJU_JPNULL1		cJ1_JPNULL1
 #define	cJU_JPNULL2		cJ1_JPNULL2
 #define	cJU_JPNULL3		cJ1_JPNULL3
-#ifdef JU_64BIT
 #define	cJU_JPNULL4		cJ1_JPNULL4
 #define	cJU_JPNULL5		cJ1_JPNULL5
 #define	cJU_JPNULL6		cJ1_JPNULL6
 #define	cJU_JPNULL7		cJ1_JPNULL7
-#endif
 #define	cJU_JPNULLMAX		cJ1_JPNULLMAX
 #define	cJU_JPBRANCH_L2		cJ1_JPBRANCH_L2
-#define	cJU_JPBRANCH_L2N	cJ1_JPBRANCH_L2N
+//#define	cJU_JPBRANCH_L2N	cJ1_JPBRANCH_L2N
 #define	cJU_JPBRANCH_L3		cJ1_JPBRANCH_L3
-#define	cJU_JPBRANCH_L3N	cJ1_JPBRANCH_L3N
-#ifdef JU_64BIT
+//#define	cJU_JPBRANCH_L3N	cJ1_JPBRANCH_L3N
 #define	cJU_JPBRANCH_L4		cJ1_JPBRANCH_L4
-#define	cJU_JPBRANCH_L4N		cJ1_JPBRANCH_L4N
+//#define	cJU_JPBRANCH_L4N		cJ1_JPBRANCH_L4N
 #define	cJU_JPBRANCH_L5		cJ1_JPBRANCH_L5
-#define	cJU_JPBRANCH_L5N		cJ1_JPBRANCH_L5N
+//#define	cJU_JPBRANCH_L5N		cJ1_JPBRANCH_L5N
 #define	cJU_JPBRANCH_L6		cJ1_JPBRANCH_L6
-#define	cJU_JPBRANCH_L6N	cJ1_JPBRANCH_L6N
+//#define	cJU_JPBRANCH_L6N	cJ1_JPBRANCH_L6N
 #define	cJU_JPBRANCH_L7		cJ1_JPBRANCH_L7
-#define	cJU_JPBRANCH_L7N	cJ1_JPBRANCH_L7N
-#endif
+//#define	cJU_JPBRANCH_L7N	cJ1_JPBRANCH_L7N
 #define	cJU_JPBRANCH_L		cJ1_JPBRANCH_L
-#define	cJU_JPBRANCH_LN	        cJ1_JPBRANCH_LN
+//#define	cJU_JPBRANCH_LN	        cJ1_JPBRANCH_LN
 #define	j__U_BranchBJPPopToWords j__1_BranchBJPPopToWords
 #define	cJU_JPBRANCH_B2		cJ1_JPBRANCH_B2
-#define	cJU_JPBRANCH_B2N	cJ1_JPBRANCH_B2N
+//#define	cJU_JPBRANCH_B2N	cJ1_JPBRANCH_B2N
 #define	cJU_JPBRANCH_B3		cJ1_JPBRANCH_B3
-#define	cJU_JPBRANCH_B3N	cJ1_JPBRANCH_B3N
-#ifdef JU_64BIT
+//#define	cJU_JPBRANCH_B3N	cJ1_JPBRANCH_B3N
 #define	cJU_JPBRANCH_B4		cJ1_JPBRANCH_B4
-#define	cJU_JPBRANCH_B4N	cJ1_JPBRANCH_B4N
+//#define	cJU_JPBRANCH_B4N	cJ1_JPBRANCH_B4N
 #define	cJU_JPBRANCH_B5		cJ1_JPBRANCH_B5
-#define	cJU_JPBRANCH_B5N	cJ1_JPBRANCH_B5N
+//#define	cJU_JPBRANCH_B5N	cJ1_JPBRANCH_B5N
 #define	cJU_JPBRANCH_B6		cJ1_JPBRANCH_B6
-#define	cJU_JPBRANCH_B6N	cJ1_JPBRANCH_B6N
+//#define	cJU_JPBRANCH_B6N	cJ1_JPBRANCH_B6N
 #define	cJU_JPBRANCH_B7		cJ1_JPBRANCH_B7
-#define	cJU_JPBRANCH_B7N	cJ1_JPBRANCH_B7N
-#endif
+//#define	cJU_JPBRANCH_B7N	cJ1_JPBRANCH_B7N
 #define	cJU_JPBRANCH_B		cJ1_JPBRANCH_B
-#define	cJU_JPBRANCH_BN	        cJ1_JPBRANCH_BN
+//#define	cJU_JPBRANCH_BN	        cJ1_JPBRANCH_BN
 #define	cJU_JPBRANCH_U2		cJ1_JPBRANCH_U2
-#define	cJU_JPBRANCH_U2N	cJ1_JPBRANCH_U2N
+//#define	cJU_JPBRANCH_U2N	cJ1_JPBRANCH_U2N
 #define	cJU_JPBRANCH_U3		cJ1_JPBRANCH_U3
-#define	cJU_JPBRANCH_U3N	cJ1_JPBRANCH_U3N
-#ifdef JU_64BIT
+//#define	cJU_JPBRANCH_U3N	cJ1_JPBRANCH_U3N
 #define	cJU_JPBRANCH_U4		cJ1_JPBRANCH_U4
-#define	cJU_JPBRANCH_U4N	cJ1_JPBRANCH_U4N
+//#define	cJU_JPBRANCH_U4N	cJ1_JPBRANCH_U4N
 #define	cJU_JPBRANCH_U5		cJ1_JPBRANCH_U5
-#define	cJU_JPBRANCH_U5N	cJ1_JPBRANCH_U5N
+//#define	cJU_JPBRANCH_U5N	cJ1_JPBRANCH_U5N
 #define	cJU_JPBRANCH_U6		cJ1_JPBRANCH_U6
-#define	cJU_JPBRANCH_U6N	cJ1_JPBRANCH_U6N
+//#define	cJU_JPBRANCH_U6N	cJ1_JPBRANCH_U6N
 #define	cJU_JPBRANCH_U7		cJ1_JPBRANCH_U7
-#define	cJU_JPBRANCH_U7N	cJ1_JPBRANCH_U7N
-#endif
+//#define	cJU_JPBRANCH_U7N	cJ1_JPBRANCH_U7N
 #define	cJU_JPBRANCH_U		cJ1_JPBRANCH_U
-#define	cJU_JPBRANCH_UN	        cJ1_JPBRANCH_UN
-#ifndef JU_64BIT
-#define	cJU_JPLEAF1		cJ1_JPLEAF1
-#define	cJU_JPLEAF1N	        cJ1_JPLEAF1N
-#endif
+//#define	cJU_JPBRANCH_UN	        cJ1_JPBRANCH_UN
+///////////////#define	cJU_JPLEAF1		cJ1_JPLEAF1
+//#define	cJU_JPLEAF1N	        cJ1_JPLEAF1N
 #define	cJU_JPLEAF2		cJ1_JPLEAF2
-#define	cJU_JPLEAF2N    	cJ1_JPLEAF2N
+//#define	cJU_JPLEAF2N    	cJ1_JPLEAF2N
 #define	cJU_JPLEAF3		cJ1_JPLEAF3
-#define	cJU_JPLEAF3N    	cJ1_JPLEAF3N
-#ifdef JU_64BIT
+//#define	cJU_JPLEAF3N    	cJ1_JPLEAF3N
 #define	cJU_JPLEAF4		cJ1_JPLEAF4
-#define	cJU_JPLEAF4N    	cJ1_JPLEAF4N
+//#define	cJU_JPLEAF4N    	cJ1_JPLEAF4N
 #define	cJU_JPLEAF5		cJ1_JPLEAF5
-#define	cJU_JPLEAF5N    	cJ1_JPLEAF5N
+//#define	cJU_JPLEAF5N    	cJ1_JPLEAF5N
 #define	cJU_JPLEAF6		cJ1_JPLEAF6
-#define	cJU_JPLEAF6N    	cJ1_JPLEAF6N
+//#define	cJU_JPLEAF6N    	cJ1_JPLEAF6N
 #define	cJU_JPLEAF7		cJ1_JPLEAF7
-#define	cJU_JPLEAF7N    	cJ1_JPLEAF7N
-#endif
+//#define	cJU_JPLEAF7N    	cJ1_JPLEAF7N
 #define	cJU_JPLEAF_B1		cJ1_JPLEAF_B1
-#define	cJU_JPLEAF_B1N  	cJ1_JPLEAF_B1N
+//#define	cJU_JPLEAF_B1N  	cJ1_JPLEAF_B1N
 //				cJ1_JPFULLPOPU1
 #define	cJU_JPIMMED_1_01	cJ1_JPIMMED_1_01
 #define	cJU_JPIMMED_2_01	cJ1_JPIMMED_2_01
 #define	cJU_JPIMMED_3_01	cJ1_JPIMMED_3_01
-#ifdef JU_64BIT
 #define	cJU_JPIMMED_4_01	cJ1_JPIMMED_4_01
 #define	cJU_JPIMMED_5_01	cJ1_JPIMMED_5_01
 #define	cJU_JPIMMED_6_01	cJ1_JPIMMED_6_01
 #define	cJU_JPIMMED_7_01	cJ1_JPIMMED_7_01
-#endif
 #define	cJU_JPIMMED_1_02	cJ1_JPIMMED_1_02
 #define	cJU_JPIMMED_1_03	cJ1_JPIMMED_1_03
 #define	cJU_JPIMMED_1_04	cJ1_JPIMMED_1_04
 #define	cJU_JPIMMED_1_05	cJ1_JPIMMED_1_05
 #define	cJU_JPIMMED_1_06	cJ1_JPIMMED_1_06
 #define	cJU_JPIMMED_1_07	cJ1_JPIMMED_1_07
-#ifdef JU_64BIT
 //				cJ1_JPIMMED_1_08
 //				cJ1_JPIMMED_1_09
 //				cJ1_JPIMMED_1_10
@@ -153,17 +138,13 @@
 //				cJ1_JPIMMED_1_13
 //				cJ1_JPIMMED_1_14
 //				cJ1_JPIMMED_1_15
-#endif
 #define	cJU_JPIMMED_2_02	cJ1_JPIMMED_2_02
 #define	cJU_JPIMMED_2_03	cJ1_JPIMMED_2_03
-#ifdef JU_64BIT
 //				cJ1_JPIMMED_2_04
 //				cJ1_JPIMMED_2_05
 //				cJ1_JPIMMED_2_06
 //				cJ1_JPIMMED_2_07
-#endif
 #define	cJU_JPIMMED_3_02	cJ1_JPIMMED_3_02
-#ifdef JU_64BIT
 //				cJ1_JPIMMED_3_03
 //				cJ1_JPIMMED_3_04
 //				cJ1_JPIMMED_3_05
@@ -173,7 +154,6 @@
 //				cJ1_JPIMMED_5_03
 //				cJ1_JPIMMED_6_02
 //				cJ1_JPIMMED_7_02
-#endif
 #define	cJU_JPIMMED_CAP		cJ1_JPIMMED_CAP
 
 #else // JUDYL ****************************************************************
@@ -182,92 +162,79 @@
 #define	cJU_JPNULL1		cJL_JPNULL1
 #define	cJU_JPNULL2		cJL_JPNULL2
 #define	cJU_JPNULL3		cJL_JPNULL3
-#ifdef JU_64BIT
 #define	cJU_JPNULL4		cJL_JPNULL4
 #define	cJU_JPNULL5		cJL_JPNULL5
 #define	cJU_JPNULL6		cJL_JPNULL6
 #define	cJU_JPNULL7		cJL_JPNULL7
-#endif
 #define	cJU_JPNULLMAX		cJL_JPNULLMAX
 #define	cJU_JPBRANCH_L2		cJL_JPBRANCH_L2
-#define	cJU_JPBRANCH_L2N	cJL_JPBRANCH_L2N
+//#define	cJU_JPBRANCH_L2N	cJL_JPBRANCH_L2N
 #define	cJU_JPBRANCH_L3		cJL_JPBRANCH_L3
-#define	cJU_JPBRANCH_L3N	cJL_JPBRANCH_L3N
-#ifdef JU_64BIT
+//#define	cJU_JPBRANCH_L3N	cJL_JPBRANCH_L3N
 #define	cJU_JPBRANCH_L4		cJL_JPBRANCH_L4
-#define	cJU_JPBRANCH_L4N	cJL_JPBRANCH_L4N
+//#define	cJU_JPBRANCH_L4N	cJL_JPBRANCH_L4N
 #define	cJU_JPBRANCH_L5		cJL_JPBRANCH_L5
-#define	cJU_JPBRANCH_L5N	cJL_JPBRANCH_L5N
+//#define	cJU_JPBRANCH_L5N	cJL_JPBRANCH_L5N
 #define	cJU_JPBRANCH_L6		cJL_JPBRANCH_L6
-#define	cJU_JPBRANCH_L6N	cJL_JPBRANCH_L6N
+//#define	cJU_JPBRANCH_L6N	cJL_JPBRANCH_L6N
 #define	cJU_JPBRANCH_L7		cJL_JPBRANCH_L7
-#define	cJU_JPBRANCH_L7N	cJL_JPBRANCH_L7N
-#endif
+//#define	cJU_JPBRANCH_L7N	cJL_JPBRANCH_L7N
 #define	cJU_JPBRANCH_L		cJL_JPBRANCH_L
-#define	cJU_JPBRANCH_LN 	cJL_JPBRANCH_LN
+//#define	cJU_JPBRANCH_LN 	cJL_JPBRANCH_LN
 #define	j__U_BranchBJPPopToWords j__L_BranchBJPPopToWords
 #define	cJU_JPBRANCH_B2		cJL_JPBRANCH_B2
-#define	cJU_JPBRANCH_B2N	cJL_JPBRANCH_B2N
+//#define	cJU_JPBRANCH_B2N	cJL_JPBRANCH_B2N
 #define	cJU_JPBRANCH_B3		cJL_JPBRANCH_B3
-#define	cJU_JPBRANCH_B3N	cJL_JPBRANCH_B3N
-#ifdef JU_64BIT
+//#define	cJU_JPBRANCH_B3N	cJL_JPBRANCH_B3N
 #define	cJU_JPBRANCH_B4		cJL_JPBRANCH_B4
-#define	cJU_JPBRANCH_B4N	cJL_JPBRANCH_B4N
+//#define	cJU_JPBRANCH_B4N	cJL_JPBRANCH_B4N
 #define	cJU_JPBRANCH_B5		cJL_JPBRANCH_B5
-#define	cJU_JPBRANCH_B5N	cJL_JPBRANCH_B5N
+//#define	cJU_JPBRANCH_B5N	cJL_JPBRANCH_B5N
 #define	cJU_JPBRANCH_B6		cJL_JPBRANCH_B6
-#define	cJU_JPBRANCH_B6N	cJL_JPBRANCH_B6N
+//#define	cJU_JPBRANCH_B6N	cJL_JPBRANCH_B6N
 #define	cJU_JPBRANCH_B7		cJL_JPBRANCH_B7
-#define	cJU_JPBRANCH_B7N	cJL_JPBRANCH_B7N
-#endif
+//#define	cJU_JPBRANCH_B7N	cJL_JPBRANCH_B7N
 #define	cJU_JPBRANCH_B		cJL_JPBRANCH_B
-#define	cJU_JPBRANCH_BN 	cJL_JPBRANCH_BN
+//#define	cJU_JPBRANCH_BN 	cJL_JPBRANCH_BN
 #define	cJU_JPBRANCH_U2		cJL_JPBRANCH_U2
-#define	cJU_JPBRANCH_U2N	cJL_JPBRANCH_U2N
+//#define	cJU_JPBRANCH_U2N	cJL_JPBRANCH_U2N
 #define	cJU_JPBRANCH_U3		cJL_JPBRANCH_U3
-#define	cJU_JPBRANCH_U3N	cJL_JPBRANCH_U3N
-#ifdef JU_64BIT
+//#define	cJU_JPBRANCH_U3N	cJL_JPBRANCH_U3N
 #define	cJU_JPBRANCH_U4		cJL_JPBRANCH_U4
-#define	cJU_JPBRANCH_U4N	cJL_JPBRANCH_U4N
+//#define	cJU_JPBRANCH_U4N	cJL_JPBRANCH_U4N
 #define	cJU_JPBRANCH_U5		cJL_JPBRANCH_U5
-#define	cJU_JPBRANCH_U5N	cJL_JPBRANCH_U5N
+//#define	cJU_JPBRANCH_U5N	cJL_JPBRANCH_U5N
 #define	cJU_JPBRANCH_U6		cJL_JPBRANCH_U6
-#define	cJU_JPBRANCH_U6N	cJL_JPBRANCH_U6N
+//#define	cJU_JPBRANCH_U6N	cJL_JPBRANCH_U6N
 #define	cJU_JPBRANCH_U7		cJL_JPBRANCH_U7
-#define	cJU_JPBRANCH_U7N	cJL_JPBRANCH_U7N
-#endif
+//#define	cJU_JPBRANCH_U7N	cJL_JPBRANCH_U7N
 #define	cJU_JPBRANCH_U		cJL_JPBRANCH_U
-#define	cJU_JPBRANCH_UN 	cJL_JPBRANCH_UN
+//#define	cJU_JPBRANCH_UN 	cJL_JPBRANCH_UN
 #define	cJU_JPLEAF1		cJL_JPLEAF1
-#define	cJU_JPLEAF1N    	cJL_JPLEAF1N
+//#define	cJU_JPLEAF1N    	cJL_JPLEAF1N
 #define	cJU_JPLEAF2		cJL_JPLEAF2
-#define	cJU_JPLEAF2N    	cJL_JPLEAF2N
+//#define	cJU_JPLEAF2N    	cJL_JPLEAF2N
 #define	cJU_JPLEAF3		cJL_JPLEAF3
-#define	cJU_JPLEAF3N    	cJL_JPLEAF3N
-#ifdef JU_64BIT
+//#define	cJU_JPLEAF3N    	cJL_JPLEAF3N
 #define	cJU_JPLEAF4		cJL_JPLEAF4
-#define	cJU_JPLEAF4N    	cJL_JPLEAF4N
+//#define	cJU_JPLEAF4N    	cJL_JPLEAF4N
 #define	cJU_JPLEAF5		cJL_JPLEAF5
-#define	cJU_JPLEAF5N    	cJL_JPLEAF5N
+//#define	cJU_JPLEAF5N    	cJL_JPLEAF5N
 #define	cJU_JPLEAF6		cJL_JPLEAF6
-#define	cJU_JPLEAF6N    	cJL_JPLEAF6N
+//#define	cJU_JPLEAF6N    	cJL_JPLEAF6N
 #define	cJU_JPLEAF7		cJL_JPLEAF7
-#define	cJU_JPLEAF7N    	cJL_JPLEAF7N
-#endif
+//#define	cJU_JPLEAF7N    	cJL_JPLEAF7N
 #define	cJU_JPLEAF_B1		cJL_JPLEAF_B1
-#define	cJU_JPLEAF_B1N  	cJL_JPLEAF_B1N
+//#define	cJU_JPLEAF_B1N  	cJL_JPLEAF_B1N
 #define	cJU_JPIMMED_1_01	cJL_JPIMMED_1_01
 #define	cJU_JPIMMED_2_01	cJL_JPIMMED_2_01
 #define	cJU_JPIMMED_3_01	cJL_JPIMMED_3_01
-#ifdef JU_64BIT
 #define	cJU_JPIMMED_4_01	cJL_JPIMMED_4_01
 #define	cJU_JPIMMED_5_01	cJL_JPIMMED_5_01
 #define	cJU_JPIMMED_6_01	cJL_JPIMMED_6_01
 #define	cJU_JPIMMED_7_01	cJL_JPIMMED_7_01
-#endif
 #define	cJU_JPIMMED_1_02	cJL_JPIMMED_1_02
 #define	cJU_JPIMMED_1_03	cJL_JPIMMED_1_03
-#ifdef JU_64BIT
 #define	cJU_JPIMMED_1_04	cJL_JPIMMED_1_04
 #define	cJU_JPIMMED_1_05	cJL_JPIMMED_1_05
 #define	cJU_JPIMMED_1_06	cJL_JPIMMED_1_06
@@ -275,7 +242,6 @@
 #define	cJU_JPIMMED_2_02	cJL_JPIMMED_2_02
 #define	cJU_JPIMMED_2_03	cJL_JPIMMED_2_03
 #define	cJU_JPIMMED_3_02	cJL_JPIMMED_3_02
-#endif
 #define	cJU_JPIMMED_CAP		cJL_JPIMMED_CAP
 
 #endif // JUDYL
@@ -287,49 +253,39 @@
 #ifdef JUDY1
 
 #define	cJU_LEAFW_MAXPOP1	cJ1_LEAFW_MAXPOP1
-#ifndef JU_64BIT
 #define	cJU_LEAF1_MAXPOP1	cJ1_LEAF1_MAXPOP1
-#endif
 #define	cJU_LEAF2_MAXPOP1	cJ1_LEAF2_MAXPOP1
+#define cJU_LEAF2_MAXWORDS      cJ1_LEAF2_MAXWORDS 
 #define	cJU_LEAF3_MAXPOP1	cJ1_LEAF3_MAXPOP1
-#ifdef JU_64BIT
 #define	cJU_LEAF4_MAXPOP1	cJ1_LEAF4_MAXPOP1
 #define	cJU_LEAF5_MAXPOP1	cJ1_LEAF5_MAXPOP1
 #define	cJU_LEAF6_MAXPOP1	cJ1_LEAF6_MAXPOP1
 #define	cJU_LEAF7_MAXPOP1	cJ1_LEAF7_MAXPOP1
-#endif
+#define cJU_MAXIMMED1           cJ1_cJU_MAXIMMED1
 #define	cJU_IMMED1_MAXPOP1	cJ1_IMMED1_MAXPOP1
 #define	cJU_IMMED2_MAXPOP1	cJ1_IMMED2_MAXPOP1
 #define	cJU_IMMED3_MAXPOP1	cJ1_IMMED3_MAXPOP1
-#ifdef JU_64BIT
 #define	cJU_IMMED4_MAXPOP1	cJ1_IMMED4_MAXPOP1
 #define	cJU_IMMED5_MAXPOP1	cJ1_IMMED5_MAXPOP1
 #define	cJU_IMMED6_MAXPOP1	cJ1_IMMED6_MAXPOP1
 #define	cJU_IMMED7_MAXPOP1	cJ1_IMMED7_MAXPOP1
-#endif
 
 #define	JU_LEAF1POPTOWORDS(Pop1)	J1_LEAF1POPTOWORDS(Pop1)
 #define	JU_LEAF2POPTOWORDS(Pop1)	J1_LEAF2POPTOWORDS(Pop1)
 #define	JU_LEAF3POPTOWORDS(Pop1)	J1_LEAF3POPTOWORDS(Pop1)
-#ifdef JU_64BIT
 #define	JU_LEAF4POPTOWORDS(Pop1)	J1_LEAF4POPTOWORDS(Pop1)
 #define	JU_LEAF5POPTOWORDS(Pop1)	J1_LEAF5POPTOWORDS(Pop1)
 #define	JU_LEAF6POPTOWORDS(Pop1)	J1_LEAF6POPTOWORDS(Pop1)
 #define	JU_LEAF7POPTOWORDS(Pop1)	J1_LEAF7POPTOWORDS(Pop1)
-#endif
 #define	JU_LEAFWPOPTOWORDS(Pop1)	J1_LEAFWPOPTOWORDS(Pop1)
 
-#ifndef JU_64BIT
 #define	JU_LEAF1GROWINPLACE(Pop1)	J1_LEAF1GROWINPLACE(Pop1)
-#endif
 #define	JU_LEAF2GROWINPLACE(Pop1)	J1_LEAF2GROWINPLACE(Pop1)
 #define	JU_LEAF3GROWINPLACE(Pop1)	J1_LEAF3GROWINPLACE(Pop1)
-#ifdef JU_64BIT
 #define	JU_LEAF4GROWINPLACE(Pop1)	J1_LEAF4GROWINPLACE(Pop1)
 #define	JU_LEAF5GROWINPLACE(Pop1)	J1_LEAF5GROWINPLACE(Pop1)
 #define	JU_LEAF6GROWINPLACE(Pop1)	J1_LEAF6GROWINPLACE(Pop1)
 #define	JU_LEAF7GROWINPLACE(Pop1)	J1_LEAF7GROWINPLACE(Pop1)
-#endif
 #define	JU_LEAFWGROWINPLACE(Pop1)	J1_LEAFWGROWINPLACE(Pop1)
 
 #define	j__udyCreateBranchL	j__udy1CreateBranchL
@@ -338,30 +294,21 @@
 #define	j__udyCascade1		j__udy1Cascade1
 #define	j__udyCascade2		j__udy1Cascade2
 #define	j__udyCascade3		j__udy1Cascade3
-#ifdef JU_64BIT
 #define	j__udyCascade4		j__udy1Cascade4
 #define	j__udyCascade5		j__udy1Cascade5
 #define	j__udyCascade6		j__udy1Cascade6
 #define	j__udyCascade7		j__udy1Cascade7
-#endif
 #define	j__udyCascadeL		j__udy1CascadeL
 #define	j__udyInsertBranch	j__udy1InsertBranch
 
 #define	j__udyBranchBToBranchL	j__udy1BranchBToBranchL
-#ifndef JU_64BIT
-#define	j__udyLeafB1ToLeaf1	j__udy1LeafB1ToLeaf1
-#endif
 #define	j__udyLeaf1ToLeaf2	j__udy1Leaf1ToLeaf2
 #define	j__udyLeaf2ToLeaf3	j__udy1Leaf2ToLeaf3
-#ifndef JU_64BIT
-#define	j__udyLeaf3ToLeafW	j__udy1Leaf3ToLeafW
-#else
 #define	j__udyLeaf3ToLeaf4	j__udy1Leaf3ToLeaf4
 #define	j__udyLeaf4ToLeaf5	j__udy1Leaf4ToLeaf5
 #define	j__udyLeaf5ToLeaf6	j__udy1Leaf5ToLeaf6
 #define	j__udyLeaf6ToLeaf7	j__udy1Leaf6ToLeaf7
 #define	j__udyLeaf7ToLeafW	j__udy1Leaf7ToLeafW
-#endif
 
 #define	jpm_t			j1pm_t
 #define	Pjpm_t			Pj1pm_t
@@ -376,17 +323,13 @@
 #define	j__udyAllocJBB		j__udy1AllocJBB
 #define	j__udyAllocJBBJP	j__udy1AllocJBBJP
 #define	j__udyAllocJBU		j__udy1AllocJBU
-#ifndef JU_64BIT
 #define	j__udyAllocJLL1		j__udy1AllocJLL1
-#endif
 #define	j__udyAllocJLL2		j__udy1AllocJLL2
 #define	j__udyAllocJLL3		j__udy1AllocJLL3
-#ifdef JU_64BIT
 #define	j__udyAllocJLL4		j__udy1AllocJLL4
 #define	j__udyAllocJLL5		j__udy1AllocJLL5
 #define	j__udyAllocJLL6		j__udy1AllocJLL6
 #define	j__udyAllocJLL7		j__udy1AllocJLL7
-#endif
 #define	j__udyAllocJLW		j__udy1AllocJLW
 #define	j__udyAllocJLB1		j__udy1AllocJLB1
 #define	j__udyFreeJPM		j__udy1FreeJ1PM
@@ -394,17 +337,13 @@
 #define	j__udyFreeJBB		j__udy1FreeJBB
 #define	j__udyFreeJBBJP		j__udy1FreeJBBJP
 #define	j__udyFreeJBU		j__udy1FreeJBU
-#ifndef JU_64BIT
 #define	j__udyFreeJLL1		j__udy1FreeJLL1
-#endif
 #define	j__udyFreeJLL2		j__udy1FreeJLL2
 #define	j__udyFreeJLL3		j__udy1FreeJLL3
-#ifdef JU_64BIT
 #define	j__udyFreeJLL4		j__udy1FreeJLL4
 #define	j__udyFreeJLL5		j__udy1FreeJLL5
 #define	j__udyFreeJLL6		j__udy1FreeJLL6
 #define	j__udyFreeJLL7		j__udy1FreeJLL7
-#endif
 #define	j__udyFreeJLW		j__udy1FreeJLW
 #define	j__udyFreeJLB1		j__udy1FreeJLB1
 #define	j__udyFreeSM		j__udy1FreeSM
@@ -416,43 +355,37 @@
 #define	cJU_LEAFW_MAXPOP1	cJL_LEAFW_MAXPOP1
 #define	cJU_LEAF1_MAXPOP1	cJL_LEAF1_MAXPOP1
 #define	cJU_LEAF2_MAXPOP1	cJL_LEAF2_MAXPOP1
+#define cJU_LEAF2_MAXWORDS      cJL_LEAF2_MAXWORDS 
 #define	cJU_LEAF3_MAXPOP1	cJL_LEAF3_MAXPOP1
-#ifdef JU_64BIT
 #define	cJU_LEAF4_MAXPOP1	cJL_LEAF4_MAXPOP1
 #define	cJU_LEAF5_MAXPOP1	cJL_LEAF5_MAXPOP1
 #define	cJU_LEAF6_MAXPOP1	cJL_LEAF6_MAXPOP1
 #define	cJU_LEAF7_MAXPOP1	cJL_LEAF7_MAXPOP1
-#endif
+#define cJU_MAXIMMED1           cJL_cJU_MAXIMMED1
 #define	cJU_IMMED1_MAXPOP1	cJL_IMMED1_MAXPOP1
 #define	cJU_IMMED2_MAXPOP1	cJL_IMMED2_MAXPOP1
 #define	cJU_IMMED3_MAXPOP1	cJL_IMMED3_MAXPOP1
-#ifdef JU_64BIT
 #define	cJU_IMMED4_MAXPOP1	cJL_IMMED4_MAXPOP1
 #define	cJU_IMMED5_MAXPOP1	cJL_IMMED5_MAXPOP1
 #define	cJU_IMMED6_MAXPOP1	cJL_IMMED6_MAXPOP1
 #define	cJU_IMMED7_MAXPOP1	cJL_IMMED7_MAXPOP1
-#endif
 
 #define	JU_LEAF1POPTOWORDS(Pop1)	JL_LEAF1POPTOWORDS(Pop1)
 #define	JU_LEAF2POPTOWORDS(Pop1)	JL_LEAF2POPTOWORDS(Pop1)
 #define	JU_LEAF3POPTOWORDS(Pop1)	JL_LEAF3POPTOWORDS(Pop1)
-#ifdef JU_64BIT
 #define	JU_LEAF4POPTOWORDS(Pop1)	JL_LEAF4POPTOWORDS(Pop1)
 #define	JU_LEAF5POPTOWORDS(Pop1)	JL_LEAF5POPTOWORDS(Pop1)
 #define	JU_LEAF6POPTOWORDS(Pop1)	JL_LEAF6POPTOWORDS(Pop1)
 #define	JU_LEAF7POPTOWORDS(Pop1)	JL_LEAF7POPTOWORDS(Pop1)
-#endif
 #define	JU_LEAFWPOPTOWORDS(Pop1)	JL_LEAFWPOPTOWORDS(Pop1)
 
 #define	JU_LEAF1GROWINPLACE(Pop1)	JL_LEAF1GROWINPLACE(Pop1)
 #define	JU_LEAF2GROWINPLACE(Pop1)	JL_LEAF2GROWINPLACE(Pop1)
 #define	JU_LEAF3GROWINPLACE(Pop1)	JL_LEAF3GROWINPLACE(Pop1)
-#ifdef JU_64BIT
 #define	JU_LEAF4GROWINPLACE(Pop1)	JL_LEAF4GROWINPLACE(Pop1)
 #define	JU_LEAF5GROWINPLACE(Pop1)	JL_LEAF5GROWINPLACE(Pop1)
 #define	JU_LEAF6GROWINPLACE(Pop1)	JL_LEAF6GROWINPLACE(Pop1)
 #define	JU_LEAF7GROWINPLACE(Pop1)	JL_LEAF7GROWINPLACE(Pop1)
-#endif
 #define	JU_LEAFWGROWINPLACE(Pop1)	JL_LEAFWGROWINPLACE(Pop1)
 
 #define	j__udyCreateBranchL	j__udyLCreateBranchL
@@ -461,12 +394,10 @@
 #define	j__udyCascade1		j__udyLCascade1
 #define	j__udyCascade2		j__udyLCascade2
 #define	j__udyCascade3		j__udyLCascade3
-#ifdef JU_64BIT
 #define	j__udyCascade4		j__udyLCascade4
 #define	j__udyCascade5		j__udyLCascade5
 #define	j__udyCascade6		j__udyLCascade6
 #define	j__udyCascade7		j__udyLCascade7
-#endif
 #define	j__udyCascadeL		j__udyLCascadeL
 #define	j__udyInsertBranch	j__udyLInsertBranch
 
@@ -474,15 +405,11 @@
 #define	j__udyLeafB1ToLeaf1	j__udyLLeafB1ToLeaf1
 #define	j__udyLeaf1ToLeaf2	j__udyLLeaf1ToLeaf2
 #define	j__udyLeaf2ToLeaf3	j__udyLLeaf2ToLeaf3
-#ifndef JU_64BIT
-#define	j__udyLeaf3ToLeafW	j__udyLLeaf3ToLeafW
-#else
 #define	j__udyLeaf3ToLeaf4	j__udyLLeaf3ToLeaf4
 #define	j__udyLeaf4ToLeaf5	j__udyLLeaf4ToLeaf5
 #define	j__udyLeaf5ToLeaf6	j__udyLLeaf5ToLeaf6
 #define	j__udyLeaf6ToLeaf7	j__udyLLeaf6ToLeaf7
 #define	j__udyLeaf7ToLeafW	j__udyLLeaf7ToLeafW
-#endif
 
 #define	jpm_t			jLpm_t
 #define	Pjpm_t			PjLpm_t
@@ -500,12 +427,10 @@
 #define	j__udyAllocJLL1		j__udyLAllocJLL1
 #define	j__udyAllocJLL2		j__udyLAllocJLL2
 #define	j__udyAllocJLL3		j__udyLAllocJLL3
-#ifdef JU_64BIT
 #define	j__udyAllocJLL4		j__udyLAllocJLL4
 #define	j__udyAllocJLL5		j__udyLAllocJLL5
 #define	j__udyAllocJLL6		j__udyLAllocJLL6
 #define	j__udyAllocJLL7		j__udyLAllocJLL7
-#endif
 #define	j__udyAllocJLW		j__udyLAllocJLW
 #define	j__udyAllocJLB1		j__udyLAllocJLB1
 //				j__udyLAllocJV
@@ -517,12 +442,10 @@
 #define	j__udyFreeJLL1		j__udyLFreeJLL1
 #define	j__udyFreeJLL2		j__udyLFreeJLL2
 #define	j__udyFreeJLL3		j__udyLFreeJLL3
-#ifdef JU_64BIT
 #define	j__udyFreeJLL4		j__udyLFreeJLL4
 #define	j__udyFreeJLL5		j__udyLFreeJLL5
 #define	j__udyFreeJLL6		j__udyLFreeJLL6
 #define	j__udyFreeJLL7		j__udyLFreeJLL7
-#endif
 #define	j__udyFreeJLW		j__udyLFreeJLW
 #define	j__udyFreeJLB1		j__udyLFreeJLB1
 #define	j__udyFreeSM		j__udyLFreeSM

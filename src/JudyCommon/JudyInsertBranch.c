@@ -38,7 +38,7 @@ extern int j__udyCreateBranchL(Pjp_t, Pjp_t, uint8_t *, Word_t, Pjpm_t);
 // ****************************************************************************
 // __ J U D Y   I N S E R T   B R A N C H
 //
-// Insert 2-element BranchL in between Pjp and Pjp->jp_Addr.
+// Insert 2-element BranchL in between Pjp and Pjp->Jp_Addr0.
 //
 // Return -1 if out of memory, otherwise return 1.
 
@@ -49,7 +49,7 @@ FUNCTION int j__udyInsertBranch(
 	Pjpm_t	Pjpm)		// for global accounting.
 {
 	jp_t	JP2 [2];
-	jp_t	JP;
+//	jp_t	JP;
 	Pjp_t	PjpNull;
 	Word_t	XorExp;
 	Word_t	Inew, Iold;
@@ -97,17 +97,18 @@ FUNCTION int j__udyInsertBranch(
 
 //	Create a 2 Expanse Linear branch
 //
-//	Note: Pjp->jp_Addr is set by j__udyCreateBranchL()
+//	Note: Pjp->Jp_Addr0 is set by j__udyCreateBranchL()
 
 	Ret = j__udyCreateBranchL(Pjp, JP2, Exp2, 2, Pjpm);
 	if (Ret == -1) return(-1);
 
 //	Get Pjp to the NULL of where to do insert
-	PjpNull	= ((P_JBL(Pjp->jp_Addr))->jbl_jp) + Inew;
+	PjpNull	= (P_JBL(ju_BaLPntr(Pjp))->jbl_jp) + Inew;
 
 //	Convert to a cJU_JPIMMED_*_01 at the correct level:
 //	Build JP and set type below to: cJU_JPIMMED_X_01
-        JU_JPSETADT(PjpNull, 0, Index, cJU_JPIMMED_1_01 - 2 + BranchLevel);
+//        JU_JPSETADT(PjpNull, 0, Index, cJU_JPIMMED_1_01 - 2 + BranchLevel);
+        ju_SetIMM01(PjpNull, 0, Index, cJU_JPIMMED_1_01 - 2 + BranchLevel);
 
 //	Return pointer to Value area in cJU_JPIMMED_X_01
 	JUDYLCODE(Pjpm->jpm_PValue = (Pjv_t) PjpNull;)
@@ -125,14 +126,17 @@ FUNCTION int j__udyInsertBranch(
 //	Set old JP to a BranchL at correct level
 
 
-	Pjp->jp_Type = cJU_JPBRANCH_L2 - (2 * 2) + (BranchLevel * 2);
+//	Pjp->jp_Type = cJU_JPBRANCH_L2 - (2 * 2) + (BranchLevel * 2);
+        ju_SetJpType(Pjp, cJU_JPBRANCH_L2 - 2 + (BranchLevel));
 
 // printf("\n =======================BranchLevel = %d, jp_Type = %d\n", (int)BranchLevel, (int)Pjp->jp_Type);
 
 	DCDMask		^= cJU_DCDMASK(BranchLevel);
 	DCDMask		 = ~DCDMask & JU_JPDCDPOP0(Pjp);
-        JP = *Pjp;
-        JU_JPSETADT(Pjp, JP.jp_Addr, DCDMask, JP.jp_Type);
+//        JP = *Pjp;
+//        JU_JPSETADT(Pjp, JP.Jp_Addr0, DCDMask, JP.jp_Type);
+//        JU_JPSETADT(Pjp, ju_BaLPntr(&JP), DCDMask, ju_Type(&JP));
+        ju_SetDcdPop0(Pjp, DCDMask);
 
 	return(1);
 

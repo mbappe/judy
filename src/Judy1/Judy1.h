@@ -96,15 +96,11 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
         cJ1_JPNULL2,            // Index Size 2[2] bytes when 1 Index inserted.
         cJ1_JPNULL3,            // Index Size 3[3] bytes when 1 Index inserted.
 
-#ifndef JU_64BIT
-#define cJ1_JPNULLMAX cJ1_JPNULL3
-#else
         cJ1_JPNULL4,            // Index Size 4[4] bytes when 1 Index inserted.
         cJ1_JPNULL5,            // Index Size 5[5] bytes when 1 Index inserted.
         cJ1_JPNULL6,            // Index Size 6[6] bytes when 1 Index inserted.
         cJ1_JPNULL7,            // Index Size 7[7] bytes when 1 Index inserted.
 #define cJ1_JPNULLMAX cJ1_JPNULL7
-#endif
 
 
 // JP BRANCH TYPES:
@@ -117,23 +113,14 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // calculations between them.
 
         cJ1_JPBRANCH_L2,        // 2[2] bytes Pop0, 1[5] bytes Dcd.
-        cJ1_JPBRANCH_L2N,        // 2[2] bytes Pop0, 1[5] bytes Dcd.
         cJ1_JPBRANCH_L3,        // 3[3] bytes Pop0, 0[4] bytes Dcd.
-        cJ1_JPBRANCH_L3N,        // 3[3] bytes Pop0, 0[4] bytes Dcd.
 
-#ifdef JU_64BIT
         cJ1_JPBRANCH_L4,        //  [4] bytes Pop0,  [3] bytes Dcd.
-        cJ1_JPBRANCH_L4N,        //  [4] bytes Pop0,  [3] bytes Dcd.
         cJ1_JPBRANCH_L5,        //  [5] bytes Pop0,  [2] bytes Dcd.
-        cJ1_JPBRANCH_L5N,        //  [5] bytes Pop0,  [2] bytes Dcd.
         cJ1_JPBRANCH_L6,        //  [6] bytes Pop0,  [1] byte  Dcd.
-        cJ1_JPBRANCH_L6N,        //  [6] bytes Pop0,  [1] byte  Dcd.
         cJ1_JPBRANCH_L7,        //  [7] bytes Pop0,  [0] bytes Dcd.
-        cJ1_JPBRANCH_L7N,        //  [7] bytes Pop0,  [0] bytes Dcd.
-#endif
 
         cJ1_JPBRANCH_L,         // note:  DcdPopO field not used.
-        cJ1_JPBRANCH_LN,         // note:  DcdPopO field not used.
 
 // Bitmap branches:
 //
@@ -141,23 +128,14 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // calculations between them.
 
         cJ1_JPBRANCH_B2,        // 2[2] bytes Pop0, 1[5] bytes Dcd.
-        cJ1_JPBRANCH_B2N,        // 2[2] bytes Pop0, 1[5] bytes Dcd.
         cJ1_JPBRANCH_B3,        // 3[3] bytes Pop0, 0[4] bytes Dcd.
-        cJ1_JPBRANCH_B3N,        // 3[3] bytes Pop0, 0[4] bytes Dcd.
 
-#ifdef JU_64BIT
         cJ1_JPBRANCH_B4,        //  [4] bytes Pop0,  [3] bytes Dcd.
-        cJ1_JPBRANCH_B4N,        //  [4] bytes Pop0,  [3] bytes Dcd.
         cJ1_JPBRANCH_B5,        //  [5] bytes Pop0,  [2] bytes Dcd.
-        cJ1_JPBRANCH_B5N,        //  [5] bytes Pop0,  [2] bytes Dcd.
         cJ1_JPBRANCH_B6,        //  [6] bytes Pop0,  [1] byte  Dcd.
-        cJ1_JPBRANCH_B6N,        //  [6] bytes Pop0,  [1] byte  Dcd.
         cJ1_JPBRANCH_B7,        //  [7] bytes Pop0,  [0] bytes Dcd.
-        cJ1_JPBRANCH_B7N,        //  [7] bytes Pop0,  [0] bytes Dcd.
-#endif
 
         cJ1_JPBRANCH_B,         // note:  DcdPopO field not used.
-        cJ1_JPBRANCH_BN,         // note:  DcdPopO field not used.
 
 // Uncompressed branches:
 //
@@ -165,23 +143,14 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // calculations between them.
 
         cJ1_JPBRANCH_U2,        // 2[2] bytes Pop0, 1[5] bytes Dcd.
-        cJ1_JPBRANCH_U2N,        // 2[2] bytes Pop0, 1[5] bytes Dcd.
         cJ1_JPBRANCH_U3,        // 3[3] bytes Pop0, 0[4] bytes Dcd.
-        cJ1_JPBRANCH_U3N,        // 3[3] bytes Pop0, 0[4] bytes Dcd.
 
-#ifdef JU_64BIT
         cJ1_JPBRANCH_U4,        //  [4] bytes Pop0,  [3] bytes Dcd.
-        cJ1_JPBRANCH_U4N,        //  [4] bytes Pop0,  [3] bytes Dcd.
         cJ1_JPBRANCH_U5,        //  [5] bytes Pop0,  [2] bytes Dcd.
-        cJ1_JPBRANCH_U5N,        //  [5] bytes Pop0,  [2] bytes Dcd.
         cJ1_JPBRANCH_U6,        //  [6] bytes Pop0,  [1] byte  Dcd.
-        cJ1_JPBRANCH_U6N,        //  [6] bytes Pop0,  [1] byte  Dcd.
         cJ1_JPBRANCH_U7,        //  [7] bytes Pop0,  [0] bytes Dcd.
-        cJ1_JPBRANCH_U7N,        //  [7] bytes Pop0,  [0] bytes Dcd.
-#endif
 
         cJ1_JPBRANCH_U,         // note:  DcdPopO field not used.
-        cJ1_JPBRANCH_UN,         // note:  DcdPopO field not used.
 
 
 // JP LEAF TYPES:
@@ -202,26 +171,15 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // byte.  Full-word, root-state leaves are under a JRP, not a JP.  However, in
 // the code a "fake" JP can be created temporarily above a root-state leaf.
 
-#ifndef JU_64BIT // 32-bit only; see above.
         cJ1_JPLEAF1,            // 1    byte  Pop0, 2    bytes Dcd.
-        cJ1_JPLEAF1N,            // 1    byte  Pop0, 2    bytes Dcd.
-#endif
-
         cJ1_JPLEAF2,            // 2[2] bytes Pop0, 1[5] bytes Dcd.
-        cJ1_JPLEAF2N,            // 2[2] bytes Pop0, 1[5] bytes Dcd.
         cJ1_JPLEAF3,            // 3[3] bytes Pop0, 0[4] bytes Dcd.
-        cJ1_JPLEAF3N,            // 3[3] bytes Pop0, 0[4] bytes Dcd.
 
-#ifdef JU_64BIT
         cJ1_JPLEAF4,            //  [4] bytes Pop0,  [3] bytes Dcd.
-        cJ1_JPLEAF4N,            //  [4] bytes Pop0,  [3] bytes Dcd.
         cJ1_JPLEAF5,            //  [5] bytes Pop0,  [2] bytes Dcd.
-        cJ1_JPLEAF5N,            //  [5] bytes Pop0,  [2] bytes Dcd.
         cJ1_JPLEAF6,            //  [6] bytes Pop0,  [1] byte  Dcd.
-        cJ1_JPLEAF6N,            //  [6] bytes Pop0,  [1] byte  Dcd.
         cJ1_JPLEAF7,            //  [7] bytes Pop0,  [0] bytes Dcd.
-        cJ1_JPLEAF7N,            //  [7] bytes Pop0,  [0] bytes Dcd.
-#endif
+        cJL_JPLEAFW,            //  [7] bytes Pop0,  [0] bytes Dcd.
 
 // Bitmap leaf; Index Size == 1:
 //
@@ -230,7 +188,6 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // efficient..
 
         cJ1_JPLEAF_B1,          // 1[1] byte Pop0, 2[6] bytes Dcd.
-        cJ1_JPLEAF_B1N,          // 1[1] byte Pop0, 2[6] bytes Dcd.
 
 #define cJ1_JLEAFMAX cJ1_JPLEAF_B1N // max Leaf jp_type
 
@@ -256,12 +213,10 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
         cJ1_JPIMMED_1_01,       // Index Size = 1, Pop1 = 1.
         cJ1_JPIMMED_2_01,       // Index Size = 2, Pop1 = 1.
         cJ1_JPIMMED_3_01,       // Index Size = 3, Pop1 = 1.
-#ifdef JU_64BIT
         cJ1_JPIMMED_4_01,       // Index Size = 4, Pop1 = 1.
         cJ1_JPIMMED_5_01,       // Index Size = 5, Pop1 = 1.
         cJ1_JPIMMED_6_01,       // Index Size = 6, Pop1 = 1.
         cJ1_JPIMMED_7_01,       // Index Size = 7, Pop1 = 1.
-#endif
 
         cJ1_JPIMMED_1_02,       // Index Size = 1, Pop1 = 2.
         cJ1_JPIMMED_1_03,       // Index Size = 1, Pop1 = 3.
@@ -270,7 +225,6 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
         cJ1_JPIMMED_1_06,       // Index Size = 1, Pop1 = 6.
         cJ1_JPIMMED_1_07,       // Index Size = 1, Pop1 = 7.
 
-#ifdef JU_64BIT
         cJ1_JPIMMED_1_08,       // Index Size = 1, Pop1 = 8.
         cJ1_JPIMMED_1_09,       // Index Size = 1, Pop1 = 9.
         cJ1_JPIMMED_1_10,       // Index Size = 1, Pop1 = 10.
@@ -279,21 +233,17 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
         cJ1_JPIMMED_1_13,       // Index Size = 1, Pop1 = 13.
         cJ1_JPIMMED_1_14,       // Index Size = 1, Pop1 = 14.
         cJ1_JPIMMED_1_15,       // Index Size = 1, Pop1 = 15.
-#endif
 
         cJ1_JPIMMED_2_02,       // Index Size = 2, Pop1 = 2.
         cJ1_JPIMMED_2_03,       // Index Size = 2, Pop1 = 3.
 
-#ifdef JU_64BIT
         cJ1_JPIMMED_2_04,       // Index Size = 2, Pop1 = 4.
         cJ1_JPIMMED_2_05,       // Index Size = 2, Pop1 = 5.
         cJ1_JPIMMED_2_06,       // Index Size = 2, Pop1 = 6.
         cJ1_JPIMMED_2_07,       // Index Size = 2, Pop1 = 7.
-#endif
 
         cJ1_JPIMMED_3_02,       // Index Size = 3, Pop1 = 2.
 
-#ifdef JU_64BIT
         cJ1_JPIMMED_3_03,       // Index Size = 3, Pop1 = 3.
         cJ1_JPIMMED_3_04,       // Index Size = 3, Pop1 = 4.
         cJ1_JPIMMED_3_05,       // Index Size = 3, Pop1 = 5.
@@ -307,7 +257,6 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
         cJ1_JPIMMED_6_02,       // Index Size = 6, Pop1 = 2.
 
         cJ1_JPIMMED_7_02,       // Index Size = 7, Pop1 = 2.
-#endif
 
 // This special Type is merely a sentinel for doing relative calculations.
 // This value should not be used in switch statements (to avoid allocating code
@@ -322,13 +271,8 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 //
 // Index Size (state) for leaf JP, and JP type based on Index Size (state):
 
-#ifndef JU_64BIT // 32-bit
-#define J1_LEAFINDEXSIZE(jpType) ((jpType)    - cJ1_JPLEAF1 + 1)
-#define J1_LEAFTYPE(IndexSize)   ((IndexSize) + cJ1_JPLEAF1 - 1)
-#else
 #define J1_LEAFINDEXSIZE(jpType) ((jpType)    - cJ1_JPLEAF2 + 2)
 #define J1_LEAFTYPE(IndexSize)   ((IndexSize) + cJ1_JPLEAF2 - 2)
-#endif
 
 
 // ****************************************************************************
@@ -344,14 +288,11 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // definitions.  See JudyTables.c for "TERMINATOR".
 
 
-#ifdef  JU_64BIT
 #define J_1_MAXB   (sizeof(Word_t) * 33)
-#else   // JU_32BIT
-#define J_1_MAXB   (sizeof(Word_t) * 51)
-#endif  // JU_32BIT
 
 //#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 15, 19, 23, 27, 33, 39, 47, 55, 67, 81, 97, 117, 141, 169, TERMINATOR }
-#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 17, 21, 27, 33, 41, 51, 65, 83, 103, 129, 159, TERMINATOR }
+/////#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 17, 21, 27, 33, 41, 51, 65, 83, 103, 129, 159, TERMINATOR }
+#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 17, 21, 27, 33, 41, 51, 65, 83, 103, 129, 159, 199, 249, 320, TERMINATOR }
 
 //#define J_1_MAXB   (sizeof(Word_t) * 67)
 //#define J_1_MAXB   (sizeof(Word_t) * 32)
@@ -360,7 +301,9 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 //pre#define ALLOCSIZES { 3, 5, 9, 15, 25, 41, 67, 109, 177, TERMINATOR }
 //#define cJ1_LEAF1_MAXWORDS  5           // Leaf1 max alloc size in words.
 
-#define cJ1_LEAF1_MAXWORDS  2           // Leaf1 max alloc size in words.
+#define cJ1_LEAF1_MAXWORDS  1           // no Leaf1
+//#define cJ1_LEAF1_MAXWORDS  2           // Leaf1 max alloc size in words.
+//#define cJ1_LEAF1_MAXWORDS  3           // Leaf1 max alloc size in words.
 
 // Under JRP (root-state leaves):
 //
@@ -378,22 +321,20 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // to a 17-Index bitmap leaf, so just use a bitmap leaf for 16+ Indexes, which
 // means set cJ1_LEAF1_MAXPOP1 to cJ1_IMMED1_MAXPOP1 (15) to cause the
 // transition at that point.
-//
-// Note:  cJ1_LEAF1_MAXPOP1 is not used on 64-bit systems.
 
-#ifndef JU_64BIT // 32-bit
 
-#define cJ1_LEAF1_MAXPOP1    (cJ1_LEAF1_MAXWORDS * cJU_BYTESPERWORD)
-#define cJ1_LEAF2_MAXPOP1    (J_1_MAXB / 2)
-#define cJ1_LEAF3_MAXPOP1    (J_1_MAXB / 3)
-#define cJ1_LEAFW_MAXPOP1    ((J_1_MAXB - cJU_BYTESPERWORD) / cJU_BYTESPERWORD)
-//#define cJ1_LEAFW_MAXPOP1    (109)      // TEMP!!!!!!!!!!!!!!!!!!!!
 
-#else // 64-bit
+#ifndef cJ1_LEAF1_MAXPOP1
+//#define cJ1_LEAF1_MAXPOP1    (cJ1_LEAF1_MAXWORDS * cJU_BYTESPERWORD)
+#define cJ1_LEAF1_MAXPOP1    (1)        // no Leaf1
+#endif  // cJ1_LEAF1_MAXPOP1
 
-// #define cJ1_LEAF1_MAXPOP1                    // no LEAF1 in 64-bit.
-#define cJ1_LEAF2_MAXPOP1    (108)      // Allocsize of 27
-//#define cJ1_LEAF2_MAXPOP1    (J_1_MAXB / 2)
+// Fix this cJ1_LEAF2_MAXWORDS stuff!!!!!!!!!!!!!!!!!!!
+
+#define cJ1_LEAF2_MAXWORDS   (64) 
+//#define cJ1_LEAF2_MAXPOP1    (108)      // Allocsize of 27
+#define cJ1_LEAF2_MAXPOP1    (64 * 4 - 1)      // Allocsize of 65
+//#define cJ1_LEAF2_MAXPOP1    (J_1_MAXB / 2)  Too big
 #define cJ1_LEAF3_MAXPOP1    (J_1_MAXB / 3)
 #define cJ1_LEAF4_MAXPOP1    (J_1_MAXB / 4)
 #define cJ1_LEAF5_MAXPOP1    (J_1_MAXB / 5)
@@ -401,7 +342,10 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 #define cJ1_LEAF7_MAXPOP1    (J_1_MAXB / 7)
 #define cJ1_LEAFW_MAXPOP1    ((J_1_MAXB - cJU_BYTESPERWORD) / cJU_BYTESPERWORD)
 
-#endif
+
+#define ju_PImmed1 ju_1Immed1
+#define ju_PImmed2 ju_1Immed2
+#define ju_PImmed4 ju_1Immed4
 
 
 // MAXIMUM POPULATIONS OF IMMEDIATE JPs:
@@ -409,16 +353,25 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // These specify the maximum Population of immediate JPs with various Index
 // Sizes (== sizes of remaining undecoded Index bits).
 
+#ifdef oldwaywithJPequal16bytes
 #define cJ1_IMMED1_MAXPOP1  ((sizeof(jp_t) - 1) / 1)    // 7 [15].
 #define cJ1_IMMED2_MAXPOP1  ((sizeof(jp_t) - 1) / 2)    // 3  [7].
 #define cJ1_IMMED3_MAXPOP1  ((sizeof(jp_t) - 1) / 3)    // 2  [5].
 
-#ifdef JU_64BIT
 #define cJ1_IMMED4_MAXPOP1  ((sizeof(jp_t) - 1) / 4)    //    [3].
 #define cJ1_IMMED5_MAXPOP1  ((sizeof(jp_t) - 1) / 5)    //    [3].
 #define cJ1_IMMED6_MAXPOP1  ((sizeof(jp_t) - 1) / 6)    //    [2].
 #define cJ1_IMMED7_MAXPOP1  ((sizeof(jp_t) - 1) / 7)    //    [2].
-#endif
+
+#else   // oldwaywithJPequal16bytes
+#define cJ1_IMMED1_MAXPOP1  15  // 7 [15].
+#define cJ1_IMMED2_MAXPOP1   7  // 3  [7].
+#define cJ1_IMMED3_MAXPOP1   5  // 2  [5].
+#define cJ1_IMMED4_MAXPOP1   3 //    [3].
+#define cJ1_IMMED5_MAXPOP1   3 //    [3].
+#define cJ1_IMMED6_MAXPOP1   2 //    [2].
+#define cJ1_IMMED7_MAXPOP1   2 //    [2].
+#endif // oldwaywithJPequal16bytes
 
 
 // ****************************************************************************
@@ -455,12 +408,13 @@ typedef struct J__UDY1_BITMAP_LEAF
 typedef struct J_UDY1_POPULATION_AND_MEMORY
 {
 /* 1 */ Word_t     jpm_Pop0;            // total population-1 in array.
+/* 8/9 */ Word_t   jpm_TotalMemWords;   // words allocated in array.
 /* 2 */ jp_t       jpm_JP;              // JP to first branch; see above.
 /* 4 */ Word_t     jpm_LastUPop0;       // last jpm_Pop0 when convert to BranchU
 // Note:  Field names match PJError_t for convenience in macros:
 /* 7 */ JU_Errno_t je_Errno;            // one of the enums in Judy.h.
 /* 7/8 */ int      je_ErrID;            // often an internal source line number.
-/* 8/9 */ Word_t   jpm_TotalMemWords;   // words allocated in array.
+        Word_t     jpm_Extra[10];
 } j1pm_t, *Pj1pm_t;
 
 
@@ -472,30 +426,23 @@ typedef struct J_UDY1_POPULATION_AND_MEMORY
 //
 // Also define macros to hide the details in the code using these tables.
 
-#ifndef JU_64BIT
-extern const uint8_t j__1_Leaf1PopToWords[cJ1_LEAF1_MAXPOP1 + 2];
-#endif
-extern const uint8_t j__1_Leaf2PopToWords[cJ1_LEAF2_MAXPOP1 + 2];
-extern const uint8_t j__1_Leaf3PopToWords[cJ1_LEAF3_MAXPOP1 + 2];
-#ifdef JU_64BIT
-extern const uint8_t j__1_Leaf4PopToWords[cJ1_LEAF4_MAXPOP1 + 2];
-extern const uint8_t j__1_Leaf5PopToWords[cJ1_LEAF5_MAXPOP1 + 2];
-extern const uint8_t j__1_Leaf6PopToWords[cJ1_LEAF6_MAXPOP1 + 2];
-extern const uint8_t j__1_Leaf7PopToWords[cJ1_LEAF7_MAXPOP1 + 2];
-#endif
-extern const uint8_t j__1_LeafWPopToWords[cJ1_LEAFW_MAXPOP1 + 2];
+extern const uint16_t j__1_Leaf1PopToWords[cJ1_LEAF1_MAXPOP1 + 2];
+extern const uint16_t j__1_Leaf2PopToWords[cJ1_LEAF2_MAXPOP1 + 2];
+extern const uint16_t j__1_Leaf3PopToWords[cJ1_LEAF3_MAXPOP1 + 2];
+extern const uint16_t j__1_Leaf4PopToWords[cJ1_LEAF4_MAXPOP1 + 2];
+extern const uint16_t j__1_Leaf5PopToWords[cJ1_LEAF5_MAXPOP1 + 2];
+extern const uint16_t j__1_Leaf6PopToWords[cJ1_LEAF6_MAXPOP1 + 2];
+extern const uint16_t j__1_Leaf7PopToWords[cJ1_LEAF7_MAXPOP1 + 2];
+extern const uint16_t j__1_LeafWPopToWords[cJ1_LEAFW_MAXPOP1 + 2];
 
 // Check if increase of population will fit in same leaf:
 
-#ifndef JU_64BIT
 #define J1_LEAF1GROWINPLACE(Pop1) \
         J__U_GROWCK(Pop1, cJ1_LEAF1_MAXPOP1, j__1_Leaf1PopToWords)
-#endif
 #define J1_LEAF2GROWINPLACE(Pop1) \
         J__U_GROWCK(Pop1, cJ1_LEAF2_MAXPOP1, j__1_Leaf2PopToWords)
 #define J1_LEAF3GROWINPLACE(Pop1) \
         J__U_GROWCK(Pop1, cJ1_LEAF3_MAXPOP1, j__1_Leaf3PopToWords)
-#ifdef JU_64BIT
 #define J1_LEAF4GROWINPLACE(Pop1) \
         J__U_GROWCK(Pop1, cJ1_LEAF4_MAXPOP1, j__1_Leaf4PopToWords)
 #define J1_LEAF5GROWINPLACE(Pop1) \
@@ -504,21 +451,16 @@ extern const uint8_t j__1_LeafWPopToWords[cJ1_LEAFW_MAXPOP1 + 2];
         J__U_GROWCK(Pop1, cJ1_LEAF6_MAXPOP1, j__1_Leaf6PopToWords)
 #define J1_LEAF7GROWINPLACE(Pop1) \
         J__U_GROWCK(Pop1, cJ1_LEAF7_MAXPOP1, j__1_Leaf7PopToWords)
-#endif
 #define J1_LEAFWGROWINPLACE(Pop1) \
         J__U_GROWCK(Pop1, cJ1_LEAFW_MAXPOP1, j__1_LeafWPopToWords)
 
-#ifndef JU_64BIT
 #define J1_LEAF1POPTOWORDS(Pop1)  (j__1_Leaf1PopToWords[Pop1])
-#endif
 #define J1_LEAF2POPTOWORDS(Pop1)  (j__1_Leaf2PopToWords[Pop1])
 #define J1_LEAF3POPTOWORDS(Pop1)  (j__1_Leaf3PopToWords[Pop1])
-#ifdef JU_64BIT
 #define J1_LEAF4POPTOWORDS(Pop1)  (j__1_Leaf4PopToWords[Pop1])
 #define J1_LEAF5POPTOWORDS(Pop1)  (j__1_Leaf5PopToWords[Pop1])
 #define J1_LEAF6POPTOWORDS(Pop1)  (j__1_Leaf6PopToWords[Pop1])
 #define J1_LEAF7POPTOWORDS(Pop1)  (j__1_Leaf7PopToWords[Pop1])
-#endif
 #define J1_LEAFWPOPTOWORDS(Pop1)  (j__1_LeafWPopToWords[Pop1])
 
 
@@ -532,18 +474,14 @@ size_t  j__udy1AllocJBB(          Pj1pm_t);             // constant size.
 size_t  j__udy1AllocJBBJP(int,    Pj1pm_t);
 size_t  j__udy1AllocJBU(          Pj1pm_t);             // constant size.
 
-#ifndef JU_64BIT
 size_t  j__udy1AllocJLL1( int,    Pj1pm_t);
-#endif
 size_t  j__udy1AllocJLL2( int,    Pj1pm_t);
 size_t  j__udy1AllocJLL3( int,    Pj1pm_t);
 
-#ifdef JU_64BIT
 size_t  j__udy1AllocJLL4( int,    Pj1pm_t);
 size_t  j__udy1AllocJLL5( int,    Pj1pm_t);
 size_t  j__udy1AllocJLL6( int,    Pj1pm_t);
 size_t  j__udy1AllocJLL7( int,    Pj1pm_t);
-#endif
 
 size_t  j__udy1AllocJLB1(         Pj1pm_t);             // constant size.
 
@@ -556,18 +494,14 @@ void    j__udy1FreeJBB(  size_t,         Pj1pm_t);      // constant size.
 void    j__udy1FreeJBBJP(size_t, int,    Pj1pm_t);
 void    j__udy1FreeJBU(  size_t,         Pj1pm_t);      // constant size.
 
-#ifndef JU_64BIT
 void    j__udy1FreeJLL1( size_t, int,    Pj1pm_t);
-#endif
 void    j__udy1FreeJLL2( size_t, int,    Pj1pm_t);
 void    j__udy1FreeJLL3( size_t, int,    Pj1pm_t);
 
-#ifdef JU_64BIT
 void    j__udy1FreeJLL4( size_t, int,    Pj1pm_t);
 void    j__udy1FreeJLL5( size_t, int,    Pj1pm_t);
 void    j__udy1FreeJLL6( size_t, int,    Pj1pm_t);
 void    j__udy1FreeJLL7( size_t, int,    Pj1pm_t);
-#endif
 
 void    j__udy1FreeJLW(  Pjlw_t, int,    Pj1pm_t);
 void    j__udy1FreeJLB1( size_t,         Pj1pm_t);      // constant size.

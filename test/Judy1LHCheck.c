@@ -10,6 +10,20 @@
 
 #include <Judy.h>
 
+// The released Judy libraries do not, and some of Doug's work-in-progress
+// libraries may not, have Judy1Dump and/or JudyLDump entry points.
+// And Mike sometimes links Judy1LHCheck with his own Judy1 library and the
+// released or Doug's JudyL or with his own JudyL and the released or
+// Doug's Judy1 libraries.
+// We want to be able to use the same Check.c for all of these cases.
+// The solution is to define JUDY1_V2 and/or JUDYL_V2 to have Check.c
+// use Judy1Dump and/or JudyLDump for real.
+
+#ifndef JUDY1_V2
+#define Judy1Dump(wRoot, nBL, wKeyPrefix)
+#define JudyLDump(wRoot, nBL, wKeyPrefix)
+#endif // JUDY1_V2
+
 // In case we want to set j__MFlag to one to get JudyMalloc to dump mmap/munmap.
 extern Word_t j__MFlag;
 
@@ -228,6 +242,7 @@ main(int argc, char *argv[])
 #define J1 (sj1.pv1)
     struct { void *pv0, *pv1, *pv2; } sjL = { 0, 0, 0 };
 #define JL (sjL.pv1)
+    printf("&sjL.pv1 %p %p\n", (void*)&sjL.pv1, sjL.pv1);
 #else // DEBUG
     void *J1 = NULL;            // Judy1
     void *JL = NULL;            // JudyL

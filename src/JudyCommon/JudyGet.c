@@ -36,6 +36,195 @@
 #include "JudyPrintJP.c"
 #endif
 
+//void(ju_BranchPop0());            // Not used in Get
+
+#ifdef  noDCD
+#undef ju_DcdNonMatchKey
+#define ju_DcdNonMatchKey(INDEX,PJP,POP0BYTES) (0)
+#endif  // DCD
+
+#include <immintrin.h> // _mm_movemask_epi8, __m128i
+
+#ifdef  REFER
+// _mm_loadu_si128 is SSE2
+// _mm_lddqu_si128 is SSE3
+// _mm_lddqu_si128 "may perform better than _mm_loadu_si128 when the data
+// crosses a cache line boundary".
+
+// v_t is a vector of 16 chars. __m128i is a vector of 2 long longs.
+// We need the char variant so we can compare with a char using '==' or '>='.
+#ifdef __clang__
+// clang has some support for gcc attribute "vector_size" but it doesn't work
+// as well as its own ext_vector_type.
+// For example, it won't promote a scalar to a vector for compare.
+typedef char __attribute__((ext_vector_type(16))) v_t;
+
+// gcc has no support for clang attribute "ext_vector_type".
+typedef char __attribute__((vector_size(16))) v_t;
+// for mis-aligned moves  typedef char __attribute__((vector_size(16), aligned(4))) 
+#endif // __clang__
+
+// HasKey returns (1 << matching slot number) if sorted full Bucket
+// has Key or zero if Bucket does not have Key.
+// Keys are sorted with lowest key at vector index zero.
+static int 
+HasKey(v_t Bucket, uint8_t Key)
+{
+    v_t xEq = (Bucket == Key); // compare Key with all
+    return _mm_movemask_epi8((__m128i)xEq); // (1 << matching slot) or 0
+}
+
+// HasKeyInPop returns (1 << matching slot number) if sorted partial Bucket
+// has Key or zero if partial Bucket does not have Key.
+// Keys are packed and sorted with lowest key at vector index zero.
+static int
+HasKeyInPop(v_t Bucket, char Key, int nPopCnt)
+{
+    return HasKey(Bucket, Key) & ((1 << nPopCnt) - 1);
+}
+
+// LocateKey returns the matching slot number if sorted full Bucket
+// has Key or -1 if Bucket does not have Key.
+// Keys are sorted with lowest key at vector index zero.
+static int
+LocateKey(v_t Bucket, char Key)
+{
+    // get (matching byte num + 1) or 0 if no match
+    return __builtin_ffsll(HasKey(Bucket, Key)) - 1;
+}
+
+// LocateKeyInPop returns the matching slot number if sorted parital Bucket
+// has Key or -1 if partial Bucket does not have Key.
+// Keys are packed and sorted with lowest key at vector index zero.
+static int
+LocateKeyInPop(v_t Bucket, char Key, int nPopCnt)
+{
+    // get (matching byte num + 1) or 0 if no match
+    return __builtin_ffsll(HasKeyInPop(Bucket, Key, nPopCnt)) - 1;
+}
+
+// HasGeKey returns (-1 << matching slot number) & 0xffff)
+// if sorted full Bucket has a key that is greater than or equal to Key
+// or zero if Bucket does not have such a key.
+// Keys are sorted with lowest key at vector index zero.
+static int
+HasGeKey(v_t Bucket, char Key)
+{
+    v_t xGe = (Bucket >= Key); // compare Key with all
+    return _mm_movemask_epi8((__m128i)xGe); // (1 << matching slot) or 0
+}
+
+// HasGeKeyInPop returns (-1 << matching slot number) & 0xffff)
+// if sorted partial Bucket has a key that is greater than or equal to Key
+// or zero if partial Bucket does not have such a key.
+// Keys are packed and sorted with lowest key at vector index zero.
+static int
+HasGeKeyInPop(v_t Bucket, char Key, int nPopCnt)
+{
+    int n = HasGeKey(Bucket, Key);
+    n &= (1 << nPopCnt) - 1;
+    return n;
+}
+
+// Use LocateSlot if we know the bucket does not have the key
+// but we need to know where the key belongs.
+static int
+LocateSlot(v_t Bucket, char Key)
+{
+    return (__builtin_ffsll(HasGeKey(Bucket, Key)) + 16) % 17;
+}
+
+// Use LocateSlotInPop if we know the bucket does not have the key
+// but we need to know where the key belongs.
+static int
+LocateSlotInPop(v_t Bucket, char Key, int nPopCnt)
+{
+    return (__builtin_ffsll(HasGeKeyInPop(Bucket, Key, nPopCnt)) + 16) % 17;
+}
+
+// Search returns the matching slot number if sorted full Bucket
+// has Key or ~(slot number of first slot with key greater than Key)
+// if Bucket has such a key or ~16 if Bucket has no such key.
+// Keys are sorted with lowest key at vector index zero.
+static int
+Search(v_t Bucket, char Key)
+{
+    // get (matching byte num + 1) or 0 if no match
+    int n = __builtin_ffsll(HasGeKey(Bucket, Key));
+    // 0 => ~16
+    // 1 => 0 if there and ~0 if not there
+    // 2 => 1 if there and ~1 if not there
+    // 4 => 2 if there and ~2 if not there
+    // 0x8000 => 15 if there and ~15 if not there
+#ifdef METHOD_TEST // Has je with gcc, but short branch forward.
+    int z = (n == 0);
+    --n; n = z ? ~(int)sizeof(v_t) : n ^ ((Bucket[n] == Key) - 1);
+#elif defined(METHOD_LS)
+    int eq = __builtin_ffsll(HasKey(Bucket, Key));
+    return eq ? eq - 1 : ~LocateSlot(Bucket, Key);
+#elif defined(METHOD_DECR)
+    int z = (n == 0); // key is greater than all others in the bucket
+    n = (z - 1) & (n - 1); // slot or 0
+    n ^= ((Bucket[n] == Key) - 1); // slot or ~slot or 0
+    n ^= ~(z - 1) & nPopCnt; // slot or ~slot or ~nPopCnt
+#else // METHOD_MASK // One instruction less than METHOD_DECR with gcc.
+    int nz = (n != 0); // bucket has a greater or equal key
+    --n; n ^= (Bucket[n & (sizeof(v_t) - 1)] == Key) - 1;
+    n |= (nz - 1) & ~sizeof(v_t);
+#endif
+    return n;
+}
+
+// SearchInPop returns the matching slot number if sorted parital Bucket
+// has Key or ~(slot number of first slot with key greater than Key)
+// if partial Bucket has such a key or ~16 if partial Bucket has no such key.
+// Keys are packed and sorted with lowest key at vector index zero.
+static int
+SearchInPop(v_t Bucket, char Key, int nPopCnt)
+{
+    // get (matching byte num + 1) or 0 if no match
+    int n = __builtin_ffsll(HasGeKeyInPop(Bucket, Key, nPopCnt));
+#ifdef METHOD_TEST // has je with gcc, but short branch forward
+    int z = (n == 0);
+    --n; n = z ? ~nPopCnt : n ^ ((Bucket[n] == Key) - 1);
+#elif defined(METHOD_LS)
+    int eq = __builtin_ffsll(HasKeyInPop(Bucket, Key, nPopCnt));
+    return eq ? eq - 1 : ~LocateSlotInPop(Bucket, Key, nPopCnt);
+#elif !defined(METHOD_DECR)
+    int z = (n == 0); // key is greater than all others in the bucket
+    n = (z - 1) & (n - 1); // slot or 0
+    n ^= ((Bucket[n] == Key) - 1); // slot or ~slot or 0
+    n ^= ~(z - 1) & nPopCnt; // slot or ~slot or ~nPopCnt
+#else // METHOD_MASK // Doesn't work for LocateSlotInPop.
+    int nz = (n != 0); // partial bucket has a greater or equal key
+    --n; n ^= (Bucket[n & (sizeof(v_t) - 1)] == Key) - 1;
+    n |= (nz - 1) & ~nPopCnt;
+#endif
+
+    return n;
+}
+#endif  // REFER
+
+
+#ifdef __clang__
+// clang has some support for gcc attribute "vector_size" but it doesn't work
+// as well as its own ext_vector_type.
+// For example, it won't promote a scalar to a vector for compare.
+typedef char __attribute__((ext_vector_type(16))) v16qi_t;
+typedef uint16_t __attribute__((ext_vector_type(8))) v8qi_t;
+#else // __clang__
+// gcc has no support for clang attribute "ext_vector_type".
+
+#ifdef  USEMISSALIGNED
+typedef char     __attribute__((vector_size(16), aligned(4))) v16qi_t;
+typedef uint16_t __attribute__((vector_size(16), aligned(4)))  v8qi_t;
+#else   // aligned method
+typedef char     __attribute__((vector_size(16)))            v16qi_t;
+typedef uint16_t __attribute__((vector_size(16)))             v8qi_t;
+#endif  // aligned method
+
+#endif // GCC ! __clang__
+
 // ****************************************************************************
 // J U D Y   1   T E S T
 // J U D Y   L   G E T
@@ -81,20 +270,20 @@ FUNCTION PPvoid_t JudyLGet (Pcvoid_t PArray,     // from which to retrieve.
 #endif  // JUDYL
 
     int       posidx;
-    uint8_t   Digit = 0;                    // byte just decoded from Index.
+    uint8_t   Digit = 0;                // byte just decoded from Index.
 
-    (void) PJError;
+    (void) PJError;                     // no longer used
 
-        if (PArray == (Pcvoid_t) NULL)  // empty array.
-            goto NotFoundExit;
+    if (PArray == (Pcvoid_t)NULL)  // empty array.
+        goto NotFoundExit;
 
 #ifdef  TRACEJPG
 #ifdef JUDY1
-    printf("\nJudy1Test, Key = 0x%lx, Array Pop1 = %lu\n", 
-            (size_t)Index, (size_t)(JU_LEAFW_POP0(PArray) + 1));
+//    printf("\nJudy1Test, Key = 0x%lx, Array Pop1 = %lu\n", 
+//            (size_t)Index, (size_t)(JU_LEAFW_POP0(PArray) + 1));
 #else /* JUDYL */
-    printf("\nJudyGet, Key = 0x%lx, Array Pop1 = %lu\n", 
-        (size_t)Index, (size_t)(JU_LEAFW_POP0(PArray) + 1));
+//    printf("\nJudyGet, Key = 0x%lx, Array Pop1 = %lu\n", 
+//        (size_t)Index, (size_t)(JU_LEAFW_POP0(PArray) + 1));
 #endif /* JUDYL */
 #endif  // TRACEJPG
 
@@ -119,9 +308,13 @@ FUNCTION PPvoid_t JudyLGet (Pcvoid_t PArray,     // from which to retrieve.
 #endif  // JUDYL
 
         }
-
         Pjpm = P_JPM(PArray);
         Pjp = &(Pjpm->jpm_JP);  // top branch is below JPM.
+
+#ifdef  TRACEJPG
+        j__udyIndex = Index;
+        j__udyPopulation = Pjpm->jpm_Pop0;
+#endif  // TRACEJPG
 
 // ****************************************************************************
 // WALK THE JUDY TREE USING A STATE MACHINE:
@@ -132,7 +325,7 @@ ContinueWalk:           // for going down one level; come here with Pjp set.
         JudyPrintJP(Pjp, "g", __LINE__);
 #endif  // TRACEJPG
 
-        switch (JU_JPTYPE(Pjp))
+        switch (ju_Type(Pjp))
         {
 
 // Ensure the switch table starts at 0 for speed; otherwise more code is
@@ -149,13 +342,10 @@ ContinueWalk:           // for going down one level; come here with Pjp set.
         case cJU_JPNULL1:
         case cJU_JPNULL2:
         case cJU_JPNULL3:
-
-#ifdef JU_64BIT
         case cJU_JPNULL4:
         case cJU_JPNULL5:
         case cJU_JPNULL6:
         case cJU_JPNULL7:
-#endif  // JU_64BIT
         {
             break;
         }
@@ -164,45 +354,41 @@ ContinueWalk:           // for going down one level; come here with Pjp set.
 //
         case cJU_JPBRANCH_L2:
         {
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 2)) break;
+            if (ju_DcdNonMatchKey(Index, Pjp, 2)) break;
             Digit = JU_DIGITATSTATE(Index, 2);
             goto JudyBranchL;
         }
         case cJU_JPBRANCH_L3:
         {
-#ifdef JU_64BIT // It is a no-op in 32 Bit
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 3)) break;
-#endif  // JU_64BIT
+            if (ju_DcdNonMatchKey(Index, Pjp, 3)) break;
+
             Digit = JU_DIGITATSTATE(Index, 3);
             goto JudyBranchL;
         }
-#ifdef JU_64BIT
         case cJU_JPBRANCH_L4:
         {
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 4)) break;
+            if (ju_DcdNonMatchKey(Index, Pjp, 4)) break;
             Digit = JU_DIGITATSTATE(Index, 4);
             goto JudyBranchL;
         }
         case cJU_JPBRANCH_L5:
         {
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 5)) break;
+            if (ju_DcdNonMatchKey(Index, Pjp, 5)) break;
             Digit = JU_DIGITATSTATE(Index, 5);
             goto JudyBranchL;
         }
         case cJU_JPBRANCH_L6:
         {
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 6)) break;
+            if (ju_DcdNonMatchKey(Index, Pjp, 6)) break;
             Digit = JU_DIGITATSTATE(Index, 6);
             goto JudyBranchL;
         }
         case cJU_JPBRANCH_L7:
         {
-            // JU_DCDNOTMATCHINDEX() would be a no-op.
+            // ju_DcdNonMatchKey() would be a no-op.
             Digit = JU_DIGITATSTATE(Index, 7);
             goto JudyBranchL;
         }
-#endif  // JU_64BIT
-
         case cJU_JPBRANCH_L:
         {
             Pjbl_t Pjbl;
@@ -212,7 +398,8 @@ ContinueWalk:           // for going down one level; come here with Pjp set.
 // Common code for all BranchLs; come here with Digit set:
 
 JudyBranchL:
-            Pjbl = P_JBL(Pjp->jp_Addr);
+//            Pjbl = P_JBL(Pjp->jp_Addr0);
+            Pjbl = P_JBL(ju_BaLPntr(Pjp));
 
             posidx = j__udySearchBranchL(Pjbl->jbl_Expanse, Pjbl->jbl_NumJPs, Digit);
 
@@ -223,6 +410,7 @@ JudyBranchL:
             goto ContinueWalk;
         }
 
+#ifndef noB
 // ****************************************************************************
 // JPBRANCH_B*:
 //  Note: Only one (1) JPBRANCH_B* can be any path in the walk down the tree,
@@ -230,46 +418,41 @@ JudyBranchL:
 
         case cJU_JPBRANCH_B2:
         {
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 2)) break;
+            if (ju_DcdNonMatchKey(Index, Pjp, 2)) break;
             Digit = JU_DIGITATSTATE(Index, 2);
             goto JudyBranchB;
         }
 
         case cJU_JPBRANCH_B3:
         {
-#ifdef JU_64BIT // otherwise its a no-op:
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 3)) break;
-#endif  // JU_64BIT
+            if (ju_DcdNonMatchKey(Index, Pjp, 3)) break;
             Digit = JU_DIGITATSTATE(Index, 3);
             goto JudyBranchB;
         }
-#ifdef JU_64BIT
         case cJU_JPBRANCH_B4:
         {
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 4)) break;
+            if (ju_DcdNonMatchKey(Index, Pjp, 4)) break;
             Digit = JU_DIGITATSTATE(Index, 4);
             goto JudyBranchB;
         }
         case cJU_JPBRANCH_B5:
         {
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 5)) break;
+            if (ju_DcdNonMatchKey(Index, Pjp, 5)) break;
             Digit = JU_DIGITATSTATE(Index, 5);
             goto JudyBranchB;
         }
         case cJU_JPBRANCH_B6:
         {
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 6)) break;
+            if (ju_DcdNonMatchKey(Index, Pjp, 6)) break;
             Digit = JU_DIGITATSTATE(Index, 6);
             goto JudyBranchB;
         }
         case cJU_JPBRANCH_B7:
         {
-//            JU_DCDNOTMATCHINDEX() would be a no-op.
+//            ju_DcdNonMatchKey() would be a no-op.
             Digit = JU_DIGITATSTATE(Index, 7);
             goto JudyBranchB;
         }
-#endif // JU_64BIT
-
         case cJU_JPBRANCH_B:
         {
             Pjbb_t    Pjbb;
@@ -282,7 +465,7 @@ JudyBranchL:
 // Common code for all BranchBs; come here with Digit set:
 
 JudyBranchB:
-            Pjbb   = P_JBB(Pjp->jp_Addr);
+            Pjbb   = P_JBB(ju_BaLPntr(Pjp));
             subexp = Digit / cJU_BITSPERSUBEXPB;
 
             BitMap = JU_JBB_BITMAP(Pjbb, subexp);
@@ -299,124 +482,166 @@ JudyBranchB:
             goto ContinueWalk;
 
         } // case cJU_JPBRANCH_B*
+#endif  // noB
 // ****************************************************************************
 // JPBRANCH_U*:
 
         case cJU_JPBRANCH_U:
         {
-            Pjp = JU_JBU_PJP(Pjp, Index, cJU_ROOTSTATE);
+            Pjp =  P_JBU(ju_BaLPntr(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, cJU_ROOTSTATE);
             goto ContinueWalk;
         }
-#ifdef JU_64BIT
         case cJU_JPBRANCH_U7:
         {
-            // JU_DCDNOTMATCHINDEX() would be a no-op.
-            Pjp = JU_JBU_PJP(Pjp, Index, 7);
+//          ju_DcdNonMatchKey() would be a no-op.
+
+            Pjp =  P_JBU(ju_BaLPntr(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, 7);
             goto ContinueWalk;
         }
         case cJU_JPBRANCH_U6:
         {
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 6)) break;
-            Pjp = JU_JBU_PJP(Pjp, Index, 6);
+            if (ju_DcdNonMatchKey(Index, Pjp, 6)) break;
+
+            Pjp =  P_JBU(ju_BaLPntr(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, 6);
             goto ContinueWalk;
         }
         case cJU_JPBRANCH_U5:
         {
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 5)) break;
-            Pjp = JU_JBU_PJP(Pjp, Index, 5);
+            if (ju_DcdNonMatchKey(Index, Pjp, 5)) break;
+
+            Pjp =  P_JBU(ju_BaLPntr(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, 5);
             goto ContinueWalk;
         }
         case cJU_JPBRANCH_U4:
         {
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 4)) break;
-            Pjp = JU_JBU_PJP(Pjp, Index, 4);
+            if (ju_DcdNonMatchKey(Index, Pjp, 4)) break;
+
+            Pjp =  P_JBU(ju_BaLPntr(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, 4);
             goto ContinueWalk;
         }
-
-#endif // JU_64BIT
         case cJU_JPBRANCH_U3:
         {
 
-#ifdef JU_64BIT // otherwise its a no-op:
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 3)) break;
-#endif  // JU_64BIT
+            if (ju_DcdNonMatchKey(Index, Pjp, 3)) break;
 
-            Pjp = JU_JBU_PJP(Pjp, Index, 3);
+            Pjp =  P_JBU(ju_BaLPntr(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, 3);
             goto ContinueWalk;
         }
         case cJU_JPBRANCH_U2:
         {
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 2)) break;
-//            Pjp =  P_JBU(Pjp->jp_Addr)->jbu_jp + JU_DIGITATSTATE(Index, 2);
-            Pjp = JU_JBU_PJP(Pjp, Index, 2);
+            if (ju_DcdNonMatchKey(Index, Pjp, 2)) break;
+
+            Pjp =  P_JBU(ju_BaLPntr(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, 2);
             goto ContinueWalk;
         }
 // ****************************************************************************
 // JPLEAF*:
 //
-// Note:  Here the calls of JU_DCDNOTMATCHINDEX() are necessary and check
+// Note:  Here the calls of ju_DcdNonMatchKey() are necessary and check
 // whether Index is out of the expanse of a narrow pointer.
 
-#if (defined(JUDYL) || (! defined(JU_64BIT)))
-//#ifdef  LEAF1
+       // Judy1 does not have Leaf1
+#ifdef  JUDYL     
         case cJU_JPLEAF1:
         {
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 1)) break;
+            if (ju_DcdNonMatchKey(Index, Pjp, 1)) break;
 
-            Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
-            Pjll = P_JLL(Pjp->jp_Addr);
+            Pjll = P_JLL(ju_BaLPntr(Pjp));
+            Pop1   = ju_LeafPop0(Pjp) + 1;
 
-#ifdef  JUDYL
-            Pjv = JL_LEAF1VALUEAREA(Pjll, Pop1);
+            Pjv  = JL_LEAF1VALUEAREA(Pjll, Pop1);
+
+#ifdef  PARALLEL
+            v16qi_t     m128reg;
+            v16qi_t    *Pv16qi;
+
+            DIRECTHITS;
+
+//          This seems a little hokey
+            Pv16qi = (v16qi_t *)ju_BaLPntr(Pjp);
+
+            uint8_t  key8 = (uint8_t)Index;
+            Word_t   charmask = 0;
+
+// for performance testing only!!!!!!!, plus xxxns on i7-6800K
+#ifdef  EXPPARALLEL
+//          This supports a Leaf1 Pop1 up to 64
+            int   bucket = 0;
+            for (int pop0 = 0; pop0 < Pop1; pop0 += 16, bucket++)
+            {
+                m128reg   = Pv16qi[bucket] == key8;      // compare 16 more Keys with key8
+                charmask |=  (Word_t)_mm_movemask_epi8((__m128i)m128reg) << pop0;
+            }
+//          because shift by 64 is undefined -- 2 steps
+            charmask &= (((Word_t)1 << (Pop1 - 1)) << 1) - 1;
+            if (charmask == 0)
+                break;
+#else  // EXPPARALLEL
+
+//          This supports a Leaf1 Pop1 up to 32
+            m128reg  =  Pv16qi[0] == key8;      // compare 16 Keys with key8
+            charmask =  (Word_t)_mm_movemask_epi8((__m128i)m128reg);
+
+//            if (Pop1 > 16) a little slower (dlb - Oct2017)
+//            {
+            m128reg  =  Pv16qi[1] == key8;      // compare 16 Keys with key8
+            charmask |= (Word_t)_mm_movemask_epi8((__m128i)m128reg) << 16;
+//            }
+
+//          mask off bits beyond population
+            charmask &= ((Word_t)1 << Pop1) - 1;
+//          need 2 step shift when Pop1 == 64 charmask &= (((Word_t)1 << (Pop1 - 1)) << 1) - 1;
+//            charmask &= (((Word_t)1 << (Pop1 - 1)) << 1) - 1;
+            if (charmask == 0)          // no matching Keys
+                break;
+            posidx = __builtin_ctzll(charmask);
+            return((PPvoid_t) (Pjv + posidx));
+
+#endif // EXPPARALLEL
+
+            posidx = __builtin_ctzll(charmask); 
+
+//            if (posidx   != __builtin_ffsll(charmask) - 1)
+//                printf(" Value = 0x%lx, Index = 0x%lx\n", *(Pjv + posidx), Index);
+
+            return((PPvoid_t) (Pjv + posidx));
+
+#else   // ! PARALLEL
+
+//          entry Pjll = Leaf1, Pjv = PValue, Pop1 = population, Key = Index
+            posidx = j__udySearchLeaf1(Pjll, Pop1, Index);
+            goto CommonLeafExit;
+#endif  // ! PARALLEL
+
+        }
 #endif  // JUDYL
 
-            goto Leaf1Exit;
-        }
-//#endif // LEAF1
-#endif // (JUDYL || (! JU_64BIT))
         case cJU_JPLEAF2:
         {
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 2)) break;
-            Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
-            Pjll = P_JLL(Pjp->jp_Addr);
+            if (ju_DcdNonMatchKey(Index, Pjp, 2)) break;
 
-#ifdef  JUDYL
-            Pjv = JL_LEAF2VALUEAREA(Pjll, Pop1);
-#endif  // JUDYL
+            Pop1 = ju_LeafPop0(Pjp) + 1;
+            Pjll = P_JLL(ju_BaLPntr(Pjp));
 
-            goto Leaf2Exit;
-
-Leaf2Exit:     // entry Pjll = Leaf2, Pjv = Value, Pop1 = population
-
+// entry Pjll = Leaf2, Pjv = Value, Pop1 = population
             posidx = j__udySearchLeaf2(Pjll, Pop1, Index);
-            goto CommonLeafExit;
-
-CommonLeafExit:
             if (posidx < 0) 
                 break;
 
-////////            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 2)) break;
-
-
-#ifdef  JUDY1
+#ifdef  JUDYL
+            Pjv = JL_LEAF2VALUEAREA(Pjll, Pop1);
+            return((PPvoid_t) (Pjv + posidx));
+#else   // JUDY1
             return(1);
 #endif  // JUDY1
-
-#ifdef  JUDYL
-            return((PPvoid_t) (Pjv + posidx));
-#endif  // JUDYL
 
         }
         case cJU_JPLEAF3:
         {
+            if (ju_DcdNonMatchKey(Index, Pjp, 3)) break;
 
-#ifdef JU_64BIT // its a no-op in 32Bit:
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 3)) break;
-#endif  // JU_64BIT
-
-            Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
-            Pjll = P_JLL(Pjp->jp_Addr);
-
+            Pop1 = ju_LeafPop0(Pjp) + 1;
+            Pjll = P_JLL(ju_BaLPntr(Pjp));
 #ifdef  JUDYL
             Pjv = JL_LEAF3VALUEAREA(Pjll, Pop1);
 #endif  // JUDYL
@@ -427,13 +652,24 @@ Leaf3Exit:     // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
 
             posidx = j__udySearchLeaf3(Pjll, Pop1, Index);
             goto CommonLeafExit;
+CommonLeafExit:
+            if (posidx < 0) 
+                break;
+#ifdef  JUDY1
+            return(1);
+#endif  // JUDY1
+
+#ifdef  JUDYL
+            return((PPvoid_t) (Pjv + posidx));
+#endif  // JUDYL
+
         }
-#ifdef JU_64BIT
         case cJU_JPLEAF4:
         {
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 4)) break;
-            Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
-            Pjll = P_JLL(Pjp->jp_Addr);
+            if (ju_DcdNonMatchKey(Index, Pjp, 4)) break;
+
+            Pop1 = ju_LeafPop0(Pjp) + 1;
+            Pjll = P_JLL(ju_BaLPntr(Pjp));
 
 #ifdef  JUDYL
             Pjv = JL_LEAF4VALUEAREA(Pjll, Pop1);
@@ -446,9 +682,10 @@ Leaf4Exit:
         }
         case cJU_JPLEAF5:
         {
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 5)) break;
-            Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
-            Pjll = P_JLL(Pjp->jp_Addr);
+            if (ju_DcdNonMatchKey(Index, Pjp, 5)) break;
+
+            Pop1 = ju_LeafPop0(Pjp) + 1;
+            Pjll = P_JLL(ju_BaLPntr(Pjp));
 
 #ifdef  JUDYL
             Pjv = JL_LEAF5VALUEAREA(Pjll, Pop1);
@@ -462,9 +699,10 @@ Leaf5Exit:
         }
         case cJU_JPLEAF6:
         {
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 6)) break;
-            Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
-            Pjll = P_JLL(Pjp->jp_Addr);
+            if (ju_DcdNonMatchKey(Index, Pjp, 6)) break;
+
+            Pop1 = ju_LeafPop0(Pjp) + 1;
+            Pjll = P_JLL(ju_BaLPntr(Pjp));
 
 #ifdef  JUDYL
             Pjv = JL_LEAF6VALUEAREA(Pjll, Pop1);
@@ -478,9 +716,10 @@ Leaf6Exit:
         }
         case cJU_JPLEAF7:
         {
-            // JU_DCDNOTMATCHINDEX() would be a no-op.
-            Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
-            Pjll = P_JLL(Pjp->jp_Addr);
+            // ju_DcdNonMatchKey() would be a no-op.
+
+            Pop1 = ju_LeafPop0(Pjp) + 1;
+            Pjll = P_JLL(ju_BaLPntr(Pjp));
 
 #ifdef  JUDYL
             Pjv = JL_LEAF7VALUEAREA(Pjll, Pop1);
@@ -492,7 +731,6 @@ Leaf7Exit:
             posidx = j__udySearchLeaf7(Pjll, Pop1, Index);
             goto CommonLeafExit;
         }
-#endif // JU_64BIT
 
 
 // ****************************************************************************
@@ -509,15 +747,18 @@ Leaf7Exit:
             Word_t      PjvRaw;
 #endif  // JUDYL
 
-            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 1)) break;
+            if (ju_DcdNonMatchKey(Index, Pjp, 1)) break;
 
-            Pjlb   = P_JLB(Pjp->jp_Addr);
+            Pjlb   = P_JLB(ju_BaLPntr(Pjp));
             Digit  = JU_DIGITATSTATE(Index, 1);
             subexp = Digit / cJU_BITSPERSUBEXPL;
+
+#ifdef EXP1BIT
+            if (subexp == 0) return(1); // 7% faster
+#endif  // EXP1BIT
+
             BitMap = JU_JLB_BITMAP(Pjlb, subexp);
             BitMsk = JU_BITPOSMASKL(Digit);
-
-//            DIRECTHITS(1);
 
 // No value in subexpanse for Index => Index not found:
 
@@ -536,7 +777,7 @@ Leaf7Exit:
 //          if population of subexpanse == 1, return ^ to Value^
             if (BitMap == BitMsk)
             {
-//////            if (JU_DCDNOTMATCHINDEX(Index, Pjp, 1)) break;
+//////            if (ju_DcdNonMatchKey(Index, Pjp, 1)) break;
                 return((PPvoid_t)(&Pjlb->jLlb_jLlbs[subexp].jLlbs_PV_Raw));
             }
 #endif /* BMVALUE */
@@ -580,18 +821,17 @@ Leaf7Exit:
         case cJU_JPIMMED_1_01:          // 1 byte decode
         case cJU_JPIMMED_2_01:          // 2 byte decode
         case cJU_JPIMMED_3_01:          // 3 byte decode
-
-#ifdef JU_64BIT
         case cJU_JPIMMED_4_01:          // 4 byte decode
         case cJU_JPIMMED_5_01:          // 5 byte decode
         case cJU_JPIMMED_6_01:          // 6 byte decode
         case cJU_JPIMMED_7_01:          // 7 byte decode
-#endif  // JU_64BIT
 
-//            SEARCHPOPULATION(1);
-//            DIRECTHITS(1);
+//            if (JU_JPDCDPOP0(Pjp) != JU_TRIMTODCDSIZE(Index)) 
+//            if (JU_TRIMTODCDSIZE(Index ^ ju_DcdPop0(Pjp)) != 0) 
+//            if (ju_DcdPop0(Pjp) != JU_TRIMTODCDSIZE(Index)) 
 
-            if (JU_JPDCDPOP0(Pjp) != JU_TRIMTODCDSIZE(Index)) 
+//          This version does not have an conditional branch
+            if ((ju_DcdPop0(Pjp) ^ Index) << 8) 
                 break;
 
 #ifdef  JUDY1
@@ -599,10 +839,11 @@ Leaf7Exit:
 #endif  // JUDY1
 
 #ifdef  JUDYL
-        return((PPvoid_t) &(Pjp->jp_PValue));  // immediate value area.
+//        return((PPvoid_t) &(Pjp->jp_ValueI));  // ^ immediate value
+        return((PPvoid_t) ju_PImmVal_01(Pjp));  // ^ to immediate Value
 #endif  // JUDYL
 
-#if (defined(JUDY1) && defined(JU_64BIT))
+#ifdef  JUDY1
         case cJ1_JPIMMED_1_15:
         case cJ1_JPIMMED_1_14:
         case cJ1_JPIMMED_1_13:
@@ -611,115 +852,148 @@ Leaf7Exit:
         case cJ1_JPIMMED_1_10:
         case cJ1_JPIMMED_1_09:
         case cJ1_JPIMMED_1_08:
-#endif  // (defined(JUDY1) && defined(JU_64BIT))
+#endif  // JUDY1
 
-#if (defined(JUDY1) || defined(JU_64BIT))
         case cJU_JPIMMED_1_07:
         case cJU_JPIMMED_1_06:
         case cJU_JPIMMED_1_05:
         case cJU_JPIMMED_1_04:
-#endif  // (defined(JUDY1) || defined(JU_64BIT))
-
         case cJU_JPIMMED_1_03:
         case cJU_JPIMMED_1_02:
         {
-            Pop1 = JU_JPTYPE(Pjp) - cJU_JPIMMED_1_02 + 2;
+            Pop1 = ju_Type(Pjp) - cJU_JPIMMED_1_02 + 2;
 
-#ifdef  JUDY1
-            Pjll = (Pjll_t)(Pjp->jp_1Index1);
-#endif  // JUDY1
+#ifdef  PARALLEL
+            DIRECTHITS;
+
+//          posidx = 16 bits where each char match is a bit set
+//            v_t m128 = (*(v_t *)Pjp == (uint8_t)Index); // compare Key with all
+//    return _mm_movemask_epi8((__m128i)m128); // (1 << matching slot) or 0
+//
+//            posidx = HasKey(*(v_t *)Pjp, (char)Index); // check equal 16 bytes
+
+//typedef    char __attribute__((vector_size(16))) v_t;
+//typedef uint8_t __attribute__((vector_size(16))) m128_t;
+//            m128_t m128reg;
+//
+//typedef unsigned char __attribute__((vector_size(16))) __v16qu;
+//typedef   uint8_t __attribute__((__vector_size__ (16))) __v16qu;
+//(v_t)_mm_loadu_si128((__m128i *)pUaBucket)
+
+            v16qi_t m128reg;
+            Word_t  charmask = 0;
+            uint8_t key8 = (uint8_t)Index;
+
+//          Do a parallel search of 16 chars
+            m128reg = (*(v16qi_t *)Pjp) == key8; 
+            charmask = _mm_movemask_epi8((__m128i)m128reg);
 
 #ifdef  JUDYL
-            Pjll = (Pjll_t)(Pjp->jp_LIndex1);
-            Pjv = P_JV(Pjp->jp_PValue);
+            charmask >>= 8;                     // skip 1st word in jp_t
+            Pjv = P_JV(ju_PImmVals(Pjp));       // ^ immediate values area
 #endif  // JUDYL
 
-            goto Leaf1Exit;
+//          Mask off bits that are beyond population (assume stats with 1st word)
+            charmask &= ((Word_t)1 << Pop1) - 1; 
 
-//  This is here because there may not be a Leaf1
-Leaf1Exit:     // entry Pjll = Leaf1, Pjv = Value, Pop1 = population
+            if (charmask == 0)                  // not found
+                break;
+#ifdef  JUDYL
+            posidx = __builtin_ctzll(charmask);
+            return((PPvoid_t) (Pjv + posidx));
+#else   // JUDY1
+            return(1);
+#endif  // JUDY1
 
+#else   // ! PARALLEL
+
+            Pjll = (Pjll_t)ju_PImmed1(Pjp);
             posidx = j__udySearchLeaf1(Pjll, Pop1, Index);
-            goto CommonLeafExit;
+            if (posidx < 0) 
+                break;
+#ifdef  JUDYL
+            Pjv = P_JV(ju_PImmVals(Pjp));  // ^ immediate values area
+            return((PPvoid_t) (Pjv + posidx));
+#else   // JUDY1
+            return(1);
+#endif  // JUDY1
+
+#endif  // ! PARALLEL
+
         }
-#if (defined(JUDY1) && defined(JU_64BIT))
+#ifdef  JUDY1
         case cJ1_JPIMMED_2_07:
         case cJ1_JPIMMED_2_06:
         case cJ1_JPIMMED_2_05:
         case cJ1_JPIMMED_2_04:
-#endif  // (defined(JUDY1) && defined(JU_64BIT))
+#endif  // JUDY1
 
-#if (defined(JUDY1) || defined(JU_64BIT))
         case cJU_JPIMMED_2_03:
         case cJU_JPIMMED_2_02:
         {
-            Pop1 = JU_JPTYPE(Pjp) - cJU_JPIMMED_2_02 + 2;
+            Pop1 = ju_Type(Pjp) - cJU_JPIMMED_2_02 + 2;
 
-#ifdef  JUDY1
-            Pjll = (Pjll_t)(Pjp->jp_1Index2);
-#endif  // JUDY1
+            Pjll = (Pjll_t)ju_PImmed2(Pjp);
 
 #ifdef  JUDYL
-            Pjll = (Pjll_t)(Pjp->jp_LIndex2);
-            Pjv = P_JV(Pjp->jp_PValue);
+            Pjv = P_JV(ju_PImmVals(Pjp));  // ^ immediate values area
 #endif  // JUDYL
 
-            goto Leaf2Exit;
+            posidx = j__udySearchLeaf2(Pjll, Pop1, Index);
+            goto CommonLeafExit;
         }
-#endif  // (defined(JUDY1) || defined(JU_64BIT))
 
-#if (defined(JUDY1) && defined(JU_64BIT))
+#ifdef  JUDY1
         case cJ1_JPIMMED_3_05: 
         case cJ1_JPIMMED_3_04:
         case cJ1_JPIMMED_3_03:
-#endif  // (defined(JUDY1) && defined(JU_64BIT))
-
-#if (defined(JUDY1) || defined(JU_64BIT))
-        case cJU_JPIMMED_3_02:
-        {
-            Pop1 = JU_JPTYPE(Pjp) - cJU_JPIMMED_3_02 + 2;
-
-#ifdef  JUDY1
-            Pjll = (Pjll_t)(Pjp->jp_1Index1);
 #endif  // JUDY1
 
+        case cJU_JPIMMED_3_02:
+        {
+            Pop1 = ju_Type(Pjp) - cJU_JPIMMED_3_02 + 2;
+            Pjll = (Pjll_t)ju_PImmed1(Pjp);
+
 #ifdef  JUDYL
-            Pjll = (Pjll_t)(Pjp->jp_LIndex1);
-            Pjv = P_JV(Pjp->jp_PValue);
+//            Pjv = P_JV(Pjp->jp_PValue);
+            Pjv = P_JV(ju_PImmVals(Pjp));  // ^ immediate values area
 #endif  // JUDYL
 
             goto Leaf3Exit;
         }
-#endif  // (defined(JUDY1) || defined(JU_64BIT))
 
-#if (defined(JUDY1) && defined(JU_64BIT))
+#ifdef  JUDY1
         case cJ1_JPIMMED_4_03:
         case cJ1_JPIMMED_4_02:
         {
-            Pop1 = JU_JPTYPE(Pjp) - cJ1_JPIMMED_4_02 + 2;
-            Pjll = (Pjll_t)Pjp->jp_1Index4;
+            Pop1 = ju_Type(Pjp) - cJ1_JPIMMED_4_02 + 2;
+//            Pjll = (Pjll_t)Pjp->jp_1Index4;
+            Pjll = (Pjll_t)ju_PImmed4(Pjp);
             goto Leaf4Exit;
         }
         case cJ1_JPIMMED_5_03:
         case cJ1_JPIMMED_5_02:
         {
-            Pop1 = JU_JPTYPE(Pjp) - cJ1_JPIMMED_5_02 + 2;
-            Pjll = (Pjll_t)Pjp->jp_1Index1;
+            Pop1 = ju_Type(Pjp) - cJ1_JPIMMED_5_02 + 2;
+//            Pjll = (Pjll_t)Pjp->jp_1Index1;
+            Pjll = (Pjll_t)ju_PImmed1(Pjp);
             goto Leaf5Exit;
         }
         case cJ1_JPIMMED_6_02:
         {
             Pop1 = 2;
-            Pjll = (Pjll_t)Pjp->jp_1Index1;
+//            Pjll = (Pjll_t)Pjp->jp_1Index1;
+            Pjll = (Pjll_t)ju_PImmed1(Pjp);
             goto Leaf6Exit;
         }
         case cJ1_JPIMMED_7_02:
         {
             Pop1 = 2;
-            Pjll = (Pjll_t)Pjp->jp_1Index1;
+//            Pjll = (Pjll_t)Pjp->jp_1Index1;
+            Pjll = (Pjll_t)ju_PImmed1(Pjp);
             goto Leaf7Exit;
         }
-#endif // (JUDY1 && JU_64BIT)
+#endif  // JUDY1
 
 
 // ****************************************************************************

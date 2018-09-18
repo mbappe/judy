@@ -55,7 +55,7 @@
 // Note:  To keep the MALLOC macro faster and simpler, set j__uMaxWords to
 // MAXINT, not zero, by default.
 
-Word_t j__uMaxWords = ~(size_t)0;
+Word_t j__uMaxWords = ~(Word_t)0;
 
 // This macro hides the faking of a malloc failure:
 //
@@ -93,7 +93,7 @@ Word_t j__uMaxWords = ~(size_t)0;
 
 #include <stdio.h>
 
-static size_t j__udyMemSequence = 0;   // event sequence number.
+static Word_t j__udyMemSequence = 0;   // event sequence number.
 
 #define TRACE_ALLOC4(a,b,c,d)     (void) printf((a), (b), (c), (d))
 #define TRACE_ALLOC5(a,b,c,d,e)   (void) printf((a), (b), (c), (d), (e))
@@ -120,7 +120,7 @@ static size_t j__udyMemSequence = 0;   // event sequence number.
 #define TRACE_FREE6( a,b,c,d,e,f)         \
             (void) printf("f %lx %lx %lx\n", (b), (e) * b_pw, f)
 
-static size_t j__udyMemSequence = 0;   // event sequence number.
+static Word_t j__udyMemSequence = 0;   // event sequence number.
 
 #else
 
@@ -166,6 +166,7 @@ static size_t j__udyMemSequence = 0;   // event sequence number.
 
 // These globals are defined in JudyMalloc.c so we don't define them
 // in more than one place, i.e. Judy1MallocIFc. and JudyLMallocIF.c.
+#ifdef RAMMETRICS
 extern Word_t    j__AllocWordsJBB;
 extern Word_t    j__AllocWordsJBU;
 extern Word_t    j__AllocWordsJBL;
@@ -181,6 +182,7 @@ extern Word_t    j__AllocWordsJLL7;
 extern Word_t    j__AllocWordsJLLW;
 extern Word_t    j__AllocWordsJV;
 extern Word_t    j__NumbJV;
+#endif // RAMMETRICS
 
 // ****************************************************************************
 // ALLOCATION FUNCTIONS:
@@ -189,7 +191,7 @@ extern Word_t    j__NumbJV;
 // object type.
 //
 // Note:  Only j__udyAllocJPM() and j__udyAllocJLW() return multiple values <=
-// sizeof(size_t) to indicate the type of memory allocation failure.  Other
+// sizeof(Word_t) to indicate the type of memory allocation failure.  Other
 // allocation functions convert this failure to a JU_ERRNO.
 
 
@@ -205,7 +207,7 @@ FUNCTION Pjpm_t j__udyAllocJPM(void)
 
         assert((Words * cJU_BYTESPERWORD) == sizeof(jpm_t));
 
-        if ((size_t) Pjpm > sizeof(size_t))
+        if ((Word_t) Pjpm > sizeof(Word_t))
         {
             ZEROWORDS(Pjpm, Words);
             Pjpm->jpm_TotalMemWords = Words;
@@ -224,14 +226,14 @@ FUNCTION Pjpm_t j__udyAllocJPM(void)
 } // j__udyAllocJPM()
 
 
-FUNCTION size_t j__udyAllocJBL(Pjpm_t Pjpm)
+FUNCTION Word_t j__udyAllocJBL(Pjpm_t Pjpm)
 {
         Word_t Words   = sizeof(jbl_t) / cJU_BYTESPERWORD;
-        size_t PjblRaw = MALLOC(JudyMallocVirtual, Pjpm->jpm_TotalMemWords, Words);
+        Word_t PjblRaw = MALLOC(JudyMallocVirtual, Pjpm->jpm_TotalMemWords, Words);
 
         assert((Words * cJU_BYTESPERWORD) == sizeof(jbl_t));
 
-        if (PjblRaw > sizeof(size_t))
+        if (PjblRaw > sizeof(Word_t))
         {
             ZEROWORDS(P_JBL(PjblRaw), Words);
             Pjpm->jpm_TotalMemWords += Words;
@@ -251,15 +253,15 @@ FUNCTION size_t j__udyAllocJBL(Pjpm_t Pjpm)
 } // j__udyAllocJBL()
 
 
-FUNCTION size_t j__udyAllocJBB(Pjpm_t Pjpm)
+FUNCTION Word_t j__udyAllocJBB(Pjpm_t Pjpm)
 {
         Word_t Words   = sizeof(jbb_t) / cJU_BYTESPERWORD;
-        size_t PjbbRaw = MALLOC(JudyMallocVirtual,
+        Word_t PjbbRaw = MALLOC(JudyMallocVirtual,
                                          Pjpm->jpm_TotalMemWords, Words);
 
         assert((Words * cJU_BYTESPERWORD) == sizeof(jbb_t));
 
-        if (PjbbRaw > sizeof(size_t))
+        if (PjbbRaw > sizeof(Word_t))
         {
             ZEROWORDS(P_JBB(PjbbRaw), Words);
             Pjpm->jpm_TotalMemWords += Words;
@@ -279,14 +281,14 @@ FUNCTION size_t j__udyAllocJBB(Pjpm_t Pjpm)
 } // j__udyAllocJBB()
 
 
-FUNCTION size_t j__udyAllocJBBJP(int NumJPs, Pjpm_t Pjpm)
+FUNCTION Word_t j__udyAllocJBBJP(int NumJPs, Pjpm_t Pjpm)
 {
         Word_t Words = JU_BRANCHJP_NUMJPSTOWORDS(NumJPs);
-            size_t  PjpRaw;
+            Word_t  PjpRaw;
 
         PjpRaw = MALLOC(JudyMalloc, Pjpm->jpm_TotalMemWords, Words);
 
-        if (PjpRaw > sizeof(size_t))
+        if (PjpRaw > sizeof(Word_t))
         {
             Pjpm->jpm_TotalMemWords += Words;
 
@@ -305,15 +307,15 @@ FUNCTION size_t j__udyAllocJBBJP(int NumJPs, Pjpm_t Pjpm)
 } // j__udyAllocJBBJP()
 
 
-FUNCTION size_t j__udyAllocJBU(Pjpm_t Pjpm)
+FUNCTION Word_t j__udyAllocJBU(Pjpm_t Pjpm)
 {
         Word_t Words   = sizeof(jbu_t) / cJU_BYTESPERWORD;
-        size_t PjbuRaw = MALLOC(JudyMallocVirtual,
+        Word_t PjbuRaw = MALLOC(JudyMallocVirtual,
                                          Pjpm->jpm_TotalMemWords, Words);
 
         assert((Words * cJU_BYTESPERWORD) == sizeof(jbu_t));
 
-        if (PjbuRaw > sizeof(size_t))
+        if (PjbuRaw > sizeof(Word_t))
         {
             Pjpm->jpm_TotalMemWords += Words;
 
@@ -332,16 +334,14 @@ FUNCTION size_t j__udyAllocJBU(Pjpm_t Pjpm)
 } // j__udyAllocJBU()
 
 
-#if (defined(JUDYL) || (! defined(JU_64BIT)))
-
-FUNCTION size_t j__udyAllocJLL1(int Pop1, Pjpm_t Pjpm)
+FUNCTION Word_t j__udyAllocJLL1(int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF1POPTOWORDS(Pop1);
-        size_t PjllRaw;
+        Word_t PjllRaw;
 
         PjllRaw = MALLOC(JudyMalloc, Pjpm->jpm_TotalMemWords, Words);
 
-        if (PjllRaw > sizeof(size_t))
+        if (PjllRaw > sizeof(Word_t))
         {
             Pjpm->jpm_TotalMemWords += Words;
 
@@ -359,17 +359,15 @@ FUNCTION size_t j__udyAllocJLL1(int Pop1, Pjpm_t Pjpm)
 
 } // j__udyAllocJLL1()
 
-#endif // (JUDYL || (! JU_64BIT))
 
-
-FUNCTION size_t j__udyAllocJLL2(int Pop1, Pjpm_t Pjpm)
+FUNCTION Word_t j__udyAllocJLL2(int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF2POPTOWORDS(Pop1);
-        size_t PjllRaw;
+        Word_t PjllRaw;
 
         PjllRaw = MALLOC(JudyMalloc, Pjpm->jpm_TotalMemWords, Words);
 
-        if (PjllRaw > sizeof(size_t))
+        if (PjllRaw > sizeof(Word_t))
         {
             Pjpm->jpm_TotalMemWords += Words;
 
@@ -388,14 +386,14 @@ FUNCTION size_t j__udyAllocJLL2(int Pop1, Pjpm_t Pjpm)
 } // j__udyAllocJLL2()
 
 
-FUNCTION size_t j__udyAllocJLL3(int Pop1, Pjpm_t Pjpm)
+FUNCTION Word_t j__udyAllocJLL3(int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF3POPTOWORDS(Pop1);
-        size_t PjllRaw;
+        Word_t PjllRaw;
 
         PjllRaw = MALLOC(JudyMalloc, Pjpm->jpm_TotalMemWords, Words);
 
-        if (PjllRaw > sizeof(size_t))
+        if (PjllRaw > sizeof(Word_t))
         {
             Pjpm->jpm_TotalMemWords += Words;
 
@@ -414,16 +412,15 @@ FUNCTION size_t j__udyAllocJLL3(int Pop1, Pjpm_t Pjpm)
 } // j__udyAllocJLL3()
 
 
-#ifdef JU_64BIT
 
-FUNCTION size_t j__udyAllocJLL4(int Pop1, Pjpm_t Pjpm)
+FUNCTION Word_t j__udyAllocJLL4(int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF4POPTOWORDS(Pop1);
-        size_t PjllRaw;
+        Word_t PjllRaw;
 
         PjllRaw = MALLOC(JudyMalloc, Pjpm->jpm_TotalMemWords, Words);
 
-        if (PjllRaw > sizeof(size_t))
+        if (PjllRaw > sizeof(Word_t))
         {
             Pjpm->jpm_TotalMemWords += Words;
 
@@ -442,14 +439,14 @@ FUNCTION size_t j__udyAllocJLL4(int Pop1, Pjpm_t Pjpm)
 } // j__udyAllocJLL4()
 
 
-FUNCTION size_t j__udyAllocJLL5(int Pop1, Pjpm_t Pjpm)
+FUNCTION Word_t j__udyAllocJLL5(int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF5POPTOWORDS(Pop1);
-        size_t PjllRaw;
+        Word_t PjllRaw;
 
         PjllRaw = MALLOC(JudyMalloc, Pjpm->jpm_TotalMemWords, Words);
 
-        if (PjllRaw > sizeof(size_t))
+        if (PjllRaw > sizeof(Word_t))
         {
             Pjpm->jpm_TotalMemWords += Words;
 
@@ -468,14 +465,14 @@ FUNCTION size_t j__udyAllocJLL5(int Pop1, Pjpm_t Pjpm)
 } // j__udyAllocJLL5()
 
 
-FUNCTION size_t j__udyAllocJLL6(int Pop1, Pjpm_t Pjpm)
+FUNCTION Word_t j__udyAllocJLL6(int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF6POPTOWORDS(Pop1);
-        size_t PjllRaw;
+        Word_t PjllRaw;
 
         PjllRaw = MALLOC(JudyMalloc, Pjpm->jpm_TotalMemWords, Words);
 
-        if (PjllRaw > sizeof(size_t))
+        if (PjllRaw > sizeof(Word_t))
         {
             Pjpm->jpm_TotalMemWords += Words;
 
@@ -494,14 +491,14 @@ FUNCTION size_t j__udyAllocJLL6(int Pop1, Pjpm_t Pjpm)
 } // j__udyAllocJLL6()
 
 
-FUNCTION size_t j__udyAllocJLL7(int Pop1, Pjpm_t Pjpm)
+FUNCTION Word_t j__udyAllocJLL7(int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF7POPTOWORDS(Pop1);
-        size_t PjllRaw;
+        Word_t PjllRaw;
 
         PjllRaw = MALLOC(JudyMalloc, Pjpm->jpm_TotalMemWords, Words);
 
-        if (PjllRaw > sizeof(size_t))
+        if (PjllRaw > sizeof(Word_t))
         {
             Pjpm->jpm_TotalMemWords += Words;
 
@@ -519,7 +516,6 @@ FUNCTION size_t j__udyAllocJLL7(int Pop1, Pjpm_t Pjpm)
 
 } // j__udyAllocJLL7()
 
-#endif // JU_64BIT
 
 
 // Note:  Root-level leaf addresses are always whole words (Pjlw_t), and unlike
@@ -544,16 +540,16 @@ FUNCTION Pjlw_t j__udyAllocJLW(int Pop1)
 } // j__udyAllocJLW()
 
 
-FUNCTION size_t j__udyAllocJLB1(Pjpm_t Pjpm)
+FUNCTION Word_t j__udyAllocJLB1(Pjpm_t Pjpm)
 {
         Word_t Words = sizeof(jlb_t) / cJU_BYTESPERWORD;
-        size_t PjlbRaw;
+        Word_t PjlbRaw;
 
         PjlbRaw = MALLOC(JudyMalloc, Pjpm->jpm_TotalMemWords, Words);
 
         assert((Words * cJU_BYTESPERWORD) == sizeof(jlb_t));
 
-        if (PjlbRaw > sizeof(size_t))
+        if (PjlbRaw > sizeof(Word_t))
         {
             ZEROWORDS(P_JLB(PjlbRaw), Words);
             Pjpm->jpm_TotalMemWords += Words;
@@ -575,14 +571,14 @@ FUNCTION size_t j__udyAllocJLB1(Pjpm_t Pjpm)
 
 #ifdef JUDYL
 
-FUNCTION size_t j__udyLAllocJV(int Pop1, Pjpm_t Pjpm)
+FUNCTION Word_t j__udyLAllocJV(int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JL_LEAFVPOPTOWORDS(Pop1);
-        size_t  PjvRaw;
+        Word_t  PjvRaw;
 
         PjvRaw = MALLOC(JudyMalloc, Pjpm->jpm_TotalMemWords, Words);
 
-        if (PjvRaw > sizeof(size_t))
+        if (PjvRaw > sizeof(Word_t))
         {
             Pjpm->jpm_TotalMemWords += Words;
 
@@ -633,12 +629,12 @@ FUNCTION void j__udyFreeJPM(Pjpm_t PjpmFree, Pjpm_t PjpmStats)
                 (void *)PjpmFree, j__udyMemSequence++, (int)Words, PjpmFree->jpm_Pop0);
 
         // MALLOCBITS_TEST(Pjpm_t, PjpmFree);   // see above.
-        JudyFree((size_t) PjpmFree, Words);
+        JudyFree((Word_t) PjpmFree, Words);
 
 } // j__udyFreeJPM()
 
 
-FUNCTION void j__udyFreeJBL(size_t Pjbl, Pjpm_t Pjpm)
+FUNCTION void j__udyFreeJBL(Word_t Pjbl, Pjpm_t Pjpm)
 {
         Word_t Words = sizeof(jbl_t) / cJU_BYTESPERWORD;
 
@@ -658,7 +654,7 @@ FUNCTION void j__udyFreeJBL(size_t Pjbl, Pjpm_t Pjpm)
 } // j__udyFreeJBL()
 
 
-FUNCTION void j__udyFreeJBB(size_t Pjbb, Pjpm_t Pjpm)
+FUNCTION void j__udyFreeJBB(Word_t Pjbb, Pjpm_t Pjpm)
 {
         int Words = sizeof(jbb_t) / cJU_BYTESPERWORD;
 
@@ -678,7 +674,7 @@ FUNCTION void j__udyFreeJBB(size_t Pjbb, Pjpm_t Pjpm)
 } // j__udyFreeJBB()
 
 
-FUNCTION void j__udyFreeJBBJP(size_t Pjp, int NumJPs, Pjpm_t Pjpm)
+FUNCTION void j__udyFreeJBBJP(Word_t Pjp, int NumJPs, Pjpm_t Pjpm)
 {
         Word_t Words = JU_BRANCHJP_NUMJPSTOWORDS(NumJPs);
 
@@ -698,7 +694,7 @@ FUNCTION void j__udyFreeJBBJP(size_t Pjp, int NumJPs, Pjpm_t Pjpm)
 } // j__udyFreeJBBJP()
 
 
-FUNCTION void j__udyFreeJBU(size_t Pjbu, Pjpm_t Pjpm)
+FUNCTION void j__udyFreeJBU(Word_t Pjbu, Pjpm_t Pjpm)
 {
         int Words = sizeof(jbu_t) / cJU_BYTESPERWORD;
 
@@ -718,9 +714,7 @@ FUNCTION void j__udyFreeJBU(size_t Pjbu, Pjpm_t Pjpm)
 } // j__udyFreeJBU()
 
 
-#if (defined(JUDYL) || (! defined(JU_64BIT)))
-
-FUNCTION void j__udyFreeJLL1(size_t Pjll, int Pop1, Pjpm_t Pjpm)
+FUNCTION void j__udyFreeJLL1(Word_t Pjll, int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF1POPTOWORDS(Pop1);
 
@@ -739,10 +733,8 @@ FUNCTION void j__udyFreeJLL1(size_t Pjll, int Pop1, Pjpm_t Pjpm)
 
 } // j__udyFreeJLL1()
 
-#endif // (JUDYL || (! JU_64BIT))
 
-
-FUNCTION void j__udyFreeJLL2(size_t Pjll, int Pop1, Pjpm_t Pjpm)
+FUNCTION void j__udyFreeJLL2(Word_t Pjll, int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF2POPTOWORDS(Pop1);
 
@@ -762,7 +754,7 @@ FUNCTION void j__udyFreeJLL2(size_t Pjll, int Pop1, Pjpm_t Pjpm)
 } // j__udyFreeJLL2()
 
 
-FUNCTION void j__udyFreeJLL3(size_t Pjll, int Pop1, Pjpm_t Pjpm)
+FUNCTION void j__udyFreeJLL3(Word_t Pjll, int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF3POPTOWORDS(Pop1);
 
@@ -782,9 +774,8 @@ FUNCTION void j__udyFreeJLL3(size_t Pjll, int Pop1, Pjpm_t Pjpm)
 } // j__udyFreeJLL3()
 
 
-#ifdef JU_64BIT
 
-FUNCTION void j__udyFreeJLL4(size_t Pjll, int Pop1, Pjpm_t Pjpm)
+FUNCTION void j__udyFreeJLL4(Word_t Pjll, int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF4POPTOWORDS(Pop1);
 
@@ -805,7 +796,7 @@ FUNCTION void j__udyFreeJLL4(size_t Pjll, int Pop1, Pjpm_t Pjpm)
 } // j__udyFreeJLL4()
 
 
-FUNCTION void j__udyFreeJLL5(size_t Pjll, int Pop1, Pjpm_t Pjpm)
+FUNCTION void j__udyFreeJLL5(Word_t Pjll, int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF5POPTOWORDS(Pop1);
 
@@ -825,7 +816,7 @@ FUNCTION void j__udyFreeJLL5(size_t Pjll, int Pop1, Pjpm_t Pjpm)
 } // j__udyFreeJLL5()
 
 
-FUNCTION void j__udyFreeJLL6(size_t Pjll, int Pop1, Pjpm_t Pjpm)
+FUNCTION void j__udyFreeJLL6(Word_t Pjll, int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF6POPTOWORDS(Pop1);
 
@@ -845,7 +836,7 @@ FUNCTION void j__udyFreeJLL6(size_t Pjll, int Pop1, Pjpm_t Pjpm)
 } // j__udyFreeJLL6()
 
 
-FUNCTION void j__udyFreeJLL7(size_t Pjll, int Pop1, Pjpm_t Pjpm)
+FUNCTION void j__udyFreeJLL7(Word_t Pjll, int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JU_LEAF7POPTOWORDS(Pop1);
 
@@ -864,7 +855,6 @@ FUNCTION void j__udyFreeJLL7(size_t Pjll, int Pop1, Pjpm_t Pjpm)
 
 } // j__udyFreeJLL7()
 
-#endif // JU_64BIT
 
 
 // Note:  j__udyFreeJLW() receives a root pointer with NO root pointer type
@@ -885,12 +875,12 @@ FUNCTION void j__udyFreeJLW(Pjlw_t Pjlw, int Pop1, Pjpm_t Pjpm)
         TRACE_FREE6("\n%p %8zd =  j__udyFreeJLW(%d), Words = %d, TotPop1 = %d\n", 
                 (void *)Pjlw, j__udyMemSequence++, Pop1, (int)Words, Pop1 - 1);
 
-        JudyFree((size_t)Pjlw, Words);
+        JudyFree((Word_t)Pjlw, Words);
 
 } // j__udyFreeJLW()
 
 
-FUNCTION void j__udyFreeJLB1(size_t Pjlb, Pjpm_t Pjpm)
+FUNCTION void j__udyFreeJLB1(Word_t Pjlb, Pjpm_t Pjpm)
 {
         Word_t Words = sizeof(jlb_t) / cJU_BYTESPERWORD;
 
@@ -912,7 +902,7 @@ FUNCTION void j__udyFreeJLB1(size_t Pjlb, Pjpm_t Pjpm)
 
 #ifdef JUDYL
 
-FUNCTION void j__udyLFreeJV(size_t Pjv, int Pop1, Pjpm_t Pjpm)
+FUNCTION void j__udyLFreeJV(Word_t Pjv, int Pop1, Pjpm_t Pjpm)
 {
         Word_t Words = JL_LEAFVPOPTOWORDS(Pop1);
 

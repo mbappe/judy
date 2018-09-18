@@ -288,21 +288,12 @@ Word_t  j__DirectHits;
 // Perhaps should change name to SEARCHCOMPAREMISSES
 #define  MISSCOMPARES(CNT)      (j__MissCompares   += (Word_t)(CNT))
 
-#ifdef  DIRINWORDS
-
-// on a bucket basis
-#define  DIRECTHITS(_START, POS, KEY)                    \
-    (j__DirectHits += (((_START) / KEYSPERBUCKET(KEY) == ((POS) / KEYSPERBUCKET(KEY)) ? 1 : 0)))
-#else  // DIRINWORDS
-// on a key basis
-#define  DIRECTHITS(_START, POS, KEY)  (j__DirectHits += 1)
-
-#endif  // DIRINWORDS
+#define  DIRECTHITS  (j__DirectHits += 1)
 
 #define  SEARCHPOPULATION(CNT)  (j__SearchPopulation += (Word_t)(CNT))
 #else
 #define  MISSCOMPARES(CNT)      // null
-#define  DIRECTHITS(_START, POS, KEY)   // null
+#define  DIRECTHITS   // null
 #define  SEARCHPOPULATION(CNT)  // null
 #endif  // ! SEARCHMETRICS
 
@@ -322,11 +313,7 @@ Word_t  j__DirectHits;
 // 64-byte cache lines, and the assumed 64-bit system has 16-word = 128-byte
 // cache lines.
 
-#ifdef JU_64BIT
 #define cJU_BYTESPERCL 128              // cache line size in bytes.
-#else
-#define cJU_BYTESPERCL  64              // cache line size in bytes.
-#endif
 
 // Bits Per Byte:
 
@@ -391,13 +378,11 @@ j__log2(Word_t num)
 
     assert(num != 0);           // log of zero is undefined
 
-#ifdef JU_64BIT
     if (num >= (((Word_t)1) << (1 * 32)))
     {
         num >>= 32;
         __lb += 32;
     }
-#endif  // JU_64BIT
 
     if (num >= (((Word_t)1) << (1 * 16)))
     {
@@ -463,7 +448,108 @@ j__log2(Word_t num)
 // LeafLs).  Use Pjlw_t for LeafWs.  Use Pleaf (with type uint8_t *, uint16_t
 // *, etc) when the leaf index size is known.
 
+#ifdef JUDY1
+// Leaf structures
+typedef struct J_UDY1_LEAF1_STRUCT
+{
+//    Word_t      jl1_pop0;
+    uint8_t     jl1_Leaf[0];
+} jll1_t, *Pjll1_t;
+
+typedef struct J_UDY1_LEAF2_STRUCT
+{
+//    Word_t      jl2_pop0;
+    uint16_t     jl2_Leaf[0];
+} jll2_t, *Pjll2_t;
+
+typedef struct J_UDY1_LEAF3_STRUCT
+{
+//    Word_t      jl3_pop0;
+    uint8_t     jl3_Leaf[0];
+} jll3_t, *Pjll3_t;
+
+typedef struct J_UDY1_LEAF4_STRUCT
+{
+//    Word_t      jl4_pop0;
+    uint32_t     jl4_Leaf[0];
+} jll4_t, *Pjll4_t;
+
+typedef struct J_UDY1_LEAF5_STRUCT
+{
+//    Word_t      jl5_pop0;
+    uint8_t     jl5_Leaf[0];
+} jll5_t, *Pjll5_t;
+
+typedef struct J_UDY1_LEAF6_STRUCT
+{
+//    Word_t      jl6_pop0;
+    uint8_t     jl6_Leaf[0];
+} jll6_t, *Pjll6_t;
+
+typedef struct J_UDY1_LEAF7_STRUCT
+{
+//    Word_t      jl7_pop0;
+    uint8_t     jl7_Leaf[0];
+} jll7_t, *Pjll7_t;
+
+typedef struct J_UDY1_LEAFW_STRUCT
+{
+    Word_t      jlw_Population;
+    Word_t      jlw_Leaf[0];
+} jlw_t, *Pjllw_t;
+
 typedef PWord_t Pjlw_t;  // pointer to root-level leaf (whole-word indexes).
+
+#endif  // JUDY1
+
+
+#ifdef JUDYL
+// Leaf structures
+typedef struct J_UDYL_LEAF1_STRUCT
+{
+    uint8_t     jl1_Leaf[0];
+} jll1_t, *Pjll1_t;
+
+typedef struct J_UDYL_LEAF2_STRUCT
+{
+    uint16_t     jl2_Leaf[0];
+} jll2_t, *Pjll2_t;
+
+typedef struct J_UDYL_LEAF3_STRUCT
+{
+    uint8_t     jl3_Leaf[0];
+} jll3_t, *Pjll3_t;
+
+typedef struct J_UDYL_LEAF4_STRUCT
+{
+    uint32_t     jl4_Leaf[0];
+} jll4_t, *Pjll4_t;
+
+typedef struct J_UDYL_LEAF5_STRUCT
+{
+    uint8_t     jl5_Leaf[0];
+} jll5_t, *Pjll5_t;
+
+typedef struct J_UDYL_LEAF6_STRUCT
+{
+    uint8_t     jl6_Leaf[0];
+} jll6_t, *Pjll6_t;
+
+typedef struct J_UDYL_LEAF7_STRUCT
+{
+    uint8_t     jl7_Leaf[0];
+} jll7_t, *Pjll7_t;
+
+typedef struct J_UDYL_LEAFW_STRUCT
+{
+    Word_t      jlw_Population;
+    Word_t      jlw_Leaf[0];
+} jLlw_t, *Pjllw_t;
+
+typedef PWord_t Pjlw_t;  // pointer to root-level leaf (whole-word indexes).
+
+#endif  // JUDYL
+
 typedef Pvoid_t Pjll_t;  // pointer to lower-level linear leaf.
 
 #ifdef JUDYL
@@ -479,7 +565,7 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 // to come from different "malloc() namespaces".
 //
 //    (root pointer)    (JRP, see above)
-//    jp.jp_Addr        generic pointer to next-level node, except when used
+//    jp.jp_Addr0        generic pointer to next-level node, except when used
 //                      as a JudyL Immed01 value area
 //    JU_JBB_PJP        macro hides jbbs_Pjp (pointer to JP subarray)
 //    JL_JLB_PVALUE     macro hides jLlbs_PV_Raw (pointer to value subarray)
@@ -493,32 +579,50 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 // do type-checking.
 
 
+#ifdef  Later
+#define P_JPM(  ADDR) ((Pjpm_t) (ADDR))  // root JPM.
+#define P_JBL(  ADDR) ((Pjbl_t) (ADDR))  // BranchL.
+#define P_JBB(  ADDR) ((Pjbb_t) (ADDR))  // BranchB.
+#define P_JBU(  ADDR) ((Pjbu_t) (ADDR))  // BranchU.
+#define P_JLL(  ADDR) ((Pjll_t) (ADDR))  // LeafL.
+#define P_JLL1( ADDR) ((Pjll1_t)(ADDR))  // LeafL.
+#define P_JLL2( ADDR) ((Pjll2_t)(ADDR))  // LeafL.
+#define P_JLL3( ADDR) ((Pjll3_t)(ADDR))  // LeafL.
+#define P_JLL4( ADDR) ((Pjll4_t)(ADDR))  // LeafL.
+#define P_JLL5( ADDR) ((Pjll5_t)(ADDR))  // LeafL.
+#define P_JLL6( ADDR) ((Pjll6_t)(ADDR))  // LeafL.
+#define P_JLL7( ADDR) ((Pjll7_t)(ADDR))  // LeafL.
+#define P_JLW( ADDR) ((Pjlw_t)(ADDR))    // root leaf.
+#define P_JLLW( ADDR) ((Pjllw_t)(ADDR))  // root leaf.
+#define P_JLB(  ADDR) ((Pjlb_t) (ADDR))  // LeafB1.
+#define P_JP(   ADDR) ((Pjp_t)  (ADDR))  // JP.
+
+#else   // ! Later
+
 #define P_JLW(  ADDR) ((Pjlw_t) (ADDR))  // root leaf.
 #define P_JPM(  ADDR) ((Pjpm_t) (ADDR))  // root JPM.
 #define P_JBL(  ADDR) ((Pjbl_t) (ADDR))  // BranchL.
 #define P_JBB(  ADDR) ((Pjbb_t) (ADDR))  // BranchB.
 #define P_JBU(  ADDR) ((Pjbu_t) (ADDR))  // BranchU.
 #define P_JLL(  ADDR) ((Pjll_t) (ADDR))  // LeafL.
+#define P_JLL1( ADDR) ((uint8_t  *)(ADDR))  // LeafL.
+#define P_JLL2( ADDR) ((uint16_t *)(ADDR))  // LeafL.
+#define P_JLL3( ADDR) ((uint8_t  *)(ADDR))  // LeafL.
+#define P_JLL4( ADDR) ((uint32_t *)(ADDR))  // LeafL.
+#define P_JLL5( ADDR) ((uint8_t  *)(ADDR))  // LeafL.
+#define P_JLL6( ADDR) ((uint8_t  *)(ADDR))  // LeafL.
+#define P_JLL7( ADDR) ((uint8_t  *)(ADDR))  // LeafL.
 #define P_JLB(  ADDR) ((Pjlb_t) (ADDR))  // LeafB1.
 #define P_JP(   ADDR) ((Pjp_t)  (ADDR))  // JP.
+#endif  // ! Later
 
-#define P_JV(   ADDR) ((Pjv_t)  (ADDR))  // &value.
-
-#ifdef  LATER
 #ifdef JUDYL
 
-#ifdef  JU_64BIT
 // Strip hi 10 bits and low 4 bits
 #define P_JV(   ADDR) ((Pjv_t)  (((Word_t)(ADDR)) & 0x3FFFFFFFFFFFF0))  // &value.
-#endif  // JU_64BIT
 
-#ifndef JU_64BIT
-// Strip low 3 bits
-#define P_JV(   ADDR) ((Pjv_t)  (((Word_t)(ADDR)) & 0xFFFFFFF8))  // &value.
-#endif  // JU_32BIT
 
 #endif  // JUDYL
-#endif  //   LATER
 
 // LEAST BYTES:
 //
@@ -534,6 +638,17 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 // constant; otherwise it is a variable shift, which is expensive on some
 // processors.
 
+// 0xffffffffffffffff = JU_LEASTBYTESMASK(0)
+// 0x              ff = JU_LEASTBYTESMASK(1)
+// 0x            ffff = JU_LEASTBYTESMASK(2)
+// 0x          ffffff = JU_LEASTBYTESMASK(3)
+// 0x        ffffffff = JU_LEASTBYTESMASK(4)
+// 0x      ffffffffff = JU_LEASTBYTESMASK(5)
+// 0x    ffffffffffff = JU_LEASTBYTESMASK(6)
+// 0x  ffffffffffffff = JU_LEASTBYTESMASK(7)
+// 0xffffffffffffffff = JU_LEASTBYTESMASK(8)
+
+// BYTES must be 2..7 
 #define JU_LEASTBYTESMASK(BYTES) \
         (((Word_t)0x100 << (cJU_BITSPERBYTE * ((BYTES) - 1))) - 1)
 
@@ -550,78 +665,18 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 // A default aspect ratio is hardwired here if not overridden at compile time,
 // such as by "EXTCCOPTS=-DBITMAP_BRANCH16x16 make".
 
-#ifndef JU_64BIT
-//////////////////////////////#if (! (defined(BITMAP_BRANCH8x32) || defined(BITMAP_BRANCH16x16) || defined(BITMAP_BRANCH32x8)))
-#define BITMAP_BRANCH32x8 1     // 32 bits per subexpanse, 8 subexpanses.
-/////////////////////#endif
-#endif  // JU_32BIT
 
-#ifdef  JU_64BIT
-////////////////#if (! (defined(BITMAP_BRANCH8x32) || defined(BITMAP_BRANCH16x16) || defined(BITMAP_BRANCH32x8) || defined(BITMAP_BRANCH64x4)))
-#define BITMAP_BRANCH64x4 1     // 64 bits per subexpanse, 4 subexpanses.
-////////////////#endif
-#endif  // JU_64BIT
-
-#ifdef BITMAP_BRANCH8x32
-//////////////////////#define BITMAPB_t uint8_t
-#endif
-
-#ifdef BITMAP_BRANCH16x16
-//////////////////////#define BITMAPB_t uint16_t
-#endif
-
-#ifdef BITMAP_BRANCH32x8
-#define BITMAPB_t uint32_t
-#endif
-
-#ifdef BITMAP_BRANCH64x4
 #define BITMAPB_t uint64_t
-#endif  
-
-// Note:  For bitmap leaves, BITMAP_LEAF64x4 is only valid for 64 bit:
-//
-// Note:  Choice of aspect ratio mostly matters for JudyL bitmap leaves.  For
-// Judy1 the choice doesnt matter much -- the code generated for different
-// BITMAP_LEAF* values choices varies, but correctness and performance are the
-// same.
-
-#ifndef JU_64BIT
-//////////////////////#if (! (defined(BITMAP_LEAF8x32) || defined(BITMAP_LEAF16x16) || defined(BITMAP_LEAF32x8)))
-#define BITMAP_LEAF32x8         // 32 bits per subexpanse, 8 subexpanses.
-//////////////////////#endif
-#endif  // 32_BIT
-
-#ifdef  JU_64BIT
-//////////////////////#if (! (defined(BITMAP_LEAF8x32) || defined(BITMAP_LEAF16x16) || defined(BITMAP_LEAF32x8) || defined(BITMAP_LEAF64x4)))
-#define BITMAP_LEAF64x4         // 64 bits per subexpanse, 4 subexpanses.
-//////////////////////#endif
-#endif // JU_64BIT
-
-#ifdef BITMAP_LEAF8x32
-//////////////////////#define BITMAPL_t uint8_t
-#endif
-
-#ifdef BITMAP_LEAF16x16
-//////////////////////#define BITMAPL_t uint16_t
-#endif
-
-#ifdef BITMAP_LEAF32x8
-#define BITMAPL_t uint32_t
-#endif
-
-#ifdef BITMAP_LEAF64x4
 #define BITMAPL_t uint64_t
-#endif
-
 
 // EXPORTED DATA AND FUNCTIONS:
 
 #ifdef JUDY1
-extern const uint8_t j__1_BranchBJPPopToWords[];
+extern const uint16_t j__1_BranchBJPPopToWords[];
 #endif
 
 #ifdef JUDYL
-extern const uint8_t j__L_BranchBJPPopToWords[];
+extern const uint16_t j__L_BranchBJPPopToWords[];
 #endif
 
 // Conversion size to Linear for a Binary Search
@@ -643,6 +698,7 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
     P_leafEnd = P_leaf + (((POP1) - 1) * (LFBTS));              \
     COPYINDEX(i_ndex, P_leafEnd);                               \
     if (I_ndex > i_ndex) return(~(POP1));                       \
+    MISSCOMPARES(1);                                            \
                                                                 \
 /*  These 2 lines of code are for high byte only candidate   */ \
     MSBIndex   = (uint8_t)(I_ndex >> (((LFBTS) - 1) * 8));      \
@@ -656,9 +712,9 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
         {                                                       \
             o_ff = (P_leaf - (uint8_t *)(ADDR)) / (LFBTS);      \
                                                                 \
-            MISSCOMPARES(o_ff);                                 \
+            if (I_ndex != i_ndex) return(~o_ff);                \
                                                                 \
-            if (I_ndex != i_ndex) o_ff = ~o_ff;                 \
+            MISSCOMPARES(o_ff);                                 \
             return(o_ff);                                       \
         }                                                       \
         P_leaf += LFBTS;                                        \
@@ -674,12 +730,13 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
     (void)(START);                                              \
                                                                 \
     if (I_ndex > P_leaf[(POP1) - 1]) return(~(POP1));           \
+    MISSCOMPARES(1);                                            \
+                                                                \
     while(I_ndex > *P_leaf) P_leaf++;                           \
+                                                                \
     _off = P_leaf - (LEAFTYPE_t *)(ADDR);                       \
-                                                                \
+    if (I_ndex != *P_leaf) return(~_off);                       \
     MISSCOMPARES(_off);                                         \
-                                                                \
-    if (I_ndex != *P_leaf) _off = ~_off;                        \
     return(_off);                                               \
 }
 
@@ -695,10 +752,9 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
     int       m_id;                                             \
     (void)(START);                                              \
                                                                 \
+    MISSCOMPARES(1);                                            \
     while ((h_igh - l_ow) > LENSIZE)   /* Binary Search */      \
     {                                                           \
-        MISSCOMPARES(1);                                        \
-                                                                \
         m_id = (h_igh + l_ow) / 2;                              \
         if ((P_leaf)[m_id] <= (I_ndex))                         \
         {                                                       \
@@ -709,18 +765,18 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
         {                                                       \
             h_igh = m_id;                                       \
         }                                                       \
+        MISSCOMPARES(1);                                        \
     }                                                           \
-                                                                \
     if ((h_igh == (POP1)) && ((I_ndex) > (P_leaf)[(POP1) - 1])) \
         return(~(POP1));                                        \
                                        /* Linear Search */      \
     while ((P_leaf)[l_ow] < (I_ndex))                           \
     {                                                           \
-        MISSCOMPARES(1);                                        \
-                                                                \
         l_ow++;                                                 \
+        MISSCOMPARES(1);                                        \
     }                                                           \
-    if ((P_leaf)[l_ow] != (I_ndex)) l_ow = ~l_ow;               \
+    if ((P_leaf)[l_ow] != (I_ndex)) return(~l_ow);              \
+    MISSCOMPARES(1);                                            \
     return(l_ow);                                               \
 }
 
@@ -737,13 +793,11 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
     __PLeaf = (uint8_t *)(ADDR);                                \
     (void)(START);                                              \
                                                                 \
+    MISSCOMPARES(1);                                            \
     while ((h_igh - l_ow) > LENSIZE)   /* Binary Search */      \
     {                                                           \
         m_id = (h_igh + l_ow) / 2;                              \
         COPYINDEX(__LeafKey, __PLeaf + (m_id * (LFBTS)));       \
-                                                                \
-        MISSCOMPARES(1);                                        \
-                                                                \
         if (__LeafKey <= __Key)                                 \
         {                                                       \
             if (__LeafKey == __Key) return(m_id);               \
@@ -753,6 +807,7 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
         {                                                       \
             h_igh = m_id;                                       \
         }                                                       \
+        MISSCOMPARES(1);                                        \
     }                                                           \
     if (h_igh == (POP1))                                        \
     {                                                           \
@@ -763,12 +818,12 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
     COPYINDEX(__LeafKey, __PLeaf + (l_ow * (LFBTS)));           \
     while (__LeafKey < __Key)                                   \
     {                                                           \
-        MISSCOMPARES(1);                                        \
-                                                                \
         l_ow++;                                                 \
         COPYINDEX(__LeafKey, __PLeaf + (l_ow * (LFBTS)));       \
+        MISSCOMPARES(1);                                        \
     }                                                           \
-    if (__LeafKey != __Key) l_ow = ~l_ow;                       \
+    if (__LeafKey != __Key) return(~l_ow);                      \
+    MISSCOMPARES(1);                                            \
     return(l_ow);                                               \
 }
 
@@ -815,9 +870,10 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
                                                                 \
     if (__LeafKey == __Key) /* 1st check if direct hit */       \
     {                                                           \
-        DIRECTHITS((START), __pos, sizeof(__Key));              \
+        DIRECTHITS;                                             \
         return(__pos);  /* Nailed it */                         \
     }                                                           \
+    MISSCOMPARES(1);                                            \
     if (__Key > __LeafKey)     /* Search forward */             \
     {                                                           \
         for (__pos++; __pos < (POP1); __pos++)                  \
@@ -827,11 +883,11 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
             {                                                   \
                 if (__LeafKey == __Key)                         \
                 {                                               \
-                    MISSCOMPARES(__pos - (START));              \
                     return(__pos);                              \
                 }                                               \
                 break;                                          \
             }                                                   \
+            MISSCOMPARES(1);                                    \
         }                                                       \
     }                                                           \
     else                /* Search in reverse */                 \
@@ -845,12 +901,12 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
             {                                                   \
                 if (__LeafKey == __Key)                         \
                 {                                               \
-                    MISSCOMPARES((START) - __pos);              \
                     return(__pos);                              \
                 }                                               \
                 __pos++;  /* advance to hole */                 \
                 break;                                          \
             }                                                   \
+            MISSCOMPARES(1);                                    \
         }                                                       \
     }                                                           \
     return (~__pos);       /* ones comp location of hole */     \
@@ -874,9 +930,10 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
                                                                 \
     if (__LeafKey == __Key)                                     \
     {                                                           \
-        DIRECTHITS((START), __pos, sizeof(__Key));              \
+        DIRECTHITS;                                             \
         return(__pos);  /* Nailed it */                         \
     }                                                           \
+    MISSCOMPARES(1);                                            \
     if (__Key > __LeafKey)                                      \
     {                   /* Search forward */                    \
         for (__pos++; __pos < (POP1); __pos++)                  \
@@ -886,11 +943,11 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
             {                                                   \
                 if (__LeafKey == __Key)                         \
                 {                                               \
-                    MISSCOMPARES(__pos - (START));              \
                     return(__pos);                              \
                 }                                               \
                 break;                                          \
             }                                                   \
+            MISSCOMPARES(__pos - (START));                      \
         }                                                       \
     }                                                           \
     else                /* Search in reverse */                 \
@@ -952,12 +1009,6 @@ extern const uint8_t j__L_BranchBJPPopToWords[];
 #ifdef __POPCNT__
 
 static inline int
-j__udyCount32Bits(uint32_t word32)
-{
-     return ((int)__builtin_popcount(word32));
-}
-
-static inline int
 j__udyCount64Bits(uint64_t word64)
 {
      return ((int)__builtin_popcountl(word64));
@@ -966,27 +1017,6 @@ j__udyCount64Bits(uint64_t word64)
 #else   // ! __POPCNT__
 
 // Hopefully non-X86 compilers will recognize this and use popc replacement
-static inline int
-j__udyCount32Bits(uint32_t word32)
-{
-//  Calculate each nibble to have counts of 0..4 bits in each nibble.
-    word32 -= (word32 >> 1) & (uint32_t)0x55555555;
-    word32 = ((word32 >> 2) & (uint32_t)0x33333333) + 
-                   (word32  & (uint32_t)0x33333333);
-
-//  Odd nibbles += even nibbles (in parallel)
-    word32 += word32 >> 4;
-
-//  Clean out the even nibbles for some calculating space
-    word32 &= (uint32_t)0x0F0F0F0F;
-
-//  Now sum the 4 bytes of bit counts of 0..8 bits each in odd nibble.
-    word32 *= (uint32_t)0x01010101;               // sums bytes (1 instruction)
-    word32  = word32 >> (32 - 8);       // sum in high byte
-
-    return ((int)word32);
-}
-
 static inline int
 j__udyCount64Bits(uint64_t word64)
 {
@@ -1009,23 +1039,8 @@ j__udyCount64Bits(uint64_t word64)
 }
 #endif  // ! __POPCNT__
 
-// Always 32 bits or less for 32 and 64Bit machines
-
-#ifndef JU_64BIT
-#define j__udyCountBitsL j__udyCount32Bits
-#define j__udyCountBitsB j__udyCount32Bits
-#endif  // JU_32BIT
-
-#ifdef  JU_64BIT
 #define j__udyCountBitsL j__udyCount64Bits
-
-#ifdef BITMAP_BRANCH64x4
 #define j__udyCountBitsB j__udyCount64Bits
-#else   // 32x8 Bits
-#define j__udyCountBitsB j__udyCount32Bits
-#endif  // ! BITMAP_BRANCH64x4
-
-#endif  // JU_64BIT
 
 // GET POP0:
 //
@@ -1060,57 +1075,38 @@ j__udyCount64Bits(uint64_t word64)
 // of the Word_t.
 // First the read macro:
 
-#define JU_JPTYPE(PJP)          ((PJP)->jp_Type)
+//#define JU_JPTYPE(PJP)          ((PJP)->jp_Type)
+//#define JU_JPTYPE(PJP)          ju_Type(PJP)
 
-#ifndef  SWAP
-#define JU_JPLEAF_POP0(PJP)     ((PJP)->jp_Addr1 & 0xFF)
+//#define JU_JPLEAF_POP0(PJP)     ((PJP)->jp_Addr1 & 0xFF)
+#define JU_JPLEAF_POP0(PJP)     ju_LeafPop0(PJP)
+
+//#define JU_JPDCDPOP0(PJP)   JU_TRIMTODCDSIZE((PJP)->jp_Addr1)
+#define JU_JPDCDPOP0(PJP)       ju_DcdPop0(PJP)
 
 #ifdef  JU_LITTLE_ENDIAN        // ====================================
-#define JU_JPDCDPOP0(PJP)   JU_TRIMTODCDSIZE((PJP)->jp_Addr1)
+//#define JU_JPDCDPOP0(PJP)   JU_TRIMTODCDSIZE((PJP)->jp_Addr1)
 
+#ifdef never
 #define JU_JPSETADT(PJP,ADDR,DCDPOP0,TYPE)                              \
 {                                                                       \
-    (PJP)->jp_Addr  = (ADDR);                                           \
+    (PJP)->jp_Addr0  = (ADDR);                                           \
     (PJP)->jp_Addr1 = (JU_TRIMTODCDSIZE(DCDPOP0)                        \
             | (((Word_t)(TYPE) << ((sizeof(Word_t)-1) * 8))));          \
 }
-#endif  // LITTLE_ENDIAN =================================================
+#endif  // never
 
-#else   // SWAP
+#else  // BIG_ENDIAN =================================================
+//#define JU_JPDCDPOP0(PJP)  (((PJP)->jp_Addr1) >> 8)
 
-// define the JU_SWAP macro
-
-#ifndef JU_64BIT
-#define JU_SWAP(WORD)   ((Word_t)__builtin_bswap32(WORD))
-#endif  // JU_32BIT
-
-#ifdef  JU_64BIT
-#define JU_SWAP(WORD)   ((Word_t)__builtin_bswap64(WORD))
-#endif  // JU_64BIT
-
-#define JU_JPLEAF_POP0(PJP)     ((PJP)->jp_DcdP0[cBPW - 2])
-
-#ifdef  JU_LITTLE_ENDIAN        // ====================================
-#define JU_JPDCDPOP0(PJP)  (JU_SWAP((PJP)->jp_Addr1) >> 8)
-
+#ifdef never
 #define JU_JPSETADT(PJP,ADDR,DCDPOP0,TYPE)                              \
 {                                                                       \
-    (PJP)->jp_Addr  = (ADDR);                                           \
-    (PJP)->jp_Addr1 = JU_SWAP(((DCDPOP0) << 8) | (uint8_t)(TYPE));      \
-}
-
-#else   // BIG_ENDIAN =================================================
-
-#define JU_JPDCDPOP0(PJP)  (((PJP)->jp_Addr1) >> 8)
-
-#define JU_JPSETADT(PJP,ADDR,DCDPOP0,TYPE)                              \
-{                                                                       \
-    (PJP)->jp_Addr  = (ADDR);                                           \
+    (PJP)->jp_Addr0  = (ADDR);                                           \
     (PJP)->jp_Addr1 = ((DCDPOP0) << 8) | (uint8_t)(TYPE);               \
 }
+#endif  // never
 #endif  // BIG_ENDIAN =================================================
-
-#endif  // SWAP
 
 // NUMBER OF BITS IN A BRANCH OR LEAF BITMAP AND SUBEXPANSE:
 //
@@ -1120,11 +1116,12 @@ j__udyCount64Bits(uint64_t word64)
 
 // Bitmaps are accessed in units of "subexpanses":
 
-#define cJU_BITSPERSUBEXPB  (sizeof(BITMAPB_t) * cJU_BITSPERBYTE)       // 4[8]
-#define cJU_NUMSUBEXPB      (cJU_BITSPERBITMAP / cJU_BITSPERSUBEXPB)    // 128[64]
+#define cJU_BITSPERSUBEXPB  (sizeof(BITMAPB_t) * cJU_BITSPERBYTE)       // 64
+#define cJU_NUMSUBEXPB      (cJU_BITSPERBITMAP / cJU_BITSPERSUBEXPB)    // 4
 
-#define cJU_BITSPERSUBEXPL  (sizeof(BITMAPL_t) * cJU_BITSPERBYTE)
-#define cJU_NUMSUBEXPL      (cJU_BITSPERBITMAP / cJU_BITSPERSUBEXPL)
+
+#define cJU_BITSPERSUBEXPL  (sizeof(BITMAPL_t) * cJU_BITSPERBYTE)       // 64
+#define cJU_NUMSUBEXPL      (cJU_BITSPERBITMAP / cJU_BITSPERSUBEXPL)    // 4
 
 
 // MASK FOR A SPECIFIED BIT IN A BITMAP:
@@ -1228,22 +1225,30 @@ j__udyCount64Bits(uint64_t word64)
 // Copy a series of generic objects (uint8_t, uint16_t, uint32_t, Word_t) from
 // one place to another.
 
+// This one is for a copy of same typeof PDST and PSRC
+#define JU_COPYMEMODD(PDST,PSRC,POP1)                   \
+    {                                                   \
+        Word_t i_ndex = 0;                              \
+        assert((POP1) > 0);                             \
+        do { (PDST)[i_ndex] = (PSRC)[i_ndex]; }         \
+        while (++i_ndex < (POP1));                      \
+    }
+
 #ifdef  MEMMOVE
+
 #define JU_COPYMEM(PDST,PSRC,POP1)                      \
     {                                                   \
-        Word_t i_ndex = 0;                              \
         assert((POP1) > 0);                             \
-        do { (PDST)[i_ndex] = (PSRC)[i_ndex]; } \
-        while (++i_ndex < (POP1));                      \
+        if (sizeof(*(PDST)) == sizeof(*(PSRC)))         \
+            memcpy(PDST, PSRC, sizeof(*(PDST)) * (POP1)); \
+        else                                            \
+            JU_COPYMEMODD((PDST),(PSRC),POP1);          \
     }
+
 #else   // ! MEMMOVE
-#define JU_COPYMEM(PDST,PSRC,POP1)                      \
-    {                                                   \
-        Word_t i_ndex = 0;                              \
-        assert((POP1) > 0);                             \
-        do { (PDST)[i_ndex] = (PSRC)[i_ndex]; } \
-        while (++i_ndex < (POP1));                      \
-    }
+
+#define JU_COPYMEM(PDST,PSRC,POP1) JU_COPYMEMODD(PDST,PSRC,POP1) 
+
 #endif  // ! MEMMOVE
 
 
@@ -1265,7 +1270,6 @@ j__udyCount64Bits(uint64_t word64)
     (PINDEX)[1] = (uint8_t)((SOURCELONG) >>  8);        \
     (PINDEX)[2] = (uint8_t)((SOURCELONG))
 
-#ifdef JU_64BIT
 
 // Copy a 5-byte Index pointed by a uint8_t * to a Word_t:
 //
@@ -1327,7 +1331,6 @@ j__udyCount64Bits(uint64_t word64)
     (PINDEX)[5] = (uint8_t)((SOURCELONG) >>  8);        \
     (PINDEX)[6] = (uint8_t)((SOURCELONG))
 
-#endif // JU_64BIT
 
 // ****************************************************************************
 // COMMON CODE FRAGMENTS (MACROS)
@@ -1406,7 +1409,7 @@ j__udyCount64Bits(uint64_t word64)
         assert((long) (POP1) > 0);                              \
         assert((Word_t) (OFFSET) <= (Word_t) (POP1));           \
         {                                                       \
-            size_t n = ((POP1)-(OFFSET)) * sizeof(*(PARRAY));   \
+            Word_t n = ((POP1)-(OFFSET)) * sizeof(*(PARRAY));   \
             void *src  = (PARRAY) + (OFFSET);                   \
             void *dest = (PARRAY) + (OFFSET) + 1;               \
             memmove(dest, src, n);                              \
@@ -1435,7 +1438,7 @@ j__udyCount64Bits(uint64_t word64)
 #ifdef  MEMMOVE
 #define JU_INSERTINPLACE3(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
-    size_t n = ((POP1)-(OFFSET)) * 3;                           \
+    Word_t n = ((POP1)-(OFFSET)) * 3;                           \
     void   *src  = (PBYTE) + ((OFFSET) * 3);                    \
     void   *dest = (PBYTE) + ((OFFSET) * 3) + 3;                \
     memmove(dest, src, n);                                      \
@@ -1457,12 +1460,11 @@ j__udyCount64Bits(uint64_t word64)
 }
 #endif  // ! MEMMOVE
 
-#ifdef JU_64BIT
 
 #ifdef  MEMMOVE
 #define JU_INSERTINPLACE5(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
-    size_t n = ((POP1)-(OFFSET)) * 5;                           \
+    Word_t n = ((POP1)-(OFFSET)) * 5;                           \
     void   *src  = (PBYTE) + ((OFFSET) * 5);                    \
     void   *dest = (PBYTE) + ((OFFSET) * 5) + 5;                \
     memmove(dest, src, n);                                      \
@@ -1489,7 +1491,7 @@ j__udyCount64Bits(uint64_t word64)
 #ifdef  MEMMOVE
 #define JU_INSERTINPLACE6(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
-    size_t n = ((POP1)-(OFFSET)) * 6;                           \
+    Word_t n = ((POP1)-(OFFSET)) * 6;                           \
     void   *src  = (PBYTE) + ((OFFSET) * 6);                    \
     void   *dest = (PBYTE) + ((OFFSET) * 6) + 6;                \
     memmove(dest, src, n);                                      \
@@ -1517,7 +1519,7 @@ j__udyCount64Bits(uint64_t word64)
 #ifdef  MEMMOVE
 #define JU_INSERTINPLACE7(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
-    size_t n = ((POP1)-(OFFSET)) * 7;                           \
+    Word_t n = ((POP1)-(OFFSET)) * 7;                           \
     void   *src  = (PBYTE) + ((OFFSET) * 7);                    \
     void   *dest = (PBYTE) + ((OFFSET) * 7) + 7;                \
     memmove(dest, src, n);                                      \
@@ -1543,7 +1545,6 @@ j__udyCount64Bits(uint64_t word64)
 }
 #endif  // ! MEMMOVE
 
-#endif // JU_64BIT
 
 // Counterparts to the above for deleting an Index:
 //
@@ -1638,7 +1639,6 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
     }                                                           \
 }
 
-#ifdef JU_64BIT
 
 #define JU_INSERTCOPY5(PDEST,PSOURCE,POP1,OFFSET,INDEX)         \
 assert((long) (POP1) > 0);                                      \
@@ -1730,7 +1730,6 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
     }                                                           \
 }
 
-#endif // JU_64BIT
 
 // Counterparts to the above for deleting an Index:
 
@@ -1802,18 +1801,14 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
 #define JU_RET_FOUND_JPM(Pjpm)                  JU_RET_FOUND
 #define JU_RET_FOUND_PVALUE(Pjv,OFFSET)         JU_RET_FOUND
 
-#ifndef JU_64BIT
 #define JU_RET_FOUND_LEAF1(Pjll,POP1,OFFSET)    JU_RET_FOUND
-#endif
 
 #define JU_RET_FOUND_LEAF2(Pjll,POP1,OFFSET)    JU_RET_FOUND
 #define JU_RET_FOUND_LEAF3(Pjll,POP1,OFFSET)    JU_RET_FOUND
-#ifdef JU_64BIT
 #define JU_RET_FOUND_LEAF4(Pjll,POP1,OFFSET)    JU_RET_FOUND
 #define JU_RET_FOUND_LEAF5(Pjll,POP1,OFFSET)    JU_RET_FOUND
 #define JU_RET_FOUND_LEAF6(Pjll,POP1,OFFSET)    JU_RET_FOUND
 #define JU_RET_FOUND_LEAF7(Pjll,POP1,OFFSET)    JU_RET_FOUND
-#endif
 #define JU_RET_FOUND_IMM_01(Pjp)                JU_RET_FOUND
 #define JU_RET_FOUND_IMM(Pjp,OFFSET)            JU_RET_FOUND
 
@@ -1841,6 +1836,7 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
 // This is useful in insert/delete code when the value area location is already
 // computed:
 
+// THESE are left over for Count & NextPrev !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #define JU_RET_FOUND_PVALUE(Pjv,OFFSET) return((PPvoid_t) ((Pjv) + OFFSET))
 
 #define JU_RET_FOUND_LEAFW(PJLW,POP1,OFFSET) \
@@ -1852,7 +1848,6 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
                 return((PPvoid_t) (JL_LEAF2VALUEAREA(Pjll, POP1) + (OFFSET)))
 #define JU_RET_FOUND_LEAF3(Pjll,POP1,OFFSET) \
                 return((PPvoid_t) (JL_LEAF3VALUEAREA(Pjll, POP1) + (OFFSET)))
-#ifdef JU_64BIT
 #define JU_RET_FOUND_LEAF4(Pjll,POP1,OFFSET) \
                 return((PPvoid_t) (JL_LEAF4VALUEAREA(Pjll, POP1) + (OFFSET)))
 #define JU_RET_FOUND_LEAF5(Pjll,POP1,OFFSET) \
@@ -1861,18 +1856,19 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
                 return((PPvoid_t) (JL_LEAF6VALUEAREA(Pjll, POP1) + (OFFSET)))
 #define JU_RET_FOUND_LEAF7(Pjll,POP1,OFFSET) \
                 return((PPvoid_t) (JL_LEAF7VALUEAREA(Pjll, POP1) + (OFFSET)))
-#endif
 
-// Note:  Here jp_Addr is a value area itself and not an address, so P_JV() is
+// Note:  Here jp_Addr0 is a value area itself and not an address, so P_JV() is
 // not needed:
 
-#define JU_RET_FOUND_IMM_01(PJP)  return((PPvoid_t) (&((PJP)->jp_PValue)))
+//#define JU_RET_FOUND_IMM_01(PJP)  return((PPvoid_t) (&((PJP)->jp_PValue)))
+#define JU_RET_FOUND_IMM_01(PJP)  return((PPvoid_t) ju_PImmVal_01(PJP))
 
-// Note:  Here jp_Addr is a pointer to a separately-mallocd value area, so
+// Note:  Here jp_Addr0 is a pointer to a separately-mallocd value area, so
 // P_JV() is required; likewise for JL_JLB_PVALUE:
 
+//#            return((PPvoid_t) (P_JV((PJP)->jp_PValue) + (OFFSET)))
 #define JU_RET_FOUND_IMM(PJP,OFFSET) \
-            return((PPvoid_t) (P_JV((PJP)->jp_PValue) + (OFFSET)))
+            return((PPvoid_t) (P_JV(ju_PImmVals(PJP)) + (OFFSET)))
 
 #ifndef BMVALUE
 
@@ -1890,7 +1886,6 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
     : (P_JV((PJLB)->jLlb_jLlbs[SUBEXP].jLlbs_PV_Raw)) + (OFFSET)))
 
 #endif  // BMVALUE
-
 
 #endif // JUDYL
 
@@ -1963,11 +1958,6 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
             return(Retval);                             \
         }
 
-// Cheap and dirty search for matching branchL
-static inline int j__udySearchBranchL(uint8_t *Lst, int pop1, uint8_t Exp)
-{
-    SEARCHLINARNATIVE(uint8_t, Lst, pop1, Exp, 0); 
-}
 
 // Leaf search routines
 
@@ -1995,8 +1985,8 @@ static inline int  FSPLIT(Word_t FIRST, Word_t LAST, Word_t KEY, Word_t POP1)
 // Used to mask to single Key
 //      = JU_LEASTBYTES((KEY), (LFBTS)); 
 //
-#define MskK(cbPK, KEY)         ((Word_t)(KEY) & (((Word_t)1 << (cbPK)) - 1))
-#define KEYMASK(cbPK)           (((Word_t)1 << (cbPK)) - 1)
+//#define MskK(cbPK, KEY)         ((Word_t)(KEY) & (((Word_t)1 << (cbPK)) - 1))
+//#define KEYMASK(cbPK)           (((Word_t)1 << (cbPK)) - 1)
 
 
 #ifdef ONEWAY
@@ -2007,6 +1997,18 @@ static inline int  FSPLIT(Word_t FIRST, Word_t LAST, Word_t KEY, Word_t POP1)
 #endif  // ! ONEWAY
 // End of review THIS NEEDS REVIEW!!!!!! Key mask and log are not the same
 // -------------------------------------------------------
+
+// Cheap and dirty search for matching branchL
+static inline int j__udySearchBranchL(uint8_t *Lst, int pop1, uint8_t Exp)
+{
+//    int Start;
+//    SEARCHPOPULATION(pop1);
+
+//  The vast majority of these are == 8, so hard code 8 
+//    Start = NSPLIT(pop1, Exp, 1 * 8); 
+//    SEARCHLEAFNATIVE(uint8_t, Lst, pop1, Exp, Start); 
+    SEARCHLINARNATIVE(uint8_t, Lst, pop1, Exp, 0); 
+}
 
 static inline int j__udySearchLeaf1(Pjll_t Pjll, int LeafPop1, Word_t Index)
 {
@@ -2023,7 +2025,10 @@ static inline int j__udySearchLeaf1(Pjll_t Pjll, int LeafPop1, Word_t Index)
 static inline int j__udySearchLeaf2(Pjll_t Pjll, int LeafPop1, Word_t Index)
 {
     int Start;
+//    printf("ALeaf2 = %d %lu 0x%lx %d\n", LeafPop1, j__SearchPopulation, Index, __LINE__);
+//    printf("ALeaf2 = %d %lu 0x%lx %d\n", LeafPop1, j__SearchPopulation, Index, __LINE__);
     SEARCHPOPULATION(LeafPop1);
+//    printf("BLeaf2 = %d %lu 0x%lx %d\n", LeafPop1, j__SearchPopulation, Index, __LINE__);
 
 //    Start = NSPLIT(LeafPop1, Index, (cbPW - __builtin_clzl(((uint16_t *)Pjll)[0] ^ ((uint16_t *)Pjll)[LeafPop1 - 1])));
 
@@ -2039,7 +2044,6 @@ static inline int j__udySearchLeaf3(Pjll_t Pjll, int LeafPop1, Word_t Index)
     SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 3, JU_COPY3_PINDEX_TO_LONG, Start); 
 }
 
-#ifdef JU_64BIT
 static inline int j__udySearchLeaf4(Pjll_t Pjll, int LeafPop1, Word_t Index)
 {
     SEARCHPOPULATION(LeafPop1);
@@ -2067,12 +2071,11 @@ static inline int j__udySearchLeaf7(Pjll_t Pjll, int LeafPop1, Word_t Index)
     int Start = NSPLIT(LeafPop1, JU_LEASTBYTES(Index, 7), 7 * 8); 
     SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 7, JU_COPY7_PINDEX_TO_LONG, Start); 
 }
-#endif // JU_64BIT
 
 
 #ifdef NSLEAFW
 
-static inline int j__udySearchLeafW(Pjlw_t Pjlw, int LeafPop1, Word_t Index)
+static inline int j__udySearchLeafW(Pllw_t Pjlw, int LeafPop1, Word_t Index)
 {
     SEARCHPOPULATION(LeafPop1);
 

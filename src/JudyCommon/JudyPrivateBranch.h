@@ -56,14 +56,17 @@ typedef struct J_UDY_POINTER_OTHERS      // JPO.
             Word_t      j_po_Addr;       // first word:  Pjp_t, Word_t, etc.
             union {
                 Word_t  j_po_Addr1;
-#ifdef SWAP
-                uint8_t j_po_DcdP0[sizeof(Word_t) - 1];
-#endif  // ! SWAP
-
                 uint8_t j_po_Bytes[sizeof(Word_t)];     // last byte = jp_Type.
             } jpo_u;
         } jpo_t;
 
+typedef struct J_UDY_POINTER_SPARE      // 
+        {
+            Word_t      j_pS_Addr;       // first word:  Pjp_t, Word_t, etc.
+            Word_t      j_pS_Addr1;      // 2nd word:  Pjp_t, Word_t, etc.
+            Word_t      j_pS_Addr2;      // 3rd  word:  Pjp_t, Word_t, etc.
+            Word_t      j_pS_Addr3;      // 4th  word:  Pjp_t, Word_t, etc.
+        } jpS_t;
 
 // JP CONTAINING IMMEDIATE INDEXES:
 //
@@ -88,9 +91,7 @@ typedef struct _JUDY_POINTER_IMMED1
             {
                 uint8_t  j_pi_1Index1[sizeof(Word_t) + sizeof(Word_t) - 1];
                 uint16_t j_pi_1Index2[(sizeof(Word_t) + sizeof(Word_t) - 1)/2];
-#ifdef  JU_64BIT
                 uint32_t j_pi_1Index4[(sizeof(Word_t) + sizeof(Word_t) - 1)/4];
-#endif  // JU_64BIT
             };
         } jpi_t;
 #endif  // JUDY1
@@ -98,13 +99,11 @@ typedef struct _JUDY_POINTER_IMMED1
 #ifdef  JUDYL
 typedef struct _JUDY_POINTER_IMMEDL      // JPI.
         {
-            Word_t      j_po_Addr;       // first word:  Pjp_t, Word_t, etc.
+            Word_t      j_pi_Immed01;       // first word:  Pjp_t, Word_t, etc.
             union 
             {
                 uint8_t  j_pi_LIndex1[sizeof(Word_t) - 1];    // see above.
-#ifdef  JU_64BIT
                 uint16_t j_pi_LIndex2[(sizeof(Word_t) - 1)/2];
-#endif  // JU_64BIT
             };
         } jpi_t;
 #endif  // JUDYL
@@ -120,6 +119,7 @@ typedef union J_UDY_POINTER             // JP.
         {
             jpo_t j_po;                 // other than immediate indexes.
             jpi_t j_pi;                 // immediate indexes.
+//            jpS_t j_spare;
         } jp_t, *Pjp_t;
 
 // For coding convenience:
@@ -132,24 +132,23 @@ typedef union J_UDY_POINTER             // JP.
 #endif  //JUDY1
 
 #ifdef  JUDYL
+#define jp_Immed01 j_pi.j_pi_Immed01   // Value area for IMMED_x_01
+#define jp_ValueI  j_pi.j_pi_Immed01   // Value area for IMMED_x_01 XXXXXXXTEMPXXXXXX
 #define jp_LIndex1 j_pi.j_pi_LIndex1    // for storing Indexes in second word.
 #define jp_LIndex2 j_pi.j_pi_LIndex2    // for storing uint16_t Indexes in first  word.
 #define jp_PValue  j_po.j_po_Addr
+// broke #define jp_PValue  j_spare.j_pS_Addr3
 #endif  // JUDYL
 
-#define jp_Addr    j_po.j_po_Addr
+#define Jp_Addr0   j_po.j_po_Addr
 #define jp_Addr1   j_po.jpo_u.j_po_Addr1
 //#define       jp_DcdPop0 j_po.jpo_u.j_po_DcdPop0
-//#define jp_Type    j_po.jpo_u.j_po_Bytes[sizeof(Word_t) - 1]
 #define jp_Type    j_po.jpo_u.j_po_Bytes[sizeof(Word_t) - 1]
 
-#ifdef SWAP
-#define jp_DcdP0   j_po.jpo_u.j_po_DcdP0
-#endif  // ! SWAP
+// Mask off the high byte from INDEX to it can be compared to DcdPopO:
+#define JU_TRIMTODCDSIZE(INDEX) ((cJU_ALLONES >> cJU_BITSPERBYTE) & (INDEX))
 
-// ****************************************************************************
-// JUDY POINTER (JP) -- RELATED MACROS AND CONSTANTS
-// ****************************************************************************
+#define cJU_POP0MASK(cPopBytes) JU_LEASTBYTESMASK(cPopBytes)
 
 // EXTRACT VALUES FROM JP:
 //
@@ -161,15 +160,135 @@ typedef union J_UDY_POINTER             // JP.
 //
 // Note:  These are constant macros (cJU) because cPopBytes should be a
 // constant.  Also note cPopBytes == state in the SM.
-
-#define cJU_POP0MASK(cPopBytes) JU_LEASTBYTESMASK(cPopBytes)
-
 #define cJU_DCDMASK(cPopBytes) \
         ((cJU_ALLONES >> cJU_BITSPERBYTE) & (~cJU_POP0MASK(cPopBytes)))
 
-// Mask off the high byte from INDEX to it can be compared to DcdPopO:
 
-#define JU_TRIMTODCDSIZE(INDEX) ((cJU_ALLONES >> cJU_BITSPERBYTE) & (INDEX))
+// DETERMINE IF AN INDEX IS (NOT) IN A JPS EXPANSE:
+
+#define JU_DCDNOTMATCHINDEX(INDEX,PJP,POP0BYTES)                \
+    (((INDEX) ^ JU_JPDCDPOP0(PJP)) & cJU_DCDMASK(POP0BYTES))
+
+
+
+
+//        ju_SetDcdPop0(PjpJP, DcdP0);
+//        ju_SetLeafPop0(PjpJP, Pop1 - 1);
+//        ju_SetJpType(PjpJP, cJU_JPLEAF2);
+//        ju_SetBaLPntr(PjpJP, PjllRaw);
+//        ju_SetIMM01(Pjp, Value, Key, Type)
+//        ju_SetPjvPntr(Pjp, PjvPntr)
+
+
+
+
+
+//#define Shif(PJP)    ((Pjp_t)((Word_t *)(PJP) + 2))
+#define Shif(PJP)    ((Pjp_t)((Word_t *)(PJP) + 0))
+
+
+
+//                            Get routines
+static uint8_t ju_Type(Pjp_t Pjp)
+        { return(Shif(Pjp)->jp_Type); } 
+
+static Word_t  ju_BaLPntr(Pjp_t Pjp)
+        { return(Shif(Pjp)->Jp_Addr0); } 
+
+static Word_t  ju_DcdPop0(Pjp_t Pjp)
+        { return(JU_TRIMTODCDSIZE(Shif(Pjp)->jp_Addr1)); } 
+////broke        { return((Shif(Pjp)->jp_Addr1)); } 
+
+static Word_t  ju_LeafPop0(Pjp_t Pjp)
+        { return(Shif(Pjp)->jp_Addr1 & 0xFF); } 
+
+static Word_t  ju_BranchPop0(Pjp_t Pjp, int Pop0Bytes)
+        { return(JU_TRIMTODCDSIZE(Shif(Pjp)->jp_Addr1) & cJU_POP0MASK(Pop0Bytes)); }
+//// broke        { return((Shif(Pjp)->jp_Addr1) & cJU_POP0MASK(Pop0Bytes)); }
+
+static Word_t  ju_DcdNonMatchKey(Word_t Index, Pjp_t Pjp, int Pop0Bytes)
+        { return(JU_DCDNOTMATCHINDEX(Index, Shif(Pjp), Pop0Bytes)); }
+
+
+//                            Set routines
+static void ju_SetLeafPop0(Pjp_t Pjp, Word_t LeafPop0)
+        { 
+            Shif(Pjp)->jp_Addr1 &= ~(Word_t)0xFF;
+            Shif(Pjp)->jp_Addr1 |=  (Word_t)0xFF & LeafPop0;
+        }
+
+static void ju_SetBaLPntr(Pjp_t Pjp, Word_t BaLPntr)
+        { Shif(Pjp)->Jp_Addr0 = BaLPntr; }
+
+static void ju_SetJpType(Pjp_t Pjp, uint8_t Type)
+        { Shif(Pjp)->jp_Type  = Type; }
+
+static void ju_SetDcdPop0(Pjp_t Pjp, Word_t DcdPop0)
+        {
+            uint8_t Type  = Shif(Pjp)->jp_Type;               // Get it
+            Shif(Pjp)->jp_Addr1 = DcdPop0;                    // Hi byte set below
+            Shif(Pjp)->jp_Type  = Type;                       // restore it
+        }
+
+#ifdef  JUDYL
+//                            Get routines
+//static Word_t ju_PjvPntr(Pjp, PValues)
+//        { return(Pjp->Jp_Addr0); }
+
+// Return ^ to JV array in Immed_x_02+
+static Word_t ju_PImmVals(Pjp_t Pjp)
+        { return(Shif(Pjp)->jp_PValue); }
+
+// Return Value in Immed_x_01
+static Word_t ju_ImmVal_01(Pjp_t Pjp)
+{ return(Shif(Pjp)->jp_Immed01); }
+
+// Return ^ to Value in Immed_x_01
+static Pjv_t ju_PImmVal_01(Pjp_t Pjp)
+        { return((Pjv_t)(&Shif(Pjp)->jp_Immed01)); }
+
+static uint8_t *ju_LImmed1(Pjp_t Pjp)
+        { return(Shif(Pjp)->jp_LIndex1); }
+
+static uint16_t *ju_LImmed2(Pjp_t Pjp)
+        { return(Shif(Pjp)->jp_LIndex2); }
+
+//                            Set routines
+static void ju_SetPjvPntr(Pjp_t Pjp, Word_t PjvPntr)
+        { Shif(Pjp)->Jp_Addr0  = PjvPntr; } 
+
+static void ju_SetIMM01(Pjp_t Pjp, Word_t Value, Word_t Key, uint8_t Type)
+        { 
+            Shif(Pjp)->Jp_Addr0  = Value; 
+            Shif(Pjp)->jp_Addr1 = Key;
+            Shif(Pjp)->jp_Type  = Type; 
+        } 
+#endif  // JUDYL
+
+#ifdef  JUDY1
+//                            Get routines
+static uint8_t *ju_1Immed1(Pjp_t Pjp)
+        { return(Shif(Pjp)->jp_1Index1); }
+
+static uint16_t *ju_1Immed2(Pjp_t Pjp)
+        { return(Shif(Pjp)->jp_1Index2); }
+
+static uint32_t *ju_1Immed4(Pjp_t Pjp)
+        { return(Shif(Pjp)->jp_1Index4); }
+
+
+//                            Set routines
+static void ju_SetIMM01(Pjp_t Pjp, Word_t Value, Word_t Key, uint8_t Type)
+        { 
+            Shif(Pjp)->Jp_Addr0  = Value; 
+            Shif(Pjp)->jp_Addr1 = Key;
+            Shif(Pjp)->jp_Type  = Type; 
+        } 
+#endif  // JUDY1
+
+// ****************************************************************************
+// JUDY POINTER (JP) -- RELATED MACROS AND CONSTANTS
+// ****************************************************************************
 
 // Get from jp_DcdPopO the Pop0 for various branch JP Types:
 //
@@ -192,16 +311,6 @@ typedef union J_UDY_POINTER             // JP.
 
 #define JU_BRANCHBJPGROWINPLACE(NumJPs) \
         J__U_GROWCK(NumJPs, cJU_BITSPERSUBEXPB, j__U_BranchBJPPopToWords)
-
-
-// DETERMINE IF AN INDEX IS (NOT) IN A JPS EXPANSE:
-
-#ifdef  noDCD
-#define JU_DCDNOTMATCHINDEX(INDEX,PJP,POP0BYTES) (0)
-#else   // DCDCHECK
-#define JU_DCDNOTMATCHINDEX(INDEX,PJP,POP0BYTES)                \
-    (((INDEX) ^ JU_JPDCDPOP0(PJP)) & cJU_DCDMASK(POP0BYTES))
-#endif  // DCD
 
 // NUMBER OF JPs IN AN UNCOMPRESSED BRANCH:
 //
@@ -226,7 +335,9 @@ typedef union J_UDY_POINTER             // JP.
 // branch until the memory consumed was even, but for speed, its better to
 // switch "sooner" and keep a linear branch fast.
 
+#ifndef cJU_BRANCHLMAXJPS
 #define cJU_BRANCHLMAXJPS 7
+#endif  // cJU_BRANCHLMAXJPS
 
 
 // LINEAR BRANCH STRUCT:
@@ -235,6 +346,8 @@ typedef union J_UDY_POINTER             // JP.
 
 typedef struct J__UDY_BRANCH_LINEAR
         {
+            Word_t jbl_RootStruct;                  // ^ to root Structure
+            Word_t jbl_DCDPop0;                     // DCDPop0
             uint8_t jbl_NumJPs;                     // num of JPs (Pjp_t), 1..N.
             uint8_t jbl_Expanse[cJU_BRANCHLMAXJPS]; // 1..7 MSbs of pop exps.
             jp_t    jbl_jp     [cJU_BRANCHLMAXJPS]; // JPs for populated exps.
@@ -298,20 +411,22 @@ typedef struct J__UDY_BRANCH_LINEAR
 typedef struct J__UDY_BRANCH_BITMAP_SUBEXPANSE
         {
             BITMAPB_t jbbs_Bitmap;
-            size_t    jbbs_Pjp;
+            Word_t    jbbs_Pjp;
 
         } jbbs_t;
 
 typedef struct J__UDY_BRANCH_BITMAP
         {
+            Word_t jbb_RootStruct;                  // ^ to root Structure
+            Word_t jbb_DCDPop0;                     // DCDPop0
             jbbs_t jbb_jbbs   [cJU_NUMSUBEXPB];
 
 #ifdef  BBSEARCH
-            size_t jbb_Pop1;
+            Word_t jbb_Pop1;
 #endif  // BBSEARCH
 
-//            size_t jbbs_Pjp[];
-            size_t jbb_numPtrs;         // number of pointers in jp_t s
+//            Word_t jbbs_Pjp[];
+            Word_t jbb_numPtrs;         // number of pointers in jp_t s
 
         } jbb_t, * Pjbb_t;
 
@@ -334,17 +449,18 @@ typedef struct J__UDY_BRANCH_BITMAP
 // Note:  This produces a non-"raw" address already passed through P_JBU().
 
 #define JU_JBU_PJP(Pjp,Index,Level) \
-        (&((P_JBU((Pjp)->jp_Addr))->jbu_jp[JU_DIGITATSTATE(Index, Level)]))
+        (&((P_JBU((Pjp)->Jp_Addr0))->jbu_jp[JU_DIGITATSTATE(Index, Level)]))
 
 #define JU_JBU_PJP0(Pjp) \
-        (&((P_JBU((Pjp)->jp_Addr))->jbu_jp[0]))
+        (&((P_JBU((Pjp)->Jp_Addr0))->jbu_jp[0]))
 
 typedef struct J__UDY_BRANCH_UNCOMPRESSED
 {
-//        Word_t  jbu_headr[2];         // MUST! be an even number of words
+        Word_t jbu_RootStruct;                  // ^ to root Structure
+        Word_t jbu_DCDPop0;                     // DCDPop0
         jp_t   jbu_jp     [cJU_BRANCHUNUMJPS];  // JPs for populated exp.
-        size_t jbu_numPtrs;             // number of Pointers in jp_t s
-//        jp_t   jbu_jp[0];                       // JPs for populated exp.
+        Word_t jbu_numPtrs;                     // number of Pointers in jp_t s
+//        jp_t   jbu_jp[0];                     // JPs for populated exp.
 } jbu_t, * Pjbu_t;
 
 
@@ -370,8 +486,11 @@ typedef struct J__UDY_BRANCH_UNCOMPRESSED
 #ifndef noU
 
 // Max population below BranchL, then convert to BranchU:
+// Note: if no conversion is allowed, the cost is 3 - 6 nS in Get/Test speed
 
+#ifndef JU_BRANCHL_MAX_POP
 #define JU_BRANCHL_MAX_POP      1000
+#endif  // ! JU_BRANCHL_MAX_POP
 
 // Minimum global population increment before next conversion of a BranchB to a
 // BranchU:
@@ -384,7 +503,10 @@ typedef struct J__UDY_BRANCH_UNCOMPRESSED
 
 // Min/max population below BranchB, then convert to BranchU:
 
+#ifndef JU_BRANCHB_MIN_POP
 #define JU_BRANCHB_MIN_POP       135
+#endif  // ! JU_BRANCHB_MIN_POP
+
 #define JU_BRANCHB_MAX_POP       750
 
 #else // noU
@@ -474,14 +596,10 @@ FUNCTION void Init (
         PWord_t   PeIndex,
         PWord_t   PoIndex,
         PWord_t   Peleaf,       // always whole words.
-#ifndef JU_64BIT
-        uint8_t * Poleaf3)
-#else
         uint8_t * Poleaf3,
         uint8_t * Poleaf5,
         uint8_t * Poleaf6,
         uint8_t * Poleaf7)
-#endif
 {
         int offset;
 
@@ -493,9 +611,6 @@ FUNCTION void Init (
         for (offset = 0; offset < (INDEXES + 1) * 3; ++offset)
             Poleaf3[offset] = base + offset;
 
-#ifndef JU_64BIT
-        *PoIndex = (91 << 24) | (92 << 16) | (93 << 8) | 94;
-#else
 
         *PoIndex = (91L << 56) | (92L << 48) | (93L << 40) | (94L << 32)
                  | (95L << 24) | (96L << 16) | (97L <<  8) |  98L;
@@ -508,7 +623,6 @@ FUNCTION void Init (
 
         for (offset = 0; offset < (INDEXES + 1) * 7; ++offset)
             Poleaf7[offset] = base + offset;
-#endif
 
 } // Init()
 
@@ -553,29 +667,20 @@ FUNCTION main()
         Word_t  oIndex;                         // odd,  to insert.
         Word_t  eleaf [ INDEXES + 1];           // even leaf, index size 4.
         uint8_t oleaf3[(INDEXES + 1) * 3];      // odd leaf,  index size 3.
-#ifdef JU_64BIT
         uint8_t oleaf5[(INDEXES + 1) * 5];      // odd leaf,  index size 5.
         uint8_t oleaf6[(INDEXES + 1) * 6];      // odd leaf,  index size 6.
         uint8_t oleaf7[(INDEXES + 1) * 7];      // odd leaf,  index size 7.
-#endif
         Word_t  eleaf_2 [ INDEXES + 1];         // same, but second arrays:
         uint8_t oleaf3_2[(INDEXES + 1) * 3];
-#ifdef JU_64BIT
         uint8_t oleaf5_2[(INDEXES + 1) * 5];
         uint8_t oleaf6_2[(INDEXES + 1) * 6];
         uint8_t oleaf7_2[(INDEXES + 1) * 7];
-#endif
         int     ioffset;                // index insertion offset.
 
-#ifndef JU_64BIT
-#define INIT        Init( 0, & eIndex, & oIndex, eleaf,   oleaf3)
-#define INIT2 INIT; Init(50, & eIndex, & oIndex, eleaf_2, oleaf3_2)
-#else
 #define INIT        Init( 0, & eIndex, & oIndex, eleaf,   oleaf3, \
                          oleaf5,   oleaf6,   oleaf7)
 #define INIT2 INIT; Init(50, & eIndex, & oIndex, eleaf_2, oleaf3_2, \
                          oleaf5_2, oleaf6_2, oleaf7_2)
-#endif
 
 #define WSIZE sizeof (Word_t)           // shorthand.
 
@@ -614,7 +719,6 @@ FUNCTION main()
             PrintLeaf("After ", ioffset, 3, oleaf3);
         }
 
-#ifdef JU_64BIT
         (void) puts("\nJU_INSERTINPLACE5():");
 
         for (ioffset = 0; ioffset <= INDEXES; ++ioffset)
@@ -644,7 +748,6 @@ FUNCTION main()
             JU_INSERTINPLACE7(oleaf7, INDEXES, ioffset, oIndex);
             PrintLeaf("After ", ioffset, 7, oleaf7);
         }
-#endif // JU_64BIT
 
         (void) puts("\nJU_DELETEINPLACE():");
 
@@ -666,7 +769,6 @@ FUNCTION main()
             PrintLeaf("After ", ioffset, 3, oleaf3);
         }
 
-#ifdef JU_64BIT
         (void) puts("\nJU_DELETEINPLACE_ODD(5):");
 
         for (ioffset = 0; ioffset < INDEXES; ++ioffset)
@@ -696,7 +798,6 @@ FUNCTION main()
             JU_DELETEINPLACE_ODD(oleaf7, INDEXES, ioffset, 7);
             PrintLeaf("After ", ioffset, 7, oleaf7);
         }
-#endif // JU_64BIT
 
         (void) puts("\nJU_INSERTCOPY():");
 
@@ -722,7 +823,6 @@ FUNCTION main()
             PrintLeaf("After,  dest", ioffset, 3, oleaf3_2);
         }
 
-#ifdef JU_64BIT
         (void) puts("\nJU_INSERTCOPY5():");
 
         for (ioffset = 0; ioffset <= INDEXES; ++ioffset)
@@ -758,7 +858,6 @@ FUNCTION main()
             PRINTLEAF("After,  src ", ioffset, 7, oleaf7);
             PrintLeaf("After,  dest", ioffset, 7, oleaf7_2);
         }
-#endif // JU_64BIT
 
         (void) puts("\nJU_DELETECOPY():");
 
@@ -784,7 +883,6 @@ FUNCTION main()
             PrintLeaf("After,  dest", ioffset, 3, oleaf3_2);
         }
 
-#ifdef JU_64BIT
         (void) puts("\nJU_DELETECOPY_ODD(5):");
 
         for (ioffset = 0; ioffset < INDEXES; ++ioffset)
@@ -820,7 +918,6 @@ FUNCTION main()
             PRINTLEAF("After,  src ", ioffset, 7, oleaf7);
             PrintLeaf("After,  dest", ioffset, 7, oleaf7_2);
         }
-#endif // JU_64BIT
 
         return(0);
 

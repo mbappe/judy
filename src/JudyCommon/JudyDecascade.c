@@ -65,7 +65,6 @@ FUNCTION static void j__udyCopy2to3(
 } // j__udyCopy2to3()
 
 
-#ifdef JU_64BIT
 
 // ****************************************************************************
 // __ J U D Y   C O P Y   3   T O   4
@@ -167,34 +166,8 @@ FUNCTION static void j__udyCopy6to7(
 
 } // j__udyCopy6to7()
 
-#endif // JU_64BIT
 
 
-#ifndef JU_64BIT // 32-bit
-
-// ****************************************************************************
-// __ J U D Y   C O P Y   3   T O   W
-//
-// Copy one or more 3-byte Indexes to a series of longs (words, always 4-byte).
-
-FUNCTION static void j__udyCopy3toW(
-	PWord_t   PDest,	// to where to copy full-word Indexes.
-	uint8_t * PSrc,		// from where to copy 3-byte indexes.
-	Word_t    Pop1,		// number of Indexes to copy.
-	Word_t    MSByte)	// most-significant byte, prefix to each Index.
-{
-	assert(Pop1);
-
-        do {
-	    JU_COPY3_PINDEX_TO_LONG(*PDest, PSrc);
-	    *PDest++ |= MSByte;
-	    PSrc     += 3;
-        } while (--Pop1);
-
-} // j__udyCopy3toW()
-
-
-#else // JU_64BIT
 
 // ****************************************************************************
 // __ J U D Y   C O P Y   7   T O   W
@@ -217,7 +190,6 @@ FUNCTION static void j__udyCopy7toW(
 
 } // j__udyCopy7toW()
 
-#endif // JU_64BIT
 
 
 // ****************************************************************************
@@ -231,9 +203,9 @@ FUNCTION int j__udyBranchBToBranchL(
 	Pjp_t	Pjp,		// points to BranchB to shrink.
 	Pjpm_t	Pjpm)		// for global accounting.
 {
-	size_t	PjbbRaw;	// old BranchB to shrink.
+	Word_t	PjbbRaw;	// old BranchB to shrink.
 	Pjbb_t	Pjbb;
-	size_t	PjblRaw;	// new BranchL to create.
+	Word_t	PjblRaw;	// new BranchL to create.
 	Pjbl_t	Pjbl;
 	Word_t	Digit;		// in BranchB.
 	Word_t  NumJPs;		// non-null JPs in BranchB.
@@ -241,10 +213,11 @@ FUNCTION int j__udyBranchBToBranchL(
 	Pjp_t	Pjpjbl;		// current JP in BranchL.
 	Word_t  SubExp;		// in BranchB.
 
-	assert(JU_JPTYPE(Pjp) >= cJU_JPBRANCH_B2);
-	assert(JU_JPTYPE(Pjp) <= cJU_JPBRANCH_B);
+	assert(ju_Type(Pjp) >= cJU_JPBRANCH_B2);
+	assert(ju_Type(Pjp) <= cJU_JPBRANCH_B);
 
-	PjbbRaw	= Pjp->jp_Addr;
+//        PjbbRaw	= Pjp->Jp_Addr0;
+        PjbbRaw = ju_BaLPntr(Pjp);
 	Pjbb	= P_JBB(PjbbRaw);
 
 // Copy 1-byte subexpanse digits from BranchB to temporary buffer for BranchL,
@@ -281,7 +254,7 @@ FUNCTION int j__udyBranchBToBranchL(
 
 	for (SubExp = 0; SubExp < cJU_NUMSUBEXPB; ++SubExp)
 	{
-	    size_t PjpRaw = JU_JBB_PJP(Pjbb, SubExp);	// current Pjp.
+	    Word_t PjpRaw = JU_JBB_PJP(Pjbb, SubExp);	// current Pjp.
 	    Pjp_t Pjp;
 
 	    if (PjpRaw == 0) continue;  // skip empty subexpanse.
@@ -299,8 +272,11 @@ FUNCTION int j__udyBranchBToBranchL(
 // Finish up:  Calculate new JP type (same index size = level in new class),
 // and tie new BranchB into parent JP:
 
-	Pjp->jp_Type += cJU_JPBRANCH_L - cJU_JPBRANCH_B;
-	Pjp->jp_Addr  = PjblRaw;
+printf("\n============================ calculate Type by cJU_JPBRANCH_L - cJU_JPBRANCH_B = %d\n", (int)(cJU_JPBRANCH_L - cJU_JPBRANCH_B));
+//        Pjp->jp_Type += cJU_JPBRANCH_L - cJU_JPBRANCH_B;
+        ju_SetJpType(Pjp, ju_Type(Pjp) + cJU_JPBRANCH_L - cJU_JPBRANCH_B);
+//        Pjp->Jp_Addr0  = PjblRaw;
+	ju_SetBaLPntr(Pjp, PjblRaw);
 
 	return(1);
 
@@ -329,7 +305,7 @@ FUNCTION int j__udyBranchUToBranchB(
 #endif // notdef
 
 
-#if (defined(JUDYL) || (! defined(JU_64BIT)))
+#ifdef  JUDYL
 
 // ****************************************************************************
 // __ J U D Y   L E A F   B 1   T O   L E A F   1
@@ -346,9 +322,9 @@ FUNCTION int j__udyLeafB1ToLeaf1(
 	Pjp_t	  Pjp,		// points to LeafB1 to shrink.
 	Pjpm_t	  Pjpm)		// for global accounting.
 {
-	size_t    PjlbRaw;	// bitmap in old leaf.
+	Word_t    PjlbRaw;	// bitmap in old leaf.
 	Pjlb_t    Pjlb;
-	size_t	  PjllRaw;	// new Leaf1.
+	Word_t	  PjllRaw;	// new Leaf1.
 	uint8_t	* Pleaf1;	// Leaf1 pointer type.
 	Word_t    Digit;	// in LeafB1 bitmap.
 #ifdef JUDYL
@@ -357,7 +333,7 @@ FUNCTION int j__udyLeafB1ToLeaf1(
 	Word_t    SubExp;
 #endif
 
-	assert(JU_JPTYPE(Pjp) == cJU_JPLEAF_B1);
+	assert(ju_Type(Pjp) == cJU_JPLEAF_B1);
 	assert(((JU_JPDCDPOP0(Pjp) & 0xFF) + 1) == cJU_LEAF1_MAXPOP1);
 
 // Allocate JPLEAF1 and prepare pointers:
@@ -366,7 +342,8 @@ FUNCTION int j__udyLeafB1ToLeaf1(
 	    return(-1);
 
 	Pleaf1	= (uint8_t *) P_JLL(PjllRaw);
-	PjlbRaw	= Pjp->jp_Addr;
+//        PjlbRaw = Pjp->Jp_Addr0;
+	PjlbRaw	= ju_BaLPntr(Pjp);
 	Pjlb	= P_JLB(PjlbRaw);
 	JUDYLCODE(PjvNew = JL_LEAF1VALUEAREA(Pleaf1, cJL_LEAF1_MAXPOP1);)
 
@@ -382,7 +359,7 @@ FUNCTION int j__udyLeafB1ToLeaf1(
 
 	for (SubExp = 0; SubExp < cJU_NUMSUBEXPL; ++SubExp)
 	{
-	    size_t PjvRaw = JL_JLB_PVALUE(Pjlb, SubExp);
+	    Word_t PjvRaw = JL_JLB_PVALUE(Pjlb, SubExp);
 	    Pjv_t Pjv    = P_JV(PjvRaw);
 
 	    if (Pjv == (Pjv_t) NULL) continue;	// skip empty subarray.
@@ -405,14 +382,16 @@ FUNCTION int j__udyLeafB1ToLeaf1(
 
 	j__udyFreeJLB1(PjlbRaw, Pjpm);
 
-	Pjp->jp_Addr = PjllRaw;
-	Pjp->jp_Type = cJU_JPLEAF1;
+//	  Pjp->Jp_Addr0 = PjllRaw;
+        ju_SetBaLPntr(Pjp, PjllRaw);
+//        Pjp->jp_Type = cJU_JPLEAF1;
+        ju_SetJpType(Pjp, cJU_JPLEAF1);
 
 	return(1);
 
 } // j__udyLeafB1ToLeaf1()
 
-#endif // (JUDYL || (! JU_64BIT))
+#endif // JUDYL
 
 
 // ****************************************************************************
@@ -436,18 +415,16 @@ FUNCTION Word_t  j__udyLeaf1ToLeaf2(
 {
 	Word_t	   Pop1;	// Indexes in leaf.
 	Word_t	   Offset;	// in linear leaf list.
-JUDYLCODE(size_t   Pjv1Raw;)	// source object value area.
+JUDYLCODE(Word_t   Pjv1Raw;)	// source object value area.
 JUDYLCODE(Pjv_t	   Pjv1;)
 
-	switch (JU_JPTYPE(Pjp))
+	switch (ju_Type(Pjp))
 	{
-
-
 // JPLEAF_B1:
-
 	case cJU_JPLEAF_B1:
 	{
-	    Pjlb_t Pjlb = P_JLB(Pjp->jp_Addr);
+//             Pjlb_t Pjlb = P_JLB(Pjp->Jp_Addr0);
+            Pjlb_t Pjlb = P_JLB(ju_BaLPntr(Pjp));
 	    Word_t Digit;	// in LeafB1 bitmap.
   JUDYLCODE(Word_t SubExp;)	// in LeafB1.
 
@@ -481,19 +458,19 @@ JUDYLCODE(Pjv_t	   Pjv1;)
 	    }
 #endif // JUDYL
 
-	    j__udyFreeJLB1(Pjp->jp_Addr, Pjpm);  // LeafB1 itself.
+//            j__udyFreeJLB1(Pjp->Jp_Addr0, Pjpm);  // LeafB1 itself.
+	    j__udyFreeJLB1(ju_BaLPntr(Pjp), Pjpm);  // LeafB1 itself.
 	    return(Pop1);
 
 	} // case cJU_JPLEAF_B1
 
-
-#if (defined(JUDYL) || (! defined(JU_64BIT)))
-
 // JPLEAF1:
 
+#ifdef  JUDYL
 	case cJU_JPLEAF1:
 	{
-	    uint8_t * PLeaf1 = (uint8_t *) P_JLL(Pjp->jp_Addr);
+//            uint8_t * PLeaf1 = (uint8_t *) P_JLL(Pjp->Jp_Addr0);
+	    uint8_t * PLeaf1 = (uint8_t *) P_JLL(ju_BaLPntr(Pjp));
 
 	    Pop1 = JU_JPBRANCH_POP0(Pjp, 1) + 1; assert(Pop1);
 	    JUDYLCODE(Pjv1 = JL_LEAF1VALUEAREA(PLeaf1, Pop1);)
@@ -506,10 +483,11 @@ JUDYLCODE(Pjv_t	   Pjv1;)
 		PLeaf2[Offset] = MSByte | PLeaf1[Offset];
 		JUDYLCODE(Pjv2[Offset] = Pjv1[Offset];)
 	    }
-	    j__udyFreeJLL1(Pjp->jp_Addr, Pop1, Pjpm);
+//            j__udyFreeJLL1(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    j__udyFreeJLL1(ju_BaLPntr(Pjp), Pop1, Pjpm);
 	    return(Pop1);
 	}
-#endif // (JUDYL || (! JU_64BIT))
+#endif // JUDYL
 
 
 // JPIMMED_1_01:
@@ -520,7 +498,8 @@ JUDYLCODE(Pjv_t	   Pjv1;)
 	case cJU_JPIMMED_1_01:
 	{
 	    PLeaf2[0] = JU_JPDCDPOP0(Pjp);	// see above.
-	    JUDYLCODE(Pjv2[0] = Pjp->jp_PValue;)
+//            JUDYLCODE(Pjv2[0] = Pjp->jp_PValue;)
+	    JUDYLCODE(Pjv2[0] = ju_ImmVal_01(Pjp);)
 	    return(1);
 	}
 
@@ -529,13 +508,11 @@ JUDYLCODE(Pjv_t	   Pjv1;)
 
 	case cJU_JPIMMED_1_02:
 	case cJU_JPIMMED_1_03:
-#if (defined(JUDY1) || defined(JU_64BIT))
 	case cJU_JPIMMED_1_04:
 	case cJU_JPIMMED_1_05:
 	case cJU_JPIMMED_1_06:
 	case cJU_JPIMMED_1_07:
-#endif
-#if (defined(JUDY1) && defined(JU_64BIT))
+#ifdef  JUDY1
 	case cJ1_JPIMMED_1_08:
 	case cJ1_JPIMMED_1_09:
 	case cJ1_JPIMMED_1_10:
@@ -546,23 +523,26 @@ JUDYLCODE(Pjv_t	   Pjv1;)
 	case cJ1_JPIMMED_1_15:
 #endif
 	{
-	    Pop1 = JU_JPTYPE(Pjp) - cJU_JPIMMED_1_02 + 2; assert(Pop1);
-	    JUDYLCODE(Pjv1Raw = Pjp->jp_PValue;)
-	    JUDYLCODE(Pjv1    = P_JV(Pjv1Raw);)
+	    Pop1 = ju_Type(Pjp) - cJU_JPIMMED_1_02 + 2; assert(Pop1);
+
+//            JUDYLCODE(Pjv1Raw = Pjp->jp_PValue;)
+	    JUDYLCODE(Pjv1Raw = ju_PImmVals(Pjp);)
+            JUDYLCODE(Pjv1    = P_JV(Pjv1Raw);)
 
 	    for (Offset = 0; Offset < Pop1; ++Offset)
 	    {
 #ifdef JUDY1
-		PLeaf2[Offset] = MSByte | Pjp->jp_1Index1[Offset];
+//                PLeaf2[Offset] = MSByte | Pjp->jp_1Index1[Offset];
+		PLeaf2[Offset] = MSByte | ju_1Immed1(Pjp)[Offset];
 #else
-		PLeaf2[Offset] = MSByte | Pjp->jp_LIndex1[Offset];
+//                PLeaf2[Offset] = MSByte | Pjp->jp_LIndex1[Offset];
+		PLeaf2[Offset] = MSByte | ju_LImmed1(Pjp)[Offset];
 		Pjv2  [Offset] = Pjv1[Offset];
 #endif
 	    }
 	    JUDYLCODE(j__udyLFreeJV(Pjv1Raw, Pop1, Pjpm);)
 	    return(Pop1);
 	}
-
 
 // UNEXPECTED CASES, including JPNULL1, should be handled by caller:
 
@@ -596,12 +576,12 @@ FUNCTION Word_t  j__udyLeaf2ToLeaf3(
 	Pjpm_t	  Pjpm)		// for global accounting.
 {
 	Word_t	  Pop1;		// Indexes in leaf.
-#if (defined(JUDYL) && defined(JU_64BIT))
-	size_t  Pjv2Raw;	// source object value area.
+#ifdef  JUDYL
+	Word_t  Pjv2Raw;	// source object value area.
 #endif
 JUDYLCODE(Pjv_t	  Pjv2;)
 
-	switch (JU_JPTYPE(Pjp))
+	switch (ju_Type(Pjp))
 	{
 
 
@@ -609,7 +589,8 @@ JUDYLCODE(Pjv_t	  Pjv2;)
 
 	case cJU_JPLEAF2:
 	{
-	    uint16_t * PLeaf2 = (uint16_t *) P_JLL(Pjp->jp_Addr);
+//            uint16_t * PLeaf2 = (uint16_t *) P_JLL(Pjp->Jp_Addr0);
+	    uint16_t * PLeaf2 = (uint16_t *) P_JLL(ju_BaLPntr(Pjp));
 
 	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1; assert(Pop1);
 	    j__udyCopy2to3(PLeaf3, PLeaf2, Pop1, MSByte);
@@ -617,7 +598,8 @@ JUDYLCODE(Pjv_t	  Pjv2;)
 	    Pjv2 = JL_LEAF2VALUEAREA(PLeaf2, Pop1);
 	    JU_COPYMEM(Pjv3, Pjv2, Pop1);
 #endif
-	    j__udyFreeJLL2(Pjp->jp_Addr, Pop1, Pjpm);
+//            j__udyFreeJLL2(Pjp->Jp_Addr0, Pop1, Pjpm);
+            j__udyFreeJLL2(ju_BaLPntr(Pjp), Pop1, Pjpm);
 	    return(Pop1);
 	}
 
@@ -631,39 +613,40 @@ JUDYLCODE(Pjv_t	  Pjv2;)
 	case cJU_JPIMMED_2_01:
 	{
 	    JU_COPY3_LONG_TO_PINDEX(PLeaf3, JU_JPDCDPOP0(Pjp));	// see above.
-	    JUDYLCODE(Pjv3[0] = Pjp->jp_PValue;)
+//            JUDYLCODE(Pjv3[0] = Pjp->jp_PValue;)
+	    JUDYLCODE(Pjv3[0] = ju_ImmVal_01(Pjp);)
 	    return(1);
 	}
 
 
 // JPIMMED_2_0[2+]:
 
-#if (defined(JUDY1) || defined(JU_64BIT))
 	case cJU_JPIMMED_2_02:
 	case cJU_JPIMMED_2_03:
-#endif
-#if (defined(JUDY1) && defined(JU_64BIT))
+#ifdef  JUDY1
 	case cJ1_JPIMMED_2_04:
 	case cJ1_JPIMMED_2_05:
 	case cJ1_JPIMMED_2_06:
 	case cJ1_JPIMMED_2_07:
 #endif
-#if (defined(JUDY1) || defined(JU_64BIT))
 	{
-	    JUDY1CODE(uint16_t * PLeaf2 = (uint16_t *) (Pjp->jp_1Index1);)
-	    JUDYLCODE(uint16_t * PLeaf2 = (uint16_t *) (Pjp->jp_LIndex1);)
+//          BUG, but didnt matter in JudyA
+//            JUDY1CODE(uint16_t * PLeaf2 = (uint16_t *) (Pjp->jp_1Index1);)
+	    JUDY1CODE(uint16_t * PLeaf2 = ju_1Immed2(Pjp));
+//            JUDYLCODE(uint16_t * PLeaf2 = (uint16_t *) (Pjp->jp_LIndex1);)
+	    JUDYLCODE(uint16_t * PLeaf2 = ju_LImmed2(Pjp));
 
-	    Pop1 = JU_JPTYPE(Pjp) - cJU_JPIMMED_2_02 + 2; assert(Pop1);
+	    Pop1 = ju_Type(Pjp) - cJU_JPIMMED_2_02 + 2; assert(Pop1);
 	    j__udyCopy2to3(PLeaf3, PLeaf2, Pop1, MSByte);
 #ifdef JUDYL
-	    Pjv2Raw = Pjp->jp_PValue;
+//            Pjv2Raw = Pjp->jp_PValue;
+            Pjv2Raw = ju_PImmVals(Pjp);
 	    Pjv2    = P_JV(Pjv2Raw);
 	    JU_COPYMEM(Pjv3, Pjv2, Pop1);
 	    j__udyLFreeJV(Pjv2Raw, Pop1, Pjpm);
 #endif
 	    return(Pop1);
 	}
-#endif // (JUDY1 || JU_64BIT)
 
 
 // UNEXPECTED CASES, including JPNULL2, should be handled by caller:
@@ -677,7 +660,6 @@ JUDYLCODE(Pjv_t	  Pjv2;)
 } // j__udyLeaf2ToLeaf3()
 
 
-#ifdef JU_64BIT
 
 // ****************************************************************************
 // __ J U D Y   L E A F   3   T O   L E A F   4
@@ -700,10 +682,10 @@ FUNCTION Word_t  j__udyLeaf3ToLeaf4(
 	Pjpm_t	   Pjpm)	// for global accounting.
 {
 	Word_t	   Pop1;	// Indexes in leaf.
-JUDYLCODE(size_t   Pjv3Raw;)	// source object value area.
+JUDYLCODE(Word_t   Pjv3Raw;)	// source object value area.
 JUDYLCODE(Pjv_t	   Pjv3;)
 
-	switch (JU_JPTYPE(Pjp))
+	switch (ju_Type(Pjp))
 	{
 
 
@@ -711,7 +693,8 @@ JUDYLCODE(Pjv_t	   Pjv3;)
 
 	case cJU_JPLEAF3:
 	{
-	    uint8_t * PLeaf3 = (uint8_t *) P_JLL(Pjp->jp_Addr);
+//            uint8_t * PLeaf3 = (uint8_t *) P_JLL(Pjp->Jp_Addr0);
+            uint8_t * PLeaf3 = (uint8_t *) P_JLL(ju_BaLPntr(Pjp));
 
 	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1; assert(Pop1);
 	    j__udyCopy3to4(PLeaf4, (uint8_t *) PLeaf3, Pop1, MSByte);
@@ -719,7 +702,8 @@ JUDYLCODE(Pjv_t	   Pjv3;)
 	    Pjv3 = JL_LEAF3VALUEAREA(PLeaf3, Pop1);
 	    JU_COPYMEM(Pjv4, Pjv3, Pop1);
 #endif
-	    j__udyFreeJLL3(Pjp->jp_Addr, Pop1, Pjpm);
+//            j__udyFreeJLL3(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    j__udyFreeJLL3(ju_BaLPntr(Pjp), Pop1, Pjpm);
 	    return(Pop1);
 	}
 
@@ -732,7 +716,8 @@ JUDYLCODE(Pjv_t	   Pjv3;)
 	case cJU_JPIMMED_3_01:
 	{
 	    PLeaf4[0] = JU_JPDCDPOP0(Pjp);	// see above.
-	    JUDYLCODE(Pjv4[0] = Pjp->jp_PValue;)
+//            JUDYLCODE(Pjv4[0] = Pjp->jp_PValue;)
+	    JUDYLCODE(Pjv4[0] = ju_ImmVal_01(Pjp);)
 	    return(1);
 	}
 
@@ -746,15 +731,19 @@ JUDYLCODE(Pjv_t	   Pjv3;)
 	case cJ1_JPIMMED_3_05:
 #endif
 	{
-	    JUDY1CODE(uint8_t * PLeaf3 = (uint8_t *) (Pjp->jp_1Index1);)
-	    JUDYLCODE(uint8_t * PLeaf3 = (uint8_t *) (Pjp->jp_LIndex1);)
+//            JUDY1CODE(uint8_t * PLeaf3 = (uint8_t *) (Pjp->jp_1Index1);)
+	    JUDY1CODE(uint8_t * PLeaf3 = ju_1Immed1(Pjp);)
+//            JUDYLCODE(uint8_t * PLeaf3 = (uint8_t *) (Pjp->jp_LIndex1);)
+	    JUDYLCODE(uint8_t * PLeaf3 = ju_LImmed1(Pjp);)
 
-	    JUDY1CODE(Pop1 = JU_JPTYPE(Pjp) - cJU_JPIMMED_3_02 + 2;)
+
+	    JUDY1CODE(Pop1 = ju_Type(Pjp) - cJU_JPIMMED_3_02 + 2;)
 	    JUDYLCODE(Pop1 = 2;)
 
 	    j__udyCopy3to4(PLeaf4, PLeaf3, Pop1, MSByte);
 #ifdef JUDYL
-	    Pjv3Raw = Pjp->jp_PValue;
+//            Pjv3Raw = Pjp->jp_PValue;
+	    Pjv3Raw = ju_PImmVals(Pjp);
 	    Pjv3    = P_JV(Pjv3Raw);
 	    JU_COPYMEM(Pjv4, Pjv3, Pop1);
 	    j__udyLFreeJV(Pjv3Raw, Pop1, Pjpm);
@@ -801,7 +790,7 @@ FUNCTION Word_t  j__udyLeaf4ToLeaf5(
 	Word_t	  Pop1;		// Indexes in leaf.
 JUDYLCODE(Pjv_t	  Pjv4;)	// source object value area.
 
-	switch (JU_JPTYPE(Pjp))
+	switch (ju_Type(Pjp))
 	{
 
 
@@ -809,7 +798,8 @@ JUDYLCODE(Pjv_t	  Pjv4;)	// source object value area.
 
 	case cJU_JPLEAF4:
 	{
-	    uint32_t * PLeaf4 = (uint32_t *) P_JLL(Pjp->jp_Addr);
+//            uint32_t * PLeaf4 = (uint32_t *) P_JLL(Pjp->Jp_Addr0);
+	    uint32_t * PLeaf4 = (uint32_t *) P_JLL(ju_BaLPntr(Pjp));
 
 	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1; assert(Pop1);
 	    j__udyCopy4to5(PLeaf5, PLeaf4, Pop1, MSByte);
@@ -817,7 +807,8 @@ JUDYLCODE(Pjv_t	  Pjv4;)	// source object value area.
 	    Pjv4 = JL_LEAF4VALUEAREA(PLeaf4, Pop1);
 	    JU_COPYMEM(Pjv5, Pjv4, Pop1);
 #endif
-	    j__udyFreeJLL4(Pjp->jp_Addr, Pop1, Pjpm);
+//            j__udyFreeJLL4(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    j__udyFreeJLL4(ju_BaLPntr(Pjp), Pop1, Pjpm);
 	    return(Pop1);
 	}
 
@@ -830,7 +821,8 @@ JUDYLCODE(Pjv_t	  Pjv4;)	// source object value area.
 	case cJU_JPIMMED_4_01:
 	{
 	    JU_COPY5_LONG_TO_PINDEX(PLeaf5, JU_JPDCDPOP0(Pjp));	// see above.
-	    JUDYLCODE(Pjv5[0] = Pjp->jp_PValue;)
+//            JUDYLCODE(Pjv5[0] = Pjp->jp_PValue;)
+	    JUDYLCODE(Pjv5[0] = ju_ImmVal_01(Pjp);)
 	    return(1);
 	}
 
@@ -842,9 +834,10 @@ JUDYLCODE(Pjv_t	  Pjv4;)	// source object value area.
 	case cJ1_JPIMMED_4_02:
 	case cJ1_JPIMMED_4_03:
 	{
-	    uint32_t * PLeaf4 = (uint32_t *) (Pjp->jp_1Index1);
+//            uint32_t * PLeaf4 = (uint32_t *) (Pjp->jp_1Index1);
+	    uint32_t * PLeaf4 = ju_1Immed4(Pjp);
 
-	    Pop1 = JU_JPTYPE(Pjp) - cJ1_JPIMMED_4_02 + 2;
+	    Pop1 = ju_Type(Pjp) - cJ1_JPIMMED_4_02 + 2;
 	    j__udyCopy4to5(PLeaf5, PLeaf4, Pop1, MSByte);
 	    return(Pop1);
 	}
@@ -885,7 +878,7 @@ FUNCTION Word_t  j__udyLeaf5ToLeaf6(
 	Word_t	  Pop1;		// Indexes in leaf.
 JUDYLCODE(Pjv_t	  Pjv5;)	// source object value area.
 
-	switch (JU_JPTYPE(Pjp))
+	switch (ju_Type(Pjp))
 	{
 
 
@@ -893,7 +886,8 @@ JUDYLCODE(Pjv_t	  Pjv5;)	// source object value area.
 
 	case cJU_JPLEAF5:
 	{
-	    uint8_t * PLeaf5 = (uint8_t *) P_JLL(Pjp->jp_Addr);
+//            uint8_t * PLeaf5 = (uint8_t *) P_JLL(Pjp->Jp_Addr0);
+	    uint8_t * PLeaf5 = (uint8_t *) P_JLL(ju_BaLPntr(Pjp));
 
 	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1; assert(Pop1);
 	    j__udyCopy5to6(PLeaf6, PLeaf5, Pop1, MSByte);
@@ -901,7 +895,8 @@ JUDYLCODE(Pjv_t	  Pjv5;)	// source object value area.
 	    Pjv5 = JL_LEAF5VALUEAREA(PLeaf5, Pop1);
 	    JU_COPYMEM(Pjv6, Pjv5, Pop1);
 #endif
-	    j__udyFreeJLL5(Pjp->jp_Addr, Pop1, Pjpm);
+//            j__udyFreeJLL5(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    j__udyFreeJLL5(ju_BaLPntr(Pjp), Pop1, Pjpm);
 	    return(Pop1);
 	}
 
@@ -914,7 +909,8 @@ JUDYLCODE(Pjv_t	  Pjv5;)	// source object value area.
 	case cJU_JPIMMED_5_01:
 	{
 	    JU_COPY6_LONG_TO_PINDEX(PLeaf6, JU_JPDCDPOP0(Pjp));	// see above.
-	    JUDYLCODE(Pjv6[0] = Pjp->jp_PValue;)
+//            JUDYLCODE(Pjv6[0] = Pjp->jp_PValue;)
+	    JUDYLCODE(Pjv6[0] = ju_ImmVal_01(Pjp);)
 	    return(1);
 	}
 
@@ -926,9 +922,10 @@ JUDYLCODE(Pjv_t	  Pjv5;)	// source object value area.
 	case cJ1_JPIMMED_5_02:
 	case cJ1_JPIMMED_5_03:
 	{
-	    uint8_t * PLeaf5 = (uint8_t *) (Pjp->jp_1Index1);
+//            uint8_t * PLeaf5 = (uint8_t *) (Pjp->jp_1Index1);
+	    uint8_t * PLeaf5 = ju_1Immed1(Pjp);
 
-	    Pop1 = JU_JPTYPE(Pjp) - cJ1_JPIMMED_5_02 + 2;
+	    Pop1 = ju_Type(Pjp) - cJ1_JPIMMED_5_02 + 2;
 	    j__udyCopy5to6(PLeaf6, PLeaf5, Pop1, MSByte);
 	    return(Pop1);
 	}
@@ -969,7 +966,7 @@ FUNCTION Word_t  j__udyLeaf6ToLeaf7(
 	Word_t	  Pop1;		// Indexes in leaf.
 JUDYLCODE(Pjv_t	  Pjv6;)	// source object value area.
 
-	switch (JU_JPTYPE(Pjp))
+	switch (ju_Type(Pjp))
 	{
 
 
@@ -977,7 +974,8 @@ JUDYLCODE(Pjv_t	  Pjv6;)	// source object value area.
 
 	case cJU_JPLEAF6:
 	{
-	    uint8_t * PLeaf6 = (uint8_t *) P_JLL(Pjp->jp_Addr);
+//            uint8_t * PLeaf6 = (uint8_t *) P_JLL(Pjp->Jp_Addr0);
+	    uint8_t * PLeaf6 = (uint8_t *) P_JLL(ju_BaLPntr(Pjp));
 
 	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
 	    j__udyCopy6to7(PLeaf7, PLeaf6, Pop1, MSByte);
@@ -985,7 +983,7 @@ JUDYLCODE(Pjv_t	  Pjv6;)	// source object value area.
 	    Pjv6 = JL_LEAF6VALUEAREA(PLeaf6, Pop1);
 	    JU_COPYMEM(Pjv7, Pjv6, Pop1);
 #endif
-	    j__udyFreeJLL6(Pjp->jp_Addr, Pop1, Pjpm);
+	    j__udyFreeJLL6(ju_BaLPntr(Pjp), Pop1, Pjpm);
 	    return(Pop1);
 	}
 
@@ -998,7 +996,8 @@ JUDYLCODE(Pjv_t	  Pjv6;)	// source object value area.
 	case cJU_JPIMMED_6_01:
 	{
 	    JU_COPY7_LONG_TO_PINDEX(PLeaf7, JU_JPDCDPOP0(Pjp));	// see above.
-	    JUDYLCODE(Pjv7[0] = Pjp->jp_PValue;)
+//            JUDYLCODE(Pjv7[0] = Pjp->jp_PValue;)
+	    JUDYLCODE(Pjv7[0] = ju_ImmVal_01(Pjp);)
 	    return(1);
 	}
 
@@ -1009,7 +1008,8 @@ JUDYLCODE(Pjv_t	  Pjv6;)	// source object value area.
 
 	case cJ1_JPIMMED_6_02:
 	{
-	    uint8_t * PLeaf6 = (uint8_t *) (Pjp->jp_1Index1);
+//            uint8_t * PLeaf6 = (uint8_t *) (Pjp->jp_1Index1);
+	    uint8_t * PLeaf6 = ju_1Immed1(Pjp);
 
 	    j__udyCopy6to7(PLeaf7, PLeaf6, /* Pop1 = */ 2, MSByte);
 	    return(2);
@@ -1027,93 +1027,8 @@ JUDYLCODE(Pjv_t	  Pjv6;)	// source object value area.
 
 } // j__udyLeaf6ToLeaf7()
 
-#endif // JU_64BIT
 
 
-#ifndef JU_64BIT // 32-bit version first
-
-// ****************************************************************************
-// __ J U D Y   L E A F   3   T O   L E A F   W
-//
-// Copy 3-byte Indexes from a Leaf3 to 4-byte Indexes in a LeafW.  Pjp MUST be
-// one of:  cJU_JPLEAF3 or cJU_JPIMMED_3_*.  Return number of Indexes copied.
-//
-// Note:  By the time this function is called to compress a level-L branch to a
-// LeafW, the branch has no narrow pointers under it, meaning only level-3
-// objects are below it and must be handled here.
-
-FUNCTION Word_t  j__udyLeaf3ToLeafW(
-	Pjlw_t	Pjlw,		// destination Index part of leaf.
-#ifdef JUDYL
-	Pjv_t	PjvW,		// destination value part of leaf.
-#endif
-	Pjp_t	Pjp,		// 3-byte-index object from which to copy.
-	Word_t	MSByte,		// most-significant byte, prefix to each Index.
-	Pjpm_t	Pjpm)		// for global accounting.
-{
-	Word_t	Pop1;		// Indexes in leaf.
-JUDYLCODE(Pjv_t Pjv3;)		// source object value area.
-
-	switch (JU_JPTYPE(Pjp))
-	{
-
-
-// JPLEAF3:
-
-	case cJU_JPLEAF3:
-	{
-	    uint8_t * PLeaf3 = (uint8_t *) P_JLL(Pjp->jp_Addr);
-
-	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
-	    j__udyCopy3toW((PWord_t) Pjlw, PLeaf3, Pop1, MSByte);
-#ifdef JUDYL
-	    Pjv3 = JL_LEAF3VALUEAREA(PLeaf3, Pop1);
-	    JU_COPYMEM(PjvW, Pjv3, Pop1);
-#endif
-	    j__udyFreeJLL3(Pjp->jp_Addr, Pop1, Pjpm);
-	    return(Pop1);
-	}
-
-
-// JPIMMED_3_01:
-//
-// Note:  jp_DcdPopO has 3 bytes of Index (all but most significant byte), and
-// MSByte must be ord in.
-
-	case cJU_JPIMMED_3_01:
-	{
-	    Pjlw[0] = MSByte | JU_JPDCDPOP0(Pjp);		// see above.
-	    JUDYLCODE(PjvW[0] = Pjp->jp_PValue;)
-	    return(1);
-	}
-
-
-#ifdef JUDY1
-
-// JPIMMED_3_02:
-
-	case cJU_JPIMMED_3_02:
-	{
-	    uint8_t * PLeaf3 = (uint8_t *) (Pjp->jp_1Index1);
-
-	    j__udyCopy3toW((PWord_t) Pjlw, PLeaf3, /* Pop1 = */ 2, MSByte);
-	    return(2);
-	}
-#endif // JUDY1
-
-
-// UNEXPECTED CASES, including JPNULL3, should be handled by caller:
-
-	default: assert(FALSE); break;
-
-	} // switch
-
-	return(0);
-
-} // j__udyLeaf3ToLeafW()
-
-
-#else // JU_64BIT
 
 
 // ****************************************************************************
@@ -1139,7 +1054,7 @@ FUNCTION Word_t  j__udyLeaf7ToLeafW(
 	Word_t	Pop1;		// Indexes in leaf.
 JUDYLCODE(Pjv_t	Pjv7;)		// source object value area.
 
-	switch (JU_JPTYPE(Pjp))
+	switch (ju_Type(Pjp))
 	{
 
 
@@ -1147,7 +1062,8 @@ JUDYLCODE(Pjv_t	Pjv7;)		// source object value area.
 
 	case cJU_JPLEAF7:
 	{
-	    uint8_t * PLeaf7 = (uint8_t *) P_JLL(Pjp->jp_Addr);
+//            uint8_t * PLeaf7 = (uint8_t *) P_JLL(Pjp->Jp_Addr0);
+	    uint8_t * PLeaf7 = (uint8_t *) P_JLL(ju_BaLPntr(Pjp));
 
 	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
 	    j__udyCopy7toW((PWord_t) Pjlw, PLeaf7, Pop1, MSByte);
@@ -1155,7 +1071,8 @@ JUDYLCODE(Pjv_t	Pjv7;)		// source object value area.
 	    Pjv7 = JL_LEAF7VALUEAREA(PLeaf7, Pop1);
 	    JU_COPYMEM(PjvW, Pjv7, Pop1);
 #endif
-	    j__udyFreeJLL7(Pjp->jp_Addr, Pop1, Pjpm);
+//            j__udyFreeJLL7(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    j__udyFreeJLL7(ju_BaLPntr(Pjp), Pop1, Pjpm);
 	    return(Pop1);
 	}
 
@@ -1168,7 +1085,8 @@ JUDYLCODE(Pjv_t	Pjv7;)		// source object value area.
 	case cJU_JPIMMED_7_01:
 	{
 	    Pjlw[0] = MSByte | JU_JPDCDPOP0(Pjp);		// see above.
-	    JUDYLCODE(PjvW[0] = Pjp->jp_PValue;)
+//            JUDYLCODE(PjvW[0] = Pjp->jp_PValue;)
+	    JUDYLCODE(PjvW[0] = ju_ImmVal_01(Pjp);)
 	    return(1);
 	}
 
@@ -1179,7 +1097,8 @@ JUDYLCODE(Pjv_t	Pjv7;)		// source object value area.
 
 	case cJ1_JPIMMED_7_02:
 	{
-	    uint8_t * PLeaf7 = (uint8_t *) (Pjp->jp_1Index1);
+//            uint8_t * PLeaf7 = (uint8_t *) (Pjp->jp_1Index1);
+	    uint8_t * PLeaf7 = ju_1Immed1(Pjp);
 
 	    j__udyCopy7toW((PWord_t) Pjlw, PLeaf7, /* Pop1 = */ 2, MSByte);
 	    return(2);
@@ -1197,4 +1116,3 @@ JUDYLCODE(Pjv_t	Pjv7;)		// source object value area.
 
 } // j__udyLeaf7ToLeafW()
 
-#endif // JU_64BIT

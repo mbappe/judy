@@ -233,7 +233,7 @@ FUNCTION PPvoid_t JudyLByCount
 
 SMByCount:			// return here for next branch/leaf.
 
-	switch (JU_JPTYPE(Pjp))
+	switch (ju_Type(Pjp))
 	{
 
 
@@ -252,15 +252,11 @@ SMByCount:			// return here for next branch/leaf.
 // Maybe its true again?
 
 	case cJU_JPBRANCH_L2:  PREPB_DCD(Pjp, 2, BranchL);
-#ifndef JU_64BIT
-	case cJU_JPBRANCH_L3:  PREPB(	 Pjp, 3, BranchL);
-#else
 	case cJU_JPBRANCH_L3:  PREPB_DCD(Pjp, 3, BranchL);
 	case cJU_JPBRANCH_L4:  PREPB_DCD(Pjp, 4, BranchL);
 	case cJU_JPBRANCH_L5:  PREPB_DCD(Pjp, 5, BranchL);
 	case cJU_JPBRANCH_L6:  PREPB_DCD(Pjp, 6, BranchL);
 	case cJU_JPBRANCH_L7:  PREPB(	 Pjp, 7, BranchL);
-#endif
 	case cJU_JPBRANCH_L:   PREPB_ROOT(	 BranchL);
 	{
 	    Pjbl_t Pjbl;
@@ -268,7 +264,7 @@ SMByCount:			// return here for next branch/leaf.
 // Common code (state-independent) for all cases of linear branches:
 
 BranchL:
-	    Pjbl = P_JBL(Pjp->jp_Addr);
+	    Pjbl = P_JBL(ju_BaLPntr(Pjp));
 
 	    for (jpnum = 0; jpnum < (Pjbl->jbl_NumJPs); ++jpnum)
 	    {
@@ -308,15 +304,11 @@ BranchL:
 // Note:  There are no null JPs in a JBB; watch out for pop1 == 0.
 
 	case cJU_JPBRANCH_B2:  PREPB_DCD(Pjp, 2, BranchB);
-#ifndef JU_64BIT
-	case cJU_JPBRANCH_B3:  PREPB(	 Pjp, 3, BranchB);
-#else
 	case cJU_JPBRANCH_B3:  PREPB_DCD(Pjp, 3, BranchB);
 	case cJU_JPBRANCH_B4:  PREPB_DCD(Pjp, 4, BranchB);
 	case cJU_JPBRANCH_B5:  PREPB_DCD(Pjp, 5, BranchB);
 	case cJU_JPBRANCH_B6:  PREPB_DCD(Pjp, 6, BranchB);
 	case cJU_JPBRANCH_B7:  PREPB(	 Pjp, 7, BranchB);
-#endif
 	case cJU_JPBRANCH_B:   PREPB_ROOT(	 BranchB);
 	{
 	    Pjbb_t Pjbb;
@@ -324,7 +316,7 @@ BranchL:
 // Common code (state-independent) for all cases of bitmap branches:
 
 BranchB:
-	    Pjbb = P_JBB(Pjp->jp_Addr);
+	    Pjbb = P_JBB(ju_BaLPntr(Pjp));
 
 // Shorthand for one subexpanse in a bitmap and for one JP in a bitmap branch:
 //
@@ -459,15 +451,11 @@ BranchB:
 // downwards until finding the expanse (digit) containing Count, and "recurse".
 
 	case cJU_JPBRANCH_U2:  PREPB_DCD(Pjp, 2, BranchU);
-#ifndef JU_64BIT
-	case cJU_JPBRANCH_U3:  PREPB(	 Pjp, 3, BranchU);
-#else
 	case cJU_JPBRANCH_U3:  PREPB_DCD(Pjp, 3, BranchU);
 	case cJU_JPBRANCH_U4:  PREPB_DCD(Pjp, 4, BranchU);
 	case cJU_JPBRANCH_U5:  PREPB_DCD(Pjp, 5, BranchU);
 	case cJU_JPBRANCH_U6:  PREPB_DCD(Pjp, 6, BranchU);
 	case cJU_JPBRANCH_U7:  PREPB(	 Pjp, 7, BranchU);
-#endif
 	case cJU_JPBRANCH_U:   PREPB_ROOT(	 BranchU);
 	{
 	    Pjbu_t Pjbu;
@@ -475,7 +463,7 @@ BranchB:
 // Common code (state-independent) for all cases of uncompressed branches:
 
 BranchU:
-	    Pjbu = P_JBU(Pjp->jp_Addr);
+	    Pjbu = P_JBU(ju_BaLPntr(Pjp));
 
 // Common code for descending through a JP:
 //
@@ -512,7 +500,7 @@ BranchU:
 		for (jpnum = 0; jpnum < cJU_BRANCHUNUMJPS; ++jpnum)
 		{
 		    // shortcut, save a function call:
-
+printf("OOps jp_Type needs attention\n");
 		    if ((Pjbu->jbu_jp[jpnum].jp_Type) <= cJU_JPNULLMAX)
 			continue;
 
@@ -550,6 +538,7 @@ BranchU:
 		{
 		    // shortcut, save a function call:
 
+printf("OOps jp_Type needs attention\n");
 		    if ((Pjbu->jbu_jp[jpnum].jp_Type) <= cJU_JPNULLMAX)
 			continue;
 
@@ -602,18 +591,17 @@ BranchU:
 #endif
 
 #define	PREPL				\
-	Pjll = P_JLL(Pjp->jp_Addr);	\
+	Pjll = P_JLL(ju_BaLPntr(Pjp));	\
 	PREPL_SETPOP1;			\
 	SETOFFSET(offset, Count0, pop1lower, Pjp)
 
-#if (defined(JUDYL) || (! defined(JU_64BIT)))
+#ifdef  JUDYL
 	case cJU_JPLEAF1:
 
 	    PREPL_DCD(1);
 	    JU_SETDIGIT1(*PIndex, ((uint8_t *) Pjll)[offset]);
 	    JU_RET_FOUND_LEAF1(Pjll, pop1, offset);
 #endif
-
 	case cJU_JPLEAF2:
 
 	    PREPL_DCD(2);
@@ -621,17 +609,6 @@ BranchU:
 		    | ((uint16_t *) Pjll)[offset];
 	    JU_RET_FOUND_LEAF2(Pjll, pop1, offset);
 
-#ifndef JU_64BIT
-	case cJU_JPLEAF3:
-	{
-	    Word_t lsb;
-	    PREPL;
-	    JU_COPY3_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (3 * offset));
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(3))) | lsb;
-	    JU_RET_FOUND_LEAF3(Pjll, pop1, offset);
-	}
-
-#else
 	case cJU_JPLEAF3:
 	{
 	    Word_t lsb;
@@ -674,7 +651,6 @@ BranchU:
 	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(7))) | lsb;
 	    JU_RET_FOUND_LEAF7(Pjll, pop1, offset);
 	}
-#endif
 
 
 // ----------------------------------------------------------------------------
@@ -692,7 +668,7 @@ BranchU:
 	    Pjlb_t Pjlb;
 
 	    JU_SETDCD(*PIndex, Pjp, 1);
-	    Pjlb = P_JLB(Pjp->jp_Addr);
+	    Pjlb = P_JLB(ju_BaLPntr(Pjp));
 	    pop1 = JU_JPLEAF_POP0(Pjp) + 1;
 
 // COUNT UPWARD, adding the pop1 of each subexpanse:
@@ -802,12 +778,10 @@ LeafB1:
 	case cJU_JPIMMED_1_01: SET_01(1); goto Imm_01;
 	case cJU_JPIMMED_2_01: SET_01(2); goto Imm_01;
 	case cJU_JPIMMED_3_01: SET_01(3); goto Imm_01;
-#ifdef JU_64BIT
 	case cJU_JPIMMED_4_01: SET_01(4); goto Imm_01;
 	case cJU_JPIMMED_5_01: SET_01(5); goto Imm_01;
 	case cJU_JPIMMED_6_01: SET_01(6); goto Imm_01;
 	case cJU_JPIMMED_7_01: SET_01(7); goto Imm_01;
-#endif
 
 Imm_01:
 
@@ -815,12 +789,10 @@ Imm_01:
 	    JU_RET_FOUND_IMM_01(Pjp);
 
 // Shorthand for where to find start of Index bytes array:
-
-#ifdef JUDY1
-#define	PJI (Pjp->jp_1Index1)
-#else
-#define	PJI (Pjp->jp_LIndex1)
-#endif
+//
+#define PJI_1 ju_PImmed1(Pjp)
+#define PJI_2 ju_PImmed2(Pjp)
+#define PJI_4 ju_PImmed4(Pjp)
 
 // Optional code to check the remaining ordinal (see SETOFFSET_IMM()) against
 // the Index Size of the Immediate:
@@ -836,13 +808,11 @@ Imm_01:
 
 	case cJU_JPIMMED_1_02: IMM( 2, Imm1);
 	case cJU_JPIMMED_1_03: IMM( 3, Imm1);
-#if (defined(JUDY1) || defined(JU_64BIT))
 	case cJU_JPIMMED_1_04: IMM( 4, Imm1);
 	case cJU_JPIMMED_1_05: IMM( 5, Imm1);
 	case cJU_JPIMMED_1_06: IMM( 6, Imm1);
 	case cJU_JPIMMED_1_07: IMM( 7, Imm1);
-#endif
-#if (defined(JUDY1) && defined(JU_64BIT))
+#ifdef  JUDY1
 	case cJ1_JPIMMED_1_08: IMM( 8, Imm1);
 	case cJ1_JPIMMED_1_09: IMM( 9, Imm1);
 	case cJ1_JPIMMED_1_10: IMM(10, Imm1);
@@ -854,54 +824,46 @@ Imm_01:
 #endif
 
 Imm1:	    SETOFFSET_IMM(offset, Count0, pop1lower);
-	    JU_SETDIGIT1(*PIndex, ((uint8_t *) PJI)[offset]);
+	    JU_SETDIGIT1(*PIndex, (PJI_1)[offset]);
 	    JU_RET_FOUND_IMM(Pjp, offset);
 
-#if (defined(JUDY1) || defined(JU_64BIT))
 	case cJU_JPIMMED_2_02: IMM(2, Imm2);
 	case cJU_JPIMMED_2_03: IMM(3, Imm2);
-#endif
-#if (defined(JUDY1) && defined(JU_64BIT))
+#ifdef  JUDY1
 	case cJ1_JPIMMED_2_04: IMM(4, Imm2);
 	case cJ1_JPIMMED_2_05: IMM(5, Imm2);
 	case cJ1_JPIMMED_2_06: IMM(6, Imm2);
 	case cJ1_JPIMMED_2_07: IMM(7, Imm2);
 #endif
 
-#if (defined(JUDY1) || defined(JU_64BIT))
 Imm2:	    SETOFFSET_IMM(offset, Count0, pop1lower);
 	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(2)))
-		    | ((uint16_t *) PJI)[offset];
+		    | (PJI_2)[offset];
 	    JU_RET_FOUND_IMM(Pjp, offset);
-#endif
 
-#if (defined(JUDY1) || defined(JU_64BIT))
 	case cJU_JPIMMED_3_02: IMM(2, Imm3);
-#endif
-#if (defined(JUDY1) && defined(JU_64BIT))
+#ifdef  JUDY1
 	case cJ1_JPIMMED_3_03: IMM(3, Imm3);
 	case cJ1_JPIMMED_3_04: IMM(4, Imm3);
 	case cJ1_JPIMMED_3_05: IMM(5, Imm3);
 #endif
 
-#if (defined(JUDY1) || defined(JU_64BIT))
 Imm3:
 	{
 	    Word_t lsb;
 	    SETOFFSET_IMM(offset, Count0, pop1lower);
-	    JU_COPY3_PINDEX_TO_LONG(lsb, ((uint8_t *) PJI) + (3 * offset));
+	    JU_COPY3_PINDEX_TO_LONG(lsb, (PJI_1) + (3 * offset));
 	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(3))) | lsb;
 	    JU_RET_FOUND_IMM(Pjp, offset);
 	}
-#endif
 
-#if (defined(JUDY1) && defined(JU_64BIT))
+#ifdef  JUDY1
 	case cJ1_JPIMMED_4_02: IMM(2, Imm4);
 	case cJ1_JPIMMED_4_03: IMM(3, Imm4);
 
 Imm4:	    SETOFFSET_IMM(offset, Count0, pop1lower);
 	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(4)))
-		    | ((uint32_t *) PJI)[offset];
+		    | (PJI_4)[offset];
 	    JU_RET_FOUND_IMM(Pjp, offset);
 
 	case cJ1_JPIMMED_5_02: IMM(2, Imm5);
@@ -911,7 +873,7 @@ Imm5:
 	{
 	    Word_t lsb;
 	    SETOFFSET_IMM(offset, Count0, pop1lower);
-	    JU_COPY5_PINDEX_TO_LONG(lsb, ((uint8_t *) PJI) + (5 * offset));
+	    JU_COPY5_PINDEX_TO_LONG(lsb, (PJI_1) + (5 * offset));
 	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(5))) | lsb;
 	    JU_RET_FOUND_IMM(Pjp, offset);
 	}
@@ -922,7 +884,7 @@ Imm6:
 	{
 	    Word_t lsb;
 	    SETOFFSET_IMM(offset, Count0, pop1lower);
-	    JU_COPY6_PINDEX_TO_LONG(lsb, ((uint8_t *) PJI) + (6 * offset));
+	    JU_COPY6_PINDEX_TO_LONG(lsb, (PJI_1) + (6 * offset));
 	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(6))) | lsb;
 	    JU_RET_FOUND_IMM(Pjp, offset);
 	}
@@ -933,11 +895,11 @@ Imm7:
 	{
 	    Word_t lsb;
 	    SETOFFSET_IMM(offset, Count0, pop1lower);
-	    JU_COPY7_PINDEX_TO_LONG(lsb, ((uint8_t *) PJI) + (7 * offset));
+	    JU_COPY7_PINDEX_TO_LONG(lsb, (PJI_1) + (7 * offset));
 	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(7))) | lsb;
 	    JU_RET_FOUND_IMM(Pjp, offset);
 	}
-#endif // (JUDY1 && JU_64BIT)
+#endif // JUDY1
 
 
 // ----------------------------------------------------------------------------

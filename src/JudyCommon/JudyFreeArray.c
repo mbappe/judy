@@ -137,7 +137,8 @@ FUNCTION void j__udyFreeSM(
 {
 	Word_t	Pop1;
 
-	switch (JU_JPTYPE(Pjp))
+//	switch (JU_JPTYPE(Pjp))
+	switch (ju_Type(Pjp))
 	{
 
 #ifdef JUDY1
@@ -157,20 +158,20 @@ FUNCTION void j__udyFreeSM(
 	case cJU_JPBRANCH_L:
 	case cJU_JPBRANCH_L2:
 	case cJU_JPBRANCH_L3:
-#ifdef JU_64BIT
 	case cJU_JPBRANCH_L4:
 	case cJU_JPBRANCH_L5:
 	case cJU_JPBRANCH_L6:
 	case cJU_JPBRANCH_L7:
-#endif // JU_64BIT
 	{
-	    Pjbl_t Pjbl = P_JBL(Pjp->jp_Addr);
+//	    Pjbl_t Pjbl = P_JBL(Pjp->Jp_Addr0);
+	    Pjbl_t Pjbl = P_JBL(ju_BaLPntr(Pjp));
 	    Word_t offset;
 
 	    for (offset = 0; offset < Pjbl->jbl_NumJPs; ++offset)
 	        j__udyFreeSM(Pjbl->jbl_jp + offset, Pjpm);
 
-	    j__udyFreeJBL(Pjp->jp_Addr, Pjpm);
+//	    j__udyFreeJBL(Pjp->Jp_Addr0, Pjpm);
+	    j__udyFreeJBL(ju_BaLPntr(Pjp), Pjpm);
 	    break;
 	}
 
@@ -182,18 +183,18 @@ FUNCTION void j__udyFreeSM(
 	case cJU_JPBRANCH_B:
 	case cJU_JPBRANCH_B2:
 	case cJU_JPBRANCH_B3:
-#ifdef JU_64BIT
 	case cJU_JPBRANCH_B4:
 	case cJU_JPBRANCH_B5:
 	case cJU_JPBRANCH_B6:
 	case cJU_JPBRANCH_B7:
-#endif // JU_64BIT
 	{
 	    Word_t subexp;
 	    Word_t offset;
 	    Word_t jpcount;
 
-	    Pjbb_t Pjbb = P_JBB(Pjp->jp_Addr);
+//	    Pjbb_t Pjbb = P_JBB(Pjp->Jp_Addr0);
+	    Pjbb_t Pjbb = P_JBB(ju_BaLPntr(Pjp));
+
 
 	    for (subexp = 0; subexp < cJU_NUMSUBEXPB; ++subexp)
 	    {
@@ -209,7 +210,8 @@ FUNCTION void j__udyFreeSM(
 		    j__udyFreeJBBJP(JU_JBB_PJP(Pjbb, subexp), jpcount, Pjpm);
 	        }
 	    }
-	    j__udyFreeJBB(Pjp->jp_Addr, Pjpm);
+//	    j__udyFreeJBB(Pjp->Jp_Addr0, Pjpm);
+	    j__udyFreeJBB(ju_BaLPntr(Pjp), Pjpm);
 
 	    break;
 	}
@@ -223,20 +225,20 @@ FUNCTION void j__udyFreeSM(
 	case cJU_JPBRANCH_U:
 	case cJU_JPBRANCH_U2:
 	case cJU_JPBRANCH_U3:
-#ifdef JU_64BIT
 	case cJU_JPBRANCH_U4:
 	case cJU_JPBRANCH_U5:
 	case cJU_JPBRANCH_U6:
 	case cJU_JPBRANCH_U7:
-#endif // JU_64BIT
 	{
 	    Word_t offset;
-	    Pjbu_t Pjbu = P_JBU(Pjp->jp_Addr);
+//	    Pjbu_t Pjbu = P_JBU(Pjp->Jp_Addr0);
+	    Pjbu_t Pjbu = P_JBU(ju_BaLPntr(Pjp));
 
 	    for (offset = 0; offset < cJU_BRANCHUNUMJPS; ++offset)
 	        j__udyFreeSM(Pjbu->jbu_jp + offset, Pjpm);
 
-	    j__udyFreeJBU(Pjp->jp_Addr, Pjpm);
+//	    j__udyFreeJBU(Pjp->Jp_Addr0, Pjpm);
+	    j__udyFreeJBU(ju_BaLPntr(Pjp), Pjpm);
 	    break;
 	}
 
@@ -248,44 +250,49 @@ FUNCTION void j__udyFreeSM(
 //
 // Note:  cJU_JPLEAF1 is a special case, see discussion in ../Judy1/Judy1.h
 
-#if (defined(JUDYL) || (! defined(JU_64BIT)))
+#ifdef  JUDYL
 	case cJU_JPLEAF1:
-	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
-	    j__udyFreeJLL1(Pjp->jp_Addr, Pop1, Pjpm);
+	    Pop1 = ju_LeafPop0(Pjp) + 1;
+//	    j__udyFreeJLL1(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    j__udyFreeJLL1(ju_BaLPntr(Pjp), Pop1, Pjpm);
 	    break;
 #endif
 
 	case cJU_JPLEAF2:
-	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
-	    j__udyFreeJLL2(Pjp->jp_Addr, Pop1, Pjpm);
+	    Pop1 = ju_LeafPop0(Pjp) + 1;
+//	    j__udyFreeJLL2(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    j__udyFreeJLL2(ju_BaLPntr(Pjp), Pop1, Pjpm);
 	    break;
 
 	case cJU_JPLEAF3:
-	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
-	    j__udyFreeJLL3(Pjp->jp_Addr, Pop1, Pjpm);
+	    Pop1 = ju_LeafPop0(Pjp) + 1;
+//	    j__udyFreeJLL3(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    j__udyFreeJLL3(ju_BaLPntr(Pjp), Pop1, Pjpm);
 	    break;
 
-#ifdef JU_64BIT
 	case cJU_JPLEAF4:
-	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
-	    j__udyFreeJLL4(Pjp->jp_Addr, Pop1, Pjpm);
+	    Pop1 = ju_LeafPop0(Pjp) + 1;
+//	    j__udyFreeJLL4(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    j__udyFreeJLL4(ju_BaLPntr(Pjp), Pop1, Pjpm);
 	    break;
 
 	case cJU_JPLEAF5:
-	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
-	    j__udyFreeJLL5(Pjp->jp_Addr, Pop1, Pjpm);
+	    Pop1 = ju_LeafPop0(Pjp) + 1;
+//	    j__udyFreeJLL5(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    j__udyFreeJLL5(ju_BaLPntr(Pjp), Pop1, Pjpm);
 	    break;
 
 	case cJU_JPLEAF6:
-	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
-	    j__udyFreeJLL6(Pjp->jp_Addr, Pop1, Pjpm);
+	    Pop1 = ju_LeafPop0(Pjp) + 1;
+//	    j__udyFreeJLL6(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    j__udyFreeJLL6(ju_BaLPntr(Pjp), Pop1, Pjpm);
 	    break;
 
 	case cJU_JPLEAF7:
-	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
-	    j__udyFreeJLL7(Pjp->jp_Addr, Pop1, Pjpm);
+	    Pop1 = ju_LeafPop0(Pjp) + 1;
+//	    j__udyFreeJLL7(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    j__udyFreeJLL7(ju_BaLPntr(Pjp), Pop1, Pjpm);
 	    break;
-#endif // JU_64BIT
 
 
 // BITMAP LEAF -- free sub-expanse arrays of JPs, then free the JBB.
@@ -295,7 +302,8 @@ FUNCTION void j__udyFreeSM(
 #ifdef JUDYL
 	    Word_t subexp;
 	    Word_t jpcount;
-	    Pjlb_t Pjlb = P_JLB(Pjp->jp_Addr);
+//	    Pjlb_t Pjlb = P_JLB(Pjp->Jp_Addr0);
+	    Pjlb_t Pjlb = P_JLB(ju_BaLPntr(Pjp));
 
 // Free the value areas in the bitmap leaf:
 
@@ -308,7 +316,8 @@ FUNCTION void j__udyFreeSM(
 	    }
 #endif // JUDYL
 
-	    j__udyFreeJLB1(Pjp->jp_Addr, Pjpm);
+//	    j__udyFreeJLB1(Pjp->Jp_Addr0, Pjpm);
+	    j__udyFreeJLB1(ju_BaLPntr(Pjp), Pjpm);
 	    break;
 
 	} // case cJU_JPLEAF_B1
@@ -322,29 +331,25 @@ FUNCTION void j__udyFreeSM(
 
 	case cJU_JPIMMED_1_02:
 	case cJU_JPIMMED_1_03:
-#ifdef JU_64BIT
 	case cJU_JPIMMED_1_04:
 	case cJU_JPIMMED_1_05:
 	case cJU_JPIMMED_1_06:
 	case cJU_JPIMMED_1_07:
-#endif
-	    Pop1 = JU_JPTYPE(Pjp) - cJU_JPIMMED_1_02 + 2;
-	    j__udyLFreeJV(Pjp->jp_PValue, Pop1, Pjpm);
+	    Pop1 = ju_Type(Pjp) - cJU_JPIMMED_1_02 + 2;
+	    j__udyLFreeJV(ju_PImmVals(Pjp), Pop1, Pjpm);
 	    break;
 
-#ifdef JU_64BIT
 	case cJU_JPIMMED_2_02:
 	case cJU_JPIMMED_2_03:
 
-	    Pop1 = JU_JPTYPE(Pjp) - cJU_JPIMMED_2_02 + 2;
-	    j__udyLFreeJV(Pjp->jp_PValue, Pop1, Pjpm);
+	    Pop1 = ju_Type(Pjp) - cJU_JPIMMED_2_02 + 2;
+	    j__udyLFreeJV(ju_PImmVals(Pjp), Pop1, Pjpm);
 	    break;
 
 	case cJU_JPIMMED_3_02:
-	    j__udyLFreeJV(Pjp->jp_PValue, 2, Pjpm);
+	    j__udyLFreeJV(ju_PImmVals(Pjp), 2, Pjpm);
 	    break;
 
-#endif // JU_64BIT
 #endif // JUDYL
 
 
@@ -355,7 +360,7 @@ FUNCTION void j__udyFreeSM(
 
 	default: break;
 
-	} // switch (JU_JPTYPE(Pjp))
+	} // switch (ju_Type(Pjp))
 
 } // j__udyFreeSM()
 

@@ -47,35 +47,29 @@
 //
 // These support fast and easy lookup by level.
 
-static uint8_t immed_maxpop1[] = {
+static uint16_t immed_maxpop1[] = {
     0,
     cJU_IMMED1_MAXPOP1,
     cJU_IMMED2_MAXPOP1,
     cJU_IMMED3_MAXPOP1,
-#ifdef JU_64BIT
     cJU_IMMED4_MAXPOP1,
     cJU_IMMED5_MAXPOP1,
     cJU_IMMED6_MAXPOP1,
     cJU_IMMED7_MAXPOP1,
-#endif
     // note:  There are no IMMEDs for whole words.
 };
 
-static uint8_t leaf_maxpop1[] = {
+static uint16_t leaf_maxpop1[] = {
     0,
-#if (defined(JUDYL) || (! defined(JU_64BIT)))
+#ifdef  JUDYL
     cJU_LEAF1_MAXPOP1,
-#else
-    0,                                  // 64-bit Judy1 has no Leaf1.
 #endif
     cJU_LEAF2_MAXPOP1,
     cJU_LEAF3_MAXPOP1,
-#ifdef JU_64BIT
     cJU_LEAF4_MAXPOP1,
     cJU_LEAF5_MAXPOP1,
     cJU_LEAF6_MAXPOP1,
     cJU_LEAF7_MAXPOP1,
-#endif
     // note:  Root-level leaves are handled differently.
 };
 
@@ -84,12 +78,10 @@ static uint8_t branchL_JPtype[] = {
     0,
     cJU_JPBRANCH_L2,
     cJU_JPBRANCH_L3,
-#ifdef JU_64BIT
     cJU_JPBRANCH_L4,
     cJU_JPBRANCH_L5,
     cJU_JPBRANCH_L6,
     cJU_JPBRANCH_L7,
-#endif
     cJU_JPBRANCH_L,
 };
 
@@ -98,12 +90,10 @@ static uint8_t branchB_JPtype[] = {
     0,
     cJU_JPBRANCH_B2,
     cJU_JPBRANCH_B3,
-#ifdef JU_64BIT
     cJU_JPBRANCH_B4,
     cJU_JPBRANCH_B5,
     cJU_JPBRANCH_B6,
     cJU_JPBRANCH_B7,
-#endif
     cJU_JPBRANCH_B,
 };
 
@@ -112,12 +102,10 @@ static uint8_t branchU_JPtype[] = {
     0,
     cJU_JPBRANCH_U2,
     cJU_JPBRANCH_U3,
-#ifdef JU_64BIT
     cJU_JPBRANCH_U4,
     cJU_JPBRANCH_U5,
     cJU_JPBRANCH_U6,
     cJU_JPBRANCH_U7,
-#endif
     cJU_JPBRANCH_U,
 };
 
@@ -130,12 +118,10 @@ static Word_t subexp_mask[] = {
     ~cJU_POP0MASK(1),
     ~cJU_POP0MASK(2),
     ~cJU_POP0MASK(3),
-#ifdef JU_64BIT
     ~cJU_POP0MASK(4),
     ~cJU_POP0MASK(5),
     ~cJU_POP0MASK(6),
     ~cJU_POP0MASK(7),
-#endif
 };
 
 
@@ -390,7 +376,8 @@ FUNCTION static bool_t j__udyInsArray(
 // matter because the JPM is deleted by the caller.
 
 #define SETJPNULL_PARENT \
-            JU_JPSETADT(PjpParent, 0, 0, cJU_JPNULL1 + Level - 1);
+            ju_SetIMM01(PjpParent, 0, 0, cJU_JPNULL1 + Level - 1);
+//            JU_JPSETADT(PjpParent, 0, 0, cJU_JPNULL1 + Level - 1);
 
 // Variation to set a specified JP (in a branch being built) to a precomputed
 // null JP:
@@ -468,7 +455,8 @@ FUNCTION static bool_t j__udyInsArray(
 
 // Set the JP type for an immediate index, where BaseJPType is JPIMMED_*_02:
 
-#define SETIMMTYPE(BaseJPType)  (PjpParent->jp_Type) = (BaseJPType) + pop1 - 2
+//#define SETIMMTYPE(BaseJPType)  (PjpParent->jp_Type) = (BaseJPType) + pop1 - 2
+#define SETIMMTYPE(BaseJPType)  ju_SetJpType(PjpParent, (BaseJPType) + pop1 - 2);
 
 // Allocate and populate a Leaf1-N:
 //
@@ -484,7 +472,10 @@ FUNCTION static bool_t j__udyInsArray(
         Word_t D_cdP0;                                                  \
         assert(pop1 - 1 <= cJU_POP0MASK(cLevel));                       \
         D_cdP0 = (*PIndex & cJU_DCDMASK(cLevel)) | (pop1 - 1);          \
-        JU_JPSETADT(PjpParent, PjllRaw, D_cdP0, JPType);                \
+  /*    JU_JPSETADT(PjpParent, PjllRaw, D_cdP0, JPType);    */          \
+        ju_SetBaLPntr(PjpParent, PjllRaw);                              \
+        ju_SetDcdPop0(PjpParent, D_cdP0);                               \
+        ju_SetJpType(PjpParent, JPType);                                \
 }
 
 
@@ -565,15 +556,15 @@ FUNCTION static bool_t j__udyInsArray(
 
         if (pop1 <= immed_maxpop1[Level])      // note: always < root level.
         {
-            JUDY1CODE(uint8_t * Pjll = (uint8_t *) (PjpParent->jp_1Index1);)
-            JUDYLCODE(uint8_t * Pjll = (uint8_t *) (PjpParent->jp_LIndex1);)
+            uint8_t * Pjll = ju_PImmed1(PjpParent);
 
             CHECKLEAFORDER;             // indexes to be stored are sorted.
 
 #ifdef JUDYL
             if ((PjvRaw = j__udyLAllocJV(pop1, Pjpm)) == 0)
                 NOMEM;
-            PjpParent->jp_PValue = PjvRaw;
+//            PjpParent->jp_PValue = PjvRaw;
+            ju_SetPjvPntr(PjpParent, PjvRaw);
             Pjv = P_JV(PjvRaw);
 #endif
 
@@ -582,15 +573,13 @@ FUNCTION static bool_t j__udyInsArray(
             case 1: COPYTOLEAF_EVEN(Pjll, uint8_t);
                     SETIMMTYPE(cJU_JPIMMED_1_02);
                     break;
-#if (defined(JUDY1) || defined(JU_64BIT))
             case 2: COPYTOLEAF_EVEN(Pjll, uint16_t);
                     SETIMMTYPE(cJU_JPIMMED_2_02);
                     break;
             case 3: COPYTOLEAF_ODD(3, Pjll, JU_COPY3_LONG_TO_PINDEX);
                     SETIMMTYPE(cJU_JPIMMED_3_02);
                     break;
-#endif
-#if (defined(JUDY1) && defined(JU_64BIT))
+#ifdef  JUDY1
             case 4: COPYTOLEAF_EVEN(Pjll, uint32_t);
                     SETIMMTYPE(cJ1_JPIMMED_4_02);
                     break;
@@ -661,18 +650,18 @@ FUNCTION static bool_t j__udyInsArray(
 
             switch (levelsub)
             {
-#if (defined(JUDYL) || (! defined(JU_64BIT)))
+#ifdef  JUDYL
             case 1: MAKELEAF_EVEN(1, cJU_JPLEAF1, j__udyAllocJLL1,
                                   JL_LEAF1VALUEAREA, uint8_t);
                     break;
-#endif
+#endif  // JUDYL
+
             case 2: MAKELEAF_EVEN(2, cJU_JPLEAF2, j__udyAllocJLL2,
                                   JL_LEAF2VALUEAREA, uint16_t);
                     break;
             case 3: MAKELEAF_ODD( 3, cJU_JPLEAF3, j__udyAllocJLL3,
                                   JL_LEAF3VALUEAREA, JU_COPY3_LONG_TO_PINDEX);
                     break;
-#ifdef JU_64BIT
             case 4: MAKELEAF_EVEN(4, cJU_JPLEAF4, j__udyAllocJLL4,
                                   JL_LEAF4VALUEAREA, uint32_t);
                     break;
@@ -685,7 +674,6 @@ FUNCTION static bool_t j__udyInsArray(
             case 7: MAKELEAF_ODD( 7, cJU_JPLEAF7, j__udyAllocJLL7,
                                   JL_LEAF7VALUEAREA, JU_COPY7_LONG_TO_PINDEX);
                     break;
-#endif
             default: assert(FALSE);     // should be impossible.
             }
 
@@ -713,10 +701,13 @@ FUNCTION static bool_t j__udyInsArray(
 
             if (pop1 == cJU_JPFULLPOPU1_POP0 + 1)
             {
-                Word_t  Addr  = PjpParent->jp_Addr;
+                Word_t  Addr  = ju_BaLPntr(PjpParent);
                 Word_t  DcdP0 = (*PIndex & cJU_DCDMASK(1))
                                         | cJU_JPFULLPOPU1_POP0;
-                JU_JPSETADT(PjpParent, Addr, DcdP0, cJ1_JPFULLPOPU1);
+//                JU_JPSETADT(PjpParent, Addr, DcdP0, cJ1_JPFULLPOPU1);
+                ju_SetBaLPntr(PjpParent, Addr);
+                ju_SetDcdPop0(PjpParent, DcdP0);
+                ju_SetJpType(PjpParent, cJ1_JPFULLPOPU1);
 
                 return(TRUE);
             }
@@ -770,8 +761,11 @@ FUNCTION static bool_t j__udyInsArray(
 
 // Attach new LeafB1 to parent JP; note use of *PPop1 possibly < pop1:
 
-            JU_JPSETADT(PjpParent, PjlbRaw, 
-                    (*PIndex & cJU_DCDMASK(1)) | (*PPop1 - 1), cJU_JPLEAF_B1);
+//            JU_JPSETADT(PjpParent, PjlbRaw, 
+//                    (*PIndex & cJU_DCDMASK(1)) | (*PPop1 - 1), cJU_JPLEAF_B1);
+            ju_SetBaLPntr(PjpParent, PjlbRaw);
+            ju_SetDcdPop0(PjpParent, (*PIndex & cJU_DCDMASK(1)) | (*PPop1 - 1));
+            ju_SetJpType(PjpParent, cJU_JPLEAF_B1);
 
             return(retval);
 
@@ -810,7 +804,6 @@ BuildBranch:    // come here directly if a leaf wont work.
 // Level = 3 and levelsub = 2; 64-bit systems have many more choices; but
 // hopefully this for-loop is fast enough even on a 32-bit system.
 //
-// TBD:  If not fast enough, #ifdef JU_64BIT and handle the 32-bit case faster.
 
         for (levelsub = Level; levelsub >= 3; --levelsub)  // see above.
             if (! SAMESUBEXP(levelsub - 1))     // at limit of narrow pointer.
@@ -841,7 +834,8 @@ BuildBranch2:   // come here directly for Level = levelsub = cJU_ROOTSTATE.
         Pjbu = P_JBU(PjbuRaw);
 
         JPtype_null       = cJU_JPNULL1 + levelsub - 2;  // in new BranchU.
-        JU_JPSETADT(&JPnull, 0, 0, JPtype_null);
+//        JU_JPSETADT(&JPnull, 0, 0, JPtype_null);
+        ju_SetIMM01(&JPnull, 0, 0, JPtype_null);
 
         Pjp               = Pjbu->jbu_jp;           // for convenience in loop.
         numJPs            = 0;                      // non-null in the BranchU.
@@ -885,9 +879,15 @@ BuildBranch2:   // come here directly for Level = levelsub = cJU_ROOTSTATE.
 
             if (pop1sub == 1)                   // note: can be at root level.
             {
+#ifdef  JUDY1
                 Word_t Addr = 0;
-      JUDYLCODE(Addr    = (Word_t) (*PValue++);)
-                JU_JPSETADT(Pjp, Addr, *PIndex, cJU_JPIMMED_1_01 + levelsub -2);
+#else   // JUDYL
+                Word_t Addr = (Word_t) (*PValue++);
+#endif  // JUDYL
+//                JU_JPSETADT(Pjp, Addr, *PIndex, cJU_JPIMMED_1_01 + levelsub -2);
+                ju_SetBaLPntr(Pjp, Addr);
+                ju_SetDcdPop0(Pjp, *PIndex);
+                ju_SetJpType(Pjp, cJU_JPIMMED_1_01 + levelsub -2);
 
                 ++numJPs;
 
@@ -1049,7 +1049,8 @@ ClearBranch:
 
             for (digit = 0; digit < cJU_BRANCHUNUMJPS; ++digit)
             {
-                if ((((Pjbu->jbu_jp) + digit)->jp_Type) == JPtype_null)
+//                if ((((Pjbu->jbu_jp) + digit)->jp_Type) == JPtype_null)
+                if (ju_Type(Pjbu->jbu_jp + digit) == JPtype_null)
                     continue;
 
                 (Pjbl->jbl_Expanse[offset  ]) = digit;
@@ -1095,7 +1096,8 @@ ClearBranch:
             Pjp2 = Pjbu->jbu_jp;
 
             for (digit = 0; digit < cJU_BRANCHUNUMJPS; ++digit)
-                if ((((Pjbu->jbu_jp) + digit)->jp_Type) != JPtype_null)
+//                if ((((Pjp2) + digit)->jp_Type) != JPtype_null)
+                if (ju_Type(Pjp2 + digit) == JPtype_null)
                     JU_BITMAPSETB(Pjbb, digit);
 
 // Copy non-null JPs to BranchB JP subarrays:
@@ -1134,7 +1136,8 @@ ClearBranch:
 
                 while (numJPs-- > 0)
                 {
-                    while ((Pjp2->jp_Type) == JPtype_null)
+//                    while ((Pjp2->jp_Type) == JPtype_null)
+                    while (ju_Type(Pjp2) == JPtype_null)
                     {
                         ++Pjp2;
                         assert(Pjp2 < (Pjbu->jbu_jp) + cJU_BRANCHUNUMJPS);
@@ -1159,14 +1162,19 @@ ClearBranch:
 // possibly reduced due to partial failure.
 
 SetParent:
-        (PjpParent->jp_Addr) = Pjbany;
-        (PjpParent->jp_Type) = JPtype;
+//        PjpParent->Jp_Addr0 = Pjbany;
+        ju_SetBaLPntr(PjpParent, Pjbany);
+//        PjpParent->jp_Type = JPtype;
+        ju_SetJpType(PjpParent, JPtype);
 
         if (Level < (int)cJU_ROOTSTATE)              // PjpParent not in JPM:
         {
             Word_t DcdP0 = (*PIndex & cJU_DCDMASK(levelsub)) | (*PPop1 - 1);
 
-            JU_JPSETADT(PjpParent ,Pjbany, DcdP0, JPtype);
+//            JU_JPSETADT(PjpParent, Pjbany, DcdP0, JPtype);
+            ju_SetBaLPntr(PjpParent, Pjbany);
+            ju_SetDcdPop0(PjpParent, DcdP0);
+            ju_SetJpType(PjpParent, JPtype);
         }
 
         return(retval);
