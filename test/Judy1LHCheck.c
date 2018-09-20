@@ -16,15 +16,19 @@
 // released or Doug's JudyL or with his own JudyL and the released or
 // Doug's Judy1 libraries.
 // We want to be able to use the same Check.c for all of these cases.
-// The solution is to define JUDY1_V2 and/or JUDYL_V2 to have Check.c
-// use Judy1Dump and/or JudyLDump for real.
+// The solution is to define JUDY1_V2 and/or JUDY1_DUMP and/or JUDYL_V2
+// and/or JUDYL_DUMP if/when we want Check.c to use Judy1Dump and/or
+// JudyLDump for real.
 
-#ifndef JUDY1_V2
-#define Judy1Dump(wRoot, nBL, wKeyPrefix)
-#define JudyLDump(wRoot, nBL, wKeyPrefix)
-#endif // JUDY1_V2
+#if !defined(JUDY1_V2) && !defined(JUDY1_DUMP)
+#define Judy1Dump(wRoot, nBitsLeft, wKeyPrefix)
+#endif // !defined(JUDY1_V2) && !defined(JUDY1_DUMP)
 
-// In case we want to set j__MFlag to one to get JudyMalloc to dump mmap/munmap.
+#if !defined(JUDYL_V2) && !defined(JUDYL_DUMP)
+#define JudyLDump(wRoot, nBitsLeft, wKeyPrefix)
+#endif // !defined(JUDYL_V2) && !defined(JUDYL_DUMP)
+
+// In case we want to set j__MFlag to 1 to get JudyMalloc to log mmap/munmap.
 extern Word_t j__MFlag;
 
 // Compile:
