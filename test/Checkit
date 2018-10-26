@@ -1,5 +1,6 @@
 #!/bin/sh
 CC=${CC:-cc}
+CC="${CC} -std=gnu11"
 WARN_CFLAGS=${WARN_CFLAGS:--Wall -Wextra}
 
 echo
