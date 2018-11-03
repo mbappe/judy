@@ -544,7 +544,6 @@ FUNCTION int j__udyCascade2(
 
 //			Save byte expanse of leaf
 			StageExp[ExpCnt] = JU_DIGITATSTATE(CIndex, 2);
-
 			if (Pop1 == 1)	// cJU_JPIMMED_1_01
 			{
 	                    Word_t DcdP0;
@@ -557,12 +556,11 @@ FUNCTION int j__udyCascade2(
                             ju_SetIMM01(PjpJP, Pjv[Start], DcdP0, cJL_JPIMMED_1_01);
 #endif  // JUDYL
 			}
-			else if (Pop1 <= cJU_IMMED1_MAXPOP1) // bigger
+//#ifdef  JUDY1
+			else if (Pop1 <= cJU_IMMED1_MAXPOP1) // bigger > 1
 			{
-//		cJL_JPIMMED_1_02..3:  JudyL 32
-//		cJ1_JPIMMED_1_02..7:  Judy1 32
-//		cJL_JPIMMED_1_02..7:  JudyL 64
-//		cJ1_JPIMMED_1_02..15: Judy1 64
+//		cJL_JPIMMED_1_02..7:  JudyL 
+//		cJ1_JPIMMED_1_02..15: Judy1 
 #ifdef JUDYL
 				Word_t PjvnewRaw;	// value area of leaf.
 				Pjv_t  Pjvnew;
@@ -586,10 +584,11 @@ FUNCTION int j__udyCascade2(
 //				PjpJP->jp_Type = cJU_JPIMMED_1_02 + Pop1 - 2;
                                 ju_SetJpType(PjpJP, cJU_JPIMMED_1_02 + Pop1 - 2);
 			}
-#ifdef  JUDYL
+//#endif  //  JUDY1
+
+///////////#ifdef  JUDYL
 			else if (Pop1 <= cJU_LEAF1_MAXPOP1) // still bigger
 			{
-//		cJU_JPLEAF1
                                 Word_t  DcdP0;
 				Word_t PjllRaw;	 // pointer to new leaf.
 				Pjll_t Pjll;
@@ -625,7 +624,7 @@ FUNCTION int j__udyCascade2(
                                 ju_SetJpType(PjpJP, cJU_JPLEAF1);
                                 ju_SetBaLPntr(PjpJP, PjllRaw);
 			}
-#endif  // JUDYL
+//////////////#endif  // JUDYL
 			else				// biggest
 			{
 //		cJU_JPLEAF_B1
@@ -1838,7 +1837,7 @@ FUNCTION int j__udyCascadeL(
 	Pjp_t	   Pjp,
 	Pjpm_t	   Pjpm)
 {
-	Pjlw_t	   Pjlw;	// leaf to work on.
+	Pjllw_t	   Pjllw;	// leaf to work on.
 	Word_t	   End, Start;	// temporaries.
 	Word_t	   ExpCnt;	// count of expanses of splay.
 	Word_t	   CIndex;	// current Index word.
@@ -1857,24 +1856,26 @@ FUNCTION int j__udyCascadeL(
 #endif  // PCAS
 
 //	Get the address of the Leaf (in root structure)
-	Pjlw = P_JLW(ju_BaLPntr(Pjp));
+	Pjllw = P_JLLW(ju_BaLPntr(Pjp));
 
-////printf("In CascadeL Pjlw = 0x%lx, Type = %d\n", (Word_t)Pjlw, ju_Type(Pjp));
+////printf("In CascadeL Pjllw = 0x%lx, Type = %d\n", (Word_t)Pjllw, ju_Type(Pjp));
 
-	assert(Pjlw[0] == (cJU_LEAFW_MAXPOP1 - 1));
+//	assert(Pjllw[0] == (cJU_LEAFW_MAXPOP1 - 1));
+	assert(Pjllw->jlw_Population0 == (cJU_LEAFW_MAXPOP1 - 1));
 
 //	Get pointer to Value area of old Leaf
 #ifdef  JUDYL
-	Pjv = JL_LEAFWVALUEAREA(Pjlw, cJU_LEAFW_MAXPOP1);
+	Pjv = JL_LEAFWVALUEAREA(Pjllw, cJU_LEAFW_MAXPOP1);
 #endif  // JUDYL
 
 //      Now point to Key area, !!! Crap should struct
-	Pjlw++;
+////	Pjllw++;
 
 // If Leaf is in 1 expanse -- first compress it (compare 1st, last & Index):
 
-	CIndex = Pjlw[0];	// also used far below
-	if (!JU_DIGITATSTATE(CIndex ^ Pjlw[cJU_LEAFW_MAXPOP1 - 1], cJU_ROOTSTATE))
+////	CIndex = Pjllw[0];	// also used far below
+        CIndex = Pjllw->jlw_Leaf[0];
+	if (!JU_DIGITATSTATE(CIndex ^ Pjllw->jlw_Leaf[cJU_LEAFW_MAXPOP1 - 1], cJU_ROOTSTATE))
 	{
 		Word_t PjllRaw;		// pointer to new leaf.
 		Pjll_t Pjll;
@@ -1893,7 +1894,7 @@ FUNCTION int j__udyCascadeL(
 		Pjll = P_JLL(PjllRaw);
 
 //		Copy LEAFW to a cJU_JPLEAF7
-		j__udyCopyWto7((uint8_t *) Pjll, Pjlw, cJU_LEAFW_MAXPOP1);
+		j__udyCopyWto7((uint8_t *) Pjll, Pjllw->jlw_Leaf, cJU_LEAFW_MAXPOP1);
 #ifdef JUDYL
 //		Get the Value area of new Leaf
 		Pjvnew = JL_LEAF7VALUEAREA(Pjll, cJU_LEAFW_MAXPOP1);
@@ -1932,7 +1933,7 @@ FUNCTION int j__udyCascadeL(
 //		Check if new expanse or last one
 		if (	(End == cJU_LEAFW_MAXPOP1)
 				||
-			(JU_DIGITATSTATE(CIndex ^ Pjlw[End], cJU_ROOTSTATE))
+			(JU_DIGITATSTATE(CIndex ^ Pjllw->jlw_Leaf[End], cJU_ROOTSTATE))
 		   )
 		{
 //			Build a leaf below the previous expanse
@@ -1969,18 +1970,18 @@ FUNCTION int j__udyCascadeL(
 #ifdef JUDY1
 			else if (Pop1 <= cJ1_IMMED7_MAXPOP1)
 			{
-//		cJ1_JPIMMED_3_02   :  Judy1 32
 //		cJ1_JPIMMED_7_02   :  Judy1 64
 //                              Copy to JP as an immediate Leaf
-			     j__udyCopyWto7(ju_PImmed1(PjpJP), Pjlw+Start, 2);
+//			     j__udyCopyWto7(ju_PImmed1(PjpJP), Pjllw+Start, 2);
+			     j__udyCopyWto7(ju_PImmed1(PjpJP), Pjllw->jlw_Leaf+Start, 2);
 //                             PjpJP->jp_Type = cJ1_JPIMMED_7_02;
                             ju_SetJpType(PjpJP, cJ1_JPIMMED_7_02);
 			}
 #endif  // JUDY1
 
-			else // Linear Leaf JPLEAF3[7]
+			else // Linear Leaf JPLEAF7
 			{
-//		cJU_JPLEAF3[7]
+//		cJU_JPLEAF7
 				Word_t PjllRaw;	 // pointer to new leaf.
 				Pjll_t Pjll;
 #ifdef  JUDYL
@@ -1991,7 +1992,8 @@ FUNCTION int j__udyCascadeL(
                                     return(-1);
 				Pjll = P_JLL(PjllRaw);
 
-				j__udyCopyWto7((uint8_t *) Pjll, Pjlw + Start, Pop1);
+//				j__udyCopyWto7((uint8_t *) Pjll, Pjllw + Start, Pop1);
+				j__udyCopyWto7((uint8_t *) Pjll, Pjllw->jlw_Leaf + Start, Pop1);
 #ifdef JUDYL
 				Pjvnew = JL_LEAF7VALUEAREA(Pjll, Pop1);
 				JU_COPYMEM(Pjvnew, Pjv + Start, Pop1);
@@ -2008,7 +2010,8 @@ FUNCTION int j__udyCascadeL(
                             break;
 
 //			New Expanse, Start and Count
-			CIndex = Pjlw[End];
+//			CIndex = Pjllw[End];
+			CIndex = Pjllw->jlw_Leaf[End];
 			Start  = End;
 		}
 	}

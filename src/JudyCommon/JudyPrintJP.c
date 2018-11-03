@@ -62,7 +62,8 @@ Word_t j__udyPopulation;        // Indexes in array, optional from caller.
 
 static Word_t startindex = 0;           // see usage below.
 static Word_t startpop   = 0;
-static bool_t enabled    = FALSE;       // by default, unless env params set.
+//static bool_t enabled    = FALSE;       // by default, unless env params set.
+static bool_t enabled    = TRUE;       // by default, unless env params set.
 
 // Shorthand for announcing JP addresses, Desc (in context), and JP types:
 //
@@ -222,7 +223,7 @@ static  bool_t checked = FALSE; // set upon first entry and check for params.
         case cJ1_JPBRANCH_L5:   JPTYPE("cJ1_JPBRANCH_L5"); POP5;NUMJPSL;break;
         case cJ1_JPBRANCH_L6:   JPTYPE("cJ1_JPBRANCH_L6"); POP6;NUMJPSL;break;
         case cJ1_JPBRANCH_L7:   JPTYPE("cJ1_JPBRANCH_L7"); POP7;NUMJPSL;break;
-        case cJ1_JPBRANCH_L:    JPTYPE("cJ1_JPBRANCH_L");       NUMJPSL;break;
+        case cJ1_JPBRANCH_L:    JPTYPE("cJ1_JPBRANCH_L");  POP7;NUMJPSL;break;
 
         case cJ1_JPBRANCH_B2:   JPTYPE("cJ1_JPBRANCH_B2"); POP2;NUMJPSB;break;
         case cJ1_JPBRANCH_B3:   JPTYPE("cJ1_JPBRANCH_B3"); POP3;NUMJPSB;break;
@@ -230,7 +231,7 @@ static  bool_t checked = FALSE; // set upon first entry and check for params.
         case cJ1_JPBRANCH_B5:   JPTYPE("cJ1_JPBRANCH_B5"); POP5;NUMJPSB;break;
         case cJ1_JPBRANCH_B6:   JPTYPE("cJ1_JPBRANCH_B6"); POP6;NUMJPSB;break;
         case cJ1_JPBRANCH_B7:   JPTYPE("cJ1_JPBRANCH_B7"); POP7;NUMJPSB;break;
-        case cJ1_JPBRANCH_B:    JPTYPE("cJ1_JPBRANCH_B");       NUMJPSB;break;
+        case cJ1_JPBRANCH_B:    JPTYPE("cJ1_JPBRANCH_B");  POP7;NUMJPSB;break;
 
         case cJ1_JPBRANCH_U2:   JPTYPE("cJ1_JPBRANCH_U2"); POP2;        break;
         case cJ1_JPBRANCH_U3:   JPTYPE("cJ1_JPBRANCH_U3"); POP3;        break;
@@ -238,9 +239,9 @@ static  bool_t checked = FALSE; // set upon first entry and check for params.
         case cJ1_JPBRANCH_U5:   JPTYPE("cJ1_JPBRANCH_U5"); POP5;        break;
         case cJ1_JPBRANCH_U6:   JPTYPE("cJ1_JPBRANCH_U6"); POP6;        break;
         case cJ1_JPBRANCH_U7:   JPTYPE("cJ1_JPBRANCH_U7"); POP7;        break;
-        case cJ1_JPBRANCH_U:    JPTYPE("cJ1_JPBRANCH_U");               break;
+        case cJ1_JPBRANCH_U:    JPTYPE("cJ1_JPBRANCH_U");  POP7;        break;
 
-//        case cJ1_JPLEAF1:       JPTYPE("cJ1_JPLEAF1"); POP1;            break;
+        case cJ1_JPLEAF1:       JPTYPE("cJ1_JPLEAF1"); POP1;            break;
         case cJ1_JPLEAF2:       JPTYPE("cJ1_JPLEAF2"); POP2;            break;
         case cJ1_JPLEAF3:       JPTYPE("cJ1_JPLEAF3"); POP3;            break;
         case cJ1_JPLEAF4:       JPTYPE("cJ1_JPLEAF4"); POP4;            break;

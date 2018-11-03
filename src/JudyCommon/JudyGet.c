@@ -43,187 +43,6 @@
 #define ju_DcdNonMatchKey(INDEX,PJP,POP0BYTES) (0)
 #endif  // DCD
 
-#include <immintrin.h> // _mm_movemask_epi8, __m128i
-
-#ifdef  REFER
-// _mm_loadu_si128 is SSE2
-// _mm_lddqu_si128 is SSE3
-// _mm_lddqu_si128 "may perform better than _mm_loadu_si128 when the data
-// crosses a cache line boundary".
-
-// v_t is a vector of 16 chars. __m128i is a vector of 2 long longs.
-// We need the char variant so we can compare with a char using '==' or '>='.
-#ifdef __clang__
-// clang has some support for gcc attribute "vector_size" but it doesn't work
-// as well as its own ext_vector_type.
-// For example, it won't promote a scalar to a vector for compare.
-typedef char __attribute__((ext_vector_type(16))) v_t;
-
-// gcc has no support for clang attribute "ext_vector_type".
-typedef char __attribute__((vector_size(16))) v_t;
-// for mis-aligned moves  typedef char __attribute__((vector_size(16), aligned(4))) 
-#endif // __clang__
-
-// HasKey returns (1 << matching slot number) if sorted full Bucket
-// has Key or zero if Bucket does not have Key.
-// Keys are sorted with lowest key at vector index zero.
-static int 
-HasKey(v_t Bucket, uint8_t Key)
-{
-    v_t xEq = (Bucket == Key); // compare Key with all
-    return _mm_movemask_epi8((__m128i)xEq); // (1 << matching slot) or 0
-}
-
-// HasKeyInPop returns (1 << matching slot number) if sorted partial Bucket
-// has Key or zero if partial Bucket does not have Key.
-// Keys are packed and sorted with lowest key at vector index zero.
-static int
-HasKeyInPop(v_t Bucket, char Key, int nPopCnt)
-{
-    return HasKey(Bucket, Key) & ((1 << nPopCnt) - 1);
-}
-
-// LocateKey returns the matching slot number if sorted full Bucket
-// has Key or -1 if Bucket does not have Key.
-// Keys are sorted with lowest key at vector index zero.
-static int
-LocateKey(v_t Bucket, char Key)
-{
-    // get (matching byte num + 1) or 0 if no match
-    return __builtin_ffsll(HasKey(Bucket, Key)) - 1;
-}
-
-// LocateKeyInPop returns the matching slot number if sorted parital Bucket
-// has Key or -1 if partial Bucket does not have Key.
-// Keys are packed and sorted with lowest key at vector index zero.
-static int
-LocateKeyInPop(v_t Bucket, char Key, int nPopCnt)
-{
-    // get (matching byte num + 1) or 0 if no match
-    return __builtin_ffsll(HasKeyInPop(Bucket, Key, nPopCnt)) - 1;
-}
-
-// HasGeKey returns (-1 << matching slot number) & 0xffff)
-// if sorted full Bucket has a key that is greater than or equal to Key
-// or zero if Bucket does not have such a key.
-// Keys are sorted with lowest key at vector index zero.
-static int
-HasGeKey(v_t Bucket, char Key)
-{
-    v_t xGe = (Bucket >= Key); // compare Key with all
-    return _mm_movemask_epi8((__m128i)xGe); // (1 << matching slot) or 0
-}
-
-// HasGeKeyInPop returns (-1 << matching slot number) & 0xffff)
-// if sorted partial Bucket has a key that is greater than or equal to Key
-// or zero if partial Bucket does not have such a key.
-// Keys are packed and sorted with lowest key at vector index zero.
-static int
-HasGeKeyInPop(v_t Bucket, char Key, int nPopCnt)
-{
-    int n = HasGeKey(Bucket, Key);
-    n &= (1 << nPopCnt) - 1;
-    return n;
-}
-
-// Use LocateSlot if we know the bucket does not have the key
-// but we need to know where the key belongs.
-static int
-LocateSlot(v_t Bucket, char Key)
-{
-    return (__builtin_ffsll(HasGeKey(Bucket, Key)) + 16) % 17;
-}
-
-// Use LocateSlotInPop if we know the bucket does not have the key
-// but we need to know where the key belongs.
-static int
-LocateSlotInPop(v_t Bucket, char Key, int nPopCnt)
-{
-    return (__builtin_ffsll(HasGeKeyInPop(Bucket, Key, nPopCnt)) + 16) % 17;
-}
-
-// Search returns the matching slot number if sorted full Bucket
-// has Key or ~(slot number of first slot with key greater than Key)
-// if Bucket has such a key or ~16 if Bucket has no such key.
-// Keys are sorted with lowest key at vector index zero.
-static int
-Search(v_t Bucket, char Key)
-{
-    // get (matching byte num + 1) or 0 if no match
-    int n = __builtin_ffsll(HasGeKey(Bucket, Key));
-    // 0 => ~16
-    // 1 => 0 if there and ~0 if not there
-    // 2 => 1 if there and ~1 if not there
-    // 4 => 2 if there and ~2 if not there
-    // 0x8000 => 15 if there and ~15 if not there
-#ifdef METHOD_TEST // Has je with gcc, but short branch forward.
-    int z = (n == 0);
-    --n; n = z ? ~(int)sizeof(v_t) : n ^ ((Bucket[n] == Key) - 1);
-#elif defined(METHOD_LS)
-    int eq = __builtin_ffsll(HasKey(Bucket, Key));
-    return eq ? eq - 1 : ~LocateSlot(Bucket, Key);
-#elif defined(METHOD_DECR)
-    int z = (n == 0); // key is greater than all others in the bucket
-    n = (z - 1) & (n - 1); // slot or 0
-    n ^= ((Bucket[n] == Key) - 1); // slot or ~slot or 0
-    n ^= ~(z - 1) & nPopCnt; // slot or ~slot or ~nPopCnt
-#else // METHOD_MASK // One instruction less than METHOD_DECR with gcc.
-    int nz = (n != 0); // bucket has a greater or equal key
-    --n; n ^= (Bucket[n & (sizeof(v_t) - 1)] == Key) - 1;
-    n |= (nz - 1) & ~sizeof(v_t);
-#endif
-    return n;
-}
-
-// SearchInPop returns the matching slot number if sorted parital Bucket
-// has Key or ~(slot number of first slot with key greater than Key)
-// if partial Bucket has such a key or ~16 if partial Bucket has no such key.
-// Keys are packed and sorted with lowest key at vector index zero.
-static int
-SearchInPop(v_t Bucket, char Key, int nPopCnt)
-{
-    // get (matching byte num + 1) or 0 if no match
-    int n = __builtin_ffsll(HasGeKeyInPop(Bucket, Key, nPopCnt));
-#ifdef METHOD_TEST // has je with gcc, but short branch forward
-    int z = (n == 0);
-    --n; n = z ? ~nPopCnt : n ^ ((Bucket[n] == Key) - 1);
-#elif defined(METHOD_LS)
-    int eq = __builtin_ffsll(HasKeyInPop(Bucket, Key, nPopCnt));
-    return eq ? eq - 1 : ~LocateSlotInPop(Bucket, Key, nPopCnt);
-#elif !defined(METHOD_DECR)
-    int z = (n == 0); // key is greater than all others in the bucket
-    n = (z - 1) & (n - 1); // slot or 0
-    n ^= ((Bucket[n] == Key) - 1); // slot or ~slot or 0
-    n ^= ~(z - 1) & nPopCnt; // slot or ~slot or ~nPopCnt
-#else // METHOD_MASK // Doesn't work for LocateSlotInPop.
-    int nz = (n != 0); // partial bucket has a greater or equal key
-    --n; n ^= (Bucket[n & (sizeof(v_t) - 1)] == Key) - 1;
-    n |= (nz - 1) & ~nPopCnt;
-#endif
-
-    return n;
-}
-#endif  // REFER
-
-
-#ifdef __clang__
-// clang has some support for gcc attribute "vector_size" but it doesn't work
-// as well as its own ext_vector_type.
-// For example, it won't promote a scalar to a vector for compare.
-typedef char __attribute__((ext_vector_type(16))) v16qi_t;
-typedef uint16_t __attribute__((ext_vector_type(8))) v8qi_t;
-#else // __clang__
-// gcc has no support for clang attribute "ext_vector_type".
-
-#ifdef  USEMISSALIGNED
-typedef char     __attribute__((vector_size(16), aligned(4))) v16qi_t;
-typedef uint16_t __attribute__((vector_size(16), aligned(4)))  v8qi_t;
-#else   // aligned method
-typedef char     __attribute__((vector_size(16)))            v16qi_t;
-typedef uint16_t __attribute__((vector_size(16)))             v8qi_t;
-#endif  // aligned method
-
-#endif // GCC ! __clang__
 
 // ****************************************************************************
 // J U D Y   1   T E S T
@@ -279,11 +98,11 @@ FUNCTION PPvoid_t JudyLGet (Pcvoid_t PArray,     // from which to retrieve.
 
 #ifdef  TRACEJPG
 #ifdef JUDY1
-//    printf("\nJudy1Test, Key = 0x%lx, Array Pop1 = %lu\n", 
-//            (size_t)Index, (size_t)(JU_LEAFW_POP0(PArray) + 1));
+    printf("\n---Judy1Test, Key = 0x%lx, Array Pop1 = %lu\n", 
+            (Word_t)Index, (Word_t)(JU_LEAFW_POP0(PArray) + 1));
 #else /* JUDYL */
-//    printf("\nJudyGet, Key = 0x%lx, Array Pop1 = %lu\n", 
-//        (size_t)Index, (size_t)(JU_LEAFW_POP0(PArray) + 1));
+    printf("\n---JudyLGet, Key = 0x%lx, Array Pop1 = %lu\n", 
+        (Word_t)Index, (Word_t)(JU_LEAFW_POP0(PArray) + 1));
 #endif /* JUDYL */
 #endif  // TRACEJPG
 
@@ -292,19 +111,22 @@ FUNCTION PPvoid_t JudyLGet (Pcvoid_t PArray,     // from which to retrieve.
 
         if (JU_LEAFW_POP0(PArray) < cJU_LEAFW_MAXPOP1) // must be a LEAFW
         {
-            Pjlw_t Pjlw = P_JLW(PArray);        // first word of leaf.
+            Pjllw_t Pjllw = P_JLLW(PArray);        // first word of leaf.
 
-            Pop1   = Pjlw[0] + 1;
+            Pop1   = Pjllw->jlw_Population0 + 1;
 
-            if ((posidx = j__udySearchLeafW(Pjlw + 1, Pop1, Index)) < 0)
+            if ((posidx = j__udySearchLeafW(Pjllw->jlw_Leaf, Pop1, Index)) < 0)
+            {
+//   printf("JudyGet failed at Pop1 = %ld, Key = 0x%lx:\n", Pop1, Index);
                 goto NotFoundExit;              // no jump to middle of switch
+            }
 
 #ifdef  JUDY1
             return(1);
 #endif  // JUDY1
 
 #ifdef  JUDYL
-            return((PPvoid_t) (JL_LEAFWVALUEAREA(Pjlw, Pop1) + posidx));
+            return((PPvoid_t) (JL_LEAFWVALUEAREA(Pjllw, Pop1) + posidx));
 #endif  // JUDYL
 
         }
@@ -540,8 +362,6 @@ JudyBranchB:
 // Note:  Here the calls of ju_DcdNonMatchKey() are necessary and check
 // whether Index is out of the expanse of a narrow pointer.
 
-       // Judy1 does not have Leaf1
-#ifdef  JUDYL     
         case cJU_JPLEAF1:
         {
             if (ju_DcdNonMatchKey(Index, Pjp, 1)) break;
@@ -549,73 +369,16 @@ JudyBranchB:
             Pjll = P_JLL(ju_BaLPntr(Pjp));
             Pop1   = ju_LeafPop0(Pjp) + 1;
 
+            SEARCHPOPULATION(Pop1);
+
+#ifdef  JUDYL
             Pjv  = JL_LEAF1VALUEAREA(Pjll, Pop1);
-
-#ifdef  PARALLEL
-            v16qi_t     m128reg;
-            v16qi_t    *Pv16qi;
-
-            DIRECTHITS;
-
-//          This seems a little hokey
-            Pv16qi = (v16qi_t *)ju_BaLPntr(Pjp);
-
-            uint8_t  key8 = (uint8_t)Index;
-            Word_t   charmask = 0;
-
-// for performance testing only!!!!!!!, plus xxxns on i7-6800K
-#ifdef  EXPPARALLEL
-//          This supports a Leaf1 Pop1 up to 64
-            int   bucket = 0;
-            for (int pop0 = 0; pop0 < Pop1; pop0 += 16, bucket++)
-            {
-                m128reg   = Pv16qi[bucket] == key8;      // compare 16 more Keys with key8
-                charmask |=  (Word_t)_mm_movemask_epi8((__m128i)m128reg) << pop0;
-            }
-//          because shift by 64 is undefined -- 2 steps
-            charmask &= (((Word_t)1 << (Pop1 - 1)) << 1) - 1;
-            if (charmask == 0)
-                break;
-#else  // EXPPARALLEL
-
-//          This supports a Leaf1 Pop1 up to 32
-            m128reg  =  Pv16qi[0] == key8;      // compare 16 Keys with key8
-            charmask =  (Word_t)_mm_movemask_epi8((__m128i)m128reg);
-
-//            if (Pop1 > 16) a little slower (dlb - Oct2017)
-//            {
-            m128reg  =  Pv16qi[1] == key8;      // compare 16 Keys with key8
-            charmask |= (Word_t)_mm_movemask_epi8((__m128i)m128reg) << 16;
-//            }
-
-//          mask off bits beyond population
-            charmask &= ((Word_t)1 << Pop1) - 1;
-//          need 2 step shift when Pop1 == 64 charmask &= (((Word_t)1 << (Pop1 - 1)) << 1) - 1;
-//            charmask &= (((Word_t)1 << (Pop1 - 1)) << 1) - 1;
-            if (charmask == 0)          // no matching Keys
-                break;
-            posidx = __builtin_ctzll(charmask);
-            return((PPvoid_t) (Pjv + posidx));
-
-#endif // EXPPARALLEL
-
-            posidx = __builtin_ctzll(charmask); 
-
-//            if (posidx   != __builtin_ffsll(charmask) - 1)
-//                printf(" Value = 0x%lx, Index = 0x%lx\n", *(Pjv + posidx), Index);
-
-            return((PPvoid_t) (Pjv + posidx));
-
-#else   // ! PARALLEL
-
-//          entry Pjll = Leaf1, Pjv = PValue, Pop1 = population, Key = Index
-            posidx = j__udySearchLeaf1(Pjll, Pop1, Index);
-            goto CommonLeafExit;
-#endif  // ! PARALLEL
-
-        }
 #endif  // JUDYL
 
+//          entry Pjll = Leaf1, Pjv = PValue, Pop1 = population, Key = Index
+            posidx = j__udySearchLeaf1(Pjll, Pop1, Index, 1 * 8);
+            goto CommonLeafExit;
+        }
         case cJU_JPLEAF2:
         {
             if (ju_DcdNonMatchKey(Index, Pjp, 2)) break;
@@ -623,11 +386,10 @@ JudyBranchB:
             Pop1 = ju_LeafPop0(Pjp) + 1;
             Pjll = P_JLL(ju_BaLPntr(Pjp));
 
-// entry Pjll = Leaf2, Pjv = Value, Pop1 = population
-            posidx = j__udySearchLeaf2(Pjll, Pop1, Index);
+//          entry Pjll = Leaf2, Pjv = Value, Pop1 = population
+            posidx = j__udySearchLeaf2(Pjll, Pop1, Index, 2 * 8);
             if (posidx < 0) 
                 break;
-
 #ifdef  JUDYL
             Pjv = JL_LEAF2VALUEAREA(Pjll, Pop1);
             return((PPvoid_t) (Pjv + posidx));
@@ -648,9 +410,9 @@ JudyBranchB:
 
             goto Leaf3Exit;
 
-Leaf3Exit:     // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
+Leaf3Exit: // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
 
-            posidx = j__udySearchLeaf3(Pjll, Pop1, Index);
+            posidx = j__udySearchLeaf3(Pjll, Pop1, Index, 3 * 8);
             goto CommonLeafExit;
 CommonLeafExit:
             if (posidx < 0) 
@@ -677,7 +439,7 @@ CommonLeafExit:
             goto Leaf4Exit;
             
 Leaf4Exit:
-            posidx = j__udySearchLeaf4(Pjll, Pop1, Index);
+            posidx = j__udySearchLeaf4(Pjll, Pop1, Index, 4 * 8);
             goto CommonLeafExit;
         }
         case cJU_JPLEAF5:
@@ -694,7 +456,7 @@ Leaf4Exit:
             goto Leaf5Exit;
             
 Leaf5Exit:
-            posidx = j__udySearchLeaf5(Pjll, Pop1, Index);
+            posidx = j__udySearchLeaf5(Pjll, Pop1, Index, 5 * 8);
             goto CommonLeafExit;
         }
         case cJU_JPLEAF6:
@@ -711,7 +473,7 @@ Leaf5Exit:
             goto Leaf6Exit;
             
 Leaf6Exit:
-            posidx = j__udySearchLeaf6(Pjll, Pop1, Index);
+            posidx = j__udySearchLeaf6(Pjll, Pop1, Index, 6 * 8);
             goto CommonLeafExit;
         }
         case cJU_JPLEAF7:
@@ -728,7 +490,7 @@ Leaf6Exit:
             goto Leaf7Exit;
             
 Leaf7Exit:
-            posidx = j__udySearchLeaf7(Pjll, Pop1, Index);
+            posidx = j__udySearchLeaf7(Pjll, Pop1, Index, 7 * 8);
             goto CommonLeafExit;
         }
 
@@ -748,6 +510,9 @@ Leaf7Exit:
 #endif  // JUDYL
 
             if (ju_DcdNonMatchKey(Index, Pjp, 1)) break;
+
+            SEARCHPOPULATION(ju_LeafPop0(Pjp) + 1);
+//            DIRECTHITS;       // not necessary, because always 100%
 
             Pjlb   = P_JLB(ju_BaLPntr(Pjp));
             Digit  = JU_DIGITATSTATE(Index, 1);
@@ -862,64 +627,15 @@ Leaf7Exit:
         case cJU_JPIMMED_1_02:
         {
             Pop1 = ju_Type(Pjp) - cJU_JPIMMED_1_02 + 2;
+            SEARCHPOPULATION(Pop1);
 
-#ifdef  PARALLEL
-            DIRECTHITS;
-
-//          posidx = 16 bits where each char match is a bit set
-//            v_t m128 = (*(v_t *)Pjp == (uint8_t)Index); // compare Key with all
-//    return _mm_movemask_epi8((__m128i)m128); // (1 << matching slot) or 0
-//
-//            posidx = HasKey(*(v_t *)Pjp, (char)Index); // check equal 16 bytes
-
-//typedef    char __attribute__((vector_size(16))) v_t;
-//typedef uint8_t __attribute__((vector_size(16))) m128_t;
-//            m128_t m128reg;
-//
-//typedef unsigned char __attribute__((vector_size(16))) __v16qu;
-//typedef   uint8_t __attribute__((__vector_size__ (16))) __v16qu;
-//(v_t)_mm_loadu_si128((__m128i *)pUaBucket)
-
-            v16qi_t m128reg;
-            Word_t  charmask = 0;
-            uint8_t key8 = (uint8_t)Index;
-
-//          Do a parallel search of 16 chars
-            m128reg = (*(v16qi_t *)Pjp) == key8; 
-            charmask = _mm_movemask_epi8((__m128i)m128reg);
-
+            Pjll = (Pjll_t)ju_PImmed1(Pjp);     // Get ^ to Keys
+            posidx = j__udySearchLeaf1(Pjll, Pop1, Index, 1 * 8);
 #ifdef  JUDYL
-            charmask >>= 8;                     // skip 1st word in jp_t
-            Pjv = P_JV(ju_PImmVals(Pjp));       // ^ immediate values area
+            Pjv = P_JV(ju_PImmVals(Pjp));       // Get ^ to Values
 #endif  // JUDYL
 
-//          Mask off bits that are beyond population (assume stats with 1st word)
-            charmask &= ((Word_t)1 << Pop1) - 1; 
-
-            if (charmask == 0)                  // not found
-                break;
-#ifdef  JUDYL
-            posidx = __builtin_ctzll(charmask);
-            return((PPvoid_t) (Pjv + posidx));
-#else   // JUDY1
-            return(1);
-#endif  // JUDY1
-
-#else   // ! PARALLEL
-
-            Pjll = (Pjll_t)ju_PImmed1(Pjp);
-            posidx = j__udySearchLeaf1(Pjll, Pop1, Index);
-            if (posidx < 0) 
-                break;
-#ifdef  JUDYL
-            Pjv = P_JV(ju_PImmVals(Pjp));  // ^ immediate values area
-            return((PPvoid_t) (Pjv + posidx));
-#else   // JUDY1
-            return(1);
-#endif  // JUDY1
-
-#endif  // ! PARALLEL
-
+            goto CommonLeafExit;                // posidx & Pjv(only JudyL)
         }
 #ifdef  JUDY1
         case cJ1_JPIMMED_2_07:
@@ -939,7 +655,7 @@ Leaf7Exit:
             Pjv = P_JV(ju_PImmVals(Pjp));  // ^ immediate values area
 #endif  // JUDYL
 
-            posidx = j__udySearchLeaf2(Pjll, Pop1, Index);
+            posidx = j__udySearchLeaf2(Pjll, Pop1, Index, 2 * 8);
             goto CommonLeafExit;
         }
 

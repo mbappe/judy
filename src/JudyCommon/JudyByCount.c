@@ -143,13 +143,14 @@ FUNCTION PPvoid_t JudyLByCount
 
 	if (JU_LEAFW_POP0(PArray) < cJU_LEAFW_MAXPOP1) // must be a LEAFW
 	{
-	    Pjlw_t Pjlw = P_JLW(PArray);		// first word of leaf.
+	    Pjllw_t Pjllw = P_JLLW(PArray);		// first word of leaf.
 
-	    if (Count0 > Pjlw[0]) JU_RET_NOTFOUND;	// too high.
+	    if (Count0 > Pjllw->jlw_Population0) JU_RET_NOTFOUND;	// too high.
 
-	    *PIndex = Pjlw[Count];			// Index, base 1.
+//	    *PIndex = Pjllw[Count];			// Index, base 1.
+	    *PIndex = Pjllw->jlw_Leaf[Count0];		// Index, base 1.
 
-	    JU_RET_FOUND_LEAFW(Pjlw, Pjlw[0] + 1, Count0);
+	    JU_RET_FOUND_LEAFW(Pjllw, Pjllw->jlw_Population0 + 1, Count0);
 	}
 	else
 	{
@@ -212,7 +213,7 @@ FUNCTION PPvoid_t JudyLByCount
 #define	SETOFFSET(Offset,Count0,Pop1lower,Pjp)	\
 	(Offset) = (Count0) - (Pop1lower);	\
 	assert((Offset) >= 0);			\
-	assert((Offset) <= JU_JPLEAF_POP0(Pjp))
+	assert((Offset) <= ju_LeafPop0(Pjp))
 
 // Variations for immediate indexes, with and without pop1-specific assertions:
 
@@ -587,7 +588,7 @@ printf("OOps jp_Type needs attention\n");
 #ifdef JUDY1
 #define	PREPL_SETPOP1			// not needed in any cases.
 #else
-#define	PREPL_SETPOP1  pop1 = JU_JPLEAF_POP0(Pjp) + 1
+#define	PREPL_SETPOP1  pop1 = ju_LeafPop0(Pjp) + 1
 #endif
 
 #define	PREPL				\
@@ -595,13 +596,13 @@ printf("OOps jp_Type needs attention\n");
 	PREPL_SETPOP1;			\
 	SETOFFSET(offset, Count0, pop1lower, Pjp)
 
-#ifdef  JUDYL
+/////////#ifdef  JUDYL
 	case cJU_JPLEAF1:
 
 	    PREPL_DCD(1);
 	    JU_SETDIGIT1(*PIndex, ((uint8_t *) Pjll)[offset]);
 	    JU_RET_FOUND_LEAF1(Pjll, pop1, offset);
-#endif
+/////////#endif
 	case cJU_JPLEAF2:
 
 	    PREPL_DCD(2);
@@ -669,7 +670,7 @@ printf("OOps jp_Type needs attention\n");
 
 	    JU_SETDCD(*PIndex, Pjp, 1);
 	    Pjlb = P_JLB(ju_BaLPntr(Pjp));
-	    pop1 = JU_JPLEAF_POP0(Pjp) + 1;
+	    pop1 = ju_LeafPop0(Pjp) + 1;
 
 // COUNT UPWARD, adding the pop1 of each subexpanse:
 //

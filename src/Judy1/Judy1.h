@@ -299,11 +299,8 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 //#define ALLOCSIZES { 3, 5, 7, 11, 15, 23, 32, 47, 64, TERMINATOR } // in words.
 //pre#define J_1_MAXB   (sizeof(Word_t) * 63)
 //pre#define ALLOCSIZES { 3, 5, 9, 15, 25, 41, 67, 109, 177, TERMINATOR }
-//#define cJ1_LEAF1_MAXWORDS  5           // Leaf1 max alloc size in words.
 
-#define cJ1_LEAF1_MAXWORDS  1           // no Leaf1
-//#define cJ1_LEAF1_MAXWORDS  2           // Leaf1 max alloc size in words.
-//#define cJ1_LEAF1_MAXWORDS  3           // Leaf1 max alloc size in words.
+#define cJ1_LEAF1_MAXWORDS  (33)          // ANY NUMBER < 2 MEANS NO LEAF1 !!!!
 
 // Under JRP (root-state leaves):
 //
@@ -326,14 +323,18 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 
 #ifndef cJ1_LEAF1_MAXPOP1
 //#define cJ1_LEAF1_MAXPOP1    (cJ1_LEAF1_MAXWORDS * cJU_BYTESPERWORD)
-#define cJ1_LEAF1_MAXPOP1    (1)        // no Leaf1
+//#define cJ1_LEAF1_MAXPOP1    (16)
+#define cJ1_LEAF1_MAXPOP1    (8)
 #endif  // cJ1_LEAF1_MAXPOP1
 
 // Fix this cJ1_LEAF2_MAXWORDS stuff!!!!!!!!!!!!!!!!!!!
 
-#define cJ1_LEAF2_MAXWORDS   (64) 
+//#define cJ1_LEAF2_MAXWORDS   (64) 
+#define cJ1_LEAF2_MAXWORDS   (65) 
 //#define cJ1_LEAF2_MAXPOP1    (108)      // Allocsize of 27
-#define cJ1_LEAF2_MAXPOP1    (64 * 4 - 1)      // Allocsize of 65
+//
+//#define cJ1_LEAF2_MAXPOP1    (64 * 4 - 1)      // Allocsize of 65
+#define cJ1_LEAF2_MAXPOP1    (255)      // Allocsize of 65
 //#define cJ1_LEAF2_MAXPOP1    (J_1_MAXB / 2)  Too big
 #define cJ1_LEAF3_MAXPOP1    (J_1_MAXB / 3)
 #define cJ1_LEAF4_MAXPOP1    (J_1_MAXB / 4)
@@ -467,44 +468,44 @@ extern const uint16_t j__1_LeafWPopToWords[cJ1_LEAFW_MAXPOP1 + 2];
 // FUNCTIONS TO ALLOCATE OBJECTS:
 
 Pj1pm_t j__udy1AllocJ1PM(void);                         // constant size.
-Pjlw_t  j__udy1AllocJLW( int );                         // no Pj1pm needed.
+Pjllw_t j__udy1AllocJLLW( int );                        // no Pj1pm needed.
 
-size_t  j__udy1AllocJBL(          Pj1pm_t);             // constant size.
-size_t  j__udy1AllocJBB(          Pj1pm_t);             // constant size.
-size_t  j__udy1AllocJBBJP(int,    Pj1pm_t);
-size_t  j__udy1AllocJBU(          Pj1pm_t);             // constant size.
+Word_t  j__udy1AllocJBL(          Pj1pm_t);             // constant size.
+Word_t  j__udy1AllocJBB(          Pj1pm_t);             // constant size.
+Word_t  j__udy1AllocJBBJP(int,    Pj1pm_t);
+Word_t  j__udy1AllocJBU(          Pj1pm_t);             // constant size.
 
-size_t  j__udy1AllocJLL1( int,    Pj1pm_t);
-size_t  j__udy1AllocJLL2( int,    Pj1pm_t);
-size_t  j__udy1AllocJLL3( int,    Pj1pm_t);
+Word_t  j__udy1AllocJLL1( int,    Pj1pm_t);
+Word_t  j__udy1AllocJLL2( int,    Pj1pm_t);
+Word_t  j__udy1AllocJLL3( int,    Pj1pm_t);
 
-size_t  j__udy1AllocJLL4( int,    Pj1pm_t);
-size_t  j__udy1AllocJLL5( int,    Pj1pm_t);
-size_t  j__udy1AllocJLL6( int,    Pj1pm_t);
-size_t  j__udy1AllocJLL7( int,    Pj1pm_t);
+Word_t  j__udy1AllocJLL4( int,    Pj1pm_t);
+Word_t  j__udy1AllocJLL5( int,    Pj1pm_t);
+Word_t  j__udy1AllocJLL6( int,    Pj1pm_t);
+Word_t  j__udy1AllocJLL7( int,    Pj1pm_t);
 
-size_t  j__udy1AllocJLB1(         Pj1pm_t);             // constant size.
+Word_t  j__udy1AllocJLB1(         Pj1pm_t);             // constant size.
 
 // FUNCTIONS TO FREE OBJECTS:
 
 void    j__udy1FreeJ1PM( Pj1pm_t,        Pj1pm_t);      // constant size.
 
-void    j__udy1FreeJBL(  size_t,         Pj1pm_t);      // constant size.
-void    j__udy1FreeJBB(  size_t,         Pj1pm_t);      // constant size.
-void    j__udy1FreeJBBJP(size_t, int,    Pj1pm_t);
-void    j__udy1FreeJBU(  size_t,         Pj1pm_t);      // constant size.
+void    j__udy1FreeJBL(  Word_t,         Pj1pm_t);      // constant size.
+void    j__udy1FreeJBB(  Word_t,         Pj1pm_t);      // constant size.
+void    j__udy1FreeJBBJP(Word_t, int,    Pj1pm_t);
+void    j__udy1FreeJBU(  Word_t,         Pj1pm_t);      // constant size.
 
-void    j__udy1FreeJLL1( size_t, int,    Pj1pm_t);
-void    j__udy1FreeJLL2( size_t, int,    Pj1pm_t);
-void    j__udy1FreeJLL3( size_t, int,    Pj1pm_t);
+void    j__udy1FreeJLL1( Word_t, int,    Pj1pm_t);
+void    j__udy1FreeJLL2( Word_t, int,    Pj1pm_t);
+void    j__udy1FreeJLL3( Word_t, int,    Pj1pm_t);
 
-void    j__udy1FreeJLL4( size_t, int,    Pj1pm_t);
-void    j__udy1FreeJLL5( size_t, int,    Pj1pm_t);
-void    j__udy1FreeJLL6( size_t, int,    Pj1pm_t);
-void    j__udy1FreeJLL7( size_t, int,    Pj1pm_t);
+void    j__udy1FreeJLL4( Word_t, int,    Pj1pm_t);
+void    j__udy1FreeJLL5( Word_t, int,    Pj1pm_t);
+void    j__udy1FreeJLL6( Word_t, int,    Pj1pm_t);
+void    j__udy1FreeJLL7( Word_t, int,    Pj1pm_t);
 
-void    j__udy1FreeJLW(  Pjlw_t, int,    Pj1pm_t);
-void    j__udy1FreeJLB1( size_t,         Pj1pm_t);      // constant size.
+void    j__udy1FreeJLLW(  Pjllw_t, int,  Pj1pm_t);
+void    j__udy1FreeJLB1( Word_t,         Pj1pm_t);      // constant size.
 void    j__udy1FreeSM(   Pjp_t,          Pj1pm_t);      // everything below Pjp.
 
 #endif // ! _JUDY1_INCLUDED

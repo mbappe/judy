@@ -194,16 +194,17 @@ JUDYLCODE(PPvoid_t PPvalue);	// from JudyLFirst() calls.
 
 	if (JU_LEAFW_POP0(PArray) < cJU_LEAFW_MAXPOP1) // must be a LEAFW
 	{
-	    Pjlw_t Pjlw	   = P_JLW(PArray);	// first word of leaf.
+	    Pjllw_t Pjllw  = P_JLLW(PArray);	// first word of leafW.
 	    Pjpm	   = & fakejpm;
 	    Pjp		   = & fakejp;
 
-//	    Pjp->Jp_Addr0   = (Word_t) Pjlw;
-            ju_SetBaLPntr(Pjp, (Word_t)Pjlw);
-//	    Pjp->jp_Type   = cJU_LEAFW;
+//	      Pjp->Jp_Addr0   = (Word_t) Pjllw;
+            ju_SetBaLPntr(Pjp, (Word_t)Pjllw);
+//	      Pjp->jp_Type   = cJU_LEAFW;
             ju_SetJpType(Pjp, cJU_LEAFW);
 
-	    Pjpm->jpm_Pop0 = Pjlw[0];		// from first word of leaf.
+//	      Pjpm->jpm_Pop0 = Pjllw[0];		// from first word of leaf.
+	    Pjpm->jpm_Pop0 = Pjllw->jlw_Population0;              // from first word of leaf.
 	    pop1	   = Pjpm->jpm_Pop0 + 1;
 	}
 	else
@@ -348,7 +349,7 @@ const	Pjpm_t	Pjpm)		// for returning error info.
 	Pjbu_t	Pjbu;
 	Pjll_t	Pjll;		// a Judy lower-level linear leaf.
 
-	size_t	digit;		// next digit to decode from Index.
+	Word_t	digit;		// next digit to decode from Index.
 	long	jpnum;		// JP number in a branch (base 0).
 	int	offset;		// index ordinal within a leaf, base 0.
 	Word_t	pop1;		// total population of an expanse.
@@ -403,11 +404,12 @@ const	Pjpm_t	Pjpm)		// for returning error info.
 
 	case cJU_LEAFW:
 	{
-//	      Pjlw_t Pjlw = P_JLW(Pjp->Jp_Addr0);		// first word of leaf.
-	    Pjlw_t Pjlw = P_JLW(ju_BaLPntr(Pjp));	// first word of leaf.
+//	      Pjllw_t Pjllw = P_JLLW(Pjp->Jp_Addr0);		// first word of leaf.
+	    Pjllw_t Pjllw = P_JLLW(ju_BaLPntr(Pjp));	// first word of leaf.
 
-	    assert((Pjpm->jpm_Pop0) + 1 == Pjlw[0] + 1);  // sent correctly.
-	    offset = j__udySearchLeafW(Pjlw + 1, Pjpm->jpm_Pop0 + 1, Index);
+	    assert((Pjpm->jpm_Pop0) + 1 == Pjllw->jlw_Population0 + 1);  // sent correctly.
+//	      offset = j__udySearchLeafW(Pjllw + 1, Pjpm->jpm_Pop0 + 1, Index);
+	    offset = j__udySearchLeafW(Pjllw->jlw_Leaf, Pjpm->jpm_Pop0 + 1, Index);
 	    return((Pjpm->jpm_Pop0) + 1 - offset);	// INCLUSIVE of Index.
 	}
 
@@ -481,7 +483,7 @@ BranchB:
 	    long   findsub;	// subexpanse containing   Index (digit).
 	    Word_t findbit;	// bit	      representing Index (digit).
 	    Word_t lowermask;	// bits for indexes at or below Index.
-	    size_t jpcount;	// JPs in a subexpanse.
+	    Word_t jpcount;	// JPs in a subexpanse.
 	    Word_t clbelow;	// cache lines below digits cache line.
 	    Word_t clabove;	// cache lines above digits cache line.
 
@@ -775,48 +777,48 @@ BranchU:
 	    assert(pop1above + pop1);
 	    return(pop1above + pop1);
 
-#ifdef JUDYL
+//////#ifdef JUDYL
 	case cJU_JPLEAF1:
 	    Pjll = P_JLL(ju_BaLPntr(Pjp));
 	    pop1 = ju_LeafPop0(Pjp) + 1;
-	    offset = j__udySearchLeaf1(Pjll, pop1, Index);
+	    offset = j__udySearchLeaf1(Pjll, pop1, Index, 1 * 8);
 	    return(pop1 - offset);
-#endif  // JUDYL
+//////#endif  // JUDYL
 
 	case cJU_JPLEAF2:
 	    Pjll = P_JLL(ju_BaLPntr(Pjp));
 	    pop1 = ju_LeafPop0(Pjp) + 1;
-	    offset = j__udySearchLeaf2(Pjll, pop1, Index);
+	    offset = j__udySearchLeaf2(Pjll, pop1, Index, 2 * 8);
 	    return(pop1 - offset);
 
 	case cJU_JPLEAF3:
 	    Pjll = P_JLL(ju_BaLPntr(Pjp));
 	    pop1 = ju_LeafPop0(Pjp) + 1;
-	    offset = j__udySearchLeaf3(Pjll, pop1, Index);
+	    offset = j__udySearchLeaf3(Pjll, pop1, Index, 3 * 8);
 	    return(pop1 - offset);
 
 	case cJU_JPLEAF4:
 	    Pjll = P_JLL(ju_BaLPntr(Pjp));
 	    pop1 = ju_LeafPop0(Pjp) + 1;
-	    offset = j__udySearchLeaf4(Pjll, pop1, Index);
+	    offset = j__udySearchLeaf4(Pjll, pop1, Index, 4 * 8);
 	    return(pop1 - offset);
 
 	case cJU_JPLEAF5:
 	    Pjll = P_JLL(ju_BaLPntr(Pjp));
 	    pop1 = ju_LeafPop0(Pjp) + 1;
-	    offset = j__udySearchLeaf5(Pjll, pop1, Index);
+	    offset = j__udySearchLeaf5(Pjll, pop1, Index, 5 * 8);
 	    return(pop1 - offset);
 
 	case cJU_JPLEAF6:
 	    Pjll = P_JLL(ju_BaLPntr(Pjp));
 	    pop1 = ju_LeafPop0(Pjp) + 1;
-	    offset = j__udySearchLeaf6(Pjll, pop1, Index);
+	    offset = j__udySearchLeaf6(Pjll, pop1, Index, 6 * 8);
 	    return(pop1 - offset);
 
 	case cJU_JPLEAF7:
 	    Pjll = P_JLL(ju_BaLPntr(Pjp));
 	    pop1 = ju_LeafPop0(Pjp) + 1;
-	    offset = j__udySearchLeaf7(Pjll, pop1, Index);
+	    offset = j__udySearchLeaf7(Pjll, pop1, Index, 7 * 8);
 	    return(pop1 - offset);
 
 
@@ -880,7 +882,7 @@ BranchU:
 #endif
 	    Pjll = P_JLL(ju_PImmed1(Pjp));
             pop1 = ju_Type(Pjp) - cJU_JPIMMED_1_02 + 2;
-	    offset = j__udySearchLeaf1(Pjll, pop1, Index);
+	    offset = j__udySearchLeaf1(Pjll, pop1, Index, 1 * 8);
 	    return(pop1 - offset);
 
 	case cJU_JPIMMED_2_02:
@@ -894,7 +896,7 @@ BranchU:
             pop1 = ju_Type(Pjp) - cJU_JPIMMED_2_02 + 2;
 	    Pjll = P_JLL(ju_PImmed2(Pjp));
 
-	    offset = j__udySearchLeaf2(Pjll, pop1, Index);
+	    offset = j__udySearchLeaf2(Pjll, pop1, Index, 2 * 8);
 	    return(pop1 - offset);
 
 // exclude JudyL, 32Bit
@@ -909,7 +911,7 @@ BranchU:
 // exclude JudyL, 32Bit
             pop1 = ju_Type(Pjp) - cJU_JPIMMED_3_02 + 2;
 	    Pjll = P_JLL(ju_PImmed1(Pjp));
-	    offset = j__udySearchLeaf3(Pjll, pop1, Index);
+	    offset = j__udySearchLeaf3(Pjll, pop1, Index, 3 * 8);
 	    return(pop1 - offset);
 
 #ifdef  JUDY1
@@ -917,26 +919,26 @@ BranchU:
 	case cJ1_JPIMMED_4_03:
             pop1 = ju_Type(Pjp) - cJ1_JPIMMED_4_02 + 2;
 	    Pjll = P_JLL(ju_PImmed4(Pjp));
-	    offset = j__udySearchLeaf4(Pjll, pop1, Index);
+	    offset = j__udySearchLeaf4(Pjll, pop1, Index, 4 * 8);
 	    return(pop1 - offset);
 
 	case cJ1_JPIMMED_5_02:
 	case cJ1_JPIMMED_5_03:
             pop1 = ju_Type(Pjp) - cJ1_JPIMMED_5_02 + 2;
 	    Pjll = P_JLL(ju_PImmed1(Pjp));
-	    offset = j__udySearchLeaf5(Pjll, pop1, Index);
+	    offset = j__udySearchLeaf5(Pjll, pop1, Index, 5 * 8);
 	    return(pop1 - offset);
 
 	case cJ1_JPIMMED_6_02:
             pop1 = 2;
 	    Pjll = P_JLL(ju_PImmed1(Pjp));
-	    offset = j__udySearchLeaf6(Pjll, pop1, Index);
+	    offset = j__udySearchLeaf6(Pjll, pop1, Index, 6 * 8);
 	    return(pop1 - offset);
 
 	case cJ1_JPIMMED_7_02:
             pop1 = 2;
 	    Pjll = P_JLL(ju_PImmed1(Pjp));
-	    offset = j__udySearchLeaf7(Pjll, pop1, Index);
+	    offset = j__udySearchLeaf7(Pjll, pop1, Index, 7 * 8);
 	    return(pop1 - offset);
 #endif  // JUDY1
 
@@ -976,9 +978,9 @@ const	Word_t	Pop1,		// Population of whole leaf.
 const	Word_t	Index)		// to which to count.
 {
 	Pjlb_t	Pjlb	= (Pjlb_t) Pjll;	// to proper type.
-	size_t	digit   = Index & cJU_MASKATSTATE(1);
-	size_t	findsub = digit / cJU_BITSPERSUBEXPL;
-	size_t	findbit = digit % cJU_BITSPERSUBEXPL;
+	Word_t	digit   = Index & cJU_MASKATSTATE(1);
+	Word_t	findsub = digit / cJU_BITSPERSUBEXPL;
+	Word_t	findbit = digit % cJU_BITSPERSUBEXPL;
 	int	count;		// in leaf through Index.
 	long	subexp;		// for stepping through subexpanses.
 
@@ -1090,9 +1092,9 @@ const	Pjp_t Pjp)		// JP to count.
 	case cJU_JPBRANCH_U7: 
             return(ju_BranchPop0(Pjp, 7) + 1);
 
-#ifdef  JUDYL
+//////#ifdef  JUDYL
 	case cJU_JPLEAF1:
-#endif
+//////#endif
 	case cJU_JPLEAF2:
 	case cJU_JPLEAF3:
 	case cJU_JPLEAF4:

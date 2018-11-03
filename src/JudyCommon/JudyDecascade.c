@@ -272,7 +272,7 @@ FUNCTION int j__udyBranchBToBranchL(
 // Finish up:  Calculate new JP type (same index size = level in new class),
 // and tie new BranchB into parent JP:
 
-printf("\n============================ calculate Type by cJU_JPBRANCH_L - cJU_JPBRANCH_B = %d\n", (int)(cJU_JPBRANCH_L - cJU_JPBRANCH_B));
+// printf("\n============================ calculate Type by cJU_JPBRANCH_L - cJU_JPBRANCH_B = %d\n", (int)(cJU_JPBRANCH_L - cJU_JPBRANCH_B));
 //        Pjp->jp_Type += cJU_JPBRANCH_L - cJU_JPBRANCH_B;
         ju_SetJpType(Pjp, ju_Type(Pjp) + cJU_JPBRANCH_L - cJU_JPBRANCH_B);
 //        Pjp->Jp_Addr0  = PjblRaw;
@@ -305,7 +305,7 @@ FUNCTION int j__udyBranchUToBranchB(
 #endif // notdef
 
 
-#ifdef  JUDYL
+////////#ifdef  JUDYL
 
 // ****************************************************************************
 // __ J U D Y   L E A F   B 1   T O   L E A F   1
@@ -391,7 +391,7 @@ FUNCTION int j__udyLeafB1ToLeaf1(
 
 } // j__udyLeafB1ToLeaf1()
 
-#endif // JUDYL
+////////#endif // JUDYL
 
 
 // ****************************************************************************
@@ -466,7 +466,7 @@ JUDYLCODE(Pjv_t	   Pjv1;)
 
 // JPLEAF1:
 
-#ifdef  JUDYL
+////////#ifdef  JUDYL
 	case cJU_JPLEAF1:
 	{
 //            uint8_t * PLeaf1 = (uint8_t *) P_JLL(Pjp->Jp_Addr0);
@@ -487,7 +487,7 @@ JUDYLCODE(Pjv_t	   Pjv1;)
 	    j__udyFreeJLL1(ju_BaLPntr(Pjp), Pop1, Pjpm);
 	    return(Pop1);
 	}
-#endif // JUDYL
+//////#endif // JUDYL
 
 
 // JPIMMED_1_01:
@@ -592,7 +592,7 @@ JUDYLCODE(Pjv_t	  Pjv2;)
 //            uint16_t * PLeaf2 = (uint16_t *) P_JLL(Pjp->Jp_Addr0);
 	    uint16_t * PLeaf2 = (uint16_t *) P_JLL(ju_BaLPntr(Pjp));
 
-	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1; assert(Pop1);
+	    Pop1 = ju_LeafPop0(Pjp) + 1; assert(Pop1);
 	    j__udyCopy2to3(PLeaf3, PLeaf2, Pop1, MSByte);
 #ifdef JUDYL
 	    Pjv2 = JL_LEAF2VALUEAREA(PLeaf2, Pop1);
@@ -696,7 +696,7 @@ JUDYLCODE(Pjv_t	   Pjv3;)
 //            uint8_t * PLeaf3 = (uint8_t *) P_JLL(Pjp->Jp_Addr0);
             uint8_t * PLeaf3 = (uint8_t *) P_JLL(ju_BaLPntr(Pjp));
 
-	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1; assert(Pop1);
+	    Pop1 = ju_LeafPop0(Pjp) + 1; assert(Pop1);
 	    j__udyCopy3to4(PLeaf4, (uint8_t *) PLeaf3, Pop1, MSByte);
 #ifdef JUDYL
 	    Pjv3 = JL_LEAF3VALUEAREA(PLeaf3, Pop1);
@@ -801,7 +801,7 @@ JUDYLCODE(Pjv_t	  Pjv4;)	// source object value area.
 //            uint32_t * PLeaf4 = (uint32_t *) P_JLL(Pjp->Jp_Addr0);
 	    uint32_t * PLeaf4 = (uint32_t *) P_JLL(ju_BaLPntr(Pjp));
 
-	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1; assert(Pop1);
+	    Pop1 = ju_LeafPop0(Pjp) + 1; assert(Pop1);
 	    j__udyCopy4to5(PLeaf5, PLeaf4, Pop1, MSByte);
 #ifdef JUDYL
 	    Pjv4 = JL_LEAF4VALUEAREA(PLeaf4, Pop1);
@@ -889,7 +889,7 @@ JUDYLCODE(Pjv_t	  Pjv5;)	// source object value area.
 //            uint8_t * PLeaf5 = (uint8_t *) P_JLL(Pjp->Jp_Addr0);
 	    uint8_t * PLeaf5 = (uint8_t *) P_JLL(ju_BaLPntr(Pjp));
 
-	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1; assert(Pop1);
+	    Pop1 = ju_LeafPop0(Pjp) + 1; assert(Pop1);
 	    j__udyCopy5to6(PLeaf6, PLeaf5, Pop1, MSByte);
 #ifdef JUDYL
 	    Pjv5 = JL_LEAF5VALUEAREA(PLeaf5, Pop1);
@@ -977,7 +977,7 @@ JUDYLCODE(Pjv_t	  Pjv6;)	// source object value area.
 //            uint8_t * PLeaf6 = (uint8_t *) P_JLL(Pjp->Jp_Addr0);
 	    uint8_t * PLeaf6 = (uint8_t *) P_JLL(ju_BaLPntr(Pjp));
 
-	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
+	    Pop1 = ju_LeafPop0(Pjp) + 1;
 	    j__udyCopy6to7(PLeaf7, PLeaf6, Pop1, MSByte);
 #ifdef JUDYL
 	    Pjv6 = JL_LEAF6VALUEAREA(PLeaf6, Pop1);
@@ -1043,9 +1043,9 @@ JUDYLCODE(Pjv_t	  Pjv6;)	// source object value area.
 // objects are below it and must be handled here.
 
 FUNCTION Word_t  j__udyLeaf7ToLeafW(
-	Pjlw_t	Pjlw,		// destination Index part of leaf.
+	PWord_t	PWordW,	        // destination Index part of leaf.
 #ifdef JUDYL
-	Pjv_t	PjvW,		// destination value part of leaf.
+	Pjv_t	Pjv,		// destination value part of leaf.
 #endif
 	Pjp_t	Pjp,		// 7-byte-index object from which to copy.
 	Word_t	MSByte,		// most-significant byte, prefix to each Index.
@@ -1065,11 +1065,11 @@ JUDYLCODE(Pjv_t	Pjv7;)		// source object value area.
 //            uint8_t * PLeaf7 = (uint8_t *) P_JLL(Pjp->Jp_Addr0);
 	    uint8_t * PLeaf7 = (uint8_t *) P_JLL(ju_BaLPntr(Pjp));
 
-	    Pop1 = JU_JPLEAF_POP0(Pjp) + 1;
-	    j__udyCopy7toW((PWord_t) Pjlw, PLeaf7, Pop1, MSByte);
+	    Pop1 = ju_LeafPop0(Pjp) + 1;
+	    j__udyCopy7toW(PWordW, PLeaf7, Pop1, MSByte);
 #ifdef JUDYL
 	    Pjv7 = JL_LEAF7VALUEAREA(PLeaf7, Pop1);
-	    JU_COPYMEM(PjvW, Pjv7, Pop1);
+	    JU_COPYMEM(Pjv, Pjv7, Pop1);
 #endif
 //            j__udyFreeJLL7(Pjp->Jp_Addr0, Pop1, Pjpm);
 	    j__udyFreeJLL7(ju_BaLPntr(Pjp), Pop1, Pjpm);
@@ -1084,9 +1084,10 @@ JUDYLCODE(Pjv_t	Pjv7;)		// source object value area.
 
 	case cJU_JPIMMED_7_01:
 	{
-	    Pjlw[0] = MSByte | JU_JPDCDPOP0(Pjp);		// see above.
-//            JUDYLCODE(PjvW[0] = Pjp->jp_PValue;)
-	    JUDYLCODE(PjvW[0] = ju_ImmVal_01(Pjp);)
+//	      Pjllw[0] = MSByte | JU_JPDCDPOP0(Pjp);		// see above.
+	    PWordW[0] = MSByte | JU_JPDCDPOP0(Pjp);		// see above.
+//            JUDYLCODE(Pjv[0] = Pjp->jp_PValue;)
+	    JUDYLCODE(Pjv[0] = ju_ImmVal_01(Pjp);)
 	    return(1);
 	}
 
@@ -1100,7 +1101,7 @@ JUDYLCODE(Pjv_t	Pjv7;)		// source object value area.
 //            uint8_t * PLeaf7 = (uint8_t *) (Pjp->jp_1Index1);
 	    uint8_t * PLeaf7 = ju_1Immed1(Pjp);
 
-	    j__udyCopy7toW((PWord_t) Pjlw, PLeaf7, /* Pop1 = */ 2, MSByte);
+	    j__udyCopy7toW(PWordW, PLeaf7, /* Pop1 = */ 2, MSByte);
 	    return(2);
 	}
 #endif

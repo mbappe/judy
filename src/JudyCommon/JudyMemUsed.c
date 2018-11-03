@@ -47,8 +47,8 @@ FUNCTION Word_t JudyLMemUsed
 
 	if (JU_LEAFW_POP0(PArray) < cJU_LEAFW_MAXPOP1) // must be a LEAFW
 	{
-	    Pjlw_t Pjlw = P_JLW(PArray);		// first word of leaf.
-	    Words = JU_LEAFWPOPTOWORDS(Pjlw[0] + 1);	// based on pop1.
+	    Pjllw_t Pjllw = P_JLLW(PArray);		// first word of leaf.
+	    Words = JU_LEAFWPOPTOWORDS(Pjllw->jlw_Population0 + 1);	// based on pop1.
 	}
 	else
 	{

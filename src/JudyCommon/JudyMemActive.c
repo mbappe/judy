@@ -52,8 +52,8 @@ FUNCTION Word_t JudyLMemActive
 
 	if (JU_LEAFW_POP0(PArray) < cJU_LEAFW_MAXPOP1) // must be a LEAFW
         {
-	    Pjlw_t Pjlw = P_JLW(PArray);	// first word of leaf.
-            Word_t Words = Pjlw[0] + 1;		// population.
+	    Pjllw_t Pjllw = P_JLLW(PArray);	// first word of leaf.
+            Word_t Words = Pjllw->jlw_Population0 + 1;		// population.
 #ifdef JUDY1
             return((Words + 1) * sizeof(Word_t));
 #else
@@ -154,9 +154,9 @@ FUNCTION static Word_t j__udyGetMemActive(
 
 // -- Cases below here terminate and do not recurse. --
 
-#ifdef  JUDYL
+////////#ifdef  JUDYL
         case cJU_JPLEAF1: IdxSz = 1; goto LeafWords;
-#endif  //  JUDYL
+//////#endif  //  JUDYL
 	case cJU_JPLEAF2: IdxSz = 2; goto LeafWords;
 	case cJU_JPLEAF3: IdxSz = 3; goto LeafWords;
 	case cJU_JPLEAF4: IdxSz = 4; goto LeafWords;
@@ -166,17 +166,17 @@ FUNCTION static Word_t j__udyGetMemActive(
 LeafWords:
 
 #ifdef JUDY1
-            return(IdxSz * (JU_JPLEAF_POP0(Pjp) + 1));
+            return(IdxSz * (ju_LeafPop0(Pjp) + 1));
 #else
             return((IdxSz + sizeof(Word_t))
-		 * (JU_JPLEAF_POP0(Pjp) + 1));
+		 * (ju_LeafPop0(Pjp) + 1));
 #endif
 	case cJU_JPLEAF_B1:
 	{
 #ifdef JUDY1
             return(sizeof(jlb_t));
 #else
-            Bytes = (JU_JPLEAF_POP0(Pjp) + 1) * sizeof(Word_t);
+            Bytes = (ju_LeafPop0(Pjp) + 1) * sizeof(Word_t);
 
 	    return(Bytes + sizeof(jlb_t));
 #endif

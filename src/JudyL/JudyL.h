@@ -271,15 +271,17 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 //#define cJL_LEAF1_MAXWORDS       (27)   // max Pop Leaf1 == 24
 
 #ifndef cJL_LEAF1_MAXPOP1
-#define cJL_LEAF1_MAXPOP1  ((27 * cJU_BYTESPERWORD)/(1 + cJU_BYTESPERWORD))
+#define cJL_LEAF1_MAXPOP1       (128)
 #endif // cJL_LEAF1_MAXPOP
 
-//#define cJL_LEAF2_MAXPOP1       (L2LEN)    // or 7,12,20,32
 //#define cJL_LEAF2_MAXWORDS      (J_L_MAXB / cJU_BYTESPERWORD)
-#define cJL_LEAF2_MAXWORDS      ((uint16_t)(320))
+//#define cJL_LEAF2_MAXWORDS      ((uint16_t)(320))
+#define cJL_LEAF2_MAXWORDS      (320)
+//#define cJL_LEAF2_MAXPOP1       ((cJL_LEAF2_MAXWORDS * 8) / (2 + cJU_BYTESPERWORD))
+#define cJL_LEAF2_MAXPOP1       (255)
 //#define cJL_LEAF2_MAXPOP1       (J_L_MAXB / (2 + cJU_BYTESPERWORD))
 //#define cJL_LEAF2_MAXPOP1       ((uint16_t)((320 * 8) / (2 + cJU_BYTESPERWORD)))
-#define cJL_LEAF2_MAXPOP1       255
+//#define cJL_LEAF2_MAXPOP1       (J_L_MAXB / (2 + cJU_BYTESPERWORD))
 #define cJL_LEAF3_MAXPOP1       (J_L_MAXB / (3 + cJU_BYTESPERWORD))
 #define cJL_LEAF4_MAXPOP1       (J_L_MAXB / (4 + cJU_BYTESPERWORD))
 #define cJL_LEAF5_MAXPOP1       (J_L_MAXB / (5 + cJU_BYTESPERWORD))
@@ -299,14 +301,14 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // already lists all the immediates in order by state and size, calculate these
 // values from it to avoid redundancy.
 
-#define cJL_IMMED1_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 1)        // 3 [7].
-#define cJL_IMMED2_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 2)        // 1 [3].
-#define cJL_IMMED3_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 3)        // 1 [2].
+#define cJL_IMMED1_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 1)        // 7
+#define cJL_IMMED2_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 2)        // 3
+#define cJL_IMMED3_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 3)        // 2
 
-#define cJL_IMMED4_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 4)        //   [1].
-#define cJL_IMMED5_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 5)        //   [1].
-#define cJL_IMMED6_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 6)        //   [1].
-#define cJL_IMMED7_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 7)        //   [1].
+#define cJL_IMMED4_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 4)        // 1
+#define cJL_IMMED5_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 5)        // 1
+#define cJL_IMMED6_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 6)        // 1
+#define cJL_IMMED7_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 7)        // 1
 
 
 // ****************************************************************************
@@ -496,46 +498,46 @@ static int JL_LEAFVGROWINPLACE(Word_t Pop1)
 
 PjLpm_t j__udyLAllocJLPM(void);                         // constant size.
 
-size_t  j__udyLAllocJBL(          PjLpm_t);             // constant size.
-size_t  j__udyLAllocJBB(          PjLpm_t);             // constant size.
-size_t  j__udyLAllocJBBJP(int,    PjLpm_t);
-size_t  j__udyLAllocJBU(          PjLpm_t);             // constant size.
+Word_t  j__udyLAllocJBL(          PjLpm_t);             // constant size.
+Word_t  j__udyLAllocJBB(          PjLpm_t);             // constant size.
+Word_t  j__udyLAllocJBBJP(int,    PjLpm_t);
+Word_t  j__udyLAllocJBU(          PjLpm_t);             // constant size.
 
-size_t  j__udyLAllocJLL1( int,    PjLpm_t);
-size_t  j__udyLAllocJLL2( int,    PjLpm_t);
-size_t  j__udyLAllocJLL3( int,    PjLpm_t);
+Word_t  j__udyLAllocJLL1( int,    PjLpm_t);
+Word_t  j__udyLAllocJLL2( int,    PjLpm_t);
+Word_t  j__udyLAllocJLL3( int,    PjLpm_t);
 
-size_t  j__udyLAllocJLL4( int,    PjLpm_t);
-size_t  j__udyLAllocJLL5( int,    PjLpm_t);
-size_t  j__udyLAllocJLL6( int,    PjLpm_t);
-size_t  j__udyLAllocJLL7( int,    PjLpm_t);
+Word_t  j__udyLAllocJLL4( int,    PjLpm_t);
+Word_t  j__udyLAllocJLL5( int,    PjLpm_t);
+Word_t  j__udyLAllocJLL6( int,    PjLpm_t);
+Word_t  j__udyLAllocJLL7( int,    PjLpm_t);
 
-Pjlw_t  j__udyLAllocJLW(  int            );             // no PjLpm_t needed.
-size_t  j__udyLAllocJLB1(         PjLpm_t);             // constant size.
-size_t  j__udyLAllocJV(   int,    PjLpm_t);
+Pjllw_t j__udyLAllocJLLW(  int           );             // no PjLpm_t needed.
+Word_t  j__udyLAllocJLB1(         PjLpm_t);             // constant size.
+Word_t  j__udyLAllocJV(   int,    PjLpm_t);
 
 
 // FUNCTIONS TO FREE OBJECTS:
 
 void    j__udyLFreeJLPM( PjLpm_t,        PjLpm_t);      // constant size.
 
-void    j__udyLFreeJBL(  size_t,         PjLpm_t);      // constant size.
-void    j__udyLFreeJBB(  size_t,         PjLpm_t);      // constant size.
-void    j__udyLFreeJBBJP(size_t, int,    PjLpm_t);
-void    j__udyLFreeJBU(  size_t,         PjLpm_t);      // constant size.
+void    j__udyLFreeJBL(  Word_t,         PjLpm_t);      // constant size.
+void    j__udyLFreeJBB(  Word_t,         PjLpm_t);      // constant size.
+void    j__udyLFreeJBBJP(Word_t, int,    PjLpm_t);
+void    j__udyLFreeJBU(  Word_t,         PjLpm_t);      // constant size.
 
-void    j__udyLFreeJLL1( size_t, int,    PjLpm_t);
-void    j__udyLFreeJLL2( size_t, int,    PjLpm_t);
-void    j__udyLFreeJLL3( size_t, int,    PjLpm_t);
+void    j__udyLFreeJLL1( Word_t, int,    PjLpm_t);
+void    j__udyLFreeJLL2( Word_t, int,    PjLpm_t);
+void    j__udyLFreeJLL3( Word_t, int,    PjLpm_t);
 
-void    j__udyLFreeJLL4( size_t, int,    PjLpm_t);
-void    j__udyLFreeJLL5( size_t, int,    PjLpm_t);
-void    j__udyLFreeJLL6( size_t, int,    PjLpm_t);
-void    j__udyLFreeJLL7( size_t, int,    PjLpm_t);
+void    j__udyLFreeJLL4( Word_t, int,    PjLpm_t);
+void    j__udyLFreeJLL5( Word_t, int,    PjLpm_t);
+void    j__udyLFreeJLL6( Word_t, int,    PjLpm_t);
+void    j__udyLFreeJLL7( Word_t, int,    PjLpm_t);
 
-void    j__udyLFreeJLW(  Pjlw_t, int,    PjLpm_t);
-void    j__udyLFreeJLB1( size_t,         PjLpm_t);      // constant size.
-void    j__udyLFreeJV(   size_t, int,    PjLpm_t);
+void    j__udyLFreeJLLW(  Pjllw_t, int,  PjLpm_t);
+void    j__udyLFreeJLB1( Word_t,         PjLpm_t);      // constant size.
+void    j__udyLFreeJV(   Word_t, int,    PjLpm_t);
 void    j__udyLFreeSM(   Pjp_t,          PjLpm_t);      // everything below Pjp.
 
 #endif // ! _JUDYL_INCLUDED

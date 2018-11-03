@@ -72,15 +72,15 @@ FUNCTION Word_t JudyLFreeArray
 
 // 	Empty array:
 
-	if (P_JLW(*PPArray) == (Pjlw_t) NULL) return(0);
+	if (P_JLLW(*PPArray) == (Pjllw_t) NULL) return(0);
 
 // PROCESS TOP LEVEL "JRP" BRANCHES AND LEAF:
 
 	if (JU_LEAFW_POP0(*PPArray) < cJU_LEAFW_MAXPOP1) // must be a LEAFW
 	{
-	    Pjlw_t Pjlw = P_JLW(*PPArray);	// first word of leaf.
+	    Pjllw_t Pjllw = P_JLLW(*PPArray);	// first word of leaf.
 
-	    j__udyFreeJLW(Pjlw, Pjlw[0] + 1, &jpm);
+	    j__udyFreeJLLW(Pjllw, Pjllw->jlw_Population0 + 1, &jpm);
 	    *PPArray = (Pvoid_t) NULL;		// make an empty array.
 	    return (-(jpm.jpm_TotalMemWords * cJU_BYTESPERWORD));  // see above.
 	}
@@ -250,13 +250,13 @@ FUNCTION void j__udyFreeSM(
 //
 // Note:  cJU_JPLEAF1 is a special case, see discussion in ../Judy1/Judy1.h
 
-#ifdef  JUDYL
+/////////#ifdef  JUDYL
 	case cJU_JPLEAF1:
 	    Pop1 = ju_LeafPop0(Pjp) + 1;
 //	    j__udyFreeJLL1(Pjp->Jp_Addr0, Pop1, Pjpm);
 	    j__udyFreeJLL1(ju_BaLPntr(Pjp), Pop1, Pjpm);
 	    break;
-#endif
+/////////#endif
 
 	case cJU_JPLEAF2:
 	    Pop1 = ju_LeafPop0(Pjp) + 1;

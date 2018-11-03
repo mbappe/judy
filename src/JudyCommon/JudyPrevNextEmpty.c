@@ -636,7 +636,7 @@ FUNCTION int JudyLNextEmpty
 	    Word_t IndexLSB;		/* least bytes only */		\
 	    Word_t IndexFound;		/* in leaf	    */		\
 									\
-	    if ((offset = Search(Pjll, (Pop0) + 1, Index)) < 0)		\
+	    if ((offset = Search(Pjll, (Pop0) + 1, Index, cDigits * 8)) < 0)		\
             { *PIndex = Index; return(1); }	/* Index is empty */	\
 									\
 	    IndexLSB = JU_LEASTBYTES(Index, cDigits);			\
@@ -696,7 +696,7 @@ FUNCTION int JudyLNextEmpty
 	    Word_t IndexFound;		/* in leaf	    */		\
 	    int	   offsetmax;		/* in bytes	    */		\
 									\
-	    if ((offset = Search(Pjll, (Pop0) + 1, Index)) < 0)		\
+	    if ((offset = Search(Pjll, (Pop0) + 1, Index, cDigits * 8)) < 0)		\
             { *PIndex = Index; return(1); }	/* Index is empty */	\
 									\
 	    IndexLSB  = JU_LEASTBYTES(Index, cDigits);			\
@@ -795,22 +795,22 @@ SMGetRestart:		// return here with revised Index.
 
 	if (JU_LEAFW_POP0(PArray) < cJU_LEAFW_MAXPOP1) // must be a LEAFW
 	{
-	    Pjlw_t Pjlw = P_JLW(PArray);	// first word of leaf.
-	    pop0 = Pjlw[0];
+	    Pjllw_t Pjllw = P_JLLW(PArray);	// first word of leaf.
+	    pop0 = Pjllw->jlw_Population0;
 
 #ifdef	JUDY1
 	    if (pop0 == 0)			// special case.
 	    {
 #ifdef JUDYPREV
-		if ((Index != Pjlw[1]) || (Index-- != 0)) { *PIndex = Index; return(1); }
+		if ((Index != Pjllw->jlw_Leaf[0]) || (Index-- != 0)) { *PIndex = Index; return(1); }
 #else
-		if ((Index != Pjlw[1]) || (++Index != 0)) { *PIndex = Index; return(1); }
+		if ((Index != Pjllw->jlw_Leaf[0]) || (++Index != 0)) { *PIndex = Index; return(1); }
 #endif
 		return(0);		// no previous/next empty index.
 	    }
 #endif // JUDY1
 
-	    j__udySearchLeafEmptyL(Pjlw + 1, pop0);
+	    j__udySearchLeafEmptyL(Pjllw->jlw_Leaf, pop0);
 
 //  No return -- thanks ALAN
 
@@ -1186,16 +1186,16 @@ SMBranchU:
 // hidden within j__udySearchLeaf*Empty*().  In case of secondary leaf dead
 // end, restart at the top of the tree.
 //
-// Note:  Pword is the name known to GET*; think of it as Pjlw.
+// Note:  Pword is the name known to GET*; think of it as Pjllw.
 
 #define	SMLEAFL(cDigits,Func)                           \
-	Pword = (PWord_t) P_JLW(ju_BaLPntr(Pjp));       \
+	Pword = (PWord_t) P_JLLW(ju_BaLPntr(Pjp));      \
 	pop0  = ju_LeafPop0(Pjp);                       \
 	Func(Pword, pop0)
 
-#ifdef  JUDYL
+///////#ifdef  JUDYL
 	case cJU_JPLEAF1:  CHECKDCD(1); SMLEAFL(1, j__udySearchLeafEmpty1);
-#endif  
+///////#endif  
 	case cJU_JPLEAF2:  CHECKDCD(2); SMLEAFL(2, j__udySearchLeafEmpty2);
 	case cJU_JPLEAF3:  CHECKDCD(3); SMLEAFL(3, j__udySearchLeafEmpty3);
 

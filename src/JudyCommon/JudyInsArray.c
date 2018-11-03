@@ -61,9 +61,9 @@ static uint16_t immed_maxpop1[] = {
 
 static uint16_t leaf_maxpop1[] = {
     0,
-#ifdef  JUDYL
+///////#ifdef  JUDYL
     cJU_LEAF1_MAXPOP1,
-#endif
+///////#endif
     cJU_LEAF2_MAXPOP1,
     cJU_LEAF3_MAXPOP1,
     cJU_LEAF4_MAXPOP1,
@@ -166,7 +166,7 @@ FUNCTION int JudyLInsArray
 #endif
         (
         PPvoid_t  PPArray,      // in which to insert, initially empty.
-        size_t    Count,        // number of indexes (and values) to insert.
+        Word_t    Count,        // number of indexes (and values) to insert.
 const   Word_t *  const PIndex, // list of indexes to insert.
 #ifdef JUDYL
 const   Word_t *  const PValue, // list of corresponding values.
@@ -174,8 +174,9 @@ const   Word_t *  const PValue, // list of corresponding values.
         PJError_t PJError       // optional, for returning error info.
         )
 {
-        Pjlw_t    Pjlw;         // new root-level leaf.
-        Pjlw_t    Pjlwindex;    // first index in root-level leaf.
+        Pjllw_t    Pjllw;         // new root-level leaf.
+//        Pjllw_t    Pjllwindex;    // first index in root-level leaf.
+        PWord_t   PLeafW;    // first index in root-level leaf.
         int       offset;       // in PIndex.
 
 
@@ -263,17 +264,17 @@ const   Word_t *  const PValue, // list of corresponding values.
         if (Count == 0) return(1);              // *PPArray remains null.
 
         {
-            Pjlw      = j__udyAllocJLW(Count + 1);
-                        JU_CHECKALLOC(Pjlw_t, Pjlw, JERRI);
-            *PPArray  = (Pvoid_t) Pjlw;
-            Pjlw[0]   = Count - 1;              // set pop0.
-            Pjlwindex = Pjlw + 1;
+            Pjllw      = j__udyAllocJLLW(Count + 1);
+            JU_CHECKALLOC(Pjllw_t, Pjllw, JERRI);
+            *PPArray  = (Pvoid_t) Pjllw;
+            Pjllw->jlw_Population0   = Count - 1;              // set pop0.
+            PLeafW = Pjllw->jlw_Leaf;
         }
 
 // Copy whole-word indexes (and values) to the root-level leaf:
 
-          JU_COPYMEM(Pjlwindex,                      PIndex, Count);
-JUDYLCODE(JU_COPYMEM(JL_LEAFWVALUEAREA(Pjlw, Count), PValue, Count));
+          JU_COPYMEM(PLeafW,                      PIndex, Count);
+JUDYLCODE(JU_COPYMEM(JL_LEAFWVALUEAREA(Pjllw, Count), PValue, Count));
 
         return(1);
 
@@ -331,7 +332,7 @@ FUNCTION static bool_t j__udyInsArray(
         uint8_t JPtype;                 // current JP type.
         uint8_t JPtype_null;            // precomputed value for new branch.
         jp_t    JPnull;                 // precomputed for speed.
-        size_t  PjbuRaw;                // constructed BranchU.
+        Word_t  PjbuRaw;                // constructed BranchU.
         Pjbu_t  Pjbu;
         int     digit;                  // in BranchU.
         Word_t  digitmask;              // for a digit in a BranchU.
@@ -342,7 +343,7 @@ FUNCTION static bool_t j__udyInsArray(
         bool_t  retval;                 // to return from this func.
 
 #ifdef  JUDYL
-        size_t PjvRaw;                  // destination value area.
+        Word_t PjvRaw;                  // destination value area.
         Pjv_t  Pjv;
 #endif  // JUDYL
 
@@ -619,7 +620,7 @@ FUNCTION static bool_t j__udyInsArray(
 
         for (levelsub = Level; levelsub >= 1; --levelsub)
         {
-            size_t PjllRaw;
+            Word_t PjllRaw;
             Pjll_t Pjll;
 
 // Check if pop1 is too large to fit in a leaf at levelsub; if so, try the next
@@ -650,11 +651,11 @@ FUNCTION static bool_t j__udyInsArray(
 
             switch (levelsub)
             {
-#ifdef  JUDYL
+///////#ifdef  JUDYL
             case 1: MAKELEAF_EVEN(1, cJU_JPLEAF1, j__udyAllocJLL1,
                                   JL_LEAF1VALUEAREA, uint8_t);
                     break;
-#endif  // JUDYL
+///////#endif  // JUDYL
 
             case 2: MAKELEAF_EVEN(2, cJU_JPLEAF2, j__udyAllocJLL2,
                                   JL_LEAF2VALUEAREA, uint16_t);
@@ -689,7 +690,7 @@ FUNCTION static bool_t j__udyInsArray(
 
         if ((Level == 1) || SAMESUBEXP(1))      // same until last digit.
         {
-            size_t PjlbRaw;                     // for bitmap leaf.
+            Word_t PjlbRaw;                     // for bitmap leaf.
             Pjlb_t Pjlb;
 
             assert(pop1 <= cJU_JPFULLPOPU1_POP0 + 1);
@@ -1031,7 +1032,7 @@ ClearBranch:
 
         if (numJPs <= cJU_BRANCHLMAXJPS)        // JPs fit in a BranchL.
         {
-            size_t PjblRaw = 0;                 // new BranchL; init for cc.
+            Word_t PjblRaw = 0;                 // new BranchL; init for cc.
             Pjbl_t Pjbl;
 
             if ((*PPop1 > JU_BRANCHL_MAX_POP)   // pop too high.
@@ -1079,7 +1080,7 @@ ClearBranch:
 
         else
         {
-            size_t PjbbRaw = 0;     // new BranchB; init for cc.
+            Word_t PjbbRaw = 0;     // new BranchB; init for cc.
             Pjbb_t Pjbb;
             Pjp_t  Pjp2;                        // in BranchU.
 
@@ -1104,7 +1105,7 @@ ClearBranch:
 
             for (offset = 0; offset < (int)cJU_NUMSUBEXPB; ++offset)
             {
-                size_t PjparrayRaw;
+                Word_t PjparrayRaw;
                 Pjp_t  Pjparray;
 
                 if (! (numJPs = j__udyCountBitsB(JU_JBB_BITMAP(Pjbb, offset))))

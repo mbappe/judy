@@ -51,7 +51,7 @@ FUNCTION int j__udyCreateBranchL(
 	Word_t  ExpCnt,		// Number of above JPs and Expanses
 	Pjpm_t	Pjpm)
 {
-	size_t	PjblRaw;	// pointer to linear branch.
+	Word_t	PjblRaw;	// pointer to linear branch.
 	Pjbl_t	Pjbl;
 
 	assert(ExpCnt <= cJU_BRANCHLMAXJPS);
@@ -113,7 +113,7 @@ FUNCTION int j__udyCreateBranchB(
 	Word_t  ExpCnt,		// Number of above JPs and Expanses
 	Pjpm_t	Pjpm)
 {
-	size_t	PjbbRaw;	// pointer to bitmap branch.
+	Word_t	PjbbRaw;	// pointer to bitmap branch.
 	Pjbb_t	Pjbb;
 	Word_t  ii, jj;		// Temps
 	uint8_t CurrSubExp;	// Current sub expanse for BM
@@ -161,7 +161,7 @@ FUNCTION int j__udyCreateBranchB(
 		{
 //			Get number of JPs in this sub expanse
 			Word_t NumJP = ii - jj;
-			size_t PjpRaw;
+			Word_t PjpRaw;
 			Pjp_t  Pjp;
 
 			PjpRaw = j__udyAllocJBBJP(NumJP, Pjpm);
@@ -224,9 +224,9 @@ FUNCTION int j__udyCreateBranchU(
 	Pjpm_t	  Pjpm)
 {
 	jp_t	  JPNull;
-        size_t    PjbuRaw;
+        Word_t    PjbuRaw;
         Pjbu_t    Pjbu;
-	size_t	  PjbbRaw;
+	Word_t	  PjbbRaw;
 	Pjbb_t	  Pjbb;
 	Word_t	  ii, jj;
 	BITMAPB_t BitMap;

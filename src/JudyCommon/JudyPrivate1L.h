@@ -100,7 +100,7 @@
 //#define	cJU_JPBRANCH_U7N	cJ1_JPBRANCH_U7N
 #define	cJU_JPBRANCH_U		cJ1_JPBRANCH_U
 //#define	cJU_JPBRANCH_UN	        cJ1_JPBRANCH_UN
-///////////////#define	cJU_JPLEAF1		cJ1_JPLEAF1
+#define	cJU_JPLEAF1		cJ1_JPLEAF1
 //#define	cJU_JPLEAF1N	        cJ1_JPLEAF1N
 #define	cJU_JPLEAF2		cJ1_JPLEAF2
 //#define	cJU_JPLEAF2N    	cJ1_JPLEAF2N
@@ -302,6 +302,7 @@
 #define	j__udyInsertBranch	j__udy1InsertBranch
 
 #define	j__udyBranchBToBranchL	j__udy1BranchBToBranchL
+#define	j__udyLeafB1ToLeaf1	j__udy1LeafB1ToLeaf1
 #define	j__udyLeaf1ToLeaf2	j__udy1Leaf1ToLeaf2
 #define	j__udyLeaf2ToLeaf3	j__udy1Leaf2ToLeaf3
 #define	j__udyLeaf3ToLeaf4	j__udy1Leaf3ToLeaf4
@@ -330,7 +331,7 @@
 #define	j__udyAllocJLL5		j__udy1AllocJLL5
 #define	j__udyAllocJLL6		j__udy1AllocJLL6
 #define	j__udyAllocJLL7		j__udy1AllocJLL7
-#define	j__udyAllocJLW		j__udy1AllocJLW
+#define	j__udyAllocJLLW		j__udy1AllocJLLW
 #define	j__udyAllocJLB1		j__udy1AllocJLB1
 #define	j__udyFreeJPM		j__udy1FreeJ1PM
 #define	j__udyFreeJBL		j__udy1FreeJBL
@@ -344,7 +345,7 @@
 #define	j__udyFreeJLL5		j__udy1FreeJLL5
 #define	j__udyFreeJLL6		j__udy1FreeJLL6
 #define	j__udyFreeJLL7		j__udy1FreeJLL7
-#define	j__udyFreeJLW		j__udy1FreeJLW
+#define	j__udyFreeJLLW		j__udy1FreeJLLW
 #define	j__udyFreeJLB1		j__udy1FreeJLB1
 #define	j__udyFreeSM		j__udy1FreeSM
 
@@ -431,7 +432,7 @@
 #define	j__udyAllocJLL5		j__udyLAllocJLL5
 #define	j__udyAllocJLL6		j__udyLAllocJLL6
 #define	j__udyAllocJLL7		j__udyLAllocJLL7
-#define	j__udyAllocJLW		j__udyLAllocJLW
+#define	j__udyAllocJLLW		j__udyLAllocJLLW
 #define	j__udyAllocJLB1		j__udyLAllocJLB1
 //				j__udyLAllocJV
 #define	j__udyFreeJPM		j__udyLFreeJLPM
@@ -446,7 +447,7 @@
 #define	j__udyFreeJLL5		j__udyLFreeJLL5
 #define	j__udyFreeJLL6		j__udyLFreeJLL6
 #define	j__udyFreeJLL7		j__udyLFreeJLL7
-#define	j__udyFreeJLW		j__udyLFreeJLW
+#define	j__udyFreeJLLW		j__udyLFreeJLLW
 #define	j__udyFreeJLB1		j__udyLFreeJLB1
 #define	j__udyFreeSM		j__udyLFreeSM
 //				j__udyLFreeJV
