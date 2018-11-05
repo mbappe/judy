@@ -626,7 +626,8 @@ Word_t    StartSequent = 1;
 //
 //Word_t    Key = 0xc1fc;
 
-Word_t PartitionDeltaFlag = 1;
+//Word_t PartitionDeltaFlag = 1;
+Word_t PartitionDeltaFlag = 0;
 
 #ifndef CALC_NEXT_KEY
 Word_t TrimKeyArrayFlag = 1;

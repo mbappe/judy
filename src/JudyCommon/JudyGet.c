@@ -369,7 +369,7 @@ JudyBranchB:
             Pjll = P_JLL(ju_BaLPntr(Pjp));
             Pop1   = ju_LeafPop0(Pjp) + 1;
 
-            SEARCHPOPULATION(Pop1);
+//            SEARCHPOPULATION(Pop1);
 
 #ifdef  JUDYL
             Pjv  = JL_LEAF1VALUEAREA(Pjll, Pop1);
@@ -595,6 +595,8 @@ Leaf7Exit:
 //            if (JU_TRIMTODCDSIZE(Index ^ ju_DcdPop0(Pjp)) != 0) 
 //            if (ju_DcdPop0(Pjp) != JU_TRIMTODCDSIZE(Index)) 
 
+//            SEARCHPOPULATION(1);      // Too much overhead
+//            DIRECTHITS;               // Too much overhead
 //          This version does not have an conditional branch
             if ((ju_DcdPop0(Pjp) ^ Index) << 8) 
                 break;
@@ -627,7 +629,6 @@ Leaf7Exit:
         case cJU_JPIMMED_1_02:
         {
             Pop1 = ju_Type(Pjp) - cJU_JPIMMED_1_02 + 2;
-            SEARCHPOPULATION(Pop1);
 
             Pjll = (Pjll_t)ju_PImmed1(Pjp);     // Get ^ to Keys
             posidx = j__udySearchLeaf1(Pjll, Pop1, Index, 1 * 8);

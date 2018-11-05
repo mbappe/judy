@@ -321,9 +321,10 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 
 
 
+// ANY NUMBER < 16 MEANS NO LEAF1 !!!!
 #ifndef cJ1_LEAF1_MAXPOP1
 //#define cJ1_LEAF1_MAXPOP1    (cJ1_LEAF1_MAXWORDS * cJU_BYTESPERWORD)
-//#define cJ1_LEAF1_MAXPOP1    (16)
+//#define cJ1_LEAF1_MAXPOP1    (32)
 #define cJ1_LEAF1_MAXPOP1    (8)
 #endif  // cJ1_LEAF1_MAXPOP1
 
@@ -334,8 +335,13 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 //#define cJ1_LEAF2_MAXPOP1    (108)      // Allocsize of 27
 //
 //#define cJ1_LEAF2_MAXPOP1    (64 * 4 - 1)      // Allocsize of 65
+
+#ifndef cJ1_LEAF2_MAXPOP1
+//#define cJ1_LEAF2_MAXPOP1    (256)      // Allocsize of 65
 #define cJ1_LEAF2_MAXPOP1    (255)      // Allocsize of 65
 //#define cJ1_LEAF2_MAXPOP1    (J_1_MAXB / 2)  Too big
+#endif  // cJ1_LEAF2_MAXPOP1
+
 #define cJ1_LEAF3_MAXPOP1    (J_1_MAXB / 3)
 #define cJ1_LEAF4_MAXPOP1    (J_1_MAXB / 4)
 #define cJ1_LEAF5_MAXPOP1    (J_1_MAXB / 5)
@@ -355,23 +361,23 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // Sizes (== sizes of remaining undecoded Index bits).
 
 #ifdef oldwaywithJPequal16bytes
-#define cJ1_IMMED1_MAXPOP1  ((sizeof(jp_t) - 1) / 1)    // 7 [15].
-#define cJ1_IMMED2_MAXPOP1  ((sizeof(jp_t) - 1) / 2)    // 3  [7].
-#define cJ1_IMMED3_MAXPOP1  ((sizeof(jp_t) - 1) / 3)    // 2  [5].
+#define cJ1_IMMED1_MAXPOP1  ((sizeof(jp_t) - 1) / 1)    // 15.
+#define cJ1_IMMED2_MAXPOP1  ((sizeof(jp_t) - 1) / 2)    // 7.
+#define cJ1_IMMED3_MAXPOP1  ((sizeof(jp_t) - 1) / 3)    // 5.
 
-#define cJ1_IMMED4_MAXPOP1  ((sizeof(jp_t) - 1) / 4)    //    [3].
-#define cJ1_IMMED5_MAXPOP1  ((sizeof(jp_t) - 1) / 5)    //    [3].
-#define cJ1_IMMED6_MAXPOP1  ((sizeof(jp_t) - 1) / 6)    //    [2].
-#define cJ1_IMMED7_MAXPOP1  ((sizeof(jp_t) - 1) / 7)    //    [2].
+#define cJ1_IMMED4_MAXPOP1  ((sizeof(jp_t) - 1) / 4)    // 3.
+#define cJ1_IMMED5_MAXPOP1  ((sizeof(jp_t) - 1) / 5)    // 3.
+#define cJ1_IMMED6_MAXPOP1  ((sizeof(jp_t) - 1) / 6)    // 2.
+#define cJ1_IMMED7_MAXPOP1  ((sizeof(jp_t) - 1) / 7)    // 2.
 
 #else   // oldwaywithJPequal16bytes
-#define cJ1_IMMED1_MAXPOP1  15  // 7 [15].
-#define cJ1_IMMED2_MAXPOP1   7  // 3  [7].
-#define cJ1_IMMED3_MAXPOP1   5  // 2  [5].
-#define cJ1_IMMED4_MAXPOP1   3 //    [3].
-#define cJ1_IMMED5_MAXPOP1   3 //    [3].
-#define cJ1_IMMED6_MAXPOP1   2 //    [2].
-#define cJ1_IMMED7_MAXPOP1   2 //    [2].
+#define cJ1_IMMED1_MAXPOP1  15 // 15    - minLeaf = 16 Keys
+#define cJ1_IMMED2_MAXPOP1   7 // 7     - minLeaf =  8 Keys
+#define cJ1_IMMED3_MAXPOP1   5 // 5     - minLeaf =  6 Keys
+#define cJ1_IMMED4_MAXPOP1   3 // 3     - minLeaf =  4 Keys
+#define cJ1_IMMED5_MAXPOP1   3 // 3     - minLeaf =  4 Keys
+#define cJ1_IMMED6_MAXPOP1   2 // 2     - minLeaf =  3 Keys
+#define cJ1_IMMED7_MAXPOP1   2 // 2     - minLeaf =  3 Keys
 #endif // oldwaywithJPequal16bytes
 
 
