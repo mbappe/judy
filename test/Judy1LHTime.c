@@ -24,6 +24,13 @@
 #include <immintrin.h>
 #endif // USE_PDEP_INTRINSIC
 
+// Judy1LHTime.c doesn't include bdefines.h so we want to be sure to
+// define DEBUG if DEBUG_ALL is defined.
+#ifdef DEBUG_ALL
+#undef DEBUG
+#define DEBUG
+#endif // DEBUG_ALL
+
 // Turn off assert(0) by default
 #ifndef DEBUG
 #define NDEBUG 1
@@ -626,8 +633,7 @@ Word_t    StartSequent = 1;
 //
 //Word_t    Key = 0xc1fc;
 
-//Word_t PartitionDeltaFlag = 1;
-Word_t PartitionDeltaFlag = 0;
+Word_t PartitionDeltaFlag = 1; // use -Z to disable small key array
 
 #ifndef CALC_NEXT_KEY
 Word_t TrimKeyArrayFlag = 1;
@@ -804,9 +810,10 @@ GetNextKey(PNewSeed_t PNewSeed)
 }
 
 static void
-PrintHeader(void)
+PrintHeader(const char *strFirstCol)
 {
-    printf("# Population  DeltaIns GetMeasmts");
+  //printf("# %s ............   ......  GetMeasmts", strFirstCol);
+    printf("# %s . GetMeasmts", strFirstCol);
 
     if (tFlag)
         printf(" MeasOv");
@@ -1002,6 +1009,7 @@ Usage(int argc, char **argv)
     printf("-M     Print on stderr Judy_mmap() and Judy_unmap() calls to kernel\n");
     printf("-h     Put 'Key holes' in the Insert path 1 and L options only\n");
     printf("-W #   Specify the 'CPU Warmup' time in milliseconds [%" PRIuPTR"]\n", Warmup);
+    printf("-Z     Do not split insert delta into parts (yields large key array size)\n");
 
     printf("\n");
 
@@ -1133,6 +1141,53 @@ Word_t    DirectHits;               // Number of direct hits -- no search
 Word_t    SearchPopulation;         // Population of Searched object
 Word_t    GetCalls;                 // number of search calls
 
+
+#ifndef OLD_DS1_GROUPS
+
+#define EXP(x) ((Word_t)1<<(x))
+
+static Word_t Log16(Word_t n) { return LOG(n) / 4; }
+static Word_t Pow16(Word_t n) { return EXP(4 * n); }
+
+static Word_t
+FinalGrpSz(Word_t nElms)
+{
+    // 17     groups of 16^0 up to 16^0 + 16^0.
+    // 16^2-1 groups of 16^0 up to 16^2 + 16^1.
+    // 16^2-1 groups of 16^1 up to 16^3 + 16^2.
+    // 16^2-1 groups of 16^2 up to 16^4 + 16^3.
+    // 16^2-1 groups of 16^3 up to 16^5 + 16^4.
+    return Pow16(Log16(nElms - Pow16(Log16(nElms) - 1) - 1) - 1);
+}
+
+// Number of groups before the first group with the final group size.
+static Word_t
+GrpsBeforeFinalGrpSz(Word_t wFinalGrpSz)
+{
+    return 17 + 255 * Log16(wFinalGrpSz);
+}
+
+// Number of elements through last group before the final group size.
+static Word_t
+ElmsBeforeFinalGrpSz(Word_t wFinalGrpSz)
+{
+    return 272 * wFinalGrpSz / 16;
+}
+
+#define DIV_UP(dividend, divisor)  (((dividend) + (divisor) - 1) / (divisor))
+
+// Number of groups.
+static Word_t
+//Groups(Word_t wGrpsBeforeFinalGrpSz, Word_t wElmsBeforeFinalGrpSz)
+NumGrps(Word_t wElms)
+{
+    Word_t wFinalGrpSz = FinalGrpSz(wElms);
+    return DIV_UP(wElms - ElmsBeforeFinalGrpSz(wFinalGrpSz), wFinalGrpSz)
+        + GrpsBeforeFinalGrpSz(wFinalGrpSz);
+}
+
+#endif // OLD_DS1_GROUPS
+
 int
 main(int argc, char *argv[])
 {
@@ -1177,7 +1232,6 @@ main(int argc, char *argv[])
     int       Col;
     int       c;
     Word_t    ii;                       // temp iterator
-    double       LastPPop;
     extern char *optarg;
 
 #ifdef LATER
@@ -1247,19 +1301,22 @@ main(int argc, char *argv[])
 #ifdef FANCY_b_flag
                                               ":"
 #endif // FANCY_b_flag
-                                              "N:dDcC1LHvIltmpxVfgiyRMKkhE",
+                                              "N:dDcC1LHvIltmpxVfgiyRMKkhEZ",
                 // Optstring sorted:
                 // "1a:B:bCcDdEF:fG:gHhIiKklLMmN:n:O:o:P:pRS:s:T:tVvW:XXxy",
                 // Used option characters sorted and with spaces for unused option characters:
-                // " 1         a:B:bCcDdE F:fG:gHhIi  KkLlMmN:n:O:o:P:p  R S:s:T:t:  VvW: Xx y  "
+                // " 1         a:B:bCcDdE F:fG:gHhIi  KkLlMmN:n:O:o:P:p  R S:s:T:t:  VvW: Xx yZ "
                 // Unused option characters sorted and with spaces for used option characters:
-                // "0 23456789A          e          Jj                 Qq r        Uu    w  Y Zz"
+                // "0 23456789A          e          Jj                 Qq r        Uu    w  Y  z"
                    longopts, NULL);
         if (c == -1)
             break;
 
         switch (c)
         {
+        case 'Z':
+            PartitionDeltaFlag = 0;
+            break;
         case 'E':
             bSplayKeyBitsFlag = 1;
             if (optarg != NULL) {
@@ -1900,20 +1957,7 @@ main(int argc, char *argv[])
 
     printf("# TITLE %s -W%" PRIuPTR"", argv[0], Warmup);
 
-    if (Bpercent == 100.0)
-    {
-         printf(" -B%" PRIuPTR, BValue);
-
-    } else
-    {
-         printf(" -N0x%" PRIxPTR, MaxNumb);
-    }
-
-    if (bSplayKeyBitsFlag) {
-        printf(" --splay-key-bits=0x%" PRIxPTR, wSplayMask);
-    }
-
-    printf(" -G%" PRIuPTR" -", GValue);
+    printf(" -");
 
     if (bFlag)
         printf("b");
@@ -1929,8 +1973,6 @@ main(int argc, char *argv[])
         printf("H");
     if (tFlag)
         printf("t");
-    if (DFlag)
-        printf("D");
     if (dFlag)
         printf("d");
     if (cFlag)
@@ -1959,6 +2001,25 @@ main(int argc, char *argv[])
         printf("M");
     if (KFlag)
         printf("K");
+    if (PartitionDeltaFlag)
+        printf("Z");
+
+    if (Bpercent == 100.0) {
+         printf(" -B%" PRIuPTR, BValue);
+    } else {
+         printf(" -N0x%" PRIxPTR, MaxNumb);
+    }
+
+    if (DFlag || SValue) {
+        printf(" -");
+        if (DFlag) printf("D");
+        if (SValue)
+            printf("S%" PRIuPTR" -s%" PRIuPTR"", SValue, StartSequent);
+    }
+
+    if (bSplayKeyBitsFlag) {
+        printf(" --splay-key-bits=0x%" PRIxPTR, wSplayMask);
+    }
 
 //  print more options - default, adjusted or otherwise
     printf(" -n%" PRIuPTR" -T%" PRIuPTR" -P%" PRIuPTR" -X%d", nElms, TValues, PtsPdec, XScale);
@@ -1972,14 +2033,14 @@ main(int argc, char *argv[])
             printf("%d", bParm[ii]);
         }
     }
-    if (SValue)
-        printf(" -S%" PRIuPTR" -s%" PRIuPTR"", SValue, StartSequent);
 
     if (FValue)
         printf(" -F %s", keyfile);
 
     if (Offset)
         printf(" -o 0x%" PRIxPTR"", Offset);
+
+    printf(" -G%" PRIuPTR, GValue);
 
     printf("\n");
 
@@ -2073,115 +2134,87 @@ main(int argc, char *argv[])
     {
         // First splay is at insert of n[8]+1'th key,
         // where n[8] is max length of list 8.
-        // Would we want n[8] groups of 1?
+        // There will be one splay.
         // Second splay is at insert of 256 * n[7]+1'th key,
         // where n[7] is max length of list 7.
-        // There will be 256 splays.
-        // It doesn't matter what n[8] is.
-        // Would we want n[7] groups of 256?
+        // It doesn't matter what n[8] is - there will be 256 splays.
         // Third wave of splays starts at insert of 64K * n[6]+1'th key,
         // where n[6] is max length of list 6.
-        // It doesn't matter what n[8], or n[7] is.
-        // There will be 64K splays.
-        // Would we want n[6] groups of 64K?
-        // Third wave of splays starts at insert of 16M * n[5]+1'th key,
-        // It doesn't matter what n[6], or n[7], or n[8] is.
-        // There will be 16M splays.
-        // Would we want n[5] groups of 16M?
-
-        // What if we do 255 groups of each power of 256?
-        // Would that handle all list sizes up to 256?
-        // We'd see the first splay and the subsequent inserts would
-        // put one key in each list.
-        // The 2nd splay would occur at the insert after some multiple of 256.
-        // The wave of splays would end when all 64K links have one key.
-        // 5*255+1=1276 groups gets us to 2^40 keys.
-        // 2*255+1 for 64K, 3*255+1 for 16M, 4*255+1 for 4G, 5*255+1 for 1T.
-        // What if we do 240 groups of each power of 16?
-        // 8*240+16=1936 groups gets us to 2^40 keys.
-        // 2*240+16 for 4K, 3*240+16 for 64K, 4*240+16 for 1M,
-        // 5*240+16 for 16M, 6*240+16 for 256M, 7*240+16 for 4G,
-        // 8*240*16 for 64G, 9*240+16 for 1T.
-
-        // Group sizes:
-        // 1 for up to 256: Groups = nElms
-        // 16 for up to 4K: Groups = 256 + (nElms + 15 - 256) / 16
-        // 256 for up to 64K: Groups = 256 + 240 + (nElms + 255 - 4K) / 256
-        // 4K for up to 1M: Groups = 256 + 2 * 240 + (nElms + 4095 - 64K) / 4K
-// Shoot. Above is off-by-one. Should be:
-        // 1 for keys [1,255]
-        // 16 for keys [256-271],[272,287],...[4090,4095]
-
+        // It doesn't matter what n[8] or n[7] are - there will be 64K splays.
+        // Fourth wave of splays starts at insert of 16M * n[5]+1'th key,
+        // where n[5] is max length of list 5.
+        // It doesn't matter what n[8] or n[7] or n[6] are - there will be
+        // 16M splays.
         if (nElms <= 256) {
             Groups = nElms;
         } else {
-// For 17, 256, 257, 258
-// Old code:
-            // The following works for nElms >= 17.
-            //Word_t logGrpSz = LOG(nElms-1)/4; // log base 16
-// Fixed code:
-            Word_t logGrpSz = LOG(nElms)/4; // log base 16
-// 1, 1, 2, 2
+#ifdef OLD_DS1_GROUPS
+            // Old logGrpSz (switch to bigger groups after 16^n):
+            Word_t logGrpSz = LOG(nElms-1)/4; // log base 16
+            // Newer logGrpSz (switch to bigger groups sooner - after 16^n - 16^(n-1)):
+            //Word_t logGrpSz = LOG(nElms)/4; // log base 16
+
             Word_t grpSz = (Word_t)1 << (logGrpSz-1) * 4; // final group size
-// 1, 1, 16, 16
-            //printf("# Final group size, grpSz, is %zd.\n", grpSz);
-// Old code:
-            //Groups = 256 + (logGrpSz-2)*240 + (nElms - grpSz*15 - 1) / grpSz;
-// 256-240+1=17, 256-240+240=256, 256+(257-16*15-1)/16=257, 256+(258-16*15-1)/16=257
-// Wanted: 17, 256, 256, 256,
-// Fixed code:
-            Groups = 255 + (logGrpSz-2)*240 + (nElms - grpSz*15) / grpSz;
-// wrong, 255-240+1=256, 255+(257-240)/16=256, 255+(258-240)/16=256
-// For 255:
-// logGrpSz: 1
-// grpSz: 1
-// Groups: 255-240+(255-15)=255
-// For 256:
-// logGrpSz: 1 // Is this what we want?
-// logGrpSz: 2 // Better.
-// For 271:
-// logGrpSz: 2
-// grpSz: 16
-// Groups: 255+(271-240)/16=256
-// For 272:
-// logGrpSz: 2
-// grpSz: 16
-// Groups: 255+(272-240)/16=257
-// For 4095:
-// logGrpSz: 2
-// grpSz: 16
-// For 4096:
-// logGrpSz: 3 // doesn't seem right
-// grpSz: 256
-// Groups: 255+240+(4096-3840)/256=496
+
+            // Old Groups (switch to bigger groups after 16^n):
+            Groups = 256 + (logGrpSz-2)*240 + (nElms - grpSz*15 - 1) / grpSz;
+            // Newer Groups (switch to bigger groups sooner -- after 16^n - 16^(n-1)):
+            //Groups = 255 + (logGrpSz-2)*240 + (nElms - grpSz*15) / grpSz;
+#else // OLD_DS1_GROUPS
+            // Newest Groups (switch to bigger groups latest - after 16^n + 16^(n-1)):
+            Groups = NumGrps(nElms);
+#endif // OLD_DS1_GROUPS
         }
 
         printf("#  Groups    0x%04zx == 0d%05zd\n", Groups, Groups);
 
-// Get memory for saving measurements
+        // Get memory for saving measurements
         Pms = (Pms_t) malloc(Groups * sizeof(ms_t));
 
-// Calculate number of Keys for each measurement point
-// Old code:
-        //for (grp = 0; (grp < 256) && (grp < Groups); grp++)
-// Fixed code:
-        for (grp = 0; (grp < 255) && (grp < Groups); grp++)
+        // Calculate number of Keys for each measurement point
+#ifdef OLD_DS1_GROUPS
+        // Old code (switch to bigger groups after 2^n):
+        for (grp = 0; (grp < 256) && (grp < Groups); grp++)
+        // New code (switch to bigger groups after 2^n-2^(n-4)):
+        //for (grp = 0; (grp < 255) && (grp < Groups); grp++)
         {
             Pms[grp].ms_delta = 1;
         }
         Word_t wPrev;
         for (Word_t wNumb = grp; grp < Groups; ++grp) {
             wPrev = wNumb;
-// Old code:
-            //wNumb += Pms[grp].ms_delta = (Word_t)1 << (LOG(wNumb)/4 - 1) * 4;
-// Fixed code:
-            wNumb += Pms[grp].ms_delta = (Word_t)1 << (LOG(wNumb+1)/4 - 1) * 4;
+            // Old code (switch to bigger groups after 2^n):
+            wNumb += Pms[grp].ms_delta = (Word_t)1 << (LOG(wNumb)/4 - 1) * 4;
+            // New code (switch to bigger groups after 2^n -2^(n-4)):
+            //wNumb += Pms[grp].ms_delta = (Word_t)1 << (LOG(wNumb+1)/4 - 1) * 4;
             if ((wNumb > nElms) || (wNumb < wPrev)) {
                 wNumb = nElms;
                 Pms[grp].ms_delta = wNumb - wPrev;
             }
             //printf("# wNumb 0x%04zx %zd\n", wNumb, wNumb);
         }
+#else // OLD_DS1_GROUPS
+        Word_t grp;
+        for (grp = 0; (grp < 272) && (grp < Groups); grp++) {
+            Pms[grp].ms_delta = 1;
+        }
+        Word_t wPrev;
+        for (Word_t wNumb = grp; grp < Groups; ++grp) {
+            wPrev = wNumb;
+            Word_t wDelta = FinalGrpSz(wNumb + 1);
+            //printf("# wDelta 0x%04zx %zd\n", wDelta, wDelta);
+            wNumb += wDelta;
+            if ((wNumb > nElms) || (wNumb < wPrev)) {
+                wNumb = nElms;
+                Pms[grp].ms_delta = nElms - wPrev;
+                assert(grp == Groups - 1);
+            } else {
+                Pms[grp].ms_delta = wNumb - wPrev;
+                assert(grp <= Groups - 1);
+            }
+            //printf("# wNumb 0x%04zx %zd\n", wNumb, wNumb);
+        }
+#endif // OLD_DS1_GROUPS
 #ifndef CALC_NEXT_KEY
     #define MAX(_a, _b)  ((_a) > (_b) ? (_a) : (_b))
         if (nElms - Pms[grp-1].ms_delta > TValues) {
@@ -2354,7 +2387,7 @@ main(int argc, char *argv[])
 
     Col = 1;
     printf("# COLHEAD %2d Population of the Array\n", Col++);
-    printf("# COLHEAD %2d Delta Inserts to the Array\n", Col++);
+    printf("# COLHEAD %2d Place holder\n", Col++);
     printf("# COLHEAD %2d Number of Measurments done by JudyLGet/Judy1Test\n", Col++);
 
     if (tFlag)
@@ -2672,7 +2705,7 @@ main(int argc, char *argv[])
 // PRINT COLUMNS HEADER TO PERFORMANCE TIMERS
 // ============================================================
 
-    PrintHeader();
+    PrintHeader("Population");
 
 // ============================================================
 // BEGIN TESTS AT EACH GROUP SIZE
@@ -2680,7 +2713,6 @@ main(int argc, char *argv[])
 
     InsertSeed = StartSeed;             // for JudyIns
     BitmapSeed = StartSeed;             // for bitmaps
-    LastPPop = 100.0;
 
 #ifndef CALC_NEXT_KEY
     int wLogPop1 = wLogPop1; // wLogPop1 is used only for -DS1.
@@ -2694,6 +2726,12 @@ main(int argc, char *argv[])
         double    DeltaGen1;
         double    DeltaGenL;
         double    DeltaGenHS;
+        double DeltanSec1Sum = 0.0;
+        double DeltanSecLSum = 0.0;
+        double DeltanSecHSSum = 0.0;
+        double DeltaMalFre1Sum = 0.0;
+        double DeltaMalFreLSum = 0.0;
+        double DeltaMalFreHSSum = 0.0;
 
         Delta = Pms[grp].ms_delta;
 
@@ -2701,6 +2739,7 @@ main(int argc, char *argv[])
             break;
 
         wFinalPop1 += Delta;
+        int bFirstPart = 1;
 
         if (PartitionDeltaFlag) {
             if (Delta > TValues) {
@@ -2803,15 +2842,19 @@ nextPart:
         }
 #endif // CALC_NEXT_KEY
 
-        if ((double)Pop1 >= LastPPop)
-        {
-            LastPPop *= 10.0;
-            PrintHeader();
-        }
+#ifdef DO_TIT
+        int bDoTit = 1;
+#else // DO_TIT
+        int bDoTit = (Meas <= 256); // bDoTit threshold is 256
+#endif // DO_TIT
 
-        if (Pop1 == wFinalPop1) {
-            printf("%11" PRIuPTR" %10" PRIuPTR" %10" PRIuPTR,
-                   Pop1, Delta, Meas);
+        if (bFirstPart) {
+            // first part of Delta
+            // (Pop1 - Delta == wFinalPop1 - Pms[grp].ms_delta)
+            if (grp && (grp % 16 == 0)) {
+                PrintHeader("9876543210"); // print column headers periodically
+            }
+            printf("%12" PRIuPTR" .%11" PRIuPTR, wFinalPop1, Meas);
         }
 
 #ifdef NEVER
@@ -2856,36 +2899,51 @@ nextPart:
 //          Test J1S, JLI, JLHS
 //          Exit with InsertSeed/Key ready for next batch
 //
-            Tit = 0;                    // exclude Judy
-            DummySeed = InsertSeed;
-            WaitForContextSwitch(Delta);
-            TestJudyIns(&J1, &JL, &JH, &DummySeed, Delta);
-            DeltaGen1 = DeltanSec1;     // save measurement overhead
-            DeltaGenL = DeltanSecL;
-            DeltaGenHS = DeltanSecHS;
+            if (bFirstPart || (Pop1 == wFinalPop1)) {
+                // first or last part of delta
+                // last part might be a different size than the rest
+                if (bDoTit) {
+                    Tit = 0;                    // exclude Judy
+                    DummySeed = InsertSeed;
+                    WaitForContextSwitch(Delta);
+                    TestJudyIns(&J1, &JL, &JH, &DummySeed, Delta);
+                    DeltaGen1 = DeltanSec1 / Delta;     // save measurement overhead
+                    DeltaGenL = DeltanSecL / Delta;
+                    DeltaGenHS = DeltanSecHS / Delta;
+                } else {
+                    DeltaGen1 = DeltaGenL = DeltaGenHS = 0.1;
+                } // end of bDoTit
+            }
 
             Tit = 1;                    // include Judy
             WaitForContextSwitch(Delta);
             TestJudyIns(&J1, &JL, &JH, &InsertSeed, Delta);
+            DeltanSec1Sum += DeltanSec1;
+            DeltanSecLSum += DeltanSecL;
+            DeltanSecHSSum += DeltanSecHS;
+            DeltaMalFre1Sum += DeltaMalFre1;
+            DeltaMalFreLSum += DeltaMalFreL;
+            DeltaMalFreHSSum += DeltaMalFreHS;
 
             if (Pop1 == wFinalPop1) {
+                // last part of Delta
                 if (J1Flag)
                 {
                     if (tFlag)
                         PRINT6_1f(DeltaGen1);
-                    DONTPRINTLESSTHANZERO(DeltanSec1, DeltaGen1);
+                    DONTPRINTLESSTHANZERO(DeltanSec1Sum / Pms[grp].ms_delta, DeltaGen1);
                 }
                 if (JLFlag)
                 {
                     if (tFlag)
                         PRINT6_1f(DeltaGenL);
-                    DONTPRINTLESSTHANZERO(DeltanSecL, DeltaGenL);
+                    DONTPRINTLESSTHANZERO(DeltanSecLSum / Pms[grp].ms_delta, DeltaGenL);
                 }
                 if (JHFlag)
                 {
                     if (tFlag)
                         PRINT6_1f(DeltaGenHS);
-                    DONTPRINTLESSTHANZERO(DeltanSecHS, DeltaGenHS);
+                    DONTPRINTLESSTHANZERO(DeltanSecHSSum / Pms[grp].ms_delta, DeltaGenHS);
                 }
                 if (fFlag)
                     fflush(NULL);
@@ -2901,156 +2959,156 @@ nextPart:
 
 //          Test J1T, JLG, JHSG
 
-#ifdef DO_TIT
-            BeginSeed = StartSeed;      // reset at beginning
-            WaitForContextSwitch(Meas);
-            if (bLfsrOnly) {
-                if (KFlag) {
-                    if (hFlag) {
-                        TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 0,
-                                    /* KFlag */ 1, /* hFlag */ 1,
-                                    /* bLfsrOnly */ 1);
+            if (Pop1 == wFinalPop1) {
+                if (bDoTit) {
+                    BeginSeed = StartSeed;      // reset at beginning
+                    WaitForContextSwitch(Meas);
+                    if (bLfsrOnly) {
+                        if (KFlag) {
+                            if (hFlag) {
+                                TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 0,
+                                            /* KFlag */ 1, /* hFlag */ 1,
+                                            /* bLfsrOnly */ 1);
+                            } else {
+                                TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 0,
+                                            /* KFlag */ 1, /* hFlag */ 0,
+                                            /* bLfsrOnly */ 1);
+                            }
+                        } else {
+                            if (hFlag) {
+                                TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 0,
+                                            /* KFlag */ 0, /* hFlag */ 1,
+                                            /* bLfsrOnly */ 1);
+                            } else {
+                                TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 0,
+                                            /* KFlag */ 0, /* hFlag */ 0,
+                                            /* bLfsrOnly */ 1);
+                            }
+                        }
                     } else {
-                        TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 0,
-                                    /* KFlag */ 1, /* hFlag */ 0,
-                                    /* bLfsrOnly */ 1);
-                    }
-                } else {
-                    if (hFlag) {
-                        TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 0,
-                                    /* KFlag */ 0, /* hFlag */ 1,
-                                    /* bLfsrOnly */ 1);
-                    } else {
-                        TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 0,
-                                    /* KFlag */ 0, /* hFlag */ 0,
-                                    /* bLfsrOnly */ 1);
-                    }
-                }
-            } else {
-                if (KFlag) {
-                    if (hFlag) {
-                        TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 0,
-                                    /* KFlag */ 1, /* hFlag */ 1,
-                                    /* bLfsrOnly */ 0);
-                    } else {
+                        if (KFlag) {
+                            if (hFlag) {
+                                TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 0,
+                                            /* KFlag */ 1, /* hFlag */ 1,
+                                            /* bLfsrOnly */ 0);
+                            } else {
 #ifdef LFSR_GET_FOR_DS1
 #ifndef CALC_NEXT_KEY
-                        if (bLfsrForGetOnly && (wFeedBTap != (Word_t)-1)) {
-                            BeginSeed = (NewSeed_t)StartSequent;
-                            TestJudyGet(J1, JL, JH, &BeginSeed, Meas,
-                                        /* Tit */ 0, /* KFlag */ 1,
-                                        /* hFlag */ 0,
-                                        /* bLfsrOnly */ BValue - wLogPop1 + 1);
-                        } else
+                                if (bLfsrForGetOnly && (wFeedBTap != (Word_t)-1)) {
+                                    BeginSeed = (NewSeed_t)StartSequent;
+                                    TestJudyGet(J1, JL, JH, &BeginSeed, Meas,
+                                                /* Tit */ 0, /* KFlag */ 1,
+                                                /* hFlag */ 0,
+                                                /* bLfsrOnly */ BValue - wLogPop1 + 1);
+                                } else
 #endif // CALC_NEXT_KEY
 #endif // LFSR_GET_FOR_DS1
-                        TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 0,
-                                    /* KFlag */ 1, /* hFlag */ 0,
-                                    /* bLfsrOnly */ 0);
-                    }
-                } else {
-                    if (hFlag) {
-                        TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 0,
-                                    /* KFlag */ 0, /* hFlag */ 1,
-                                    /* bLfsrOnly */ 0);
-                    } else {
+                                TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 0,
+                                            /* KFlag */ 1, /* hFlag */ 0,
+                                            /* bLfsrOnly */ 0);
+                            }
+                        } else {
+                            if (hFlag) {
+                                TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 0,
+                                            /* KFlag */ 0, /* hFlag */ 1,
+                                            /* bLfsrOnly */ 0);
+                            } else {
 #ifdef LFSR_GET_FOR_DS1
 #ifndef CALC_NEXT_KEY
-                        if (bLfsrForGetOnly && (wFeedBTap != (Word_t)-1)) {
-                            BeginSeed = (NewSeed_t)StartSequent;
-                            TestJudyGet(J1, JL, JH, &BeginSeed, Meas,
-                                        /* Tit */ 0, /* KFlag */ 0,
-                                        /* hFlag */ 0,
-                                        /* bLfsrOnly */ BValue - wLogPop1 + 1);
-                        } else
+                                if (bLfsrForGetOnly && (wFeedBTap != (Word_t)-1)) {
+                                    BeginSeed = (NewSeed_t)StartSequent;
+                                    TestJudyGet(J1, JL, JH, &BeginSeed, Meas,
+                                                /* Tit */ 0, /* KFlag */ 0,
+                                                /* hFlag */ 0,
+                                                /* bLfsrOnly */ BValue - wLogPop1 + 1);
+                                } else
 #endif // CALC_NEXT_KEY
 #endif // LFSR_GET_FOR_DS1
-                        TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 0,
-                                    /* KFlag */ 0, /* hFlag */ 0,
-                                    /* bLfsrOnly */ 0);
+                                TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 0,
+                                            /* KFlag */ 0, /* hFlag */ 0,
+                                            /* bLfsrOnly */ 0);
+                            }
+                        }
                     }
-                }
-            }
-            DeltaGen1 = DeltanSec1;     // save measurement overhead
-            DeltaGenL = DeltanSecL;
-            DeltaGenHS = DeltanSecHS;
-#else // DO_TIT
-            DeltaGen1 = DeltaGenL = DeltaGenHS = 0.1;
-#endif // DO_TIT
+                    DeltaGen1 = DeltanSec1;     // save measurement overhead
+                    DeltaGenL = DeltanSecL;
+                    DeltaGenHS = DeltanSecHS;
+                } else {
+                    DeltaGen1 = DeltaGenL = DeltaGenHS = 0.1;
+                } // end of bDoTit
 
-            BeginSeed = StartSeed;      // reset at beginning
-            WaitForContextSwitch(Meas);
-            if (bLfsrOnly) {
-                if (KFlag) {
-                    if (hFlag) {
-                        TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 1,
-                                    /* KFlag */ 1, /* hFlag */ 1,
-                                    /* bLfsrOnly */ 1);
+                BeginSeed = StartSeed;      // reset at beginning
+                WaitForContextSwitch(Meas);
+                if (bLfsrOnly) {
+                    if (KFlag) {
+                        if (hFlag) {
+                            TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 1,
+                                        /* KFlag */ 1, /* hFlag */ 1,
+                                        /* bLfsrOnly */ 1);
+                        } else {
+                            TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 1,
+                                        /* KFlag */ 1, /* hFlag */ 0,
+                                        /* bLfsrOnly */ 1);
+                        }
                     } else {
-                        TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 1,
-                                    /* KFlag */ 1, /* hFlag */ 0,
-                                    /* bLfsrOnly */ 1);
+                        if (hFlag) {
+                            TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 1,
+                                        /* KFlag */ 0, /* hFlag */ 1,
+                                        /* bLfsrOnly */ 1);
+                        } else {
+                            TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 1,
+                                        /* KFlag */ 0, /* hFlag */ 0,
+                                        /* bLfsrOnly */ 1);
+                        }
                     }
                 } else {
-                    if (hFlag) {
-                        TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 1,
-                                    /* KFlag */ 0, /* hFlag */ 1,
-                                    /* bLfsrOnly */ 1);
-                    } else {
-                        TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 1,
-                                    /* KFlag */ 0, /* hFlag */ 0,
-                                    /* bLfsrOnly */ 1);
-                    }
-                }
-            } else {
-                if (KFlag) {
-                    if (hFlag) {
-                        TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 1,
-                                    /* KFlag */ 1, /* hFlag */ 1,
-                                    /* bLfsrOnly */ 0);
-                    } else {
+                    if (KFlag) {
+                        if (hFlag) {
+                            TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 1,
+                                        /* KFlag */ 1, /* hFlag */ 1,
+                                        /* bLfsrOnly */ 0);
+                        } else {
 #ifdef LFSR_GET_FOR_DS1
 #ifndef CALC_NEXT_KEY
-                        if (bLfsrForGetOnly && (wFeedBTap != (Word_t)-1)) {
-                            BeginSeed = (NewSeed_t)StartSequent;
-                            TestJudyGet(J1, JL, JH, &BeginSeed, Meas,
-                                        /* Tit */ 1, /* KFlag */ 1,
-                                        /* hFlag */ 0,
-                                        /* bLfsrOnly */ BValue - wLogPop1 + 1);
-                        } else
+                            if (bLfsrForGetOnly && (wFeedBTap != (Word_t)-1)) {
+                                BeginSeed = (NewSeed_t)StartSequent;
+                                TestJudyGet(J1, JL, JH, &BeginSeed, Meas,
+                                            /* Tit */ 1, /* KFlag */ 1,
+                                            /* hFlag */ 0,
+                                            /* bLfsrOnly */ BValue - wLogPop1 + 1);
+                            } else
 #endif // CALC_NEXT_KEY
 #endif // LFSR_GET_FOR_DS1
-                        TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 1,
-                                    /* KFlag */ 1, /* hFlag */ 0,
-                                    /* bLfsrOnly */ 0);
-                    }
-                } else {
-                    if (hFlag) {
-                        TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 1,
-                                    /* KFlag */ 0, /* hFlag */ 1,
-                                    /* bLfsrOnly */ 0);
+                            TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 1,
+                                        /* KFlag */ 1, /* hFlag */ 0,
+                                        /* bLfsrOnly */ 0);
+                        }
                     } else {
+                        if (hFlag) {
+                            TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 1,
+                                        /* KFlag */ 0, /* hFlag */ 1,
+                                        /* bLfsrOnly */ 0);
+                        } else {
 #ifdef LFSR_GET_FOR_DS1
 #ifndef CALC_NEXT_KEY
-                        if (bLfsrForGetOnly && (wFeedBTap != (Word_t)-1)) {
-                            BeginSeed = (NewSeed_t)StartSequent;
-                            TestJudyGet(J1, JL, JH, &BeginSeed, Meas,
-                                        /* Tit */ 1, /* KFlag */ 0,
-                                        /* hFlag */ 0,
-                                        /* bLfsrOnly */ BValue - wLogPop1 + 1);
-                        } else
+                            if (bLfsrForGetOnly && (wFeedBTap != (Word_t)-1)) {
+                                BeginSeed = (NewSeed_t)StartSequent;
+                                TestJudyGet(J1, JL, JH, &BeginSeed, Meas,
+                                            /* Tit */ 1, /* KFlag */ 0,
+                                            /* hFlag */ 0,
+                                            /* bLfsrOnly */ BValue - wLogPop1 + 1);
+                            } else
 #endif // CALC_NEXT_KEY
 #endif // LFSR_GET_FOR_DS1
-                        TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 1,
-                                    /* KFlag */ 0, /* hFlag */ 0,
-                                    /* bLfsrOnly */ 0);
+                            TestJudyGet(J1, JL, JH, &BeginSeed, Meas, /* Tit */ 1,
+                                        /* KFlag */ 0, /* hFlag */ 0,
+                                        /* bLfsrOnly */ 0);
+                        }
                     }
                 }
-            }
 
 //            TreeDepth        = j__TreeDepth;
 
-            if (Pop1 == wFinalPop1) {
                 if (J1Flag)
                 {
                     if (tFlag)
@@ -3080,15 +3138,25 @@ nextPart:
 //          Test JLI
 //          Exit with InsertSeed/Key ready for next batch
 
-            Tit = 0;                    // exclude Judy
-            DummySeed = InsertSeed;
-            WaitForContextSwitch(Delta);
-            TestJudyLIns(&JL, &DummySeed, Delta);
-            DeltaGenL = DeltanSecL;
+            if (bFirstPart || (Pop1 == wFinalPop1)) {
+                // first or last part of delta
+                // last part might be a different size than the rest
+                if (bDoTit) {
+                    Tit = 0;                    // exclude Judy
+                    DummySeed = InsertSeed;
+                    WaitForContextSwitch(Delta);
+                    TestJudyLIns(&JL, &DummySeed, Delta);
+                    DeltaGenL = DeltanSecL;
+                } else {
+                    DeltaGenL = 0.1;
+                } // end of bDoTit
+            }
 
             Tit = 1;                    // include Judy
             WaitForContextSwitch(Delta);
             TestJudyLIns(&JL, &InsertSeed, Delta);
+            DeltanSecLSum += DeltanSecL;
+            DeltaMalFreLSum += DeltaMalFreL;
             if (Pop1 == wFinalPop1) {
                 if (tFlag)
                     PRINT6_1f(DeltaGenL);
@@ -3097,11 +3165,15 @@ nextPart:
                     fflush(NULL);
             }
 
+          if (bDoTit) {
             Tit = 0;                    // exclude Judy
             BeginSeed = StartSeed;      // reset at beginning
             WaitForContextSwitch(Meas);
             TestJudyLGet(JL, &BeginSeed, Meas);
             DeltaGenL = DeltanSecL;
+          } else {
+            DeltaGenL = 0.1;
+          } // end of bDoTit
 
             Tit = 1;                    // include Judy
             BeginSeed = StartSeed;      // reset at beginning
@@ -3127,11 +3199,15 @@ nextPart:
             //DummySeed = BitmapSeed;
             //GetNextKey(&DummySeed);   // warm up cache
 
+          if (bDoTit) {
             Tit = 0;
             DummySeed = BitmapSeed;
             WaitForContextSwitch(Delta);
             TestBitmapSet(&B1, &DummySeed, Delta);
             DeltanBit = DeltanSecBt;
+          } else {
+            DeltanBit = 0.1;
+          } // end of bDoTit
 
             Tit = 1;
             WaitForContextSwitch(Delta);
@@ -3143,11 +3219,15 @@ nextPart:
                 DONTPRINTLESSTHANZERO(DeltanSecBt, DeltanBit);
             }
 
+          if (bDoTit) {
             Tit = 0;
             BeginSeed = StartSeed;      // reset at beginning
             WaitForContextSwitch(Meas);
             TestBitmapTest(B1, &BeginSeed, Meas);
             DeltanBit = DeltanSecBt;
+          } else {
+            DeltanBit = 0.1;
+          } // end of bDoTit
 
             Tit = 1;
             BeginSeed = StartSeed;      // reset at beginning
@@ -3171,11 +3251,15 @@ nextPart:
             //DummySeed = BitmapSeed;
             //GetNextKey(&DummySeed);   // warm up cache
 
+          if (bDoTit) {
             Tit = 0;
             DummySeed = BitmapSeed;
             WaitForContextSwitch(Delta);
             TestByteSet(&DummySeed, Delta);
             DeltanByte = DeltanSecBy;
+          } else {
+            DeltanByte = 0.1;
+          } // end of bDoTit
 
             Tit = 1;
             WaitForContextSwitch(Delta);
@@ -3187,11 +3271,15 @@ nextPart:
                 DONTPRINTLESSTHANZERO(DeltanSecBy, DeltanByte);
             }
 
+          if (bDoTit) {
             Tit = 0;
             BeginSeed = StartSeed;      // reset at beginning
             WaitForContextSwitch(Meas);
             TestByteTest(&BeginSeed, Meas);
             DeltanByte = DeltanSecBy;
+          } else {
+            DeltanByte = 0.1;
+          } // end of bDoTit
 
             Tit = 1;
             BeginSeed = StartSeed;      // reset at beginning
@@ -3211,6 +3299,7 @@ nextPart:
 
         if (IFlag)
         {
+          if (bDoTit) {
             Tit = 0;
             BeginSeed = StartSeed;      // reset at beginning
             WaitForContextSwitch(Meas);
@@ -3218,6 +3307,9 @@ nextPart:
             DeltaGen1 = DeltanSec1;     // save measurement overhead
             DeltaGenL = DeltanSecL;
             DeltaGenHS = DeltanSecHS;
+          } else {
+            DeltaGen1 = DeltaGenL = DeltaGenHS = 0.1;
+          } // end of bDoTit
 
             Tit = 1;
             BeginSeed = StartSeed;      // reset at beginning
@@ -3246,11 +3338,15 @@ nextPart:
         }
         if (CFlag)
         {
+          if (bDoTit) {
             Tit = 0;
             WaitForContextSwitch(Meas);
             TestJudyCount(J1, JL, &BeginSeed, Meas);
             DeltaGen1 = DeltanSec1;     // save measurement overhead
             DeltaGenL = DeltanSecL;
+          } else {
+            DeltaGen1 = DeltaGenL = 0.1;
+          } // end of bDoTit
 
             Tit = 1;
             WaitForContextSwitch(Meas);
@@ -3267,12 +3363,16 @@ nextPart:
         if (vFlag)
         {
 //          Test J1N, JLN
+          if (bDoTit) {
             Tit = 0;
             BeginSeed = StartSeed;      // reset at beginning
             WaitForContextSwitch(Meas);
             TestJudyNext(J1, JL, &BeginSeed, Meas);
             DeltaGen1 = DeltanSec1;     // save measurement overhead
             DeltaGenL = DeltanSecL;
+          } else {
+            DeltaGen1 = DeltaGenL = 0.1;
+          } // end of bDoTit
 
             Tit = 1;
             BeginSeed = StartSeed;      // reset at beginning
@@ -3288,12 +3388,16 @@ nextPart:
             }
 
 //          Test J1P, JLP
+          if (bDoTit) {
             Tit = 0;
             BeginSeed = StartSeed;      // reset at beginning
             WaitForContextSwitch(Meas);
             TestJudyPrev(J1, JL, &BeginSeed, ~(Word_t)0, Meas);
             DeltaGen1 = DeltanSec1;     // save measurement overhead
             DeltaGenL = DeltanSecL;
+          } else {
+            DeltaGen1 = DeltaGenL = 0.1;
+          } // end of bDoTit
 
             Tit = 1;
             BeginSeed = StartSeed;      // reset at beginning
@@ -3309,12 +3413,16 @@ nextPart:
             }
 
 //          Test J1NE, JLNE
+          if (bDoTit) {
             Tit = 0;
             BeginSeed = StartSeed;      // reset at beginning
             WaitForContextSwitch(Meas);
             TestJudyNextEmpty(J1, JL, &BeginSeed, Meas);
             DeltaGen1 = DeltanSec1;     // save measurement overhead
             DeltaGenL = DeltanSecL;
+          } else {
+            DeltaGen1 = DeltaGenL = 0.1;
+          } // end of bDoTit
 
             Tit = 1;
             BeginSeed = StartSeed;      // reset at beginning
@@ -3331,12 +3439,16 @@ nextPart:
 
 //          Test J1PE, JLPE
 //
+          if (bDoTit) {
             Tit = 0;
             BeginSeed = StartSeed;      // reset at beginning
             WaitForContextSwitch(Meas);
             TestJudyPrevEmpty(J1, JL, &BeginSeed, Meas);
             DeltaGen1 = DeltanSec1;     // save measurement overhead
             DeltaGenL = DeltanSecL;
+          } else {
+            DeltaGen1 = DeltaGenL = 0.1;
+          } // end of bDoTit
 
             Tit = 1;
             BeginSeed = StartSeed;      // reset at beginning
@@ -3355,6 +3467,7 @@ nextPart:
 //      Test J1U, JLD, JHSD
         if (dFlag)
         {
+          if (bDoTit) {
             Tit = 0;
             BeginSeed = StartSeed;      // reset at beginning
             WaitForContextSwitch(Meas);
@@ -3362,6 +3475,9 @@ nextPart:
             DeltaGen1 = DeltanSec1;     // save measurement overhead
             DeltaGenL = DeltanSecL;
             DeltaGenHS = DeltanSecHS;
+          } else {
+            DeltaGen1 = DeltaGenL = DeltaGenHS = 0.1;
+          } // end of bDoTit
 
             Tit = 1;
             BeginSeed = StartSeed;      // reset at beginning
@@ -3453,11 +3569,11 @@ nextPart:
 //              Print the percent efficiency of dlmalloc
                 PRINT7_3f(j__AllocWordsTOT / (double)(j__TotalBytesAllocated / sizeof(Word_t)));
                 if (J1Flag)
-                    PRINT5_2f((double)DeltaMalFre1);
+                    PRINT5_2f(DeltaMalFre1Sum / Pms[grp].ms_delta);
                 if (JLFlag || JRFlag)
-                    PRINT5_2f((double)DeltaMalFreL);
+                    PRINT5_2f(DeltaMalFreLSum / Pms[grp].ms_delta);
                 if (JHFlag)
-                    PRINT5_2f((double)DeltaMalFreHS);
+                    PRINT5_2f(DeltaMalFreHSSum / Pms[grp].ms_delta);
             }
 ////////////            if (yFlag || bFlag)
             {
@@ -3469,6 +3585,7 @@ printf(" %ld", GetCalls);
                 fflush(NULL);                   // assure data gets to file in case malloc fail
         }
         if (Pop1 != wFinalPop1) {
+            bFirstPart = 0;
             goto nextPart;
         }
     }
@@ -3623,7 +3740,7 @@ TestJudyIns(void **J1, void **JL, void **JH, PNewSeed_t PSeed, Word_t Elements)
     DeltanSecL = 0.0;
     DeltanSecHS = 0.0;
 
-    Word_t Loops = lFlag ? 1 : (MAXLOOPS / Elements) + MINLOOPS;
+    Word_t Loops = 1; // loops don't work as expected for array modifying ops
 
 //  Judy1Set timings
 
@@ -3747,7 +3864,7 @@ TestJudyIns(void **J1, void **JL, void **JH, PNewSeed_t PSeed, Word_t Elements)
                 }
             }
             ENDTm(DeltanSec1);
-            DeltaMalFre1 = (double)(j__MalFreeCnt - StartMallocs) / Elements;
+            DeltaMalFre1 = j__MalFreeCnt - StartMallocs;
 
             if (DminTime > DeltanSec1)
             {
@@ -3761,7 +3878,7 @@ TestJudyIns(void **J1, void **JL, void **JH, PNewSeed_t PSeed, Word_t Elements)
                     break;
             }
         }
-        DeltanSec1 = DminTime / (double)Elements;
+        DeltanSec1 = DminTime;
     }
 
 //  JudyLIns timings
@@ -3841,7 +3958,7 @@ TestJudyIns(void **J1, void **JL, void **JH, PNewSeed_t PSeed, Word_t Elements)
                                 }
                                 if (PValueNew != PValue)
                                 {
-                                    printf("\n#Line = %d, Caution: PValueNew = 0x%" PRIxPTR", PValueold = 0x%" PRIxPTR" changed\n", __LINE__, (Word_t)PValueNew, (Word_t)PValue);
+//                                    printf("\n#Line = %d, Caution: PValueNew = 0x%" PRIxPTR", PValueold = 0x%" PRIxPTR" changed\n", __LINE__, (Word_t)PValueNew, (Word_t)PValue);
 //                                    printf("- ValueNew = 0x%" PRIxPTR", Valueold = 0x%" PRIxPTR"\n", *PValueNew, *PValue);
 //                                    FAILURE("Second JudyLIns failed with wrong PValue after Insert", TstKey);
                                 }
@@ -3922,8 +4039,7 @@ TestJudyIns(void **J1, void **JL, void **JH, PNewSeed_t PSeed, Word_t Elements)
                 }
             }
             ENDTm(DeltanSecL);
-            DeltanSecL /= Elements;
-            DeltaMalFreL = (double)(j__MalFreeCnt - StartMallocs) / Elements;
+            DeltaMalFreL = j__MalFreeCnt - StartMallocs;
 
             if (DminTime > DeltanSecL)
             {
@@ -3979,8 +4095,7 @@ TestJudyIns(void **J1, void **JL, void **JH, PNewSeed_t PSeed, Word_t Elements)
                 }
             }
             ENDTm(DeltanSecHS);
-            DeltanSecHS /= Elements;
-            DeltaMalFreHS = (double)(j__MalFreeCnt - StartMallocs) / Elements;
+            DeltaMalFreHS = j__MalFreeCnt - StartMallocs;
 
             if (DminTime > DeltanSecHS)
             {
@@ -4021,7 +4136,7 @@ TestJudyLIns(void **JL, PNewSeed_t PSeed, Word_t Elements)
     DeltanSecL = 0.0;
     PValue = (PWord_t)NULL;
 
-    Word_t Loops = lFlag ? 1 : (MAXLOOPS / Elements) + MINLOOPS;
+    Word_t Loops = 1;
 
 //  JudyLIns timings
     DminTime = 1e40; icnt = ICNT; lp = 0;
@@ -4072,8 +4187,7 @@ TestJudyLIns(void **JL, PNewSeed_t PSeed, Word_t Elements)
         TstKey = GetNextKey(&TempSeed);
         *PValue = TstKey;
 
-        DeltanSecL /= Elements;
-        DeltaMalFreL = (double)(j__MalFreeCnt - StartMallocs) / Elements;
+        DeltaMalFreL = j__MalFreeCnt - StartMallocs;
 
         if (DminTime > DeltanSecL)
         {

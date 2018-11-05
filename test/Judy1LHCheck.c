@@ -10,6 +10,13 @@
 
 #include <Judy.h>
 
+// Judy1LHCheck.c doesn't include bdefines.h so we want to be sure to
+// define DEBUG if DEBUG_ALL is defined.
+#ifdef DEBUG_ALL
+#undef DEBUG
+#define DEBUG
+#endif // DEBUG_ALL
+
 // The released Judy libraries do not, and some of Doug's work-in-progress
 // libraries may not, have Judy1Dump and/or JudyLDump entry points.
 // And Mike sometimes links Judy1LHCheck with his own Judy1 library and the
@@ -987,8 +994,10 @@ TestJudyNextEmpty(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
 
         Rcode1 = Judy1Test(J1, J1index, NULL);
 
-        if (Rcode1 != 0)
+        if (Rcode1 != 0) {
+            printf("PrevKey 0x%zx J1index 0x%zx\n", PrevKey, J1index);
             FAILURE("J1NE returned non-empty Index =", J1index);
+        }
 
         PValue = (PWord_t)JudyLGet(JL, JLindex, NULL);
         if (PValue != (Word_t *) NULL)
