@@ -611,6 +611,8 @@ FUNCTION int j__udyCascade2(
 //		                j__udyCopy2to1(Pjll, PLeaf+Start, Pop1);
 				JU_COPYMEM((uint8_t *)Pjll, PLeaf+Start, Pop1);
 
+                                JU_PADLEAF1(Pjll, Pop1);
+
                                 DcdP0 = (ju_DcdPop0(Pjp) & cJU_DCDMASK(2))
                                                 |
                                         (CIndex & cJU_DCDMASK(2-1));
@@ -756,6 +758,9 @@ FUNCTION int j__udyCascade3(
 //		Copy just 2 bytes Indexes to new Leaf
 //		j__udyCopyWto2(Pjll, StageA, cJU_LEAF3_MAXPOP1);
 		JU_COPYMEM((uint16_t *) Pjll, StageA, cJU_LEAF3_MAXPOP1);
+
+                JU_PADLEAF2(Pjll, cJU_LEAF3_MAXPOP1);
+
 #ifdef JUDYL
 //		Copy Value area into new Leaf
 		Pjvnew = JL_LEAF2VALUEAREA(Pjll, cJU_LEAF3_MAXPOP1);
@@ -871,8 +876,9 @@ FUNCTION int j__udyCascade3(
 #endif
 //				Copy least 2 bytes per Index of Leaf to new Leaf
 //		                j__udyCopyWto2(Pjll, StageA+Start, Pop1);
-				JU_COPYMEM((uint16_t *) Pjll, StageA+Start,
-					   Pop1);
+				JU_COPYMEM((uint16_t *) Pjll, StageA+Start, Pop1);
+
+                                JU_PADLEAF2(Pjll, Pop1);
 
                                 DcdP0 = (ju_DcdPop0(Pjp) & cJU_DCDMASK(3))
                                                 |

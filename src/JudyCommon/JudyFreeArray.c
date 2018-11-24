@@ -107,6 +107,7 @@ FUNCTION Word_t JudyLFreeArray
 
 	    if (TotalMem + jpm.jpm_TotalMemWords)
 	    {
+	        *PPArray = (Pvoid_t) NULL;		// make an empty array.
 		JU_SET_ERRNO(PJError, JU_ERRNO_CORRUPT);
 		return(JERR);
 	    }

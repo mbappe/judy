@@ -619,7 +619,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
                         j__udyLeaf1ToLeaf2(Pleaf, Pjv, Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 2),
                                            Pjpm);
 #endif // JUDYL
-                    Pleaf = (uint16_t *) (((Word_t)Pleaf) + ((2) * pop1));
+                    Pleaf = (uint16_t *) (((Word_t)Pleaf) + ((2) * pop1));      // ????????????????
                     JUDYLCODE(Pjv += pop1;);
                 }
                 j__udyFreeJBBJP(Pjp2Raw, /* pop1 = */ offset, Pjpm);
@@ -1597,7 +1597,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             Pjvnew = P_JV(PjvnewRaw);
             JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 1);
 #endif // JUDYL
+
             JU_DELETECOPY((uint8_t *) ju_PImmed1(Pjp), Pleaf, pop1, offset, 1);
+
             j__udyFreeJLL1(PjllRaw, pop1, Pjpm);
 #ifdef  JUDYL
             /* Pjp->jp_PValue = PjvnewRaw;      */
@@ -1611,6 +1613,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         if (JU_LEAF1GROWINPLACE(pop1 - 1))
         { /* hysteresis = 0 */
             JU_DELETEINPLACE(Pleaf, pop1, offset, 1);
+            JU_PADLEAF1(Pleaf, pop1 - 1);
 #ifdef  JUDYL
             JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
 #endif // JUDYL
@@ -1626,6 +1629,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 1);        // and Value area
 #endif // JUDYL
             JU_DELETECOPY((uint8_t *) Pjllnew, Pleaf, pop1, offset, 1);
+            JU_PADLEAF1(Pjllnew, pop1 - 1);
             j__udyFreeJLL1(PleafRaw, pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw; */
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             return (1);
@@ -1698,18 +1702,20 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         if (JU_LEAF2GROWINPLACE(pop1 - 1))      /* hysteresis = 0 */
         {
             JU_DELETEINPLACE(Pleaf, pop1, offset, 2);
+            JU_PADLEAF2(Pleaf, pop1 - 1);
 #ifdef JUDYL
-             /**/ JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
+            JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
             return (1);
         }
         {
-             /**/ Pjv_t Pjvnew;
+            Pjv_t Pjvnew;
             if ((PjllnewRaw = j__udyAllocJLL2(pop1 - 1, Pjpm)) == 0)
                 return (-1);
             Pjllnew = P_JLL(PjllnewRaw);
-             /**/ Pjvnew = JL_LEAF2VALUEAREA(Pjllnew, pop1 - 1);
+            Pjvnew = JL_LEAF2VALUEAREA(Pjllnew, pop1 - 1);
             JU_DELETECOPY((uint16_t *) Pjllnew, Pleaf, pop1, offset, 2);
-             /**/ JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 2);
+            JU_PADLEAF2(Pjllnew, pop1 - 1);
+            JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 2);
             j__udyFreeJLL2(PleafRaw, pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw;    */
             ju_SetBaLPntr(Pjp, PjllnewRaw);
 #endif // JUDYL
@@ -1720,6 +1726,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             return (-1);
         Pjllnew = P_JLL(PjllnewRaw);
         JU_DELETECOPY((uint16_t *) Pjllnew, Pleaf, pop1, offset, 2);
+        JU_PADLEAF2(Pjllnew, pop1 - 1);
         j__udyFreeJLL2(PleafRaw, pop1, Pjpm);   /*   Pjp->Jp_Addr0 = PjllnewRaw;     */
         ju_SetBaLPntr(Pjp, PjllnewRaw);
         return (1);
@@ -2786,9 +2793,9 @@ JudyLDel(PPvoid_t PPArray,              // in which to delete.
 // If so, theres nothing to do.  This saves a lot of time.  Pass through
 // PJError, if any, from the "get" function.
 #ifdef  JUDY1
-    if ((retcode = Judy1Test(*PPArray, Index, PJError)) == JERRI)
+    if ((retcode = j__udy1Test(*PPArray, Index, PJError)) == JERRI)
 #else  // JUDYL
-    if ((PPvalue = JudyLGet(*PPArray, Index, PJError)) == PPJERR)
+    if ((PPvalue = j__udyLGet(*PPArray, Index, PJError)) == PPJERR)
 #endif // JUDYL
         return (JERRI);
 #ifdef  JUDY1
@@ -2832,10 +2839,22 @@ JudyLDel(PPvoid_t PPArray,              // in which to delete.
 // Note:  "Grow in place from pop1 - 1" is the logical inverse of, "shrink in
 // place from pop1."  Also, Pjllw points to the count word, so skip that for
 // doing the deletion.
+//   printf("\n --- Before Key = 0x%016lx pop1 = %ld, offset = %d\n", Pjllw->jlw_Leaf[offset], pop1, offset);
+//   for (int ii = 0; ii < pop1; ii++)
+//   {
+//       printf("   %3d = 0x%016lx\n", ii, Pjllw->jlw_Leaf[ii]);
+//   }
         if (JU_LEAFWGROWINPLACE(pop1 - 1))
         {
 //            JU_DELETEINPLACE(Pjllw + 1, pop1, offset, ignore);
             JU_DELETEINPLACE(Pjllw->jlw_Leaf, pop1, offset, ignore);
+//   printf("\n --- After - Deleteinplace   = %ld\n", pop1 - 1);
+//   for (int ii = 0; ii < (pop1 - 1); ii++)
+//   {
+//       printf("   %3d = 0x%016lx\n",  ii, Pjllw->jlw_Leaf[ii]);
+//   }
+//   printf("\n");
+
 #ifdef JUDYL
 //              also delete from value area:
             JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
@@ -2854,6 +2873,12 @@ JudyLDel(PPvoid_t PPArray,              // in which to delete.
         Pjllwnew->jlw_Population0 = (pop1 - 1) - 1;
 //        JU_DELETECOPY(Pjllwnew + 1, Pjllw + 1, pop1, offset, ignore);
         JU_DELETECOPY(Pjllwnew->jlw_Leaf, Pjllw->jlw_Leaf, pop1, offset, ignore);
+//   printf("\n --- After - Deletecopy      = %ld\n", pop1 - 1);
+//   for (int ii = 0; ii < (pop1 - 1); ii++)
+//   {
+//       printf("   %3d = 0x%016lx\n",  ii, Pjllw->jlw_Leaf[ii]);
+//   }
+//   printf("\n");
 #ifdef JUDYL
         Pjvnew = JL_LEAFWVALUEAREA(Pjllwnew, pop1 - 1);
         JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, ignore);

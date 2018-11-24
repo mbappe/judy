@@ -276,8 +276,10 @@ typedef int bool_t;
 #ifdef  SEARCHMETRICS
 Word_t  j__MisComparesP;
 Word_t  j__MisComparesM;
-Word_t  j__SearchPopulation;
+Word_t  j__GetCallsP;
+Word_t  j__GetCallsM;
 Word_t  j__GetCalls;
+Word_t  j__SearchPopulation;
 Word_t  j__DirectHits;
 
 // if BUCKETSIZE not defined, default to one word
@@ -287,16 +289,28 @@ Word_t  j__DirectHits;
 
 #define KEYSPERBUCKET(KEY)   (BUCKETSIZE / (KEY))
 
-// Perhaps should change name to SEARCHCOMPAREMISSES
-#define  MISSCOMPARESP(CNT)     (j__MisComparesP   += (Word_t)(CNT))
-#define  MISSCOMPARESM(CNT)     (j__MisComparesM   += (Word_t)(CNT))
-#define  DIRECTHITS             (j__DirectHits += 1)
+// Perhaps should change name to SEARCHCOMPAREMISES
+#define  MISCOMPARESP(CNT)      (j__MisComparesP   += (Word_t)(CNT), j__GetCallsP++)
+#define  MISCOMPARESM(CNT)      (j__MisComparesM   += (Word_t)(CNT), j__GetCallsM++)
+
+#define  MISCOMPARESP1          (j__MisComparesP++)     // GETCALLS() must be called appropriately
+#define  MISCOMPARESM1          (j__MisComparesM++)
+
+#define  GETCALLSP              (j__GetCallsP++)        // for B1 & Binary search only
+#define  GETCALLSM              (j__GetCallsM++)        // for B1 & Binary search only
+
+#define  DIRECTHITS             (j__DirectHits++)
 #define  SEARCHPOPULATION(CNT)  (j__SearchPopulation += (Word_t)(CNT), j__GetCalls++)
 #else
-#define  MISSCOMPARESP(CNT)      // null
-#define  MISSCOMPARESM(CNT)      // null
-#define  DIRECTHITS   // null
-#define  SEARCHPOPULATION(CNT)  // null
+#define  MISCOMPARESP(CNT)
+#define  MISCOMPARESM(CNT)
+#define  MISCOMPARESP1
+#define  MISCOMPARESM1
+#define  GETCALLSP
+#define  GETCALLSM
+#define  GETCALLS
+#define  DIRECTHITS
+#define  SEARCHPOPULATION(CNT)
 #endif  // ! SEARCHMETRICS
 
 #include <assert.h>
@@ -674,10 +688,12 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 
 #ifdef JUDY1
 extern const uint16_t j__1_BranchBJPPopToWords[];
+extern int      j__udy1Test(Pcvoid_t PArray, Word_t Index, P_JE);
 #endif
 
 #ifdef JUDYL
 extern const uint16_t j__L_BranchBJPPopToWords[];
+extern PPvoid_t j__udyLGet(Pcvoid_t PArray, Word_t Index, P_JE);
 #endif
 
 // Conversion size to Linear for a Binary Search
@@ -714,7 +730,7 @@ extern const uint16_t j__L_BranchBJPPopToWords[];
                                                                 \
             if (I_ndex != i_ndex) return(~o_ff);                \
                                                                 \
-            MISSCOMPARESP(o_ff);                                \
+            MISCOMPARESP(o_ff);                                 \
             return(o_ff);                                       \
         }                                                       \
         P_leaf += LFBTS;                                        \
@@ -735,7 +751,7 @@ extern const uint16_t j__L_BranchBJPPopToWords[];
                                                                 \
     _off = P_leaf - (LEAFTYPE_t *)(ADDR);                       \
     if (I_ndex != *P_leaf) return(~_off);                       \
-    MISSCOMPARESP(_off);                                        \
+ /*   MISCOMPARESP(_off);     */                                \
     return(_off);                                               \
 }
 
@@ -753,17 +769,20 @@ extern const uint16_t j__L_BranchBJPPopToWords[];
                                                                 \
     while ((h_igh - l_ow) > LENSIZE)   /* Binary Search */      \
     {                                                           \
+        GETCALLSP;                                              \
         m_id = (h_igh + l_ow) / 2;                              \
         if ((P_leaf)[m_id] <= (I_ndex))                         \
         {                                                       \
-            if ((P_leaf)[m_id] == (I_ndex)) return(m_id);       \
+            if ((P_leaf)[m_id] == (I_ndex))                     \
+            {                                                   \
+                return(m_id);                                   \
+            }                                                   \
             l_ow = m_id;                                        \
         }                                                       \
         else                                                    \
         {                                                       \
             h_igh = m_id;                                       \
         }                                                       \
-        MISSCOMPARESM(1);                                       \
     }                                                           \
     if ((h_igh == (POP1)) && ((I_ndex) > (P_leaf)[(POP1) - 1])) \
         return(~(POP1));                                        \
@@ -771,10 +790,9 @@ extern const uint16_t j__L_BranchBJPPopToWords[];
     while ((P_leaf)[l_ow] < (I_ndex))                           \
     {                                                           \
         l_ow++;                                                 \
-        MISSCOMPARESP(1);                                       \
+        GETCALLSM;                                              \
     }                                                           \
     if ((P_leaf)[l_ow] != (I_ndex)) return(~l_ow);              \
-    MISSCOMPARESP(1);                                           \
     return(l_ow);                                               \
 }
 
@@ -804,7 +822,7 @@ extern const uint16_t j__L_BranchBJPPopToWords[];
         {                                                       \
             h_igh = m_id;                                       \
         }                                                       \
-        MISSCOMPARESP(1);                                       \
+        MISCOMPARESP1;                                          \
     }                                                           \
     if (h_igh == (POP1))                                        \
     {                                                           \
@@ -817,10 +835,10 @@ extern const uint16_t j__L_BranchBJPPopToWords[];
     {                                                           \
         l_ow++;                                                 \
         COPYINDEX(__LeafKey, __PLeaf + (l_ow * (LFBTS)));       \
-        MISSCOMPARESP(1);                                       \
+        MISCOMPARESP1;                                          \
     }                                                           \
     if (__LeafKey != __Key) return(~l_ow);                      \
-    MISSCOMPARESP(1);                                           \
+    MISCOMPARESP(1);                                            \
     return(l_ow);                                               \
 }
 
@@ -879,9 +897,7 @@ extern const uint16_t j__L_BranchBJPPopToWords[];
             {                                                   \
                 if (__LeafKey == __Key)                         \
                 {                                               \
-        /*           if (((__pos ^ (int)(START)) >> 3) == 0)   */       \
-        /*              DIRECTHITS;                            */       \
-                    MISSCOMPARESP(__pos - (START));             \
+                    MISCOMPARESP(__pos - (START));              \
                     return(__pos);                              \
                 }                                               \
                 break;                                          \
@@ -899,9 +915,7 @@ extern const uint16_t j__L_BranchBJPPopToWords[];
             {                                                   \
                 if (__LeafKey == __Key)                         \
                 {                                               \
-         /*          if (((__pos ^ (int)(START)) >> 3) == 0)   */       \
-         /*             DIRECTHITS;                            */       \
-                    MISSCOMPARESM((START) - __pos);             \
+                    MISCOMPARESM((START) - __pos);              \
                     return(__pos);                              \
                 }                                               \
                 __pos++;  /* advance to hole */                 \
@@ -942,7 +956,7 @@ extern const uint16_t j__L_BranchBJPPopToWords[];
             {                                                   \
                 if (__LeafKey == __Key)                         \
                 {                                               \
-                    MISSCOMPARESP(__pos - (START));             \
+                    MISCOMPARESP(__pos - (START));              \
                     return(__pos);                              \
                 }                                               \
                 break;                                          \
@@ -959,7 +973,7 @@ extern const uint16_t j__L_BranchBJPPopToWords[];
             {                                                   \
                 if (__LeafKey == __Key)                         \
                 {                                               \
-                    MISSCOMPARESM((START) - __pos);             \
+                    MISCOMPARESM((START) - __pos);              \
                     return(__pos);                              \
                 }                                               \
                 __pos++;  /* advance to hole */                 \
@@ -1233,7 +1247,6 @@ j__udyCount64Bits(uint64_t word64)
         while (++i_ndex < (POP1));                      \
     }
 
-#ifdef  MEMMOVE
 
 #define JU_COPYMEM(PDST,PSRC,POP1)                      \
     {                                                   \
@@ -1244,11 +1257,6 @@ j__udyCount64Bits(uint64_t word64)
             JU_COPYMEMODD((PDST),(PSRC),POP1);          \
     }
 
-#else   // ! MEMMOVE
-
-#define JU_COPYMEM(PDST,PSRC,POP1) JU_COPYMEMODD(PDST,PSRC,POP1) 
-
-#endif  // ! MEMMOVE
 
 
 // ****************************************************************************
@@ -1336,7 +1344,190 @@ j__udyCount64Bits(uint64_t word64)
 // ****************************************************************************
 //
 // These code chunks are shared between various source files.
+//
+// Replicate a KEY as many times as possible in a Word_t
+// (if n keys do not exactly fit, right justify by shifting by remainder bits)
 
+// Used to mask to single Key
+#define KEYMASK(cbPK)           (((Word_t)1 << (cbPK)) - 1)
+
+// Used to right justify the replicated Keys that have remainder bits - zero if Key 2 ^ n
+//                              ( 64  - (  64  /   16 )  *   16 )))
+#define REMb(cbPK)              (cbPW - ((cbPW / (cbPK)) * (cbPK)))
+
+// Replicate a KEY as many times as possible in a Word_t
+// (if n keys do not exactly fit, right justify by shifting by remainder bits)
+#define REPKEY(cbPK, KEY)                                        \
+    ((((Word_t)(-1) / KEYMASK(cbPK)) * (KEYMASK(cbPK) & (KEY))) >> REMb(cbPK))
+
+#define JU_PADLEAF1(PJLL, POP1)                         \
+{                                                       \
+    Word_t   __Pop0 = (POP1) - 1;                       \
+    Word_t   __rounduppop1 = ((__Pop0 + 8) / 8) * 8;    \
+    uint8_t *__Pleaf1 = (uint8_t *)(PJLL);              \
+                                                        \
+    for (int __i = (POP1); __i < __rounduppop1; __i++)  \
+         __Pleaf1[__i] = __Pleaf1[__Pop0];              \
+}
+
+#define JU_PADLEAF2(PJLL, POP1)                         \
+{                                                       \
+    Word_t    __Pop0 = (POP1) - 1;                      \
+    Word_t    __rounduppop1 = ((__Pop0 + 4) / 4) * 4;   \
+    uint16_t *__Pleaf2 = (uint16_t *)(PJLL);            \
+                                                        \
+    for (int __i = (POP1); __i < __rounduppop1; __i++)  \
+         __Pleaf2[__i] = __Pleaf2[__Pop0];              \
+}
+
+#ifdef  later
+// #ifdef  PARALLEL1
+// Macros for one word parallel searches
+// cbPW = bits per Word
+// KEYMASK = Key Mask
+// KEY  = Key
+// REMb = Remainder Bits in Word_t, if n keys do not exactly fit in Word_t
+// cbPK = Bits Per Key
+
+//#define cbPW        (sizeof(Word_t) * 8)
+
+// WTF, compilers should warn about this or fix it
+// Count_Least_Zero bits
+//#define JU_CLZ(BUCKET)       ((Word_t)(BUCKET) > 0 ? (int)__builtin_clzl((Word_t)BUCKET) : (int)cbPW)
+
+#define JU_POP0(BUCKET)      ((int)((cbPW - 1) - JU_CLZ(BUCKET)) / bitsPerKey)
+
+// count trailing zero bits
+#define JU_CTZ(BUCKET, BPK)     (__builtin_ctzl(BUCKET) / (BPK))
+
+// Check if any Key in the Word_t has a zero value
+#define HAS0KEY(cbPK, BUCKET)                                      \
+    (((BUCKET) - REPKEY(cbPK, 1)) & ~(BUCKET) & REPKEY(cbPK, -1))
+
+// How many keys offset until the one found (in highest bit in zero)
+//#define KEYOFFSET(ZERO, cbPK)         (__builtin_ctzl(ZERO) / (cbPK))
+
+// Mask to bits in Population0 
+///#define Mskbs(cbPK, POP0)      ((1 << ((POP0) * (cbPK))))
+
+// Calculate the population of a bucket
+//#define JU_POP0(BUCKET, cbPK)      ((int)((cbPW - 1) - JU_CLZL(BUCKET)) / (cbPK))
+
+// Mask to remove Keys that are not in the population
+// broke?
+
+//#define P_M(cbPK,POP0) (((Word_t)((1 << ((cbPK) - 1)) * 2) << ((POP0) * cbPK)) - 1)
+
+// Experiment with different methods
+#ifdef  JUDYL
+
+#ifdef  ONE
+static int j__udyBuckoff(Word_t Bucket, int bPK)
+{
+    Bucket &= -Bucket;                  // get rid of all but Lsb bit
+    if ((Bucket >>= bPK) == 0) return(0);
+    if ((Bucket >>= bPK) == 0) return(1);
+    if ((Bucket >>= bPK) == 0) return(2);
+    return(3);                  // only other posibility
+}
+#endif  // ONE
+
+#ifdef  TWO
+static int j__udyBuckoff(Word_t Bucket, int bPK)
+{
+    int offset;
+    Word_t xxx;
+
+    xxx = Bucket & -Bucket;          // get rid of all but Lsb bit
+    for (offset = 0; xxx >>= bPK; offset++);
+    return(offset);
+}
+#endif  // TWO
+
+#ifdef  THREE 
+//  Only slightly faster with 4Ghz i7-5960X/2666-14 RAM
+//  Shame on Intel (bsfq instruction)
+static int j__udyBuckoff(Word_t Bucket, int bPK)
+{
+    return (__builtin_ctzl(Bucket) / bPK);
+}
+#endif  // THREE 
+
+#ifdef  FOUR 
+//  Only slightly faster with 4Ghz i7-5960X/2666-14 RAM
+//  Shame on Intel (bsfq instruction)
+static int j__udyBuckoff(Word_t Bucket, int bPK)
+{
+    Bucket = (Bucket & -Bucket) - 1;    // get rid of all but Lsb bits
+    return ((int)__builtin_popcountl(Bucket) / bPK);
+}
+#endif  // FOUR 
+
+#endif  // JUDYL
+
+// If matching Key in Bucket, then offset into Bucket is returned
+// else -1 if no Key was found
+
+// Note: bPK must be a compile time constant for high performance
+static int
+j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
+{
+    Word_t      repLsbKey;
+    Word_t      repMsbKey;
+    Word_t      newBucket;
+
+    assert (Bucket != 0);
+
+//  Check special case of Key == 0
+//  BUT, the leaf population can never be < 2, so Bucket can never be zero,
+//  so save some conditional branches.
+//  if (Key == 0)
+//  {
+//      if (Bucket & KeyMask) 
+//          return (-1);        // no match and offset = -1
+//      else
+//          return (0);         // match and offset = 0
+//  }
+
+//  replicate the Lsb in every Key position (at compile time)
+    repLsbKey = REPKEY(bPK, 1);
+
+//  replicate the Msb in every Key position (at compile time)
+    repMsbKey = repLsbKey << (bPK - 1);
+
+//  make zero the searched for Key in new Bucket
+    newBucket = Bucket ^ REPKEY(bPK, Key);
+
+//  Magic, the Msb=1 is located in the matching Key position
+    newBucket = (newBucket - repLsbKey) & (~newBucket) & repMsbKey;
+
+    printf("\n-----------  0x%lx, rep = 0x%lx\n", Key, newBucket);
+
+    if (newBucket == 0)         // Key not found in Bucket
+        return(-1);
+
+#ifdef  JUDY1
+    return(0);                  // Key was found in Bucket
+#endif  // JUDY1
+
+#ifdef  JUDYL
+//  Calc offset 0..3 into one Bucket for Pjv_t
+#ifdef  FIVE
+    {
+        uint16_t *bucket16 = (uint16_t *)&Bucket;
+        int off = 0;
+
+        while (bucket16[off] != (uint16_t)Key) off++;
+        return(off);
+    }
+#else   // ! FIVE
+    return (j__udyBuckoff(newBucket, bPK));
+#endif  // ! FIVE
+#endif  // JUDYL
+
+}
+// #endif  //  PARALLEL1
+#endif  // later
 
 // SET (REPLACE) ONE DIGIT IN AN INDEX:
 //
@@ -1380,9 +1571,13 @@ j__udyCount64Bits(uint64_t word64)
 // TBD:  It would be nice to validate jp_DcdPopO against known digits to ensure
 // no corruption, but this is non-trivial.
 
+//#define JU_SETDCD(INDEX,PJP,cSTATE)                             \
+//    (INDEX) = ((INDEX) & ~cJU_DCDMASK(cSTATE))                  \
+//                | (JU_JPDCDPOP0(PJP) & cJU_DCDMASK(cSTATE))
+
 #define JU_SETDCD(INDEX,PJP,cSTATE)                             \
     (INDEX) = ((INDEX) & ~cJU_DCDMASK(cSTATE))                  \
-                | (JU_JPDCDPOP0(PJP) & cJU_DCDMASK(cSTATE))
+                | (ju_DcdPop0(PJP) & cJU_DCDMASK(cSTATE))
 
 // INSERT/DELETE AN INDEX IN-PLACE IN MEMORY:
 //
@@ -1402,7 +1597,6 @@ j__udyCount64Bits(uint64_t word64)
 // Note:  The following macros are tricky enough that there is some test code
 // for them appended to this file.
 
-#ifdef  MEMMOVE
 #include <string.h> 
 #define JU_INSERTINPLACE(PARRAY,POP1,OFFSET,INDEX)              \
         assert((long) (POP1) > 0);                              \
@@ -1415,26 +1609,12 @@ j__udyCount64Bits(uint64_t word64)
             (PARRAY)[OFFSET] = (INDEX);                         \
         }
 
-#else   // ! MEMMOVE
-#define JU_INSERTINPLACE(PARRAY,POP1,OFFSET,INDEX)              \
-        assert((long) (POP1) > 0);                              \
-        assert((Word_t) (OFFSET) <= (Word_t) (POP1));           \
-        {                                                       \
-            int    i_offset = (int)(POP1);                      \
-                                                                \
-            while (i_offset-- > (OFFSET))                       \
-                (PARRAY)[i_offset + 1] = (PARRAY)[i_offset];    \
-                                                                \
-            (PARRAY)[OFFSET] = (INDEX);                         \
-        }
-#endif  // ! MEMMOVE
 
 
 // Variation for non-native Indexes, where cIS = Index Size
 // and PByte must point to a uint8_t (byte); shift byte-by-byte:
 //
 
-#ifdef  MEMMOVE
 #define JU_INSERTINPLACE3(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
     Word_t n = ((POP1)-(OFFSET)) * 3;                           \
@@ -1443,24 +1623,8 @@ j__udyCount64Bits(uint64_t word64)
     memmove(dest, src, n);                                      \
     JU_COPY3_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 3]), INDEX);   \
 }
-#else   // ! MEMMOVE
-#define JU_INSERTINPLACE3(PBYTE,POP1,OFFSET,INDEX)              \
-{                                                               \
-    int    i_off = POP1;                                        \
-                                                                \
-    while (i_off-- > (OFFSET))                                  \
-    {                                                           \
-        Word_t  i_dx = i_off * 3;                               \
-        (PBYTE)[i_dx + 0 + 3] = (PBYTE)[i_dx + 0];              \
-        (PBYTE)[i_dx + 1 + 3] = (PBYTE)[i_dx + 1];              \
-        (PBYTE)[i_dx + 2 + 3] = (PBYTE)[i_dx + 2];              \
-    }                                                           \
-    JU_COPY3_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 3]), INDEX);   \
-}
-#endif  // ! MEMMOVE
 
 
-#ifdef  MEMMOVE
 #define JU_INSERTINPLACE5(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
     Word_t n = ((POP1)-(OFFSET)) * 5;                           \
@@ -1469,25 +1633,7 @@ j__udyCount64Bits(uint64_t word64)
     memmove(dest, src, n);                                      \
     JU_COPY5_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 5]), INDEX);   \
 }
-#else   // ! MEMMOVE
-#define JU_INSERTINPLACE5(PBYTE,POP1,OFFSET,INDEX)              \
-{                                                               \
-    int    i_off = POP1;                                        \
-                                                                \
-    while (i_off-- > (OFFSET))                                  \
-    {                                                           \
-        Word_t  i_dx = i_off * 5;                               \
-        (PBYTE)[i_dx + 0 + 5] = (PBYTE)[i_dx + 0];              \
-        (PBYTE)[i_dx + 1 + 5] = (PBYTE)[i_dx + 1];              \
-        (PBYTE)[i_dx + 2 + 5] = (PBYTE)[i_dx + 2];              \
-        (PBYTE)[i_dx + 3 + 5] = (PBYTE)[i_dx + 3];              \
-        (PBYTE)[i_dx + 4 + 5] = (PBYTE)[i_dx + 4];              \
-    }                                                           \
-    JU_COPY5_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 5]), INDEX);   \
-}
-#endif  // ! MEMMOVE
 
-#ifdef  MEMMOVE
 #define JU_INSERTINPLACE6(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
     Word_t n = ((POP1)-(OFFSET)) * 6;                           \
@@ -1496,26 +1642,7 @@ j__udyCount64Bits(uint64_t word64)
     memmove(dest, src, n);                                      \
     JU_COPY6_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 6]), INDEX);   \
 }
-#else   // ! MEMMOVE
-#define JU_INSERTINPLACE6(PBYTE,POP1,OFFSET,INDEX)              \
-{                                                               \
-    int    i_off = POP1;                                        \
-                                                                \
-    while (i_off-- > (OFFSET))                                  \
-    {                                                           \
-        Word_t  i_dx = i_off * 6;                               \
-        (PBYTE)[i_dx + 0 + 6] = (PBYTE)[i_dx + 0];              \
-        (PBYTE)[i_dx + 1 + 6] = (PBYTE)[i_dx + 1];              \
-        (PBYTE)[i_dx + 2 + 6] = (PBYTE)[i_dx + 2];              \
-        (PBYTE)[i_dx + 3 + 6] = (PBYTE)[i_dx + 3];              \
-        (PBYTE)[i_dx + 4 + 6] = (PBYTE)[i_dx + 4];              \
-        (PBYTE)[i_dx + 5 + 6] = (PBYTE)[i_dx + 5];              \
-    }                                                           \
-    JU_COPY6_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 6]), INDEX);   \
-}
-#endif  // ! MEMMOVE
 
-#ifdef  MEMMOVE
 #define JU_INSERTINPLACE7(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
     Word_t n = ((POP1)-(OFFSET)) * 7;                           \
@@ -1524,25 +1651,6 @@ j__udyCount64Bits(uint64_t word64)
     memmove(dest, src, n);                                      \
     JU_COPY7_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 7]), INDEX);   \
 }
-#else   // ! MEMMOVE
-#define JU_INSERTINPLACE7(PBYTE,POP1,OFFSET,INDEX)              \
-{                                                               \
-    int    i_off = POP1;                                        \
-                                                                \
-    while (i_off-- > (OFFSET))                                  \
-    {                                                           \
-        Word_t  i_dx = i_off * 7;                               \
-        (PBYTE)[i_dx + 0 + 7] = (PBYTE)[i_dx + 0];              \
-        (PBYTE)[i_dx + 1 + 7] = (PBYTE)[i_dx + 1];              \
-        (PBYTE)[i_dx + 2 + 7] = (PBYTE)[i_dx + 2];              \
-        (PBYTE)[i_dx + 3 + 7] = (PBYTE)[i_dx + 3];              \
-        (PBYTE)[i_dx + 4 + 7] = (PBYTE)[i_dx + 4];              \
-        (PBYTE)[i_dx + 5 + 7] = (PBYTE)[i_dx + 5];              \
-        (PBYTE)[i_dx + 6 + 7] = (PBYTE)[i_dx + 6];              \
-    }                                                           \
-    JU_COPY7_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 7]), INDEX);   \
-}
-#endif  // ! MEMMOVE
 
 
 // Counterparts to the above for deleting an Index:
@@ -1553,43 +1661,36 @@ j__udyCount64Bits(uint64_t word64)
         assert((long) (POP1) > 0);                              \
         assert((Word_t) (OFFSET) < (Word_t) (POP1));            \
         {                                                       \
-            int    i_offset = (OFFSET);                         \
+            void *src  = (PARRAY) + (OFFSET) + 1;               \
+            void *dest = (PARRAY) + (OFFSET);                   \
+            Word_t n = ((POP1)-(OFFSET)) * sizeof(*(PARRAY));   \
                                                                 \
-            while (++i_offset < (int)(POP1))                    \
-            {                                                   \
-                (PARRAY)[i_offset - 1] = (PARRAY)[i_offset];    \
-            }                                                   \
+            memmove(dest, src, n - 1);                          \
      /*       (PARRAY)[(POP1) - 1] = 0;     zero pad */         \
-            (PARRAY)[i_offset - 1] = 0;     /* zero pad */      \
         }
 
 #define JU_DELETEINPLACEJP(PARRAY,POP1,OFFSET,IGNORE)           \
+        JU_DELETEINPLACE(PARRAY,POP1,OFFSET,IGNORE)
+
+#define JU_DELETEINPLACE(PARRAY,POP1,OFFSET,IGNORE)             \
         assert((long) (POP1) > 0);                              \
         assert((Word_t) (OFFSET) < (Word_t) (POP1));            \
         {                                                       \
-            int    i_offset = (OFFSET);                         \
-            while (++i_offset < (int)(POP1))                    \
-            {                                                   \
-                (PARRAY)[i_offset - 1] = (PARRAY)[i_offset];    \
-            }                                                   \
+            void *src  = (PARRAY) + (OFFSET) + 1;               \
+            void *dest = (PARRAY) + (OFFSET);                   \
+            Word_t n = ((POP1)-(OFFSET)) * sizeof(*(PARRAY));   \
+            memmove(dest, src, n - 1);                          \
+     /*       (PARRAY)[(POP1) - 1] = 0;     zero pad */         \
         }
-
-// Variation for odd-byte-sized (non-native) Indexes, where cIS = Index Size
-// and PByte must point to a uint8_t (byte); copy byte-by-byte:
-//
-// Note:  If cIS == 1, JU_DELETEINPLACE_ODD == JU_DELETEINPLACE.
-//
-// Note:  There are no endian issues here because bytes are just shifted as-is,
-// not converted to/from an Index.
 
 #define JU_DELETEINPLACE_ODD(PBYTE,POP1,OFFSET,cIS)             \
         assert((long) (POP1) > 0);                              \
         assert((Word_t) (OFFSET) < (Word_t) (POP1));            \
         {                                                       \
-            int    b_off = (int)(((OFFSET) + 1) * (cIS)) - 1;   \
-                                                                \
-            while (++b_off < (int)((POP1) * (cIS)))             \
-                (PBYTE)[b_off - (cIS)] = (PBYTE)[b_off];        \
+            void *src  = (PBYTE) + (OFFSET * cIS) + cIS;        \
+            void *dest = (PBYTE) + (OFFSET * cIS);              \
+            Word_t n = ((POP1)-(OFFSET)) * cIS;                 \
+            memmove(dest, src, n - cIS);                        \
         }
 
 
@@ -1600,175 +1701,114 @@ j__udyCount64Bits(uint64_t word64)
 // are used when moving Indexes from one memory object to another.
 
 #define JU_INSERTCOPY(PDEST,PSOURCE,POP1,OFFSET,INDEX)          \
-        assert((long) (POP1) > 0);                              \
-        assert((Word_t) (OFFSET) <= (Word_t) (POP1));           \
-        {                                                       \
-            int    i_offset;                                    \
-                                                                \
-            for (i_offset = 0; i_offset < (int)(OFFSET); ++i_offset) \
-                (PDEST)[i_offset] = (PSOURCE)[i_offset];        \
-                                                                \
-            (PDEST)[i_offset] = (INDEX);                        \
-                                                                \
-            for (/* null */; i_offset < (int)(POP1); ++i_offset)\
-                (PDEST)[i_offset + 1] = (PSOURCE)[i_offset];    \
-        }
+    assert((long) (POP1) > 0);                                  \
+    assert((Word_t) (OFFSET) <= (Word_t) (POP1));               \
+    {                                                           \
+        char *src  = (char *)(PSOURCE);                         \
+        char *dest = (char *)(PDEST);                           \
+        int   cIS = sizeof(*(PDEST));                           \
+        Word_t __n = (OFFSET) * cIS;                            \
+        memcpy((void *)dest, (void *)src, __n);                 \
+        dest += __n;                                            \
+        src  += __n;                                            \
+        (PDEST)[OFFSET] = (INDEX);          /* insert new */    \
+        __n = ((POP1)-(OFFSET)) * cIS;                          \
+        dest += cIS;                                            \
+        memcpy((void *)dest, (void *)src, __n);                 \
+    }
 
 #define JU_INSERTCOPY3(PDEST,PSOURCE,POP1,OFFSET,INDEX)         \
-assert((long) (POP1) > 0);                                      \
-assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
-{                                                               \
-    int    o_ff;                                                \
-                                                                \
-    for (o_ff = 0; o_ff < (int)(OFFSET); o_ff++)                \
+    assert((long) (POP1) > 0);                                  \
+    assert((Word_t) (OFFSET) <= (Word_t) (POP1));               \
     {                                                           \
-        Word_t  i_dx = o_ff * 3;                                \
-        (PDEST)[i_dx + 0] = (PSOURCE)[i_dx + 0];                \
-        (PDEST)[i_dx + 1] = (PSOURCE)[i_dx + 1];                \
-        (PDEST)[i_dx + 2] = (PSOURCE)[i_dx + 2];                \
-    }                                                           \
-    JU_COPY3_LONG_TO_PINDEX(&((PDEST)[(OFFSET) * 3]), INDEX);   \
+        char *src  = (char *)(PSOURCE);                         \
+        char *dest = (char *)(PDEST);                           \
+        int   cIS = 3;                                          \
+        Word_t __n = (OFFSET) * cIS;                            \
+        memcpy((void *)dest, (void *)src, __n);                 \
+        dest += __n;                                            \
+        src  += __n;                                            \
                                                                 \
-    for (/* null */; o_ff < (int)(POP1); o_ff++)                \
-    {                                                           \
-        Word_t  i_dx = o_ff * 3;                                \
-        (PDEST)[i_dx + 0 + 3] = (PSOURCE)[i_dx + 0];            \
-        (PDEST)[i_dx + 1 + 3] = (PSOURCE)[i_dx + 1];            \
-        (PDEST)[i_dx + 2 + 3] = (PSOURCE)[i_dx + 2];            \
-    }                                                           \
-}
-
+        JU_COPY3_LONG_TO_PINDEX(&((PDEST)[(OFFSET) * cIS]), INDEX); \
+                                                                \
+        __n = ((POP1)-(OFFSET)) * cIS;                          \
+        dest += cIS;                                            \
+        memcpy((void *)dest, (void *)src, __n);                 \
+    }
 
 #define JU_INSERTCOPY5(PDEST,PSOURCE,POP1,OFFSET,INDEX)         \
-assert((long) (POP1) > 0);                                      \
-assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
-{                                                               \
-    int    o_ff;                                                \
-                                                                \
-    for (o_ff = 0; o_ff < (int)(OFFSET); o_ff++)                \
+    assert((long) (POP1) > 0);                                  \
+    assert((Word_t) (OFFSET) <= (Word_t) (POP1));               \
     {                                                           \
-        int     i_dx = o_ff * 5;                                \
-        (PDEST)[i_dx + 0] = (PSOURCE)[i_dx + 0];                \
-        (PDEST)[i_dx + 1] = (PSOURCE)[i_dx + 1];                \
-        (PDEST)[i_dx + 2] = (PSOURCE)[i_dx + 2];                \
-        (PDEST)[i_dx + 3] = (PSOURCE)[i_dx + 3];                \
-        (PDEST)[i_dx + 4] = (PSOURCE)[i_dx + 4];                \
-    }                                                           \
-    JU_COPY5_LONG_TO_PINDEX(&((PDEST)[(OFFSET) * 5]), INDEX);   \
+        char *src  = (char *)(PSOURCE);                         \
+        char *dest = (char *)(PDEST);                           \
+        int   cIS = 5;                                          \
+        Word_t __n = (OFFSET) * cIS;                            \
+        memcpy((void *)dest, (void *)src, __n);                 \
+        dest += __n;                                            \
+        src  += __n;                                            \
                                                                 \
-    for (/* null */; o_ff < (int)(POP1); o_ff++)                \
-    {                                                           \
-        int     i_dx = o_ff * 5;                                \
-        (PDEST)[i_dx + 0 + 5] = (PSOURCE)[i_dx + 0];            \
-        (PDEST)[i_dx + 1 + 5] = (PSOURCE)[i_dx + 1];            \
-        (PDEST)[i_dx + 2 + 5] = (PSOURCE)[i_dx + 2];            \
-        (PDEST)[i_dx + 3 + 5] = (PSOURCE)[i_dx + 3];            \
-        (PDEST)[i_dx + 4 + 5] = (PSOURCE)[i_dx + 4];            \
-    }                                                           \
-}
+        JU_COPY5_LONG_TO_PINDEX(&((PDEST)[(OFFSET) * cIS]), INDEX); \
+                                                                \
+        __n = ((POP1)-(OFFSET)) * cIS;                          \
+        dest += cIS;                                            \
+        memcpy((void *)dest, (void *)src, __n);                 \
+    }
 
 #define JU_INSERTCOPY6(PDEST,PSOURCE,POP1,OFFSET,INDEX)         \
-assert((long) (POP1) > 0);                                      \
-assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
-{                                                               \
-    int    o_ff;                                                \
-                                                                \
-    for (o_ff = 0; o_ff < (int)(OFFSET); o_ff++)                \
+    assert((long) (POP1) > 0);                                  \
+    assert((Word_t) (OFFSET) <= (Word_t) (POP1));               \
     {                                                           \
-        Word_t  i_dx = o_ff * 6;                                \
-        (PDEST)[i_dx + 0] = (PSOURCE)[i_dx + 0];                \
-        (PDEST)[i_dx + 1] = (PSOURCE)[i_dx + 1];                \
-        (PDEST)[i_dx + 2] = (PSOURCE)[i_dx + 2];                \
-        (PDEST)[i_dx + 3] = (PSOURCE)[i_dx + 3];                \
-        (PDEST)[i_dx + 4] = (PSOURCE)[i_dx + 4];                \
-        (PDEST)[i_dx + 5] = (PSOURCE)[i_dx + 5];                \
-    }                                                           \
-    JU_COPY6_LONG_TO_PINDEX(&((PDEST)[(OFFSET) * 6]), INDEX);   \
+        char *src  = (char *)(PSOURCE);                         \
+        char *dest = (char *)(PDEST);                           \
+        int   cIS = 6;                                          \
+        Word_t __n = (OFFSET) * cIS;                            \
+        memcpy((void *)dest, (void *)src, __n);                 \
+        dest += __n;                                            \
+        src  += __n;                                            \
                                                                 \
-    for (/* null */; o_ff < (int)(POP1); o_ff++)                \
-    {                                                           \
-        int     i_dx = o_ff * 6;                                \
-        (PDEST)[i_dx + 0 + 6] = (PSOURCE)[i_dx + 0];            \
-        (PDEST)[i_dx + 1 + 6] = (PSOURCE)[i_dx + 1];            \
-        (PDEST)[i_dx + 2 + 6] = (PSOURCE)[i_dx + 2];            \
-        (PDEST)[i_dx + 3 + 6] = (PSOURCE)[i_dx + 3];            \
-        (PDEST)[i_dx + 4 + 6] = (PSOURCE)[i_dx + 4];            \
-        (PDEST)[i_dx + 5 + 6] = (PSOURCE)[i_dx + 5];            \
-    }                                                           \
-}
+        JU_COPY6_LONG_TO_PINDEX(&((PDEST)[(OFFSET) * cIS]), INDEX); \
+                                                                \
+        __n = ((POP1)-(OFFSET)) * cIS;                          \
+        dest += cIS;                                            \
+        memcpy((void *)dest, (void *)src, __n);                 \
+    }
 
 #define JU_INSERTCOPY7(PDEST,PSOURCE,POP1,OFFSET,INDEX)         \
-assert((long) (POP1) > 0);                                      \
-assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
-{                                                               \
-    int    o_ff;                                                \
-                                                                \
-    for (o_ff = 0; o_ff < (int)(OFFSET); o_ff++)                \
+    assert((long) (POP1) > 0);                                  \
+    assert((Word_t) (OFFSET) <= (Word_t) (POP1));               \
     {                                                           \
-        Word_t  i_dx = o_ff * 7;                                \
-        (PDEST)[i_dx + 0] = (PSOURCE)[i_dx + 0];                \
-        (PDEST)[i_dx + 1] = (PSOURCE)[i_dx + 1];                \
-        (PDEST)[i_dx + 2] = (PSOURCE)[i_dx + 2];                \
-        (PDEST)[i_dx + 3] = (PSOURCE)[i_dx + 3];                \
-        (PDEST)[i_dx + 4] = (PSOURCE)[i_dx + 4];                \
-        (PDEST)[i_dx + 5] = (PSOURCE)[i_dx + 5];                \
-        (PDEST)[i_dx + 6] = (PSOURCE)[i_dx + 6];                \
-    }                                                           \
-    JU_COPY7_LONG_TO_PINDEX(&((PDEST)[(OFFSET) * 7]), INDEX);   \
+        char *src  = (char *)(PSOURCE);                         \
+        char *dest = (char *)(PDEST);                           \
+        int   cIS = 7;                                          \
+        Word_t __n = (OFFSET) * cIS;                            \
+        memcpy((void *)dest, (void *)src, __n);                 \
+        dest += __n;                                            \
+        src  += __n;                                            \
                                                                 \
-    for (/* null */; o_ff < (int)(POP1); o_ff++)                \
-    {                                                           \
-        int     i_dx = o_ff * 7;                                \
-        (PDEST)[i_dx + 0 + 7] = (PSOURCE)[i_dx + 0];            \
-        (PDEST)[i_dx + 1 + 7] = (PSOURCE)[i_dx + 1];            \
-        (PDEST)[i_dx + 2 + 7] = (PSOURCE)[i_dx + 2];            \
-        (PDEST)[i_dx + 3 + 7] = (PSOURCE)[i_dx + 3];            \
-        (PDEST)[i_dx + 4 + 7] = (PSOURCE)[i_dx + 4];            \
-        (PDEST)[i_dx + 5 + 7] = (PSOURCE)[i_dx + 5];            \
-        (PDEST)[i_dx + 6 + 7] = (PSOURCE)[i_dx + 6];            \
-    }                                                           \
-}
+        JU_COPY7_LONG_TO_PINDEX(&((PDEST)[(OFFSET) * cIS]), INDEX); \
+                                                                \
+        __n = ((POP1)-(OFFSET)) * cIS;                          \
+        dest += cIS;                                            \
+        memcpy((void *)dest, (void *)src, __n);                 \
+    }
 
-
-// Counterparts to the above for deleting an Index:
-
-#define JU_DELETECOPY(PDEST,PSOURCE,POP1,OFFSET,IGNORE)         \
+#define JU_DELETECOPY_ODD(PDEST,PSOURCE,POP1,OFFSET,cIS)        \
         assert((long) (POP1) > 0);                              \
         assert((Word_t) (OFFSET) < (Word_t) (POP1));            \
         {                                                       \
-            int    i_offset;                                    \
-                                                                \
-            for (i_offset = 0; i_offset < (OFFSET); ++i_offset) \
-                (PDEST)[i_offset] = (PSOURCE)[i_offset];        \
-                                                                \
-            for (++i_offset; i_offset < (int)(POP1); ++i_offset)\
-                (PDEST)[i_offset - 1] = (PSOURCE)[i_offset];    \
+            char *src  = (char *)(PSOURCE);                     \
+            char *dest = (char *)(PDEST);                       \
+            Word_t __n = (OFFSET) * cIS;                        \
+            memcpy((void *)dest, (void *)src, __n);             \
+            dest += __n;                                        \
+            src  += __n + cIS;   /* skip deleted Key */         \
+            __n = (((POP1 - 1)-(OFFSET)) * cIS);                \
+            memcpy((void *)dest, (void *)src, __n);             \
         }
 
-// Variation for odd-byte-sized (non-native) Indexes, where cIS = Index Size;
-// copy byte-by-byte:
-//
-// Note:  There are no endian issues here because bytes are just shifted as-is,
-// not converted to/from an Index.
-//
-// Note:  If cIS == 1, JU_DELETECOPY_ODD == JU_DELETECOPY, at least in concept.
-
-#define JU_DELETECOPY_ODD(PDEST,PSOURCE,POP1,OFFSET,cIS)                \
-        assert((long) (POP1) > 0);                                      \
-        assert((Word_t) (OFFSET) < (Word_t) (POP1));                    \
-        {                                                               \
-            uint8_t *_Pdest   = (uint8_t *) (PDEST);                    \
-            uint8_t *_Psource = (uint8_t *) (PSOURCE);                  \
-            int      b_off;                                             \
-                                                                        \
-            for (b_off = 0; b_off < (int)((OFFSET) * (cIS)); ++b_off)   \
-                *_Pdest++ = *_Psource++;                                \
-                                                                        \
-            _Psource += (cIS);                                          \
-                                                                        \
-            for (b_off += (cIS); b_off < (int)((POP1) * (cIS)); ++b_off)\
-                *_Pdest++ = *_Psource++;                                \
-        }
+#define JU_DELETECOPY(PDEST,PSOURCE,POP1,OFFSET,IGNORE)         \
+    JU_DELETECOPY_ODD(PDEST,PSOURCE,POP1,OFFSET,sizeof(*(PDEST)))
 
 
 // GENERIC RETURN CODE HANDLING FOR JUDY1 (NO VALUE AREAS) AND JUDYL (VALUE
@@ -1795,7 +1835,7 @@ assert((Word_t) (OFFSET) <= (Word_t) (POP1));                   \
 // For Judy1, these all "fall through" to simply JU_RET_FOUND, since there is no
 // value area pointer to return:
 
-#define JU_RET_FOUND_LEAFW(PJLLW,POP1,OFFSET)    JU_RET_FOUND
+#define JU_RET_FOUND_LEAFW(PJLLW,POP1,OFFSET)   JU_RET_FOUND
 
 #define JU_RET_FOUND_JPM(Pjpm)                  JU_RET_FOUND
 #define JU_RET_FOUND_PVALUE(Pjv,OFFSET)         JU_RET_FOUND

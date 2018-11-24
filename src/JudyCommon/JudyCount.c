@@ -159,7 +159,7 @@ JUDYLCODE(PPvoid_t PPvalue);	// from JudyLFirst() calls.
 	if (Index1 == Index2)
 	{
 #ifdef JUDY1
-	    retcode = Judy1Test(PArray, Index1, PJError);
+	    retcode = j__udy1Test(PArray, Index1, PJError);
 
 	    if (retcode == JERRI) return(C_JERR);	// pass through error.
 
@@ -169,7 +169,7 @@ JUDYLCODE(PPvoid_t PPvalue);	// from JudyLFirst() calls.
 		return(C_JERR);
 	    }
 #else
-	    PPvalue = JudyLGet(PArray, Index1, PJError);
+	    PPvalue = j__udyLGet(PArray, Index1, PJError);
 
 	    if (PPvalue == PPJERR) return(C_JERR);	// pass through error.
 

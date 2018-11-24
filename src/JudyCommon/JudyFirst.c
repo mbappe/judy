@@ -58,7 +58,7 @@ FUNCTION PPvoid_t JudyLFirst
 	}
 
 #ifdef JUDY1
-	switch (Judy1Test(PArray, *PIndex, PJError))
+	switch (j__udy1Test(PArray, *PIndex, PJError))
 	{
 	case 1:	 return(1);			// found *PIndex itself.
 	case 0:  return(Judy1Next(PArray, PIndex, PJError));
@@ -68,7 +68,7 @@ FUNCTION PPvoid_t JudyLFirst
 	{
 	    PPvoid_t PValue;
 
-	    if ((PValue = JudyLGet(PArray, *PIndex, PJError)) == PPJERR)
+	    if ((PValue = j__udyLGet(PArray, *PIndex, PJError)) == PPJERR)
 		return(PPJERR);
 
 	    if (PValue != (PPvoid_t) NULL) return(PValue);  // found *PIndex.
@@ -104,7 +104,7 @@ FUNCTION PPvoid_t JudyLLast
 	}
 
 #ifdef JUDY1
-	switch (Judy1Test(PArray, *PIndex, PJError))
+	switch (j__udy1Test(PArray, *PIndex, PJError))
 	{
 	case 1:	 return(1);			// found *PIndex itself.
 	case 0:  return(Judy1Prev(PArray, PIndex, PJError));
@@ -114,7 +114,7 @@ FUNCTION PPvoid_t JudyLLast
 	{
 	    PPvoid_t PValue;
 
-	    if ((PValue = JudyLGet(PArray, *PIndex, PJError)) == PPJERR)
+	    if ((PValue = j__udyLGet(PArray, *PIndex, PJError)) == PPJERR)
 		return(PPJERR);
 
 	    if (PValue != (PPvoid_t) NULL) return(PValue);  // found *PIndex.
@@ -148,7 +148,7 @@ FUNCTION int JudyLFirstEmpty(
 	}
 
 #ifdef JUDY1
-	switch (Judy1Test(PArray, *PIndex, PJError))
+	switch (j__udy1Test(PArray, *PIndex, PJError))
 	{
 	case 0:	 return(1);			// found *PIndex itself.
 	case 1:  return(Judy1NextEmpty(PArray, PIndex, PJError));
@@ -158,7 +158,7 @@ FUNCTION int JudyLFirstEmpty(
 	{
 	    PPvoid_t PValue;
 
-	    if ((PValue = JudyLGet(PArray, *PIndex, PJError)) == PPJERR)
+	    if ((PValue = j__udyLGet(PArray, *PIndex, PJError)) == PPJERR)
 		return(JERRI);
 
 	    if (PValue == (PPvoid_t) NULL) return(1);	// found *PIndex.
@@ -192,7 +192,7 @@ FUNCTION int JudyLLastEmpty(
 	}
 
 #ifdef JUDY1
-	switch (Judy1Test(PArray, *PIndex, PJError))
+	switch (j__udy1Test(PArray, *PIndex, PJError))
 	{
 	case 0:	 return(1);			// found *PIndex itself.
 	case 1:  return(Judy1PrevEmpty(PArray, PIndex, PJError));
@@ -202,7 +202,7 @@ FUNCTION int JudyLLastEmpty(
 	{
 	    PPvoid_t PValue;
 
-	    if ((PValue = JudyLGet(PArray, *PIndex, PJError)) == PPJERR)
+	    if ((PValue = j__udyLGet(PArray, *PIndex, PJError)) == PPJERR)
 		return(JERRI);
 
 	    if (PValue == (PPvoid_t) NULL) return(1);	// found *PIndex.
