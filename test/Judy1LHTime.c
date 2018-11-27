@@ -40,29 +40,36 @@
 
 #include <Judy.h>                       // for Judy macros J*()
 
+// This Judy1LHTime program uses RAMMETRICS globals which are, at present,
+// defined unconditionally in the Judy library in JudyMalloc.c.
+// The Judy 1.0.5 library doesn't define the RAMMETRICS globals but we'd like
+// to be able link this modern Judy1LHTime with the Judy 1.0.5 library.
+// Use -DJUDY_V105 or -DJUDY_METRICS_GLOBALS to define the variables in the
+// Judy1LHtime program, itself, in order to link this modern Judy1LHTime
+// program with a Judy 1.0.5 library or build it in a Judy 1.0.5 working
+// directory.
 #if defined(JUDY_V105) || defined(JUDY_METRICS_GLOBALS)
-// Judy 1.0.5 doesn't have RAMMETRICS but this modern Time.c program
-// assumes the globals exist. Use -DJUDY_V105 or -DJUDY_METRICS_GLOBALS
-// to build this modern Time.c program in a Judy 1.0.5 working directory.
-Word_t j__MalFreeCnt;
-Word_t j__MFlag;
-Word_t j__AllocWordsTOT;
-Word_t j__AllocWordsJBB;
-Word_t j__AllocWordsJBU;
-Word_t j__AllocWordsJBL;
-Word_t j__AllocWordsJLLW;
-Word_t j__AllocWordsJLL7;
-Word_t j__AllocWordsJLL6;
-Word_t j__AllocWordsJLL5;
-Word_t j__AllocWordsJLL4;
-Word_t j__AllocWordsJLL3;
-Word_t j__AllocWordsJLL2;
-Word_t j__AllocWordsJLL1;
-Word_t j__AllocWordsJLB1;
-Word_t j__AllocWordsJV;
-Word_t j__AllocWordsTOT;
-Word_t j__TotalBytesAllocated;
+#define RM_EXTERN
+#else // defined(JUDY_V105) || defined(JUDY_METRICS_GLOBALS)
+#define RM_EXTERN  extern
 #endif // defined(JUDY_V105) || defined(JUDY_METRICS_GLOBALS)
+RM_EXTERN Word_t j__TotalBytesAllocated; // allocated by mmap
+RM_EXTERN Word_t j__MFlag; // print mmap and munmap calls on stderr
+RM_EXTERN Word_t j__MalFreeCnt; // count of JudyMalloc + JudyFree calls
+RM_EXTERN Word_t j__AllocWordsTOT;
+RM_EXTERN Word_t j__AllocWordsJBB;
+RM_EXTERN Word_t j__AllocWordsJBU;
+RM_EXTERN Word_t j__AllocWordsJBL;
+RM_EXTERN Word_t j__AllocWordsJLLW;
+RM_EXTERN Word_t j__AllocWordsJLL7;
+RM_EXTERN Word_t j__AllocWordsJLL6;
+RM_EXTERN Word_t j__AllocWordsJLL5;
+RM_EXTERN Word_t j__AllocWordsJLL4;
+RM_EXTERN Word_t j__AllocWordsJLL3;
+RM_EXTERN Word_t j__AllocWordsJLL2;
+RM_EXTERN Word_t j__AllocWordsJLL1;
+RM_EXTERN Word_t j__AllocWordsJLB1;
+RM_EXTERN Word_t j__AllocWordsJV;
 
 // The released Judy libraries do not, and some of Doug's work-in-progress
 // libraries may not, have Judy1Dump and/or JudyLDump entry points.
@@ -75,6 +82,16 @@ Word_t j__TotalBytesAllocated;
 // The solution is to define JUDY1_V2 and/or JUDY1_DUMP and/or JUDYL_V2
 // and/or JUDYL_DUMP if/when we want Time.c to use Judy1Dump and/or
 // JudyLDump for real.
+
+// The released Judy libraries do not, and some of Doug's work-in-progress
+// libraries may not, have Judy[1L]Dump entry points.
+// And Mike sometimes links Judy1LHTime with his own Judy1 library and the
+// released or Doug's JudyL library, or links Judy1LHTime with his own JudyL
+// library and the released or Doug's Judy1 library.
+// We want to be able to use the same Judy1LHTime.c for all of these cases.
+// The solution is to define JUDY1_V2 and/or JUDY1_DUMP when we want
+// Judy1LHTime to use Judy1Dump for real. And to define JUDYL_V2
+// and/or JUDYL_DUMP if/when we want Judy1LHTime to use JudyLDump for real.
 
 #if !defined(JUDY1_V2) && !defined(JUDY1_DUMP)
 #define Judy1Dump(wRoot, nBitsLeft, wKeyPrefix)
@@ -175,34 +192,9 @@ Word_t    j__GetCallsP; // Num search calls with no direct hit and resulting in 
 Word_t    j__GetCallsM; // Num search calls with no direct hit and resulting in backward search
 Word_t    j__GetCalls;  // Num search calls
 
-extern Word_t    j__AllocWordsTOT;
-extern Word_t    j__MFlag;                     // Print memory allocation on stderr
-extern Word_t    j__TotalBytesAllocated;       //
-extern Word_t    j__MalFreeCnt;                // JudyMalloc() + Judyfree() count
-
-extern Word_t    j__AllocWordsJBB;
-extern Word_t    j__AllocWordsJBU;
-extern Word_t    j__AllocWordsJBL;
-extern Word_t    j__AllocWordsJLB1;
-extern Word_t    j__AllocWordsJLL1;
-extern Word_t    j__AllocWordsJLL2;
-extern Word_t    j__AllocWordsJLL3;
-extern Word_t    j__AllocWordsJLL4;
-extern Word_t    j__AllocWordsJLL5;
-extern Word_t    j__AllocWordsJLL6;
-extern Word_t    j__AllocWordsJLL7;
-extern Word_t    j__AllocWordsJLLW;
-extern Word_t    j__AllocWordsJV;
-extern Word_t    j__NumbJV;
-
-// This 64 Bit define may NOT work on all compilers
-
-
 //=======================================================================
 //      T I M I N G   M A C R O S
 //=======================================================================
-
-// (D) is returned in nano-seconds from last STARTTm
 
 #include <time.h>
 
@@ -226,6 +218,7 @@ struct timespec TVBeg__, TVEnd__;
 /*  asm volatile("" ::: "memory");   */                                 \
 }
 
+// (D) is returned in nano-seconds from last STARTTm
 #define ENDTm(D) 							\
 { 									\
 /*    asm volatile("" ::: "memory");        */                          \
@@ -423,9 +416,13 @@ PRINT5_2f(double __X)
         {
             printf(" %5.1f", __X);
         }
-        else
+        else if (__X >= .5)
         {
             printf(" %5.0f", __X);
+        }
+        else
+        {
+            printf("    00"); // -nan
         }
     }
     else
@@ -472,7 +469,7 @@ PRINT7_3f(double __X)
     }
     else
     {
-        printf("     0");               // keep white space cleaner
+        printf("       0");               // keep white space cleaner
     }
 }
 
@@ -829,17 +826,17 @@ PrintHeader(const char *strFirstCol)
     if (tFlag)
         printf(" MeasOv");
     if (J1Flag)
-        printf("     J1S");
+        printf("    J1S");
     if (JLFlag)
-        printf("     JLI");
+        printf("    JLI");
     if (JRFlag)
-        printf("   JLI-R");
+        printf("  JLI-R");
     if (JHFlag)
-        printf("    JHSI");
+        printf("   JHSI");
     if (bFlag)
         printf("  BMSet");
     if (yFlag)
-        printf("  ByMSet");
+        printf(" ByMSet");
     if (tFlag)
         printf(" MeasOv");
     if (J1Flag)
@@ -906,20 +903,8 @@ PrintHeader(const char *strFirstCol)
             printf("   JHSD");
     }
 
-    if (bFlag)
-        printf("  Heap: Words/Key");
-    if (yFlag)
-        printf("  Heap: Words/Key");
-
-    if ((J1Flag + JLFlag + JHFlag) == 1)    // only if 1 Heap
-    {
-        if (J1Flag)
-            printf(" 1heap/K");
-        if (JLFlag || JRFlag)
-            printf(" Lheap/K");
-        if (JHFlag)
-            printf(" HSheap/K");
-    }
+    if (J1Flag | JLFlag | JHFlag | JRFlag)
+        printf("  Hp/K");
 
     if (mFlag && (bFlag == 0) && (yFlag == 0))
     {
@@ -952,7 +937,7 @@ PrintHeader(const char *strFirstCol)
 
 //        printf(" TrDep");
         printf(" AvPop");
-        printf(" %%MalEff");
+        printf(" %%MEff");
 
         if (J1Flag)
             printf(" MF1/K");
@@ -963,10 +948,15 @@ PrintHeader(const char *strFirstCol)
 
         printf("  mmap/K");
     }
-printf("  DiHts");
-printf("  GetsP");
-printf("  GetsM");
-printf("   Gets");
+
+    if (J1Flag | JLFlag | JHFlag | JRFlag)
+    {
+        printf("  DiHts");
+        printf("  GetsP");
+        printf("  GetsM");
+        printf("   Gets");
+    }
+
     printf("\n");
 }
 
@@ -2594,8 +2584,8 @@ main(int argc, char *argv[])
         printf("# COLHEAD %2d %%DiHt - %% of Direct Hits per Leaf Search\n", Col++);
 
 //        printf("# COLHEAD %2d TrDep  - Tree depth with LGet/1Test searches\n", Col++);
-        printf("# COLHEAD %2d AvPop - Average Current Leaf Population\n", Col++);
-        printf("# COLHEAD %2d %%MalEff - %% RAM JudyMalloc()ed vs mmap()ed from Kernel\n", Col++);
+        printf("# COLHEAD %2d AvPop - Average Population of Leaves Searched (be careful)\n", Col++);
+        printf("# COLHEAD %2d %%MEff - %% RAM JudyMalloc()ed vs mmap()ed from Kernel\n", Col++);
 
         if (J1Flag)
             printf
@@ -2610,13 +2600,16 @@ main(int argc, char *argv[])
                 ("# COLHEAD %2d MFHS/K   - JudyHS average malloc+free's per Key\n",
                  Col++);
 
-            printf
-                ("# COLHEAD %2d mmap/K   - mmap()ed Words per Key\n", Col++);
+        printf("# COLHEAD %2d mmap/K   - mmap()ed Words per Key\n", Col++);
     }
-printf("# COLHEAD %2d DiHts - Num get calls the result in a direct hit\n", Col++);
-printf("# COLHEAD %2d GetsP - Num get calls that miss and search forward\n", Col++);
-printf("# COLHEAD %2d GetsM - Num get calls that miss and search backward\n", Col++);
-printf("# COLHEAD %2d Gets  - Num get calls\n", Col++);
+
+    if (J1Flag | JLFlag | JHFlag | JRFlag)
+    {
+        printf("# COLHEAD %2d DiHts - Num get calls the result in a direct hit\n", Col++);
+        printf("# COLHEAD %2d GetsP - Num get calls that miss and search forward\n", Col++);
+        printf("# COLHEAD %2d GetsM - Num get calls that miss and search backward\n", Col++);
+        printf("# COLHEAD %2d Gets  - Num get calls\n", Col++);
+    }
 
     if (J1Flag)
         printf("# %s - Leaf sizes in Words\n", Judy1MallocSizes);
@@ -3067,19 +3060,19 @@ nextPart:
                 {
                     if (tFlag)
                         PRINT6_1f(DeltaGen1);
-                    DONTPRINTLESSTHANZERO7(DeltanSec1Sum / Pms[grp].ms_delta, DeltaGen1);
+                    DONTPRINTLESSTHANZERO(DeltanSec1Sum / Pms[grp].ms_delta, DeltaGen1);
                 }
                 if (JLFlag)
                 {
                     if (tFlag)
                         PRINT6_1f(DeltaGenL);
-                    DONTPRINTLESSTHANZERO7(DeltanSecLSum / Pms[grp].ms_delta, DeltaGenL);
+                    DONTPRINTLESSTHANZERO(DeltanSecLSum / Pms[grp].ms_delta, DeltaGenL);
                 }
                 if (JHFlag)
                 {
                     if (tFlag)
                         PRINT6_1f(DeltaGenHS);
-                    DONTPRINTLESSTHANZERO7(DeltanSecHSSum / Pms[grp].ms_delta, DeltaGenHS);
+                    DONTPRINTLESSTHANZERO(DeltanSecHSSum / Pms[grp].ms_delta, DeltaGenHS);
                 }
                 if (fFlag)
                     fflush(NULL);
@@ -3304,7 +3297,7 @@ nextPart:
             if (Pop1 == wFinalPop1) {
                 if (tFlag)
                     PRINT6_1f(DeltaGenL);
-                DONTPRINTLESSTHANZERO7(DeltanSecLSum / Pms[grp].ms_delta, DeltaGenL);
+                DONTPRINTLESSTHANZERO(DeltanSecLSum / Pms[grp].ms_delta, DeltaGenL);
                 if (fFlag)
                     fflush(NULL);
             }
@@ -3647,8 +3640,8 @@ nextPart:
 
         if (Pop1 == wFinalPop1) {
 
-            if ((J1Flag + JLFlag + JHFlag) == 1)            // only 1 Heap
-                PRINT7_3f((double)j__AllocWordsTOT / (double)Pop1);
+            if (J1Flag | JLFlag | JHFlag | JRFlag)
+                PRINT5_2f((double)j__AllocWordsTOT / Pop1);
 
             if (mFlag && (bFlag == 0) && (yFlag == 0))
             {
@@ -3690,8 +3683,7 @@ nextPart:
 //                printf(" %5.1f", TreeDepth / (double)Meas);
 
 //              Print the percent efficiency of dlmalloc
-                printf(" %7.3f", 100 * j__AllocWordsTOT / (double)(j__TotalBytesAllocated / sizeof(Word_t)));
-                //PRINTT7_3f(j__AllocWordsTOT / (double)(j__TotalBytesAllocated / sizeof(Word_t)));
+                PRINT5_2f((double)j__AllocWordsTOT / (j__TotalBytesAllocated / sizeof(Word_t)));
                 if (J1Flag)
                     PRINT5_2f(DeltaMalFre1Sum / Pms[grp].ms_delta);
                 if (JLFlag || JRFlag)
@@ -3706,10 +3698,15 @@ nextPart:
                     PRINT7_3f(dVal);
                 }
             }
-printf(" %6zd", DirectHits);
-printf(" %6zd", GetCallsP);
-printf(" %6zd", GetCallsM);
-printf(" %6zd", GetCalls);
+
+            if (J1Flag | JLFlag | JHFlag | JRFlag)
+            {
+                printf(" %6zd", DirectHits);
+                printf(" %6zd", GetCallsP);
+                printf(" %6zd", GetCallsM);
+                printf(" %6zd", GetCalls);
+            }
+
             printf("\n");
             if (fFlag)
                 fflush(NULL);                   // assure data gets to file in case malloc fail
