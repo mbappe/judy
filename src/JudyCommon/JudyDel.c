@@ -185,6 +185,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // context.
 // END OF MACROS, START OF CASES:
     case cJU_JPBRANCH_L2:
+    {
         assert(!ju_DcdNonMatchKey(Index, Pjp, 2));
         assert(ParentLevel > (2));
         pop1 = ju_BranchPop0(Pjp, 2) + 1;
@@ -235,7 +236,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
+    }
     case cJU_JPBRANCH_L3:
+    {
         assert(!ju_DcdNonMatchKey(Index, Pjp, 3));
         assert(ParentLevel > (3));
         pop1 = ju_BranchPop0(Pjp, 3) + 1;
@@ -288,7 +291,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
+    }
     case cJU_JPBRANCH_L4:
+    {
         assert(!ju_DcdNonMatchKey(Index, Pjp, 4));
         assert(ParentLevel > (4));
         pop1 = ju_BranchPop0(Pjp, 4) + 1;
@@ -340,7 +345,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
+    }
     case cJU_JPBRANCH_L5:
+    {
         assert(!ju_DcdNonMatchKey(Index, Pjp, 5));
         assert(ParentLevel > (5));
         pop1 = ju_BranchPop0(Pjp, 5) + 1;
@@ -393,7 +400,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
+    }
     case cJU_JPBRANCH_L6:
+    {
         assert(!ju_DcdNonMatchKey(Index, Pjp, 6));
         assert(ParentLevel > (6));
         pop1 = ju_BranchPop0(Pjp, 6) + 1;
@@ -446,7 +455,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
+    }
     case cJU_JPBRANCH_L7:
+    {
         assert(!ju_DcdNonMatchKey(Index, Pjp, 7));
         assert(ParentLevel > (7));
         pop1 = ju_BranchPop0(Pjp, 7) + 1;
@@ -498,6 +509,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
+    }
 // A top-level BranchL is different and cannot use JU_BRANCHL():  Dont try to
 // compress to a (LEAFW) leaf yet, but leave this for a later deletion
 // (hysteresis > 0); and the next JP type depends on the system word size; so
@@ -565,6 +577,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // Note:  Its no accident that the macro calls for these cases is nearly
 // identical to the code for BranchLs.
     case cJU_JPBRANCH_B2:
+    {
         assert(!ju_DcdNonMatchKey(Index, Pjp, 2));
         assert(ParentLevel > (2));
         pop1 = ju_BranchPop0(Pjp, 2) + 1;
@@ -632,7 +645,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
+    }
     case cJU_JPBRANCH_B3:
+    {
         assert(!ju_DcdNonMatchKey(Index, Pjp, 3));
         assert(ParentLevel > (3));
         pop1 = ju_BranchPop0(Pjp, 3) + 1;
@@ -701,7 +716,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
+    }
     case cJU_JPBRANCH_B4:
+    {
         assert(!ju_DcdNonMatchKey(Index, Pjp, 4));
         assert(ParentLevel > (4));
         pop1 = ju_BranchPop0(Pjp, 4) + 1;
@@ -769,7 +786,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
+    }
     case cJU_JPBRANCH_B5:
+    {
         assert(!ju_DcdNonMatchKey(Index, Pjp, 5));
         assert(ParentLevel > (5));
         pop1 = ju_BranchPop0(Pjp, 5) + 1;
@@ -838,7 +857,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
+    }
     case cJU_JPBRANCH_B6:
+    {
         assert(!ju_DcdNonMatchKey(Index, Pjp, 6));
         assert(ParentLevel > (6));
         pop1 = ju_BranchPop0(Pjp, 6) + 1;
@@ -907,7 +928,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
+    }
     case cJU_JPBRANCH_B7:
+    {
         assert(!ju_DcdNonMatchKey(Index, Pjp, 7));
         assert(ParentLevel > (7));
         pop1 = ju_BranchPop0(Pjp, 7) + 1;
@@ -976,6 +999,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
+    }
 // A top-level BranchB is different and cannot use JU_BRANCHB():  Dont try to
 // compress to a (LEAFW) leaf yet, but leave this for a later deletion
 // (hysteresis > 0); and the next JP type depends on the system word size; so
@@ -1119,6 +1143,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // identical to the code for BranchLs, with the addition of cJU_JPNULL*
 // parameters only needed for BranchUs.
     case cJU_JPBRANCH_U2:
+    {
         assert(!ju_DcdNonMatchKey(Index, Pjp, 2));
         assert(ParentLevel > (2));
         DBGCODE(parentJPtype = ju_Type(Pjp););
@@ -1168,7 +1193,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
+    }
     case cJU_JPBRANCH_U3:
+    {
         assert(!ju_DcdNonMatchKey(Index, Pjp, 3));
         assert(ParentLevel > (3));
         DBGCODE(parentJPtype = ju_Type(Pjp););
@@ -1219,7 +1246,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
+    }
     case cJU_JPBRANCH_U4:
+    {
         assert(!ju_DcdNonMatchKey(Index, Pjp, 4));
         assert(ParentLevel > (4));
         DBGCODE(parentJPtype = ju_Type(Pjp););
@@ -1269,7 +1298,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
+    }
     case cJU_JPBRANCH_U5:
+    {
         assert(!ju_DcdNonMatchKey(Index, Pjp, 5));
         assert(ParentLevel > (5));
         DBGCODE(parentJPtype = ju_Type(Pjp););
@@ -1320,7 +1351,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
+    }
     case cJU_JPBRANCH_U6:
+    {
         assert(!ju_DcdNonMatchKey(Index, Pjp, 6));
         assert(ParentLevel > (6));
         DBGCODE(parentJPtype = ju_Type(Pjp););
@@ -1371,7 +1404,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
+    }
     case cJU_JPBRANCH_U7:
+    {
         assert(!ju_DcdNonMatchKey(Index, Pjp, 7));
         assert(ParentLevel > (7));
         DBGCODE(parentJPtype = ju_Type(Pjp););
@@ -1422,16 +1457,19 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             ju_SetBaLPntr(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
+    }
 // A top-level BranchU is different and cannot use JU_BRANCHU():  Dont try to
 // compress to a (LEAFW) leaf yet, but leave this for a later deletion
 // (hysteresis > 0); just descend through the BranchU:
     case cJU_JPBRANCH_U:
+    {
         DBGCODE(parentJPtype = ju_Type(Pjp););
         level = cJU_ROOTSTATE;
 //            Pjp   = P_JP(ju_BaLPntr(Pjp)) + JU_DIGITATSTATE(Index, cJU_ROOTSTATE);
         Pjbu_t    Pjbu = P_JBU(ju_BaLPntr(Pjp));
         Pjp = Pjbu->jbu_jp + JU_DIGITATSTATE(Index, cJU_ROOTSTATE);
         break;
+    }
 // ****************************************************************************
 // LINEAR LEAF:
 //
@@ -2386,40 +2424,54 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // END OF MACROS, START OF CASES:
 // Single Index remains in Immed; convert JP to null:
     case cJU_JPIMMED_1_01:
+    {
         assert(parentJPtype == (cJU_JPBRANCH_U2));
         assert(ju_DcdPop0(Pjp) == JU_TRIMTODCDSIZE(Index));
         ju_SetIMM01(Pjp, 0, 0, cJU_JPNULL1);
         return (1);
+    }
     case cJU_JPIMMED_2_01:
+    {
         assert(parentJPtype == (cJU_JPBRANCH_U3));
         assert(ju_DcdPop0(Pjp) == JU_TRIMTODCDSIZE(Index));
         ju_SetIMM01(Pjp, 0, 0, cJU_JPNULL2);
         return (1);
+    }
     case cJU_JPIMMED_3_01:
+    {
         assert(parentJPtype == (cJU_JPBRANCH_U4));
         assert(ju_DcdPop0(Pjp) == JU_TRIMTODCDSIZE(Index));
         ju_SetIMM01(Pjp, 0, 0, cJU_JPNULL3);
         return (1);
+    }
     case cJU_JPIMMED_4_01:
+    {
         assert(parentJPtype == (cJU_JPBRANCH_U5));
         assert(ju_DcdPop0(Pjp) == JU_TRIMTODCDSIZE(Index));
         ju_SetIMM01(Pjp, 0, 0, cJU_JPNULL4);
         return (1);
+    }
     case cJU_JPIMMED_5_01:
+    {
         assert(parentJPtype == (cJU_JPBRANCH_U6));
         assert(ju_DcdPop0(Pjp) == JU_TRIMTODCDSIZE(Index));
         ju_SetIMM01(Pjp, 0, 0, cJU_JPNULL5);
         return (1);
+    }
     case cJU_JPIMMED_6_01:
+    {
         assert(parentJPtype == (cJU_JPBRANCH_U7));
         assert(ju_DcdPop0(Pjp) == JU_TRIMTODCDSIZE(Index));
         ju_SetIMM01(Pjp, 0, 0, cJU_JPNULL6);
         return (1);
+    }
     case cJU_JPIMMED_7_01:
+    {
         assert(parentJPtype == (cJU_JPBRANCH_U));
         assert(ju_DcdPop0(Pjp) == JU_TRIMTODCDSIZE(Index));
         ju_SetIMM01(Pjp, 0, 0, cJU_JPNULL7);
         return (1);
+    }
 // Multiple Indexes remain in the Immed JP; delete the specified Index:
     case cJU_JPIMMED_1_02:
     {
@@ -2721,9 +2773,11 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // ****************************************************************************
 // INVALID JP TYPE:
     default:
+    {
         JU_SET_ERRNO_NONNULL(Pjpm, JU_ERRNO_CORRUPT);
         return (-1);
     }                                   // switch
+    }
 // PROCESS JP -- RECURSIVELY:
 //
 // For non-Immed JP types, if successful, post-decrement the population count
