@@ -114,6 +114,7 @@ static int    pre_munmap(void *, Word_t);
 // #define DARWIN  1
 #define HAVE_MORECORE 0
 #define HAVE_MMAP 1
+#define USE_LOCKS 0
 
 #define mmap            pre_mmap        // re-define for dlmalloc
 #define munmap          pre_munmap      // re-define for dlmalloc
