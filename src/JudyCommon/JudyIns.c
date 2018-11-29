@@ -622,7 +622,6 @@ JudyBranchB:
 
             uint8_t  *Pleaf1new = P_JLL1(Pleaf1newRaw);
             JU_INSERTCOPY(Pleaf1new, Pleaf1, exppop1, offset, Index);
-
             JU_PADLEAF1(Pleaf1new, exppop1 + 1);
 
 #ifdef JUDYL
@@ -752,6 +751,7 @@ JudyBranchB:
                 return (-1);
             Pleafnew = (uint16_t *) P_JLL(PjllnewRaw);
             JU_INSERTCOPY(Pleafnew, Pleaf, exppop1, offset, Index);
+            JU_PADLEAF2(Pleafnew, exppop1 + 1);
 #ifdef JUDYL
             Pjv_t     Pjvnew = JL_LEAF2VALUEAREA(Pleafnew, (exppop1) + 1);
             JU_INSERTCOPY(Pjvnew, Pjv, exppop1, offset, 0);

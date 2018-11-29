@@ -274,13 +274,13 @@ typedef int bool_t;
 // Enable measurements for average number of compare misses in search routines
 
 #ifdef  SEARCHMETRICS
-Word_t  j__MisComparesP;
-Word_t  j__MisComparesM;
-Word_t  j__GetCallsP;
-Word_t  j__GetCallsM;
-Word_t  j__GetCalls;
-Word_t  j__SearchPopulation;
-Word_t  j__DirectHits;
+extern Word_t  j__MisComparesP;
+extern Word_t  j__MisComparesM;
+extern Word_t  j__GetCallsP;
+extern Word_t  j__GetCallsM;
+extern Word_t  j__GetCalls;
+extern Word_t  j__SearchPopulation;
+extern Word_t  j__DirectHits;
 
 // if BUCKETSIZE not defined, default to one word
 #ifndef BUCKETSIZE
@@ -1099,26 +1099,8 @@ j__udyCount64Bits(uint64_t word64)
 
 #ifdef  JU_LITTLE_ENDIAN        // ====================================
 //#define JU_JPDCDPOP0(PJP)   JU_TRIMTODCDSIZE((PJP)->jp_Addr1)
-
-#ifdef never
-#define JU_JPSETADT(PJP,ADDR,DCDPOP0,TYPE)                              \
-{                                                                       \
-    (PJP)->jp_Addr0  = (ADDR);                                           \
-    (PJP)->jp_Addr1 = (JU_TRIMTODCDSIZE(DCDPOP0)                        \
-            | (((Word_t)(TYPE) << ((sizeof(Word_t)-1) * 8))));          \
-}
-#endif  // never
-
 #else  // BIG_ENDIAN =================================================
 //#define JU_JPDCDPOP0(PJP)  (((PJP)->jp_Addr1) >> 8)
-
-#ifdef never
-#define JU_JPSETADT(PJP,ADDR,DCDPOP0,TYPE)                              \
-{                                                                       \
-    (PJP)->jp_Addr0  = (ADDR);                                           \
-    (PJP)->jp_Addr1 = ((DCDPOP0) << 8) | (uint8_t)(TYPE);               \
-}
-#endif  // never
 #endif  // BIG_ENDIAN =================================================
 
 // NUMBER OF BITS IN A BRANCH OR LEAF BITMAP AND SUBEXPANSE:
@@ -1360,6 +1342,10 @@ j__udyCount64Bits(uint64_t word64)
 #define REPKEY(cbPK, KEY)                                        \
     ((((Word_t)(-1) / KEYMASK(cbPK)) * (KEYMASK(cbPK) & (KEY))) >> REMb(cbPK))
 
+#ifdef noPAD
+#define JU_PADLEAF1(PJLL, POP1)
+#define JU_PADLEAF2(PJLL, POP1)
+#else   // noPAD
 #define JU_PADLEAF1(PJLL, POP1)                         \
 {                                                       \
     Word_t   __Pop0 = (POP1) - 1;                       \
@@ -1379,6 +1365,7 @@ j__udyCount64Bits(uint64_t word64)
     for (int __i = (POP1); __i < __rounduppop1; __i++)  \
          __Pleaf2[__i] = __Pleaf2[__Pop0];              \
 }
+#endif  // noPAD
 
 #ifdef  later
 // #ifdef  PARALLEL1
@@ -1570,10 +1557,6 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
 //
 // TBD:  It would be nice to validate jp_DcdPopO against known digits to ensure
 // no corruption, but this is non-trivial.
-
-//#define JU_SETDCD(INDEX,PJP,cSTATE)                             \
-//    (INDEX) = ((INDEX) & ~cJU_DCDMASK(cSTATE))                  \
-//                | (JU_JPDCDPOP0(PJP) & cJU_DCDMASK(cSTATE))
 
 #define JU_SETDCD(INDEX,PJP,cSTATE)                             \
     (INDEX) = ((INDEX) & ~cJU_DCDMASK(cSTATE))                  \

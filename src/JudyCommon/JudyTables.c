@@ -188,23 +188,28 @@ FUNCTION int main()
     int ii;
 
 #ifdef JUDY1
-    char *fname = "Judy1Tables.c";
-#else
-    char *fname = "JudyLTables.c";
-#endif
-
-    if ((fd = fopen(fname, "w")) == NULL){
-	perror("FATAL ERROR: could not write to Judy[1L]Tables.c file\n");
+    if ((fd = fopen("Judy1Tables.c", "w")) == NULL)
+    {
+	perror("FATAL ERROR: could not write to Judy1Tables.c file\n");
 	return (-1);
     }
+#endif  // JUDY1
 
+#ifdef JUDYL
+    if ((fd = fopen("JudyLTables.c", "w")) == NULL)
+    {
+	perror("FATAL ERROR: could not write to JudyLTables.c file\n");
+	return (-1);
+    }
+#endif  // JUDYL
 
-    fprintf(fd,"// @(#) From generation tool: $Revision: 1.3 $ $Source: /home/doug/judy-1.0.5_PSplit_goto_newLeaf3_U2_1K_1_L765_5th_cleanedup_again/src/JudyCommon/RCS/JudyTables.c,v $\n");
+    fprintf(fd,"// This file is created by src/JudyTables.c -- DO NOT EDIT!\n");
+//    fprintf(fd,"// @(#) From generation tool: $Revision: 1.3 $ $Source: /home/doug/judy-1.0.5_PSplit_goto_newLeaf3_U2_1K_1_L765_5th_cleanedup_again/src/JudyCommon/RCS/JudyTables.c,v $\n");
     fprintf(fd,"//\n\n");
 
 
-// ================================ Judy1 =================================
 #ifdef JUDY1
+// ================================ Judy1 =================================
 
     fprintf(fd,"#include \"Judy1.h\"\n");
 
@@ -213,17 +218,23 @@ FUNCTION int main()
     fprintf(fd,"const char * Judy1MallocSizes = \"Judy1MallocSizes =");
 
     for (ii = 0; AllocSizes[ii] != TERMINATOR; ii++)
-	fprintf(fd," %d,", AllocSizes[ii]);
+	fprintf(fd,"%d,", AllocSizes[ii]);
 
-    fprintf(fd," Leaf1 = %d\";\n\n", (int)cJ1_LEAF1_MAXPOP1);
+    fprintf(fd," LW=%d L7=%d L6=%d L5=%d L4=%d L3=%d L2=%d L1=%d\";\n\n", 
+            (int)cJ1_LEAFW_MAXPOP1,
+            (int)cJ1_LEAF7_MAXPOP1,
+            (int)cJ1_LEAF6_MAXPOP1,
+            (int)cJ1_LEAF5_MAXPOP1,
+            (int)cJ1_LEAF4_MAXPOP1,
+            (int)cJ1_LEAF3_MAXPOP1,
+            (int)cJ1_LEAF2_MAXPOP1,
+            (int)cJ1_LEAF1_MAXPOP1);
 
-// ================================ 32 bit ================================
-
-// ================================ 64 bit ================================
     GenTable("j__1_BranchBJP","cJU_BITSPERSUBEXPB",sizeof(jp_t), cJU_BITSPERSUBEXPB, 0, 1);
+    GenTable("j__1_BranchQ","cJU_SUBEXPPERSTATE",sizeof(jp_t), cJU_SUBEXPPERSTATE, 0, 6);
 
-    GenTable("j__1_Leaf1", "cJ1_LEAF1_MAXPOP1", 1, cJ1_LEAF1_MAXPOP1, 0, 0);
-    GenTable("j__1_Leaf2", "cJ1_LEAF2_MAXPOP1", 2, cJ1_LEAF2_MAXPOP1, 0, 0);
+    GenTable("j__1_Leaf1", "cJ1_LEAF1_MAXPOP1", 1, cJ1_LEAF1_MAXPOP1, 0, 1);
+    GenTable("j__1_Leaf2", "cJ1_LEAF2_MAXPOP1", 2, cJ1_LEAF2_MAXPOP1, 0, 1);
     GenTable("j__1_Leaf3", "cJ1_LEAF3_MAXPOP1", 3, cJ1_LEAF3_MAXPOP1, 0, 0);
     GenTable("j__1_Leaf4", "cJ1_LEAF4_MAXPOP1", 4, cJ1_LEAF4_MAXPOP1, 0, 0);
     GenTable("j__1_Leaf5", "cJ1_LEAF5_MAXPOP1", 5, cJ1_LEAF5_MAXPOP1, 0, 0);
@@ -232,9 +243,8 @@ FUNCTION int main()
     GenTable("j__1_LeafW", "cJ1_LEAFW_MAXPOP1", 8, cJ1_LEAFW_MAXPOP1, 0, 1);
 #endif  // JUDY1
 
-
-// ================================ JudyL =================================
 #ifdef JUDYL
+// ================================ JudyL =================================
 
     fprintf(fd,"#include \"JudyL.h\"\n");
 
@@ -243,16 +253,23 @@ FUNCTION int main()
     fprintf(fd,"const char * JudyLMallocSizes = \"JudyLMallocSizes =");
 
     for (ii = 0; AllocSizes[ii] != TERMINATOR; ii++)
-	fprintf(fd," %d,", AllocSizes[ii]);
+	fprintf(fd,"%d,", AllocSizes[ii]);
 
-    fprintf(fd," Leaf1 = %d\";\n\n", (int)cJL_LEAF1_MAXPOP1);
+    fprintf(fd," LW=%d L7=%d L6=%d L5=%d L4=%d L3=%d L2=%d L1=%d\";\n\n", 
+            (int)cJL_LEAFW_MAXPOP1,
+            (int)cJL_LEAF7_MAXPOP1,
+            (int)cJL_LEAF6_MAXPOP1,
+            (int)cJL_LEAF5_MAXPOP1,
+            (int)cJL_LEAF4_MAXPOP1,
+            (int)cJL_LEAF3_MAXPOP1,
+            (int)cJL_LEAF2_MAXPOP1,
+            (int)cJL_LEAF1_MAXPOP1);
 
-
-// ================================ 64 bit ================================
     GenTable("j__L_BranchBJP","cJU_BITSPERSUBEXPB",sizeof(jp_t), cJU_BITSPERSUBEXPB, 0, 1);
+    GenTable("j__L_BranchQ","cJU_SUBEXPPERSTATE",sizeof(jp_t), cJU_SUBEXPPERSTATE, 0, 6);
 
-    GenTable("j__L_Leaf1", "cJL_LEAF1_MAXPOP1",  1, cJL_LEAF1_MAXPOP1,  BPW, 0);
-    GenTable("j__L_Leaf2", "cJL_LEAF2_MAXPOP1",  2, cJL_LEAF2_MAXPOP1,  BPW, 0);
+    GenTable("j__L_Leaf1", "cJL_LEAF1_MAXPOP1",  1, cJL_LEAF1_MAXPOP1,  BPW, 1);
+    GenTable("j__L_Leaf2", "cJL_LEAF2_MAXPOP1",  2, cJL_LEAF2_MAXPOP1,  BPW, 1);
     GenTable("j__L_Leaf3", "cJL_LEAF3_MAXPOP1",  3, cJL_LEAF3_MAXPOP1,  BPW, 0);
     GenTable("j__L_Leaf4", "cJL_LEAF4_MAXPOP1",  4, cJL_LEAF4_MAXPOP1,  BPW, 0);
     GenTable("j__L_Leaf5", "cJL_LEAF5_MAXPOP1",  5, cJL_LEAF5_MAXPOP1,  BPW, 0);

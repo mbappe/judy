@@ -53,20 +53,12 @@
 
 typedef struct J_UDY_POINTER_OTHERS      // JPO.
         {
-            Word_t      j_po_Addr;       // first word:  Pjp_t, Word_t, etc.
+            Word_t      j_po_Addr0;       // first word:  Pjp_t, Word_t, etc.
             union {
                 Word_t  j_po_Addr1;
                 uint8_t j_po_Bytes[sizeof(Word_t)];     // last byte = jp_Type.
             } jpo_u;
         } jpo_t;
-
-typedef struct J_UDY_POINTER_SPARE      // 
-        {
-            Word_t      j_pS_Addr;       // first word:  Pjp_t, Word_t, etc.
-            Word_t      j_pS_Addr1;      // 2nd word:  Pjp_t, Word_t, etc.
-            Word_t      j_pS_Addr2;      // 3rd  word:  Pjp_t, Word_t, etc.
-            Word_t      j_pS_Addr3;      // 4th  word:  Pjp_t, Word_t, etc.
-        } jpS_t;
 
 // JP CONTAINING IMMEDIATE INDEXES:
 //
@@ -119,7 +111,6 @@ typedef union J_UDY_POINTER             // JP.
         {
             jpo_t j_po;                 // other than immediate indexes.
             jpi_t j_pi;                 // immediate indexes.
-//            jpS_t j_spare;
         } jp_t, *Pjp_t;
 
 // For coding convenience:
@@ -136,11 +127,11 @@ typedef union J_UDY_POINTER             // JP.
 #define jp_ValueI  j_pi.j_pi_Immed01   // Value area for IMMED_x_01 XXXXXXXTEMPXXXXXX
 #define jp_LIndex1 j_pi.j_pi_LIndex1    // for storing Indexes in second word.
 #define jp_LIndex2 j_pi.j_pi_LIndex2    // for storing uint16_t Indexes in first  word.
-#define jp_PValue  j_po.j_po_Addr
+#define jp_PValue  j_po.j_po_Addr0
 // broke #define jp_PValue  j_spare.j_pS_Addr3
 #endif  // JUDYL
 
-#define Jp_Addr0   j_po.j_po_Addr
+#define Jp_Addr0   j_po.j_po_Addr0
 #define jp_Addr1   j_po.jpo_u.j_po_Addr1
 //#define       jp_DcdPop0 j_po.jpo_u.j_po_DcdPop0
 #define jp_Type    j_po.jpo_u.j_po_Bytes[sizeof(Word_t) - 1]
@@ -183,51 +174,51 @@ typedef union J_UDY_POINTER             // JP.
 
 
 
-//#define Shif(PJP)    ((Pjp_t)((Word_t *)(PJP) + 2))
-#define Shif(PJP)    ((Pjp_t)((Word_t *)(PJP) + 0))
+//#define PJP)    ((Pjp_t)((Word_t *)(PJP) + 2))
+//#define Shif(PJP)    ((Pjp_t)((Word_t *)(PJP) + 0))
 
 
 
 //                            Get routines
 static uint8_t ju_Type(Pjp_t Pjp)
-        { return(Shif(Pjp)->jp_Type); } 
+        { return(Pjp->jp_Type); } 
 
 static Word_t  ju_BaLPntr(Pjp_t Pjp)
-        { return(Shif(Pjp)->Jp_Addr0); } 
+        { return(Pjp->Jp_Addr0 >> 16); } 
 
 static Word_t  ju_DcdPop0(Pjp_t Pjp)
-        { return(JU_TRIMTODCDSIZE(Shif(Pjp)->jp_Addr1)); } 
-////broke        { return((Shif(Pjp)->jp_Addr1)); } 
+        { return(JU_TRIMTODCDSIZE(Pjp->jp_Addr1)); } 
+////broke        { return((Pjp)->jp_Addr1)); } 
 
 static Word_t  ju_LeafPop0(Pjp_t Pjp)
-        { return(Shif(Pjp)->jp_Addr1 & 0xFF); } 
+        { return(Pjp->jp_Addr1 & 0xFF); } 
 
 static Word_t  ju_BranchPop0(Pjp_t Pjp, int Pop0Bytes)
-        { return(JU_TRIMTODCDSIZE(Shif(Pjp)->jp_Addr1) & cJU_POP0MASK(Pop0Bytes)); }
-//// broke        { return((Shif(Pjp)->jp_Addr1) & cJU_POP0MASK(Pop0Bytes)); }
+        { return(JU_TRIMTODCDSIZE(Pjp->jp_Addr1) & cJU_POP0MASK(Pop0Bytes)); }
+//// broke        { return((Pjp->jp_Addr1) & cJU_POP0MASK(Pop0Bytes)); }
 
 static Word_t  ju_DcdNonMatchKey(Word_t Index, Pjp_t Pjp, int Pop0Bytes)
-        { return(JU_DCDNOTMATCHINDEX(Index, Shif(Pjp), Pop0Bytes)); }
+        { return(JU_DCDNOTMATCHINDEX(Index, Pjp, Pop0Bytes)); }
 
 
 //                            Set routines
 static void ju_SetLeafPop0(Pjp_t Pjp, Word_t LeafPop0)
         { 
-            Shif(Pjp)->jp_Addr1 &= ~(Word_t)0xFF;
-            Shif(Pjp)->jp_Addr1 |=  (Word_t)0xFF & LeafPop0;
+            Pjp->jp_Addr1 &= ~(Word_t)0xFF;
+            Pjp->jp_Addr1 |=  (Word_t)0xFF & LeafPop0;
         }
 
 static void ju_SetBaLPntr(Pjp_t Pjp, Word_t BaLPntr)
-        { Shif(Pjp)->Jp_Addr0 = BaLPntr; }
+        { Pjp->Jp_Addr0 = BaLPntr << 16; }
 
 static void ju_SetJpType(Pjp_t Pjp, uint8_t Type)
-        { Shif(Pjp)->jp_Type  = Type; }
+        { Pjp->jp_Type  = Type; }
 
 static void ju_SetDcdPop0(Pjp_t Pjp, Word_t DcdPop0)
         {
-            uint8_t Type  = Shif(Pjp)->jp_Type;               // Get it
-            Shif(Pjp)->jp_Addr1 = DcdPop0;                    // Hi byte set below
-            Shif(Pjp)->jp_Type  = Type;                       // restore it
+            uint8_t Type  = Pjp->jp_Type;               // Get it
+            Pjp->jp_Addr1 = DcdPop0;                    // Hi byte set below
+            Pjp->jp_Type  = Type;                       // restore it
         }
 
 #ifdef  JUDYL
@@ -237,52 +228,52 @@ static void ju_SetDcdPop0(Pjp_t Pjp, Word_t DcdPop0)
 
 // Return ^ to JV array in Immed_x_02+
 static Word_t ju_PImmVals(Pjp_t Pjp)
-        { return(Shif(Pjp)->jp_PValue); }
+        { return(Pjp->jp_PValue); }
 
 // Return Value in Immed_x_01
 static Word_t ju_ImmVal_01(Pjp_t Pjp)
-{ return(Shif(Pjp)->jp_Immed01); }
+{ return(Pjp->jp_Immed01); }
 
 // Return ^ to Value in Immed_x_01
 static Pjv_t ju_PImmVal_01(Pjp_t Pjp)
-        { return((Pjv_t)(&Shif(Pjp)->jp_Immed01)); }
+        { return((Pjv_t)(&Pjp->jp_Immed01)); }
 
 static uint8_t *ju_LImmed1(Pjp_t Pjp)
-        { return(Shif(Pjp)->jp_LIndex1); }
+        { return(Pjp->jp_LIndex1); }
 
 static uint16_t *ju_LImmed2(Pjp_t Pjp)
-        { return(Shif(Pjp)->jp_LIndex2); }
+        { return(Pjp->jp_LIndex2); }
 
 //                            Set routines
 static void ju_SetPjvPntr(Pjp_t Pjp, Word_t PjvPntr)
-        { Shif(Pjp)->Jp_Addr0  = PjvPntr; } 
+        { Pjp->Jp_Addr0  = PjvPntr; } 
 
 static void ju_SetIMM01(Pjp_t Pjp, Word_t Value, Word_t Key, uint8_t Type)
         { 
-            Shif(Pjp)->Jp_Addr0  = Value; 
-            Shif(Pjp)->jp_Addr1 = Key;
-            Shif(Pjp)->jp_Type  = Type; 
+            Pjp->Jp_Addr0  = Value; 
+            Pjp->jp_Addr1 = Key;
+            Pjp->jp_Type  = Type; // hi-byte of Addr1
         } 
 #endif  // JUDYL
 
 #ifdef  JUDY1
 //                            Get routines
 static uint8_t *ju_1Immed1(Pjp_t Pjp)
-        { return(Shif(Pjp)->jp_1Index1); }
+        { return(Pjp->jp_1Index1); }
 
 static uint16_t *ju_1Immed2(Pjp_t Pjp)
-        { return(Shif(Pjp)->jp_1Index2); }
+        { return(Pjp->jp_1Index2); }
 
 static uint32_t *ju_1Immed4(Pjp_t Pjp)
-        { return(Shif(Pjp)->jp_1Index4); }
+        { return(Pjp->jp_1Index4); }
 
 
 //                            Set routines
 static void ju_SetIMM01(Pjp_t Pjp, Word_t Value, Word_t Key, uint8_t Type)
         { 
-            Shif(Pjp)->Jp_Addr0  = Value; 
-            Shif(Pjp)->jp_Addr1 = Key;
-            Shif(Pjp)->jp_Type  = Type; 
+            Pjp->Jp_Addr0  = Value; 
+            Pjp->jp_Addr1 = Key;
+            Pjp->jp_Type  = Type;  // hi-byte of Addr1
         } 
 #endif  // JUDY1
 
@@ -443,16 +434,6 @@ typedef struct J__UDY_BRANCH_BITMAP
 // ****************************************************************************
 // JUDY BRANCH UNCOMPRESSED (JBU) SUPPORT
 // ****************************************************************************
-
-// Convenience wrapper for referencing BranchU JPs:
-//
-// Note:  This produces a non-"raw" address already passed through P_JBU().
-
-#define JU_JBU_PJP(Pjp,Index,Level) \
-        (&((P_JBU((Pjp)->Jp_Addr0))->jbu_jp[JU_DIGITATSTATE(Index, Level)]))
-
-#define JU_JBU_PJP0(Pjp) \
-        (&((P_JBU((Pjp)->Jp_Addr0))->jbu_jp[0]))
 
 typedef struct J__UDY_BRANCH_UNCOMPRESSED
 {

@@ -62,8 +62,8 @@ Word_t j__udyPopulation;        // Indexes in array, optional from caller.
 
 static Word_t startindex = 0;           // see usage below.
 static Word_t startpop   = 0;
-//static bool_t enabled    = FALSE;       // by default, unless env params set.
-static bool_t enabled    = TRUE;       // by default, unless env params set.
+static bool_t enabled    = FALSE;       // by default, unless env params set.
+//static bool_t enabled    = TRUE;       // by default, unless env params set.
 
 // Shorthand for announcing JP addresses, Desc (in context), and JP types:
 //

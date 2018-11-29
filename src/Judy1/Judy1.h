@@ -292,7 +292,7 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 
 //#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 15, 19, 23, 27, 33, 39, 47, 55, 67, 81, 97, 117, 141, 169, TERMINATOR }
 /////#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 17, 21, 27, 33, 41, 51, 65, 83, 103, 129, 159, TERMINATOR }
-#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 17, 21, 27, 33, 41, 51, 65, 83, 103, 129, 159, 199, 249, 320, TERMINATOR }
+#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 17, 21, 27, 33, 41, 51, 65, 83, 103, 129, 159, 199, 249, 320, 519, TERMINATOR }
 
 //#define J_1_MAXB   (sizeof(Word_t) * 67)
 //#define J_1_MAXB   (sizeof(Word_t) * 32)

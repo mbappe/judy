@@ -1041,7 +1041,7 @@ JudyBranchB:
             Word_t  Bucket;
             Word_t  newBucket;
 
-#ifdef  PADCHECK
+#ifdef  PADCHECK1
 if ((Pop1 & 0x7))
 {
     int roundupnextword = ((Pop1 + 7) / 8) * 8;
@@ -1049,7 +1049,7 @@ if ((Pop1 & 0x7))
     {
         if (((uint8_t *)Pjll)[Pop1 -1] != (((uint8_t *)Pjll)[ii]))
         {
-printf("\n---Oops-----------Pop1 = %ld, Key = 0x%2lx, NewBucket = 0x%16lx, posidx = %d\n", Pop1, Index, newBucket, posidx);
+printf("\n---Oops-----------Pop1 = %ld, Key = 0x%2lx, posidx = %d\n", Pop1, Index, posidx);
     for (int ii = 0; ii < ((Pop1 + 7) & -cKPW); ii++)
         printf("%d=0x%02x ", ii, ((uint8_t *)(Pjll))[ii]);
     printf("posidx = %d\n", posidx);
@@ -1057,7 +1057,7 @@ printf("\n---Oops-----------Pop1 = %ld, Key = 0x%2lx, NewBucket = 0x%16lx, posid
         }
     }
 }
-#endif  // PADCHECK
+#endif  // PADCHECK1
 
 //---Dir-----------Pop1 = 16, Key = 0x8d, NewBucket = 0x               0, posidx = 8
 //0=0x0a 1=0x1f 2=0x24 3=0x31 4=0x39 5=0x47 6=0x5f 7=0x6e 8=0x71 9=0x92 10=0x99 11=0xc3 12=0xc8 13=0xde 14=0xf0 15=0xf4 posidx = 8
@@ -1250,6 +1250,7 @@ printf("\n------Minus------Pop1 = %ld, Key = 0x%4lx, NewBucket = 0x%16lx, posidx
             Pjll   = P_JLL(ju_BaLPntr(Pjp));
             Pop1   = ju_LeafPop0(Pjp) + 1;
 
+
 //            printf("\n");
 //            for (int ii=0; ii < Pop1; ii++)
 //                printf("%2d=0x%x ", ii, ((uint16_t *)Pjll)[ii]);
@@ -1273,6 +1274,24 @@ printf("\n------Minus------Pop1 = %ld, Key = 0x%4lx, NewBucket = 0x%16lx, posidx
 
             Word_t  Bucket;
             Word_t  newBucket;
+
+#ifdef  PADCHECK2
+if ((Pop1 & 0x3))
+{
+    int roundupnextword = ((Pop1 + 3) / 4) * 4;
+    for (int ii = Pop1; ii < roundupnextword; ii++)
+    {
+        if (((uint16_t *)Pjll)[Pop1 -1] != (((uint16_t *)Pjll)[ii]))
+        {
+printf("\n---Oops-----------Pop1 = %ld, Key = 0x%2lx, posidx = %d\n", Pop1, Index, posidx);
+    for (int ii = 0; ii < ((Pop1 + 7) & -cKPW); ii++)
+        printf("%d=0x%02x ", ii, ((uint16_t *)(Pjll))[ii]);
+    printf("posidx = %d\n", posidx);
+    break;
+        }
+    }
+}
+#endif  // PADCHECK2
 
 //              make zero the searched for Key in new Bucket
 //              Magic, the Msb=1 is located in the matching Key position

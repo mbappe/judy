@@ -1159,7 +1159,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
             uint16_t *Pleaf;
             Word_t    PjbuRaw = ju_BaLPntr(Pjp);
-            Pjp_t     Pjp2 = JU_JBU_PJP0(Pjp);
+            Pjp_t     Pjp2 = P_JBU(ju_BaLPntr(Pjp))->jbu_jp;
             Word_t    ldigit;           /* larger than uint8_t */
             if ((PjllnewRaw = j__udyAllocJLL2(cJU_LEAF2_MAXPOP1, Pjpm)) == 0)
                 return (-1);
@@ -1211,7 +1211,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
             uint8_t  *Pleaf;
             Word_t    PjbuRaw = ju_BaLPntr(Pjp);
-            Pjp_t     Pjp2 = JU_JBU_PJP0(Pjp);
+            Pjp_t     Pjp2 = P_JBU(ju_BaLPntr(Pjp))->jbu_jp;
             Word_t    ldigit;           /* larger than uint8_t */
             if ((PjllnewRaw = j__udyAllocJLL3(cJU_LEAF3_MAXPOP1, Pjpm)) == 0)
                 return (-1);
@@ -1264,7 +1264,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
             uint32_t *Pleaf;
             Word_t    PjbuRaw = ju_BaLPntr(Pjp);
-            Pjp_t     Pjp2 = JU_JBU_PJP0(Pjp);
+            Pjp_t     Pjp2 = P_JBU(ju_BaLPntr(Pjp))->jbu_jp;
             Word_t    ldigit;           /* larger than uint8_t */
             if ((PjllnewRaw = j__udyAllocJLL4(cJU_LEAF4_MAXPOP1, Pjpm)) == 0)
                 return (-1);
@@ -1316,7 +1316,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
             uint8_t  *Pleaf;
             Word_t    PjbuRaw = ju_BaLPntr(Pjp);
-            Pjp_t     Pjp2 = JU_JBU_PJP0(Pjp);
+            Pjp_t     Pjp2 = P_JBU(ju_BaLPntr(Pjp))->jbu_jp;
             Word_t    ldigit;           /* larger than uint8_t */
             if ((PjllnewRaw = j__udyAllocJLL5(cJU_LEAF5_MAXPOP1, Pjpm)) == 0)
                 return (-1);
@@ -1369,7 +1369,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
             uint8_t  *Pleaf;
             Word_t    PjbuRaw = ju_BaLPntr(Pjp);
-            Pjp_t     Pjp2 = JU_JBU_PJP0(Pjp);
+            Pjp_t     Pjp2 = P_JBU(ju_BaLPntr(Pjp))->jbu_jp;
             Word_t    ldigit;           /* larger than uint8_t */
             if ((PjllnewRaw = j__udyAllocJLL6(cJU_LEAF6_MAXPOP1, Pjpm)) == 0)
                 return (-1);
@@ -1422,7 +1422,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
             uint8_t  *Pleaf;
             Word_t    PjbuRaw = ju_BaLPntr(Pjp);
-            Pjp_t     Pjp2 = JU_JBU_PJP0(Pjp);
+            Pjp_t     Pjp2 = P_JBU(ju_BaLPntr(Pjp))->jbu_jp;
             Word_t    ldigit;           /* larger than uint8_t */
             if ((PjllnewRaw = j__udyAllocJLL7(cJU_LEAF7_MAXPOP1, Pjpm)) == 0)
                 return (-1);
@@ -1831,17 +1831,17 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
             JU_DELETEINPLACE_ODD(Pleaf, pop1, offset, 3);
 #ifdef JUDYL
-             /**/ JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
+            JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
             return (1);
         }
         {
-             /**/ Pjv_t Pjvnew;
+            Pjv_t Pjvnew;
             if ((PjllnewRaw = j__udyAllocJLL3(pop1 - 1, Pjpm)) == 0)
                 return (-1);
             Pjllnew = P_JLL(PjllnewRaw);
-             /**/ Pjvnew = JL_LEAF3VALUEAREA(Pjllnew, pop1 - 1);
+            Pjvnew = JL_LEAF3VALUEAREA(Pjllnew, pop1 - 1);
             JU_DELETECOPY_ODD((uint8_t *) Pjllnew, Pleaf, pop1, offset, 3);
-             /**/ JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 3);
+            JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 3);
             j__udyFreeJLL3(PleafRaw, pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw;    */
             ju_SetBaLPntr(Pjp, PjllnewRaw);
 #endif // JUDYL
@@ -1911,17 +1911,16 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             {
                 Word_t    D_cdP0;
                 Word_t    A_ddr = 0;
-                uint8_t   T_ype = ju_Type(Pjp);
                 offset = (Pleaf[0] == JU_LEASTBYTES(Index, 4)); /* undeleted Ind */
                 assert(Pleaf[offset ? 0 : 1] == JU_LEASTBYTES(Index, 4));
                 D_cdP0 = (Index & cJU_DCDMASK(4)) | Pleaf[offset];
-                JUDYLCODE(A_ddr = Pjv[offset];);
-                ju_SetBaLPntr(Pjp, A_ddr);
-                ju_SetDcdPop0(Pjp, D_cdP0);
-                ju_SetJpType(Pjp, T_ype);
+                A_ddr = Pjv[offset];
+                ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_4_01);
+//                ju_SetBaLPntr(Pjp, A_ddr);
+//                ju_SetDcdPop0(Pjp, D_cdP0);
+//                ju_SetJpType(Pjp, T_ype);
             }
             j__udyFreeJLL4(PjllRaw, pop1, Pjpm);
-            ju_SetJpType(Pjp, cJU_JPIMMED_4_01);
 #endif // JUDYL
             return (1);
         }
@@ -1929,17 +1928,17 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
             JU_DELETEINPLACE(Pleaf, pop1, offset, 4);
 #ifdef JUDYL
-             /**/ JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
+            JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
             return (1);
         }
         {
-             /**/ Pjv_t Pjvnew;
+            Pjv_t Pjvnew;
             if ((PjllnewRaw = j__udyAllocJLL4(pop1 - 1, Pjpm)) == 0)
                 return (-1);
             Pjllnew = P_JLL(PjllnewRaw);
-             /**/ Pjvnew = JL_LEAF4VALUEAREA(Pjllnew, pop1 - 1);
+            Pjvnew = JL_LEAF4VALUEAREA(Pjllnew, pop1 - 1);
             JU_DELETECOPY((uint32_t *)Pjllnew, Pleaf, pop1, offset, 4);
-             /**/ JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 4);
+            JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 4);
             j__udyFreeJLL4(PleafRaw, pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw;    */
             ju_SetBaLPntr(Pjp, PjllnewRaw);
 #endif // JUDYL
@@ -2000,18 +1999,17 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             {
                 Word_t    D_cdP0;
                 Word_t    A_ddr = 0;
-                uint8_t   T_ype = ju_Type(Pjp);
                 offset = j__udySearchLeaf5(Pleaf, 2, Index, 5 * 8);
                 assert(offset >= 0);    /* Index must be valid */
                 JU_COPY5_PINDEX_TO_LONG(D_cdP0, &(Pleaf[offset ? 0 : 5]));
                 D_cdP0 |= Index & cJU_DCDMASK(5);
-                JUDYLCODE(A_ddr = Pjv[offset ? 0 : 1];);
-                ju_SetBaLPntr(Pjp, A_ddr);
-                ju_SetDcdPop0(Pjp, D_cdP0);
-                ju_SetJpType(Pjp, T_ype);
+                A_ddr = Pjv[offset ? 0 : 1];
+                ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_5_01);
+//                ju_SetBaLPntr(Pjp, A_ddr);
+//                ju_SetDcdPop0(Pjp, D_cdP0);
+//                ju_SetJpType(Pjp, T_ype);
             }
             j__udyFreeJLL5(PjllRaw, pop1, Pjpm);        /* Pjp->jp_Type = (Immed01JPType);        */
-            ju_SetJpType(Pjp, cJU_JPIMMED_5_01);
 #endif // JUDYL
             return (1);
         }
@@ -2019,17 +2017,17 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
             JU_DELETEINPLACE_ODD(Pleaf, pop1, offset, 5);
 #ifdef JUDYL
-             /**/ JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
+            JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
             return (1);
         }
         {
-             /**/ Pjv_t Pjvnew;
+            Pjv_t Pjvnew;
             if ((PjllnewRaw = j__udyAllocJLL5(pop1 - 1, Pjpm)) == 0)
                 return (-1);
             Pjllnew = P_JLL(PjllnewRaw);
-             /**/ Pjvnew = JL_LEAF5VALUEAREA(Pjllnew, pop1 - 1);
+            Pjvnew = JL_LEAF5VALUEAREA(Pjllnew, pop1 - 1);
             JU_DELETECOPY_ODD((uint8_t *) Pjllnew, Pleaf, pop1, offset, 5);
-             /**/ JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 5);
+            JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 5);
             j__udyFreeJLL5(PleafRaw, pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw;    */
             ju_SetBaLPntr(Pjp, PjllnewRaw);
 #endif // JUDYL
@@ -2090,18 +2088,17 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             {
                 Word_t    D_cdP0;
                 Word_t    A_ddr = 0;
-                uint8_t   T_ype = ju_Type(Pjp);
                 offset = j__udySearchLeaf6(Pleaf, 2, Index, 6 * 8);
                 assert(offset >= 0);    /* Index must be valid */
                 JU_COPY6_PINDEX_TO_LONG(D_cdP0, &(Pleaf[offset ? 0 : 6]));
                 D_cdP0 |= Index & cJU_DCDMASK(6);
-                JUDYLCODE(A_ddr = Pjv[offset ? 0 : 1];);
-                ju_SetBaLPntr(Pjp, A_ddr);
-                ju_SetDcdPop0(Pjp, D_cdP0);
-                ju_SetJpType(Pjp, T_ype);
+                A_ddr = Pjv[offset ? 0 : 1];
+                ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_6_01);
+//                ju_SetBaLPntr(Pjp, A_ddr);
+//                ju_SetDcdPop0(Pjp, D_cdP0);
+//                ju_SetJpType(Pjp, T_ype);
             }
             j__udyFreeJLL6(PjllRaw, pop1, Pjpm);        /* Pjp->jp_Type = (Immed01JPType);        */
-            ju_SetJpType(Pjp, cJU_JPIMMED_6_01);
 #endif // JUDYL
             return (1);
         }
@@ -2109,17 +2106,17 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
             JU_DELETEINPLACE_ODD(Pleaf, pop1, offset, 6);
 #ifdef JUDYL
-             /**/ JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
+            JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
             return (1);
         }
         {
-             /**/ Pjv_t Pjvnew;
+            Pjv_t Pjvnew;
             if ((PjllnewRaw = j__udyAllocJLL6(pop1 - 1, Pjpm)) == 0)
                 return (-1);
             Pjllnew = P_JLL(PjllnewRaw);
-             /**/ Pjvnew = JL_LEAF6VALUEAREA(Pjllnew, pop1 - 1);
+            Pjvnew = JL_LEAF6VALUEAREA(Pjllnew, pop1 - 1);
             JU_DELETECOPY_ODD((uint8_t *) Pjllnew, Pleaf, pop1, offset, 6);
-             /**/ JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 6);
+            JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 6);
             j__udyFreeJLL6(PleafRaw, pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw;    */
             ju_SetBaLPntr(Pjp, PjllnewRaw);
 #endif // JUDYL
@@ -2161,18 +2158,17 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             {
                 Word_t    D_cdP0;
                 Word_t    A_ddr = 0;
-                uint8_t   T_ype = ju_Type(Pjp);
                 offset = j__udySearchLeaf7(Pleaf, 2, Index, 7 * 8);
                 assert(offset >= 0);    /* Index must be valid */
                 JU_COPY7_PINDEX_TO_LONG(D_cdP0, &(Pleaf[offset ? 0 : 7]));
                 D_cdP0 |= Index & cJU_DCDMASK(7);
-                JUDYLCODE(A_ddr = Pjv[offset ? 0 : 1];);
-                ju_SetBaLPntr(Pjp, A_ddr);
-                ju_SetDcdPop0(Pjp, D_cdP0);
-                ju_SetJpType(Pjp, T_ype);
+                A_ddr = Pjv[offset ? 0 : 1];
+                ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_7_01);
+//                ju_SetBaLPntr(Pjp, A_ddr);
+//                ju_SetDcdPop0(Pjp, D_cdP0);
+//                ju_SetJpType(Pjp, T_ype);
             }
             j__udyFreeJLL7(PjllRaw, pop1, Pjpm);        /* Pjp->jp_Type = (Immed01JPType);        */
-            ju_SetJpType(Pjp, cJU_JPIMMED_7_01);
 #endif // JUDYL
             return (1);
         }
@@ -2180,17 +2176,17 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
             JU_DELETEINPLACE_ODD(Pleaf, pop1, offset, 7);
 #ifdef JUDYL
-             /**/ JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
+            JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
             return (1);
         }
         {
-             /**/ Pjv_t Pjvnew;
+            Pjv_t Pjvnew;
             if ((PjllnewRaw = j__udyAllocJLL7(pop1 - 1, Pjpm)) == 0)
                 return (-1);
             Pjllnew = P_JLL(PjllnewRaw);
-             /**/ Pjvnew = JL_LEAF7VALUEAREA(Pjllnew, pop1 - 1);
+            Pjvnew = JL_LEAF7VALUEAREA(Pjllnew, pop1 - 1);
             JU_DELETECOPY_ODD((uint8_t *) Pjllnew, Pleaf, pop1, offset, 7);
-             /**/ JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 7);
+            JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 7);
             j__udyFreeJLL7(PleafRaw, pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw;    */
             ju_SetBaLPntr(Pjp, PjllnewRaw);
 #endif // JUDYL
@@ -2485,19 +2481,18 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
             Word_t    D_cdP0;
             Word_t    A_ddr = 0;
-            uint8_t   T_ype = ju_Type(Pjp);
             offset = (Pleaf[0] == JU_LEASTBYTES(Index, 1));     /* undeleted Ind */
             assert(Pleaf[offset ? 0 : 1] == JU_LEASTBYTES(Index, 1));
             D_cdP0 = (Index & cJU_DCDMASK(1)) | Pleaf[offset];
             JUDYLCODE(A_ddr = Pjv[offset];);
-            ju_SetBaLPntr(Pjp, A_ddr);
-            ju_SetDcdPop0(Pjp, D_cdP0);
-            ju_SetJpType(Pjp, T_ype);
+            ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_1_01);
+//            ju_SetBaLPntr(Pjp, A_ddr);
+//            ju_SetDcdPop0(Pjp, D_cdP0);
+//            ju_SetJpType(Pjp, T_ype);
         }
 #ifdef  JUDYL
         j__udyLFreeJV(PjvRaw, 2, Pjpm); /* Pjp->jp_Type = (NewJPType);   */
 #endif // JUDYL
-        ju_SetJpType(Pjp, cJU_JPIMMED_1_01);
         return (1);
     }
     case cJU_JPIMMED_1_03:
@@ -2562,19 +2557,18 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
             Word_t    D_cdP0;
             Word_t    A_ddr = 0;
-            uint8_t   T_ype = ju_Type(Pjp);
             offset = (Pleaf[0] == JU_LEASTBYTES(Index, 2));     /* undeleted Ind */
             assert(Pleaf[offset ? 0 : 1] == JU_LEASTBYTES(Index, 2));
             D_cdP0 = (Index & cJU_DCDMASK(2)) | Pleaf[offset];
             JUDYLCODE(A_ddr = Pjv[offset];);
-            ju_SetBaLPntr(Pjp, A_ddr);
-            ju_SetDcdPop0(Pjp, D_cdP0);
-            ju_SetJpType(Pjp, T_ype);
+            ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_2_01);
+//            ju_SetBaLPntr(Pjp, A_ddr);
+//            ju_SetDcdPop0(Pjp, D_cdP0);
+//            ju_SetJpType(Pjp, T_ype);
         }                               /*  Pjp->jp_Type = (NewJPType);   */
 #ifdef  JUDYL
         j__udyLFreeJV(PjvRaw, 2, Pjpm); /* Pjp->jp_Type = (NewJPType);   */
 #endif // JUDYL
-        ju_SetJpType(Pjp, cJU_JPIMMED_2_01);
         return (1);
     }
     case cJU_JPIMMED_2_03:
@@ -2631,20 +2625,21 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
             Word_t    D_cdP0;
             Word_t    A_ddr = 0;
-            uint8_t   T_ype = ju_Type(Pjp);
             offset = j__udySearchLeaf3(Pleaf, 2, Index, 3 * 8);
             assert(offset >= 0);        /* Index must be valid */
             JU_COPY3_PINDEX_TO_LONG(D_cdP0, &(Pleaf[offset ? 0 : 3]));
             D_cdP0 |= Index & cJU_DCDMASK(3);
-            JUDYLCODE(A_ddr = Pjv[offset ? 0 : 1];);
-            ju_SetBaLPntr(Pjp, A_ddr);
-            ju_SetDcdPop0(Pjp, D_cdP0);
-            ju_SetJpType(Pjp, T_ype);
+#ifdef  JUDYL
+            A_ddr = Pjv[offset ? 0 : 1];
+#endif  // JUDYL
+            ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_3_01);
+//            ju_SetBaLPntr(Pjp, A_ddr);
+//            ju_SetDcdPop0(Pjp, D_cdP0);
+//            ju_SetJpType(Pjp, T_ype);
         }                               /* Pjp->jp_Type = (NewJPType);   */
 #ifdef  JUDYL
         j__udyLFreeJV(PjvRaw, 2, Pjpm); /* Pjp->jp_Type = (NewJPType);   */
 #endif // JUDYL
-        ju_SetJpType(Pjp, cJU_JPIMMED_3_01);
         return (1);
     }
 #ifdef  JUDY1
@@ -2670,16 +2665,14 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
             Word_t    D_cdP0;
             Word_t    A_ddr = 0;
-            uint8_t   T_ype = ju_Type(Pjp);
             offset = (Pleaf[0] == JU_LEASTBYTES(Index, 4));     /* undeleted Ind */
             assert(Pleaf[offset ? 0 : 1] == JU_LEASTBYTES(Index, 4));
             D_cdP0 = (Index & cJU_DCDMASK(4)) | Pleaf[offset];
-            JUDYLCODE(A_ddr = Pjv[offset];);
-            ju_SetBaLPntr(Pjp, A_ddr);
-            ju_SetDcdPop0(Pjp, D_cdP0);
-            ju_SetJpType(Pjp, T_ype);
+            ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_4_01);
+//            ju_SetBaLPntr(Pjp, A_ddr);
+//            ju_SetDcdPop0(Pjp, D_cdP0);
+//            ju_SetJpType(Pjp, T_ype);
         }                               /*  Pjp->jp_Type = (NewJPType);   */
-        ju_SetJpType(Pjp, cJU_JPIMMED_4_01);
         return (1);
     }
     case cJ1_JPIMMED_4_03:
@@ -2702,17 +2695,15 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
             Word_t    D_cdP0;
             Word_t    A_ddr = 0;
-            uint8_t   T_ype = ju_Type(Pjp);
             offset = j__udySearchLeaf5(Pleaf, 2, Index, 5 * 8);
             assert(offset >= 0);        /* Index must be valid */
             JU_COPY5_PINDEX_TO_LONG(D_cdP0, &(Pleaf[offset ? 0 : 5]));
             D_cdP0 |= Index & cJU_DCDMASK(5);
-            JUDYLCODE(A_ddr = Pjv[offset ? 0 : 1];);
-            ju_SetBaLPntr(Pjp, A_ddr);
-            ju_SetDcdPop0(Pjp, D_cdP0);
-            ju_SetJpType(Pjp, T_ype);
+            ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_5_01);
+//            ju_SetBaLPntr(Pjp, A_ddr);
+//            ju_SetDcdPop0(Pjp, D_cdP0);
+//            ju_SetJpType(Pjp, T_ype);
         }                               /* Pjp->jp_Type = (NewJPType);   */
-        ju_SetJpType(Pjp, cJU_JPIMMED_5_01);
         return (1);
     }
     case cJ1_JPIMMED_5_03:
@@ -2735,17 +2726,15 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
             Word_t    D_cdP0;
             Word_t    A_ddr = 0;
-            uint8_t   T_ype = ju_Type(Pjp);
             offset = j__udySearchLeaf6(Pleaf, 2, Index, 6 * 8);
             assert(offset >= 0);        /* Index must be valid */
             JU_COPY6_PINDEX_TO_LONG(D_cdP0, &(Pleaf[offset ? 0 : 6]));
             D_cdP0 |= Index & cJU_DCDMASK(6);
-            JUDYLCODE(A_ddr = Pjv[offset ? 0 : 1];);
-            ju_SetBaLPntr(Pjp, A_ddr);
-            ju_SetDcdPop0(Pjp, D_cdP0);
-            ju_SetJpType(Pjp, T_ype);
+            ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_6_01);
+//            ju_SetBaLPntr(Pjp, A_ddr);
+//            ju_SetDcdPop0(Pjp, D_cdP0);
+//            ju_SetJpType(Pjp, T_ype);
         }                               /* Pjp->jp_Type = (NewJPType);   */
-        ju_SetJpType(Pjp, cJU_JPIMMED_6_01);
         return (1);
     }
     case cJ1_JPIMMED_7_02:
@@ -2756,17 +2745,16 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
             Word_t    D_cdP0;
             Word_t    A_ddr = 0;
-            uint8_t   T_ype = ju_Type(Pjp);
             offset = j__udySearchLeaf7(Pleaf, 2, Index, 7 * 8);
             assert(offset >= 0);        /* Index must be valid */
             JU_COPY7_PINDEX_TO_LONG(D_cdP0, &(Pleaf[offset ? 0 : 7]));
             D_cdP0 |= Index & cJU_DCDMASK(7);
-            JUDYLCODE(A_ddr = Pjv[offset ? 0 : 1];);
-            ju_SetBaLPntr(Pjp, A_ddr);
-            ju_SetDcdPop0(Pjp, D_cdP0);
-            ju_SetJpType(Pjp, T_ype);
+            ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_7_01);
+//            ju_SetBaLPntr(Pjp, A_ddr);
+//            ju_SetDcdPop0(Pjp, D_cdP0);
+//            ju_SetJpType(Pjp, T_ype);
         }                               /* Pjp->jp_Type = (NewJPType);   */
-        ju_SetJpType(Pjp, cJU_JPIMMED_7_01);
+//        ju_SetJpType(Pjp, cJU_JPIMMED_7_01);
         return (1);
     }
 #endif // JUDY1
