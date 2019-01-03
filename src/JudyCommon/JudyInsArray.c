@@ -211,12 +211,17 @@ const   Word_t *  const PValue, // list of corresponding values.
 // Allocate JPM:
 
             Pjpm = j__udyAllocJPM();
-            JU_CHECKALLOC(Pjpm_t, Pjpm, JERRI);
+//            JU_CHECKALLOC(Pjpm_t, Pjpm, JERRI);
+            if (Pjpm < (Pjpm_t) cBPW)
+            {
+                JU_SET_ERRNO(PJError, JU_ALLOC_ERRNO(Pjpm));
+                return(JERRI);
+            }
             *PPArray = (Pvoid_t) Pjpm;
 
 // Set some JPM fields:
 
-            (Pjpm->jpm_Pop0) = Count - 1;
+            Pjpm->jpm_Pop0 = Count - 1;
             // note: (Pjpm->jpm_TotalMemWords) is now initialized.
 
 // Build Judy tree:
@@ -224,7 +229,8 @@ const   Word_t *  const PValue, // list of corresponding values.
 // In case of error save the final Count, possibly modified, unless modified to
 // 0, in which case free the JPM itself:
 
-            if (! j__udyInsArray(&(Pjpm->jpm_JP), cJU_ROOTSTATE, &Count,
+//            if (! j__udyInsArray(&(Pjpm->jpm_JP), cJU_ROOTSTATE, &Count,
+            if (! j__udyInsArray(Pjpm->jpm_JP + 0, cJU_ROOTSTATE, &Count,
                                  (PWord_t) PIndex,
 #ifdef JUDYL
                                  (Pjv_t) PValue,
@@ -235,7 +241,7 @@ const   Word_t *  const PValue, // list of corresponding values.
 
                 if (Count)              // partial success, adjust pop0:
                 {
-                    (Pjpm->jpm_Pop0) = Count - 1;
+                    Pjpm->jpm_Pop0= Count - 1;
                 }
                 else                    // total failure, free JPM:
                 {
@@ -265,7 +271,13 @@ const   Word_t *  const PValue, // list of corresponding values.
 
         {
             Pjllw      = j__udyAllocJLLW(Count + 1);
-            JU_CHECKALLOC(Pjllw_t, Pjllw, JERRI);
+//            JU_CHECKALLOC(Pjllw_t, Pjllw, JERRI);
+            if (Pjllw < (Pjllw_t) cBPW)
+            {
+                JU_SET_ERRNO(PJError, JU_ALLOC_ERRNO(Pjllw));
+                return(JERRI);
+            }
+
             *PPArray  = (Pvoid_t) Pjllw;
             Pjllw->jlw_Population0   = Count - 1;              // set pop0.
             PLeafW = Pjllw->jlw_Leaf;
@@ -474,7 +486,7 @@ FUNCTION static bool_t j__udyInsArray(
         assert(pop1 - 1 <= cJU_POP0MASK(cLevel));                       \
         D_cdP0 = (*PIndex & cJU_DCDMASK(cLevel)) | (pop1 - 1);          \
   /*    JU_JPSETADT(PjpParent, PjllRaw, D_cdP0, JPType);    */          \
-        ju_SetBaLPntr(PjpParent, PjllRaw);                              \
+        ju_SetPntrInJp(PjpParent, PjllRaw);                              \
         ju_SetDcdPop0(PjpParent, D_cdP0);                               \
         ju_SetJpType(PjpParent, JPType);                                \
 }
@@ -565,7 +577,7 @@ FUNCTION static bool_t j__udyInsArray(
             if ((PjvRaw = j__udyLAllocJV(pop1, Pjpm)) == 0)
                 NOMEM;
 //            PjpParent->jp_PValue = PjvRaw;
-            ju_SetPjvPntr(PjpParent, PjvRaw);
+            ju_SetPntrInJp(PjpParent, PjvRaw);
             Pjv = P_JV(PjvRaw);
 #endif
 
@@ -702,11 +714,11 @@ FUNCTION static bool_t j__udyInsArray(
 
             if (pop1 == cJU_JPFULLPOPU1_POP0 + 1)
             {
-                Word_t  Addr  = ju_BaLPntr(PjpParent);
+                Word_t  Addr  = ju_PntrInJp(PjpParent);
                 Word_t  DcdP0 = (*PIndex & cJU_DCDMASK(1))
                                         | cJU_JPFULLPOPU1_POP0;
 //                JU_JPSETADT(PjpParent, Addr, DcdP0, cJ1_JPFULLPOPU1);
-                ju_SetBaLPntr(PjpParent, Addr);
+                ju_SetPntrInJp(PjpParent, Addr);
                 ju_SetDcdPop0(PjpParent, DcdP0);
                 ju_SetJpType(PjpParent, cJ1_JPFULLPOPU1);
 
@@ -764,7 +776,7 @@ FUNCTION static bool_t j__udyInsArray(
 
 //            JU_JPSETADT(PjpParent, PjlbRaw, 
 //                    (*PIndex & cJU_DCDMASK(1)) | (*PPop1 - 1), cJU_JPLEAF_B1);
-            ju_SetBaLPntr(PjpParent, PjlbRaw);
+            ju_SetPntrInJp(PjpParent, PjlbRaw);
             ju_SetDcdPop0(PjpParent, (*PIndex & cJU_DCDMASK(1)) | (*PPop1 - 1));
             ju_SetJpType(PjpParent, cJU_JPLEAF_B1);
 
@@ -886,7 +898,7 @@ BuildBranch2:   // come here directly for Level = levelsub = cJU_ROOTSTATE.
                 Word_t Addr = (Word_t) (*PValue++);
 #endif  // JUDYL
 //                JU_JPSETADT(Pjp, Addr, *PIndex, cJU_JPIMMED_1_01 + levelsub -2);
-                ju_SetBaLPntr(Pjp, Addr);
+                ju_SetPntrInJp(Pjp, Addr);
                 ju_SetDcdPop0(Pjp, *PIndex);
                 ju_SetJpType(Pjp, cJU_JPIMMED_1_01 + levelsub -2);
 
@@ -1164,7 +1176,7 @@ ClearBranch:
 
 SetParent:
 //        PjpParent->Jp_Addr0 = Pjbany;
-        ju_SetBaLPntr(PjpParent, Pjbany);
+        ju_SetPntrInJp(PjpParent, Pjbany);
 //        PjpParent->jp_Type = JPtype;
         ju_SetJpType(PjpParent, JPtype);
 
@@ -1173,7 +1185,7 @@ SetParent:
             Word_t DcdP0 = (*PIndex & cJU_DCDMASK(levelsub)) | (*PPop1 - 1);
 
 //            JU_JPSETADT(PjpParent, Pjbany, DcdP0, JPtype);
-            ju_SetBaLPntr(PjpParent, Pjbany);
+            ju_SetPntrInJp(PjpParent, Pjbany);
             ju_SetDcdPop0(PjpParent, DcdP0);
             ju_SetJpType(PjpParent, JPtype);
         }

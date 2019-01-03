@@ -686,7 +686,7 @@ wcreate(char *word, TREEREC * par)
     return (tmp);
 }
 
-#define INITARRAY ANSREC      ans = {0}
+#define INITARRAY ANSREC      ans = {}
 
 #define STORESTRING(STRING)   splayinsert(&ans, STRING)
 
@@ -918,7 +918,7 @@ wcreate(char *word, TREEREC * par)
     return (tmp);
 }
 
-#define INITARRAY ANSREC      ans = {0}
+#define INITARRAY ANSREC      ans = {}
 
 #define STORESTRING(STRING)   redblackinsert(&ans, STRING)
 

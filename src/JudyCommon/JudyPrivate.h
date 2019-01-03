@@ -918,7 +918,7 @@ extern PPvoid_t j__udyLGet(Pcvoid_t PArray, Word_t Index, P_JE);
                     MISCOMPARESM((START) - __pos);              \
                     return(__pos);                              \
                 }                                               \
-                __pos++;  /* advance to hole */                 \
+                __pos++; /*  advance to hole */                 \
                 break;                                          \
             }                                                   \
         }                                                       \
@@ -976,7 +976,7 @@ extern PPvoid_t j__udyLGet(Pcvoid_t PArray, Word_t Index, P_JE);
                     MISCOMPARESM((START) - __pos);              \
                     return(__pos);                              \
                 }                                               \
-                __pos++;  /* advance to hole */                 \
+                __pos++; /*  advance to hole */                 \
                 break;                                          \
             }                                                   \
         }                                                       \
@@ -1094,11 +1094,11 @@ j__udyCount64Bits(uint64_t word64)
 //#define JU_JPLEAF_POP0(PJP)     ((PJP)->jp_Addr1 & 0xFF)
 ////#define JU_JPLEAF_POP0(PJP)     ju_LeafPop0(PJP)
 
-//#define JU_JPDCDPOP0(PJP)   JU_TRIMTODCDSIZE((PJP)->jp_Addr1)
+//#define JU_JPDCDPOP0(PJP)   JU_TrimToIMM01((PJP)->jp_Addr1)
 #define JU_JPDCDPOP0(PJP)       ju_DcdPop0(PJP)
 
 #ifdef  JU_LITTLE_ENDIAN        // ====================================
-//#define JU_JPDCDPOP0(PJP)   JU_TRIMTODCDSIZE((PJP)->jp_Addr1)
+//#define JU_JPDCDPOP0(PJP)   JU_TrimToIMM01((PJP)->jp_Addr1)
 #else  // BIG_ENDIAN =================================================
 //#define JU_JPDCDPOP0(PJP)  (((PJP)->jp_Addr1) >> 8)
 #endif  // BIG_ENDIAN =================================================
@@ -1890,7 +1890,7 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
 
 //#            return((PPvoid_t) (P_JV((PJP)->jp_PValue) + (OFFSET)))
 #define JU_RET_FOUND_IMM(PJP,OFFSET) \
-            return((PPvoid_t) (P_JV(ju_PImmVals(PJP)) + (OFFSET)))
+            return((PPvoid_t) (P_JV(ju_PntrInJp(PJP)) + (OFFSET)))
 
 #ifndef BMVALUE
 
@@ -1973,12 +1973,11 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
 #define JU_ALLOC_ERRNO(ADDR) \
         (((void *) (ADDR) != (void *) NULL) ? JU_ERRNO_OVERRUN : JU_ERRNO_NOMEM)
 
-#define JU_CHECKALLOC(Type,Ptr,Retval)                  \
-        if ((Ptr) < (Type) cBPW)                        \
-        {                                               \
-            JU_SET_ERRNO(PJError, JU_ALLOC_ERRNO(Ptr)); \
-            return(Retval);                             \
-        }
+//#define JU_CHECKALLOC(Type,Ptr,Retval) 
+//        {                               
+//            JU_SET_ERRNO(PJError, JU_ALLOC_ERRNO(Ptr));
+//            return(Retval);                           
+//        }
 
 
 // Leaf search routines
@@ -1995,55 +1994,57 @@ static inline int j__udySearchBranchL(uint8_t *Lst, int pop1, uint8_t Exp)
 
 static inline int j__udySearchLeaf1(Pjll_t Pjll, int LeafPop1, Word_t Index, int Expanse)
 {
-    int Start;
     SEARCHPOPULATION(LeafPop1);
-
-    Start = PSPLIT(LeafPop1, (uint8_t)Index, Expanse); 
+    Index = JU_LEASTBYTES(Index, 1);
+    int Start = PSPLIT(LeafPop1, Index, Expanse); 
     SEARCHLEAFNATIVE(uint8_t,  Pjll, LeafPop1, Index, Start); 
 }
 
 static inline int j__udySearchLeaf2(Pjll_t Pjll, int LeafPop1, Word_t Index, int Expanse)
 {
-    int Start;
     SEARCHPOPULATION(LeafPop1);
-    Index = (uint16_t)Index;
-
-    Start = PSPLIT(LeafPop1, Index, Expanse); 
+    Index = JU_LEASTBYTES(Index, 2);
+    int Start = PSPLIT(LeafPop1, Index, Expanse); 
     SEARCHLEAFNATIVE(uint16_t,  Pjll, LeafPop1, Index, Start); 
 }
 
 static inline int j__udySearchLeaf3(Pjll_t Pjll, int LeafPop1, Word_t Index, int Expanse)
 {
     SEARCHPOPULATION(LeafPop1);
-    int Start = PSPLIT(LeafPop1, JU_LEASTBYTES(Index, 3), Expanse); 
+    Index = JU_LEASTBYTES(Index, 3);
+    int Start = PSPLIT(LeafPop1, Index, Expanse); 
     SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 3, JU_COPY3_PINDEX_TO_LONG, Start); 
 }
 
 static inline int j__udySearchLeaf4(Pjll_t Pjll, int LeafPop1, Word_t Index, int Expanse)
 {
     SEARCHPOPULATION(LeafPop1);
-    int Start = PSPLIT(LeafPop1, (uint32_t)Index, Expanse); 
+    Index = JU_LEASTBYTES(Index, 4);
+    int Start = PSPLIT(LeafPop1, Index, Expanse); 
     SEARCHLEAFNATIVE(uint32_t,  Pjll, LeafPop1, Index, Start); 
 }
 
 static inline int j__udySearchLeaf5(Pjll_t Pjll, int LeafPop1, Word_t Index, int Expanse)
 {
     SEARCHPOPULATION(LeafPop1);
-    int Start = PSPLIT(LeafPop1, JU_LEASTBYTES(Index, 5), Expanse); 
+    Index = JU_LEASTBYTES(Index, 5);
+    int Start = PSPLIT(LeafPop1, Index, Expanse); 
     SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 5, JU_COPY5_PINDEX_TO_LONG, Start); 
 }
 
 static inline int j__udySearchLeaf6(Pjll_t Pjll, int LeafPop1, Word_t Index, int Expanse)
 {
     SEARCHPOPULATION(LeafPop1);
-    int Start = PSPLIT(LeafPop1, JU_LEASTBYTES(Index, 6), Expanse); 
+    Index = JU_LEASTBYTES(Index, 6);
+    int Start = PSPLIT(LeafPop1, Index, Expanse); 
     SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 6, JU_COPY6_PINDEX_TO_LONG, Start); 
 }
 
 static inline int j__udySearchLeaf7(Pjll_t Pjll, int LeafPop1, Word_t Index, int Expanse)
 {
     SEARCHPOPULATION(LeafPop1);
-    int Start = PSPLIT(LeafPop1, JU_LEASTBYTES(Index, 7), Expanse); 
+    Index = JU_LEASTBYTES(Index, 7);
+    int Start = PSPLIT(LeafPop1, Index, Expanse); 
     SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 7, JU_COPY7_PINDEX_TO_LONG, Start); 
 }
 

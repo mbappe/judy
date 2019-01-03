@@ -299,7 +299,7 @@ FUNCTION int JudyLNextEmpty
 // empty.
 
 #define	CHECKDCD(cDigits) \
-	if (ju_DcdNonMatchKey(Index, Pjp, cDigits)) { *PIndex = Index; return(1); }
+	if (ju_DcdNotMatchKey(Index, Pjp, cDigits)) { *PIndex = Index; return(1); }
 
 
 // REVISE REMAINDER OF INDEX:
@@ -429,8 +429,8 @@ FUNCTION int JudyLNextEmpty
 	    if (MinIndex)                               \
             {                                           \
                 --Index;                                \
-                    *PIndex = Index;                    \
-                    return(1);                          \
+                *PIndex = Index;                        \
+                return(1);                              \
             }	                                        \
 	    SMRESTART(Digits);				\
 	}
@@ -798,7 +798,7 @@ SMGetRestart:		// return here with revised Index.
 	    Pjllw_t Pjllw = P_JLLW(PArray);	// first word of leaf.
 	    pop0 = Pjllw->jlw_Population0;
 
-#ifdef	JUDY1
+#ifdef	FORIMPOSSIBLEPOPS
 	    if (pop0 == 0)			// special case.
 	    {
 #ifdef JUDYPREV
@@ -808,7 +808,7 @@ SMGetRestart:		// return here with revised Index.
 #endif
 		return(0);		// no previous/next empty index.
 	    }
-#endif // JUDY1
+#endif  // FORIMPOSSIBLEPOPS
 
 	    j__udySearchLeafEmptyL(Pjllw->jlw_Leaf, pop0);
 
@@ -825,9 +825,10 @@ SMGetRestart:		// return here with revised Index.
 
 	{
 	    Pjpm_t Pjpm = P_JPM(PArray);
-	    Pjp = &(Pjpm->jpm_JP);
+//	    Pjp = &(Pjpm->jpm_JP);
+	    Pjp = Pjpm->jpm_JP + 0;
 
-//	    goto SMGetContinue;
+	    goto SMGetContinue;
 	}
 
 
@@ -878,7 +879,7 @@ SMGetContinue:			// return here for next branch/leaf.
 // Common code (state-independent) for all cases of linear branches:
 
 SMBranchL:
-	    Pjbl = P_JBL(ju_BaLPntr(Pjp));
+	    Pjbl = P_JBL(ju_PntrInJp(Pjp));
 
 // First, check if Indexs expanse (digit) is below/above the first/last
 // populated expanse in the BranchL, in which case Index is empty; otherwise
@@ -998,7 +999,7 @@ SMBranchL:
 // Common code (state-independent) for all cases of bitmap branches:
 
 SMBranchB:
-	    Pjbb = P_JBB(ju_BaLPntr(Pjp));
+	    Pjbb = P_JBB(ju_PntrInJp(Pjp));
 
 // Locate the digits JP in the subexpanse list, if present:
 
@@ -1132,7 +1133,7 @@ BranchBNextSubexp:	// return here to check next bitmap subexpanse.
 // Common code (state-independent) for all cases of uncompressed branches:
 
 SMBranchU:
-	    Pjbu = P_JBU(ju_BaLPntr(Pjp));
+	    Pjbu = P_JBU(ju_PntrInJp(Pjp));
 	    Pjp	 = Pjbu->jbu_jp + digit;
 
 // Absent JP = null JP for current digit in Index:
@@ -1189,13 +1190,11 @@ SMBranchU:
 // Note:  Pword is the name known to GET*; think of it as Pjllw.
 
 #define	SMLEAFL(cDigits,Func)                           \
-	Pword = (PWord_t) P_JLLW(ju_BaLPntr(Pjp));      \
+	Pword = (PWord_t) P_JLLW(ju_PntrInJp(Pjp));      \
 	pop0  = ju_LeafPop0(Pjp);                       \
 	Func(Pword, pop0)
 
-///////#ifdef  JUDYL
 	case cJU_JPLEAF1:  CHECKDCD(1); SMLEAFL(1, j__udySearchLeafEmpty1);
-///////#endif  
 	case cJU_JPLEAF2:  CHECKDCD(2); SMLEAFL(2, j__udySearchLeafEmpty2);
 	case cJU_JPLEAF3:  CHECKDCD(3); SMLEAFL(3, j__udySearchLeafEmpty3);
 
@@ -1215,7 +1214,7 @@ SMBranchU:
 
 	    CHECKDCD(1);
 
-	    Pjlb	= P_JLB(ju_BaLPntr(Pjp));
+	    Pjlb	= P_JLB(ju_PntrInJp(Pjp));
 	    digit	= JU_DIGITATSTATE(Index, 1);
 	    subexp	= digit / cJU_BITSPERSUBEXPL;
 	    bitposmaskL	= JU_BITPOSMASKL(digit);
@@ -1334,10 +1333,10 @@ LeafB1NextSubexp:	// return here to check next bitmap subexpanse.
 	case cJU_JPIMMED_5_01:
 	case cJU_JPIMMED_6_01:
 	case cJU_JPIMMED_7_01:
-	    if (ju_DcdPop0(Pjp) != JU_TRIMTODCDSIZE(Index)) 
+	    if (ju_IMM01Key(Pjp) != JU_TrimToIMM01(Index)) 
             { *PIndex = Index; return(1); }
 	    digits = ju_Type(Pjp) - cJU_JPIMMED_1_01 + 1;
-	    LEAF_EDGE(JU_LEASTBYTES(ju_DcdPop0(Pjp), digits), digits);
+	    LEAF_EDGE(JU_LEASTBYTES(ju_IMM01Key(Pjp), digits), digits);
 
 // Immediate JPs with Pop1 > 1:
 
@@ -1349,9 +1348,9 @@ LeafB1NextSubexp:	// return here to check next bitmap subexpanse.
 	case cJU_JPIMMED_1_05:
 	case cJU_JPIMMED_1_06:
 	case cJU_JPIMMED_1_07:
+	case cJU_JPIMMED_1_08:
 
 #ifdef  JUDY1
-	case cJ1_JPIMMED_1_08:
 	case cJ1_JPIMMED_1_09:
 	case cJ1_JPIMMED_1_10:
 	case cJ1_JPIMMED_1_11:
@@ -1366,9 +1365,9 @@ LeafB1NextSubexp:	// return here to check next bitmap subexpanse.
 
 	case cJU_JPIMMED_2_02:
 	case cJU_JPIMMED_2_03:
+	case cJU_JPIMMED_2_04:
 
 #ifdef  JUDY1
-	case cJ1_JPIMMED_2_04:
 	case cJ1_JPIMMED_2_05:
 	case cJ1_JPIMMED_2_06:
 	case cJ1_JPIMMED_2_07:
@@ -1386,26 +1385,28 @@ LeafB1NextSubexp:	// return here to check next bitmap subexpanse.
 #endif  // JUDY1
 
 //	    IMM_MULTI(j__udySearchLeafEmpty3, cJU_JPIMMED_3_02, ju_PImmed1(Pjp));
-	    j__udySearchLeafEmpty3(ju_PImmed1(Pjp), ju_Type(Pjp) - cJU_JPIMMED_3_02 + 1);
+	    j__udySearchLeafEmpty3(ju_PImmed3(Pjp), ju_Type(Pjp) - cJU_JPIMMED_3_02 + 1);
 
+	case cJU_JPIMMED_4_02:
+//	    IMM_MULTI(j__udySearchLeafEmpty4, cJ1_JPIMMED_4_02, ju_PImmed4(Pjp));
+	    j__udySearchLeafEmpty4(ju_PImmed4(Pjp), ju_Type(Pjp) - cJU_JPIMMED_4_02 + 1);
 #ifdef  JUDY1
-	case cJ1_JPIMMED_4_02:
 	case cJ1_JPIMMED_4_03:
 //	    IMM_MULTI(j__udySearchLeafEmpty4, cJ1_JPIMMED_4_02, ju_PImmed4(Pjp));
-	    j__udySearchLeafEmpty4(ju_PImmed1(Pjp), ju_Type(Pjp) - cJ1_JPIMMED_4_02 + 1);
+	    j__udySearchLeafEmpty4(ju_PImmed4(Pjp), ju_Type(Pjp) - cJ1_JPIMMED_4_02 + 1);
 
 	case cJ1_JPIMMED_5_02:
 	case cJ1_JPIMMED_5_03:
 //	    IMM_MULTI(j__udySearchLeafEmpty5, cJ1_JPIMMED_5_02, ju_PImmed1(Pjp));
-	    j__udySearchLeafEmpty5(ju_PImmed1(Pjp), ju_Type(Pjp) - cJ1_JPIMMED_5_02 + 1);
+	    j__udySearchLeafEmpty5(ju_PImmed5(Pjp), ju_Type(Pjp) - cJ1_JPIMMED_5_02 + 1);
 
 	case cJ1_JPIMMED_6_02:
 //	    IMM_MULTI(j__udySearchLeafEmpty6, cJ1_JPIMMED_6_02, ju_PImmed1(Pjp));
-	    j__udySearchLeafEmpty6(ju_PImmed1(Pjp), ju_Type(Pjp) - cJ1_JPIMMED_6_02 + 1);
+	    j__udySearchLeafEmpty6(ju_PImmed6(Pjp), ju_Type(Pjp) - cJ1_JPIMMED_6_02 + 1);
 
 	case cJ1_JPIMMED_7_02:
 //	    IMM_MULTI(j__udySearchLeafEmpty7, cJ1_JPIMMED_7_02, ju_PImmed1(Pjp));
-	    j__udySearchLeafEmpty7(ju_PImmed1(Pjp), ju_Type(Pjp) - cJ1_JPIMMED_7_02 + 1);
+	    j__udySearchLeafEmpty7(ju_PImmed7(Pjp), ju_Type(Pjp) - cJ1_JPIMMED_7_02 + 1);
 #endif
 
 

@@ -99,7 +99,8 @@ FUNCTION Word_t JudyLFreeArray
 	    Pjpm_t Pjpm	    = P_JPM(*PPArray);
 	    Word_t TotalMem = Pjpm->jpm_TotalMemWords;
 
-	    j__udyFreeSM(&(Pjpm->jpm_JP), &jpm);  // recurse through tree.
+//	    j__udyFreeSM(&(Pjpm->jpm_JP), &jpm);  // recurse through tree.
+	    j__udyFreeSM((Pjpm->jpm_JP + 0), &jpm);  // recurse through tree.
 	    j__udyFreeJPM(Pjpm, &jpm);
 
 // Verify the array was not corrupt.  This means that amount of memory freed
@@ -107,6 +108,7 @@ FUNCTION Word_t JudyLFreeArray
 
 	    if (TotalMem + jpm.jpm_TotalMemWords)
 	    {
+printf("FreeArray TotalMem = %ld, jpm.jpm_TotalMemWords = %ld\n",  TotalMem, -jpm.jpm_TotalMemWords);
 	        *PPArray = (Pvoid_t) NULL;		// make an empty array.
 		JU_SET_ERRNO(PJError, JU_ERRNO_CORRUPT);
 		return(JERR);
@@ -118,6 +120,9 @@ FUNCTION Word_t JudyLFreeArray
 
 } // Judy1FreeArray() / JudyLFreeArray()
 
+#ifdef  DEBUG
+        Word_t Line;
+#endif  // DEBUG
 
 // ****************************************************************************
 // __ J U D Y   F R E E   S M
@@ -138,17 +143,61 @@ FUNCTION void j__udyFreeSM(
 {
 	Word_t	Pop1;
 
-//	switch (JU_JPTYPE(Pjp))
+
 	switch (ju_Type(Pjp))
 	{
+        case    cJU_JPNULL1:            // Index Size 1 bytes 
+        case    cJU_JPNULL2:            // Index Size 2 bytes 
+        case    cJU_JPNULL3:            // Index Size 3 bytes 
+        case    cJU_JPNULL4:            // Index Size 4 bytes 
+        case    cJU_JPNULL5:            // Index Size 5 bytes 
+        case    cJU_JPNULL6:            // Index Size 6 bytes 
+        case    cJU_JPNULL7:            // Index Size 7 bytes 
+        case    cJU_JPIMMED_1_01:       // Index Size = 1, Pop1 = 1.
+        case    cJU_JPIMMED_2_01:       // Index Size = 2, Pop1 = 1.
+        case    cJU_JPIMMED_3_01:       // Index Size = 3, Pop1 = 1.
+        case    cJU_JPIMMED_4_01:       // Index Size = 4, Pop1 = 1.
+        case    cJU_JPIMMED_5_01:       // Index Size = 5, Pop1 = 1.
+        case    cJU_JPIMMED_6_01:       // Index Size = 6, Pop1 = 1.
+        case    cJU_JPIMMED_7_01:       // Index Size = 7, Pop1 = 1.
 
-#ifdef JUDY1
-
-// FULL EXPANSE -- nothing to free  for this jp_Type.
-
-	case cJ1_JPFULLPOPU1:
-	    break;
-#endif
+#ifdef  JUDY1
+        case    cJ1_JPIMMED_1_02:       // Index Size = 1, Pop1 = 2.
+        case    cJ1_JPIMMED_1_03:       // Index Size = 1, Pop1 = 3.
+        case    cJ1_JPIMMED_1_04:       // Index Size = 1, Pop1 = 4.
+        case    cJ1_JPIMMED_1_05:       // Index Size = 1, Pop1 = 5.
+        case    cJ1_JPIMMED_1_06:       // Index Size = 1, Pop1 = 6.
+        case    cJ1_JPIMMED_1_07:       // Index Size = 1, Pop1 = 7.
+        case    cJ1_JPIMMED_1_08:       // Index Size = 1, Pop1 = 8.
+        case    cJ1_JPIMMED_1_09:       // Index Size = 1, Pop1 = 9.
+        case    cJ1_JPIMMED_1_10:       // Index Size = 1, Pop1 = 10.
+        case    cJ1_JPIMMED_1_11:       // Index Size = 1, Pop1 = 11.
+        case    cJ1_JPIMMED_1_12:       // Index Size = 1, Pop1 = 12.
+        case    cJ1_JPIMMED_1_13:       // Index Size = 1, Pop1 = 13.
+        case    cJ1_JPIMMED_1_14:       // Index Size = 1, Pop1 = 14.
+        case    cJ1_JPIMMED_1_15:       // Index Size = 1, Pop1 = 15.
+        case    cJ1_JPIMMED_2_02:       // Index Size = 2, Pop1 = 2.
+        case    cJ1_JPIMMED_2_03:       // Index Size = 2, Pop1 = 3.
+        case    cJ1_JPIMMED_2_04:       // Index Size = 2, Pop1 = 4.
+        case    cJ1_JPIMMED_2_05:       // Index Size = 2, Pop1 = 5.
+        case    cJ1_JPIMMED_2_06:       // Index Size = 2, Pop1 = 6.
+        case    cJ1_JPIMMED_2_07:       // Index Size = 2, Pop1 = 7.
+        case    cJ1_JPIMMED_3_02:       // Index Size = 3, Pop1 = 2.
+        case    cJ1_JPIMMED_3_03:       // Index Size = 3, Pop1 = 3.
+        case    cJ1_JPIMMED_3_04:       // Index Size = 3, Pop1 = 4.
+        case    cJ1_JPIMMED_3_05:       // Index Size = 3, Pop1 = 5.
+        case    cJ1_JPIMMED_4_02:       // Index Size = 4, Pop1 = 2.
+        case    cJ1_JPIMMED_4_03:       // Index Size = 4, Pop1 = 3.
+        case    cJ1_JPIMMED_5_02:       // Index Size = 5, Pop1 = 2.
+        case    cJ1_JPIMMED_5_03:       // Index Size = 5, Pop1 = 3.
+        case    cJ1_JPIMMED_6_02:       // Index Size = 6, Pop1 = 2.
+        case    cJ1_JPIMMED_7_02:       // Index Size = 7, Pop1 = 2.
+	case    cJ1_JPFULLPOPU1:        // FULL EXPANSE    Pop1 = 256
+#endif  // JUDY1
+#ifdef  DEBUG
+            Line = __LINE__;
+#endif  // DEBUG
+	    break;              // no memory to Free
 
 // JUDY BRANCH -- free the sub-tree depth first:
 
@@ -164,15 +213,18 @@ FUNCTION void j__udyFreeSM(
 	case cJU_JPBRANCH_L6:
 	case cJU_JPBRANCH_L7:
 	{
+#ifdef  DEBUG
+            Line = __LINE__;
+#endif  // DEBUG
 //	    Pjbl_t Pjbl = P_JBL(Pjp->Jp_Addr0);
-	    Pjbl_t Pjbl = P_JBL(ju_BaLPntr(Pjp));
+	    Pjbl_t Pjbl = P_JBL(ju_PntrInJp(Pjp));
 	    Word_t offset;
 
-	    for (offset = 0; offset < Pjbl->jbl_NumJPs; ++offset)
+	    for (offset = 0; offset < Pjbl->jbl_NumJPs; offset++)
 	        j__udyFreeSM(Pjbl->jbl_jp + offset, Pjpm);
 
 //	    j__udyFreeJBL(Pjp->Jp_Addr0, Pjpm);
-	    j__udyFreeJBL(ju_BaLPntr(Pjp), Pjpm);
+	    j__udyFreeJBL(ju_PntrInJp(Pjp), Pjpm);
 	    break;
 	}
 
@@ -189,12 +241,15 @@ FUNCTION void j__udyFreeSM(
 	case cJU_JPBRANCH_B6:
 	case cJU_JPBRANCH_B7:
 	{
+#ifdef  DEBUG
+            Line = __LINE__;
+#endif  // DEBUG
 	    Word_t subexp;
 	    Word_t offset;
 	    Word_t jpcount;
 
 //	    Pjbb_t Pjbb = P_JBB(Pjp->Jp_Addr0);
-	    Pjbb_t Pjbb = P_JBB(ju_BaLPntr(Pjp));
+	    Pjbb_t Pjbb = P_JBB(ju_PntrInJp(Pjp));
 
 
 	    for (subexp = 0; subexp < cJU_NUMSUBEXPB; ++subexp)
@@ -205,14 +260,13 @@ FUNCTION void j__udyFreeSM(
 	        {
 		    for (offset = 0; offset < jpcount; ++offset)
 		    {
-		       j__udyFreeSM(P_JP(JU_JBB_PJP(Pjbb, subexp)) + offset,
-				    Pjpm);
+		       j__udyFreeSM(P_JP(JU_JBB_PJP(Pjbb, subexp)) + offset, Pjpm);
 		    }
 		    j__udyFreeJBBJP(JU_JBB_PJP(Pjbb, subexp), jpcount, Pjpm);
 	        }
 	    }
 //	    j__udyFreeJBB(Pjp->Jp_Addr0, Pjpm);
-	    j__udyFreeJBB(ju_BaLPntr(Pjp), Pjpm);
+	    j__udyFreeJBB(ju_PntrInJp(Pjp), Pjpm);
 
 	    break;
 	}
@@ -231,15 +285,18 @@ FUNCTION void j__udyFreeSM(
 	case cJU_JPBRANCH_U6:
 	case cJU_JPBRANCH_U7:
 	{
+#ifdef  DEBUG
+            Line = __LINE__;
+#endif  // DEBUG
 	    Word_t offset;
 //	    Pjbu_t Pjbu = P_JBU(Pjp->Jp_Addr0);
-	    Pjbu_t Pjbu = P_JBU(ju_BaLPntr(Pjp));
+	    Pjbu_t Pjbu = P_JBU(ju_PntrInJp(Pjp));
 
 	    for (offset = 0; offset < cJU_BRANCHUNUMJPS; ++offset)
 	        j__udyFreeSM(Pjbu->jbu_jp + offset, Pjpm);
 
 //	    j__udyFreeJBU(Pjp->Jp_Addr0, Pjpm);
-	    j__udyFreeJBU(ju_BaLPntr(Pjp), Pjpm);
+	    j__udyFreeJBU(ju_PntrInJp(Pjp), Pjpm);
 	    break;
 	}
 
@@ -251,48 +308,74 @@ FUNCTION void j__udyFreeSM(
 //
 // Note:  cJU_JPLEAF1 is a special case, see discussion in ../Judy1/Judy1.h
 
-/////////#ifdef  JUDYL
 	case cJU_JPLEAF1:
+#ifdef  DEBUG
+            Line = __LINE__;
+#endif  // DEBUG
 	    Pop1 = ju_LeafPop0(Pjp) + 1;
+            assert((ju_DcdPop0(Pjp) & 0xff) == (Pop1 - 1));
 //	    j__udyFreeJLL1(Pjp->Jp_Addr0, Pop1, Pjpm);
-	    j__udyFreeJLL1(ju_BaLPntr(Pjp), Pop1, Pjpm);
+	    j__udyFreeJLL1(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
-/////////#endif
 
 	case cJU_JPLEAF2:
+#ifdef  DEBUG
+            Line = __LINE__;
+#endif  // DEBUG
 	    Pop1 = ju_LeafPop0(Pjp) + 1;
+            assert((ju_DcdPop0(Pjp) & 0xff) == (Pop1 - 1));
 //	    j__udyFreeJLL2(Pjp->Jp_Addr0, Pop1, Pjpm);
-	    j__udyFreeJLL2(ju_BaLPntr(Pjp), Pop1, Pjpm);
+	    j__udyFreeJLL2(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
 
 	case cJU_JPLEAF3:
+#ifdef  DEBUG
+            Line = __LINE__;
+#endif  // DEBUG
 	    Pop1 = ju_LeafPop0(Pjp) + 1;
+            assert((ju_DcdPop0(Pjp) & 0xff) == (Pop1 - 1));
 //	    j__udyFreeJLL3(Pjp->Jp_Addr0, Pop1, Pjpm);
-	    j__udyFreeJLL3(ju_BaLPntr(Pjp), Pop1, Pjpm);
+	    j__udyFreeJLL3(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
 
 	case cJU_JPLEAF4:
+#ifdef  DEBUG
+            Line = __LINE__;
+#endif  // DEBUG
 	    Pop1 = ju_LeafPop0(Pjp) + 1;
+            assert((ju_DcdPop0(Pjp) & 0xff) == (Pop1 - 1));
 //	    j__udyFreeJLL4(Pjp->Jp_Addr0, Pop1, Pjpm);
-	    j__udyFreeJLL4(ju_BaLPntr(Pjp), Pop1, Pjpm);
+	    j__udyFreeJLL4(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
 
 	case cJU_JPLEAF5:
+#ifdef  DEBUG
+            Line = __LINE__;
+#endif  // DEBUG
 	    Pop1 = ju_LeafPop0(Pjp) + 1;
+            assert((ju_DcdPop0(Pjp) & 0xff) == (Pop1 - 1));
 //	    j__udyFreeJLL5(Pjp->Jp_Addr0, Pop1, Pjpm);
-	    j__udyFreeJLL5(ju_BaLPntr(Pjp), Pop1, Pjpm);
+	    j__udyFreeJLL5(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
 
 	case cJU_JPLEAF6:
+#ifdef  DEBUG
+            Line = __LINE__;
+#endif  // DEBUG
 	    Pop1 = ju_LeafPop0(Pjp) + 1;
+            assert((ju_DcdPop0(Pjp) & 0xff) == (Pop1 - 1));
 //	    j__udyFreeJLL6(Pjp->Jp_Addr0, Pop1, Pjpm);
-	    j__udyFreeJLL6(ju_BaLPntr(Pjp), Pop1, Pjpm);
+	    j__udyFreeJLL6(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
 
 	case cJU_JPLEAF7:
+#ifdef  DEBUG
+            Line = __LINE__;
+#endif  // DEBUG
 	    Pop1 = ju_LeafPop0(Pjp) + 1;
+            assert((ju_DcdPop0(Pjp) & 0xff) == (Pop1 - 1));
 //	    j__udyFreeJLL7(Pjp->Jp_Addr0, Pop1, Pjpm);
-	    j__udyFreeJLL7(ju_BaLPntr(Pjp), Pop1, Pjpm);
+	    j__udyFreeJLL7(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
 
 
@@ -300,11 +383,14 @@ FUNCTION void j__udyFreeSM(
 
 	case cJU_JPLEAF_B1:
 	{
+#ifdef  DEBUG
+            Line = __LINE__;
+#endif  // DEBUG
 #ifdef JUDYL
 	    Word_t subexp;
 	    Word_t jpcount;
 //	    Pjlb_t Pjlb = P_JLB(Pjp->Jp_Addr0);
-	    Pjlb_t Pjlb = P_JLB(ju_BaLPntr(Pjp));
+	    Pjlb_t Pjlb = P_JLB(ju_PntrInJp(Pjp));
 
 // Free the value areas in the bitmap leaf:
 
@@ -318,39 +404,43 @@ FUNCTION void j__udyFreeSM(
 #endif // JUDYL
 
 //	    j__udyFreeJLB1(Pjp->Jp_Addr0, Pjpm);
-	    j__udyFreeJLB1(ju_BaLPntr(Pjp), Pjpm);
+	    j__udyFreeJLB1(ju_PntrInJp(Pjp), Pjpm);
 	    break;
 
 	} // case cJU_JPLEAF_B1
 
 #ifdef JUDYL
 
-
 // IMMED*:
 //
 // For JUDYL, all non JPIMMED_*_01s have a LeafV which must be freed:
 
-	case cJU_JPIMMED_1_02:
-	case cJU_JPIMMED_1_03:
-	case cJU_JPIMMED_1_04:
-	case cJU_JPIMMED_1_05:
-	case cJU_JPIMMED_1_06:
-	case cJU_JPIMMED_1_07:
+	case cJL_JPIMMED_1_02:
+	case cJL_JPIMMED_1_03:
+	case cJL_JPIMMED_1_04:
+	case cJL_JPIMMED_1_05:
+	case cJL_JPIMMED_1_06:
+	case cJL_JPIMMED_1_07:
+	case cJL_JPIMMED_1_08:
 	    Pop1 = ju_Type(Pjp) - cJU_JPIMMED_1_02 + 2;
-	    j__udyLFreeJV(ju_PImmVals(Pjp), Pop1, Pjpm);
+	    j__udyLFreeJV(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
 
-	case cJU_JPIMMED_2_02:
-	case cJU_JPIMMED_2_03:
+	case cJL_JPIMMED_2_02:
+	case cJL_JPIMMED_2_03:
+	case cJL_JPIMMED_2_04:
 
 	    Pop1 = ju_Type(Pjp) - cJU_JPIMMED_2_02 + 2;
-	    j__udyLFreeJV(ju_PImmVals(Pjp), Pop1, Pjpm);
+	    j__udyLFreeJV(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
 
-	case cJU_JPIMMED_3_02:
-	    j__udyLFreeJV(ju_PImmVals(Pjp), 2, Pjpm);
+	case cJL_JPIMMED_3_02:
+	    j__udyLFreeJV(ju_PntrInJp(Pjp), 2, Pjpm);
 	    break;
 
+	case cJL_JPIMMED_4_02:
+	    j__udyLFreeJV(ju_PntrInJp(Pjp), 2, Pjpm);
+	    break;
 #endif // JUDYL
 
 
@@ -359,7 +449,8 @@ FUNCTION void j__udyFreeSM(
 // Note:  Lump together no-op and invalid JP types; see function header
 // comments.
 
-	default: break;
+	default: 
+            break;
 
 	} // switch (ju_Type(Pjp))
 

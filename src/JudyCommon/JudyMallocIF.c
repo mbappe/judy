@@ -172,14 +172,15 @@ extern Word_t    j__AllocWordsJBU;
 extern Word_t    j__AllocWordsJBL;
 extern Word_t    j__AllocWordsJLB1;
 // extern Word_t    j__AllocWordsJLB2;
-extern Word_t    j__AllocWordsJLL1;
-extern Word_t    j__AllocWordsJLL2;
-extern Word_t    j__AllocWordsJLL3;
-extern Word_t    j__AllocWordsJLL4;
-extern Word_t    j__AllocWordsJLL5;
-extern Word_t    j__AllocWordsJLL6;
-extern Word_t    j__AllocWordsJLL7;
-extern Word_t    j__AllocWordsJLLW;
+extern Word_t    j__AllocWordsJLL[8];
+#define   j__AllocWordsJLLW  j__AllocWordsJLL[0]
+#define   j__AllocWordsJLL7  j__AllocWordsJLL[7]
+#define   j__AllocWordsJLL6  j__AllocWordsJLL[6]
+#define   j__AllocWordsJLL5  j__AllocWordsJLL[5]
+#define   j__AllocWordsJLL4  j__AllocWordsJLL[4]
+#define   j__AllocWordsJLL3  j__AllocWordsJLL[3]
+#define   j__AllocWordsJLL2  j__AllocWordsJLL[2]
+#define   j__AllocWordsJLL1  j__AllocWordsJLL[1]
 extern Word_t    j__AllocWordsJV;
 extern Word_t    j__NumbJV;
 #endif // RAMMETRICS

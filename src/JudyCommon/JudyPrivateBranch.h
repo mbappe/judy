@@ -51,26 +51,106 @@
 // anything else, even with the -Zp option.  This is pretty ugly, but
 // fortunately portable, and its all hide-able by macros (see below).
 
-typedef struct J_UDY_POINTER_OTHERS      // JPO.
+//  ------------------------------------------------------------------
+//                   J U D Y L  &  J U D Y 1
+//  ------------------------------------------------------------------
+
+//    =================================================================
+//    |          Little Endian Branch/Leaf Pointer                    |
+//    |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   | 
+//    |        Pointer to Branches/Leafs (48 Bits)    |jp_JPop|jp_Type|
+//    |                      D C D  ~|~ Pop0 of Branch                |
+//    =================================================================
+
+//  ------------------------------------------------------------------
+//                          J U D Y L 
+//  ------------------------------------------------------------------
+//    =================================================================
+//    |          Little Endian Bitmap Leaf 6 bit decode Key           |
+//    |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   | 
+//    | Pointer to Value area JudyL                   |jp_BPop|jp_Type|
+//    |                    B i t  M a p  (64 bits - 6 bits decode_    |
+//    =================================================================
+
+//    =================================================================
+//    |          Little Endian Immed_[1..7]_01 only 56 bit (2) Key    |
+//    |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   | 
+//    |                   I M M E D 56  56 bit                |jp_Type|
+//    |                   V     A     L     U     E                   |
+//    =================================================================
+
+//    =================================================================
+//    |          Little Endian Immed 8 bit (8) decode Key             |
+//    |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   | 
+//    | Pointer to IMMEDs VALUES in JudyL (48 bits)   |jp_IPop|jp_Type|
+//    |Imm[7] |Imm[6] |Imm[5] |Imm[4] |Imm[3] |Imm[2] |Imm[1] |Imm[0] |
+//    =================================================================
+//    Note: 2 * 3 < 8,      5 * 1 < 8,     6 * 1 < 8,     7 * 1 < 8
+
+//    =================================================================
+//    |          Little Endian Immed 16 bit (4) decode Key            |
+//    |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   | 
+//    | Pointer to IMMEDs Values in JudyL (48 bits)   |jp_IPop|jp_Type|
+//    |     Immed[3]  |   Immed[2]    |   Immed[1]    |   Immed[0]    |
+//    =================================================================
+
+//    =================================================================
+//    |          Little Endian Immed 32 bit (2) decode Key            |
+//    |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   | 
+//    | Pointer to IMMEDs Values in JudyL (48 bits)   |jp_IPop|jp_Type|
+//    |            Immed[1]           |            Immed[0]           |
+//    =================================================================
+
+//  ------------------------------------------------------------------
+//                          J U D Y 1 
+//  ------------------------------------------------------------------
+//    =================================================================
+//    |          Little Endian Immed 56/64 bit (2) Key                |
+//    |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   | 
+//    |                   I M M E D X_56  56 bit Key          |jp_Type|
+//    |                   I M M E D X_64  64 bit Key                  |
+//    =================================================================
+
+//    =================================================================
+//    |          Little Endian Immed 32 bit (3) decode Key - Judy1    |
+//    |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   | 
+//    |            Immed[0]           | spare 16 bits |jp_IPop|jp_Type|
+//    |            Immed[2]           |            Immed[1]           |
+//    =================================================================
+
+//    =================================================================
+//    |          Little Endian Immed 16 bit (7) decode Key            |
+//    |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   | 
+//    |   Immed[2]   |   Immed[1]     |   Immed[0]    |jp_IPop|jp_Type|
+//    |   Immed[6]   |   Immed[5]     |   Immed[4]    |  Immed[3]     |
+//    =================================================================
+
+//    =================================================================
+//    |          Little Endian Immed 8 bit (15) decode Key            |
+//    |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   | 
+//    |Imm[6] |Imm[5] |Imm[4] |Imm[3] |Imm[2] |Imm[1] |Imm[0] |jp_Type|
+//    |Imm[14]|Imm[13]Imm[12]|Imm[11]| Imm[10]|Imm[9] |Imm[8] |Imm[7] |
+//    =================================================================
+//    Note: (3) * 5 == 15,  (5) * 3 <= 15,  (6) * 2 <= 15,  (7) * 2 <= 15
+
+typedef struct J_UDY_POINTER_OTHERS     // JPO.
+{
+        union
         {
-            Word_t      j_po_Addr0;       // first word:  Pjp_t, Word_t, etc.
-            union {
-                Word_t  j_po_Addr1;
-                uint8_t j_po_Bytes[sizeof(Word_t)];     // last byte = jp_Type.
-            } jpo_u;
-        } jpo_t;
+            Word_t  j_po_Addr0;         // only the hi 48 bits are available
+            uint8_t j_po_jp_Type[2];    // jp_Type & jp_IPop in lo 16 bits
+        };
+        union
+        {
+            Word_t  j_po_Addr1;         // 2nd Word_t
+//            uint8_t j_po_LeafPop0;      // TEMP!!! least byte in DCD
+        };
+} jpo_t;
 
 // JP CONTAINING IMMEDIATE INDEXES:
 //
-// j_pi_1Index[] plus j_pi_LIndex[] together hold as many N-byte (1..3-byte
-// [1..7-byte]) Indexes as will fit in sizeof(jpi_t) less 1 byte for j_pi_Type
-// (that is, 7..1 [15..1] Indexes).
-//
-// For Judy1, j_pi_1Index[] is used and j_pi_LIndex[] is not used.
-// For JudyL, j_pi_LIndex[] is used and j_pi_1Index[] is not used.
-//
 // Note:  Actually when Pop1 = 1, jpi_t is not used, and the least bytes of the
-// single Index are stored in j_po_DcdPopO, for both Judy1 and JudyL, so for
+// single Index are stored n j_po_DcdPopO, for both Judy1 and JudyL, so for
 // JudyL the j_po_Addr field can hold the target value.
 //
 // TBD:  Revise this structure to not overload j_po_DcdPopO this way?  The
@@ -78,26 +158,27 @@ typedef struct J_UDY_POINTER_OTHERS      // JPO.
 
 #ifdef  JUDY1
 typedef struct _JUDY_POINTER_IMMED1  
-        {
-            union 
-            {
-                uint8_t  j_pi_1Index1[sizeof(Word_t) + sizeof(Word_t) - 1];
-                uint16_t j_pi_1Index2[(sizeof(Word_t) + sizeof(Word_t) - 1)/2];
-                uint32_t j_pi_1Index4[(sizeof(Word_t) + sizeof(Word_t) - 1)/4];
-            };
-        } jpi_t;
+{
+        union 
+        {   // jp_Type is low addrs and each array is 2 Word_t
+            uint8_t  j_pi_1Index1[(2 * sizeof(Word_t))/1];   // 15 Keys
+            uint16_t j_pi_1Index2[(2 * sizeof(Word_t))/2];   // 7 Keys
+            uint32_t j_pi_1Index4[(2 * sizeof(Word_t))/4];   // 3 Keys
+        };
+} jpi_t;
 #endif  // JUDY1
 
 #ifdef  JUDYL
 typedef struct _JUDY_POINTER_IMMEDL      // JPI.
+{
+        Word_t   j_pi_Space;       // (48 bit) pointer to Values
+        union 
         {
-            Word_t      j_pi_Immed01;       // first word:  Pjp_t, Word_t, etc.
-            union 
-            {
-                uint8_t  j_pi_LIndex1[sizeof(Word_t) - 1];    // see above.
-                uint16_t j_pi_LIndex2[(sizeof(Word_t) - 1)/2];
-            };
-        } jpi_t;
+            uint8_t  j_pi_LIndex1[sizeof(Word_t)];      // 8 Keys in 2nd word
+            uint16_t j_pi_LIndex2[sizeof(Word_t)/2];    // 4 Keys in 2nd word
+            uint32_t j_pi_LIndex4[sizeof(Word_t)/4];    // 2 Keys in 2nd word
+        };
+} jpi_t;
 #endif  // JUDYL
 
 // UNION OF JP TYPES:
@@ -107,37 +188,35 @@ typedef struct _JUDY_POINTER_IMMEDL      // JPI.
 // or a bitmap branch which contains 8 lists of 0..32 JPs.  JPs reside only in
 // branches of a Judy SM.
 
-typedef union J_UDY_POINTER             // JP.
-        {
-            jpo_t j_po;                 // other than immediate indexes.
-            jpi_t j_pi;                 // immediate indexes.
-        } jp_t, *Pjp_t;
+typedef union J_UDY_POINTER         // JP.
+{
+        jpo_t j_po;                 // other than immediate Keys.
+        jpi_t j_pi;                 // immediate Keys.
+} jp_t, *Pjp_t;
 
 // For coding convenience:
-//#define jp_1Index  j_p1.j_p1_1Index     // for storing Indexes in first  word.
-//#define jp_LIndex  j_pL.j_pL_LIndex     // for storing Indexes in second word.
 #ifdef  JUDY1
-#define jp_1Index1 j_pi.j_pi_1Index1    // for storing uint8_t  Indexes in first  word.
-#define jp_1Index2 j_pi.j_pi_1Index2    // for storing uint16_t Indexes in first  word.
-#define jp_1Index4 j_pi.j_pi_1Index4    // for storing uint32_t Indexes in first  word.
+// These are offset by one key to make room for jp_Type - no jp_Ipop for 1,3,5,6,7
+#define jp_PIndex1 j_pi.j_pi_1Index1    // for storing uint8_t  Keys in 1st  word.
+#define jp_PIndex2 j_pi.j_pi_1Index2    // for storing uint16_t Keys in 1st  word.
+#define jp_PIndex4 j_pi.j_pi_1Index4    // for storing uint32_t Keys in 1st  word.
 #endif  //JUDY1
 
 #ifdef  JUDYL
-#define jp_Immed01 j_pi.j_pi_Immed01   // Value area for IMMED_x_01
-#define jp_ValueI  j_pi.j_pi_Immed01   // Value area for IMMED_x_01 XXXXXXXTEMPXXXXXX
-#define jp_LIndex1 j_pi.j_pi_LIndex1    // for storing Indexes in second word.
-#define jp_LIndex2 j_pi.j_pi_LIndex2    // for storing uint16_t Indexes in first  word.
-#define jp_PValue  j_po.j_po_Addr0
-// broke #define jp_PValue  j_spare.j_pS_Addr3
+#define jp_PIndex1 j_pi.j_pi_LIndex1    // for storing uint8_t in first word.
+#define jp_PIndex2 j_pi.j_pi_LIndex2    // for storing uint16_t in first word
+#define jp_PIndex4 j_pi.j_pi_LIndex4    // for storing uint16_t in first word
+#define jp_PValue  j_pi.j_pi_PValue          // Pointer to Values for IMMED_[1..7]_[02..15]
 #endif  // JUDYL
 
-#define Jp_Addr0   j_po.j_po_Addr0
-#define jp_Addr1   j_po.jpo_u.j_po_Addr1
-//#define       jp_DcdPop0 j_po.jpo_u.j_po_DcdPop0
-#define jp_Type    j_po.jpo_u.j_po_Bytes[sizeof(Word_t) - 1]
+#define jp_Type    j_po.j_po_jp_Type[0] // jp_Type & jp_IPop
+#define jp_IPop    j_po.j_po_jp_Type[1] // jp_Type & jp_IPop
+#define jp_Addr0   j_po.j_po_Addr0      // only the hi 48 bits are available
+#define jp_Addr1   j_po.j_po_Addr1      //
+#define jp_LeafPop0    j_po.j_po_jp_Type[1] // jp_Type & jp_IPop
 
 // Mask off the high byte from INDEX to it can be compared to DcdPopO:
-#define JU_TRIMTODCDSIZE(INDEX) ((cJU_ALLONES >> cJU_BITSPERBYTE) & (INDEX))
+#define JU_TrimToIMM01(INDEX) ((cJU_ALLONES >> cJU_BITSPERBYTE) & (INDEX))
 
 #define cJU_POP0MASK(cPopBytes) JU_LEASTBYTESMASK(cPopBytes)
 
@@ -151,130 +230,121 @@ typedef union J_UDY_POINTER             // JP.
 //
 // Note:  These are constant macros (cJU) because cPopBytes should be a
 // constant.  Also note cPopBytes == state in the SM.
-#define cJU_DCDMASK(cPopBytes) \
-        ((cJU_ALLONES >> cJU_BITSPERBYTE) & (~cJU_POP0MASK(cPopBytes)))
 
+//#define cJU_DCDMASK(cPopBytes) ((cJU_ALLONES >> cJU_BITSPERBYTE) & (~cJU_POP0MASK(cPopBytes)))
+#define cJU_DCDMASK(cPopBytes) (~cJU_POP0MASK(cPopBytes))
 
-// DETERMINE IF AN INDEX IS (NOT) IN A JPS EXPANSE:
-
+// DETERMINE IF AN INDEX IS (NOT) IN A JP EXPANSE:
 #define JU_DCDNOTMATCHINDEX(INDEX,PJP,POP0BYTES)                \
-    (((INDEX) ^ JU_JPDCDPOP0(PJP)) & cJU_DCDMASK(POP0BYTES))
+    (((INDEX) ^ ju_DcdPop0(PJP)) & cJU_DCDMASK(POP0BYTES))
 
+//
+//      Get routines
+//
 
-
-
-//        ju_SetDcdPop0(PjpJP, DcdP0);
-//        ju_SetLeafPop0(PjpJP, Pop1 - 1);
-//        ju_SetJpType(PjpJP, cJU_JPLEAF2);
-//        ju_SetBaLPntr(PjpJP, PjllRaw);
-//        ju_SetIMM01(Pjp, Value, Key, Type)
-//        ju_SetPjvPntr(Pjp, PjvPntr)
-
-
-
-
-
-//#define PJP)    ((Pjp_t)((Word_t *)(PJP) + 2))
-//#define Shif(PJP)    ((Pjp_t)((Word_t *)(PJP) + 0))
-
-
-
-//                            Get routines
 static uint8_t ju_Type(Pjp_t Pjp)
         { return(Pjp->jp_Type); } 
 
-static Word_t  ju_BaLPntr(Pjp_t Pjp)
-        { return(Pjp->Jp_Addr0 >> 16); } 
+static Word_t  ju_PntrInJp(Pjp_t Pjp)
+        { return(Pjp->jp_Addr0 >> 16); } 
 
 static Word_t  ju_DcdPop0(Pjp_t Pjp)
-        { return(JU_TRIMTODCDSIZE(Pjp->jp_Addr1)); } 
-////broke        { return((Pjp)->jp_Addr1)); } 
+        { return(Pjp->jp_Addr1); } 
 
 static Word_t  ju_LeafPop0(Pjp_t Pjp)
-        { return(Pjp->jp_Addr1 & 0xFF); } 
+        { return(Pjp->jp_LeafPop0); }   // TEMP - should be below
+//        { return(Pjp->jp_IPop); } 
 
-static Word_t  ju_BranchPop0(Pjp_t Pjp, int Pop0Bytes)
-        { return(JU_TRIMTODCDSIZE(Pjp->jp_Addr1) & cJU_POP0MASK(Pop0Bytes)); }
-//// broke        { return((Pjp->jp_Addr1) & cJU_POP0MASK(Pop0Bytes)); }
+static Word_t  ju_BranchPop0(Pjp_t Pjp, int level)
+        { return(Pjp->jp_Addr1 & cJU_POP0MASK(level)); }
 
-static Word_t  ju_DcdNonMatchKey(Word_t Index, Pjp_t Pjp, int Pop0Bytes)
-        { return(JU_DCDNOTMATCHINDEX(Index, Pjp, Pop0Bytes)); }
+static Word_t  ju_DcdNotMatchKey(Word_t Key, Pjp_t Pjp, int level)
+          { 
+#ifdef  PCASNOT
+              Word_t res = (Key ^ ju_DcdPop0(Pjp)) & cJU_DCDMASK(level); 
+if (res) printf("\n+FAILED DCD Check++++ ju_DcdNotMatchKey: DcdP0 = 0x%016lx Key = 0x%016lx mask = 0x%016lx level = %d\n", Pjp->jp_Addr1, Key, cJU_DCDMASK(level), level);
+else     printf("\n+PASSED DCD Check++++ ju_DcdNotMatchKey: DcdP0 = 0x%016lx Key = 0x%016lx mask = 0x%016lx level = %d\n", Pjp->jp_Addr1, Key, cJU_DCDMASK(level), level);
+#endif  // PCASNOT
+              return((Key ^ ju_DcdPop0(Pjp)) & cJU_DCDMASK(level)); 
+          }
+
+static Word_t ju_IMM01Key(Pjp_t Pjp)    // only low 56 bits of Key
+        { return(Pjp->jp_Addr0 >> 8); } // shift out jp_Type
+
+// Return Value in Immed_x_01
+static Word_t ju_ImmVal_01(Pjp_t Pjp)
+        { return(Pjp->jp_Addr1); }
 
 
-//                            Set routines
-static void ju_SetLeafPop0(Pjp_t Pjp, Word_t LeafPop0)
+//
+//      Set routines
+//
+
+static void ju_SetIMM01(Pjp_t Pjp, Word_t Value, Word_t Key, uint8_t Type)
         { 
-            Pjp->jp_Addr1 &= ~(Word_t)0xFF;
-            Pjp->jp_Addr1 |=  (Word_t)0xFF & LeafPop0;
-        }
+            Pjp->jp_Addr0 = (Key << 8) | Type;
+//            Pjp->jp_Type  = Type; // lo-byte of Addr0 (see above)
+            Pjp->jp_Addr1 = Value;
+        } 
 
-static void ju_SetBaLPntr(Pjp_t Pjp, Word_t BaLPntr)
-        { Pjp->Jp_Addr0 = BaLPntr << 16; }
+static void ju_SetLeafPop0(Pjp_t Pjp, Word_t LeafPop0)
+        { Pjp->jp_LeafPop0 = (uint8_t)LeafPop0; }       // TEMP!!!!!
+//        { Pjp->jp_IPop = (uint8_t)LeafPop0; }
+
+static void ju_SetPntrInJp(Pjp_t Pjp, Word_t PntrInJp)
+        { 
+            Word_t Types = Pjp->jp_Addr0 & 0xFFFF;
+            Pjp->jp_Addr0 = (PntrInJp << 16) | Types; 
+        }
 
 static void ju_SetJpType(Pjp_t Pjp, uint8_t Type)
         { Pjp->jp_Type  = Type; }
 
 static void ju_SetDcdPop0(Pjp_t Pjp, Word_t DcdPop0)
-        {
-            uint8_t Type  = Pjp->jp_Type;               // Get it
-            Pjp->jp_Addr1 = DcdPop0;                    // Hi byte set below
-            Pjp->jp_Type  = Type;                       // restore it
-        }
+        { Pjp->jp_Addr1 = DcdPop0; }
 
 #ifdef  JUDYL
-//                            Get routines
-//static Word_t ju_PjvPntr(Pjp, PValues)
-//        { return(Pjp->Jp_Addr0); }
-
-// Return ^ to JV array in Immed_x_02+
-static Word_t ju_PImmVals(Pjp_t Pjp)
-        { return(Pjp->jp_PValue); }
-
-// Return Value in Immed_x_01
-static Word_t ju_ImmVal_01(Pjp_t Pjp)
-{ return(Pjp->jp_Immed01); }
-
-// Return ^ to Value in Immed_x_01
+//
+//      JUDYL Get routines
+//
+// Return pointer to Value in Immed_[1..7]_01
 static Pjv_t ju_PImmVal_01(Pjp_t Pjp)
-        { return((Pjv_t)(&Pjp->jp_Immed01)); }
+        { return((Pjv_t)(&Pjp->jp_Addr1)); }
 
-static uint8_t *ju_LImmed1(Pjp_t Pjp)
-        { return(Pjp->jp_LIndex1); }
+static uint8_t *ju_PImmed1(Pjp_t Pjp)
+        { return(Pjp->jp_PIndex1); }   // used for 1,3,5,6,7 Keys
 
-static uint16_t *ju_LImmed2(Pjp_t Pjp)
-        { return(Pjp->jp_LIndex2); }
+#define ju_PImmed3 ju_PImmed1
+#define ju_PImmed5 ju_PImmed1
+#define ju_PImmed6 ju_PImmed1
+#define ju_PImmed7 ju_PImmed1
 
-//                            Set routines
-static void ju_SetPjvPntr(Pjp_t Pjp, Word_t PjvPntr)
-        { Pjp->Jp_Addr0  = PjvPntr; } 
+static uint16_t *ju_PImmed2(Pjp_t Pjp)
+        { return(Pjp->jp_PIndex2); }
 
-static void ju_SetIMM01(Pjp_t Pjp, Word_t Value, Word_t Key, uint8_t Type)
-        { 
-            Pjp->Jp_Addr0  = Value; 
-            Pjp->jp_Addr1 = Key;
-            Pjp->jp_Type  = Type; // hi-byte of Addr1
-        } 
+static uint32_t *ju_PImmed4(Pjp_t Pjp)
+        { return(Pjp->jp_PIndex4); }
 #endif  // JUDYL
 
 #ifdef  JUDY1
-//                            Get routines
-static uint8_t *ju_1Immed1(Pjp_t Pjp)
-        { return(Pjp->jp_1Index1); }
 
-static uint16_t *ju_1Immed2(Pjp_t Pjp)
-        { return(Pjp->jp_1Index2); }
+//
+//      JUDY1 Get routines
+//
 
-static uint32_t *ju_1Immed4(Pjp_t Pjp)
-        { return(Pjp->jp_1Index4); }
+static uint8_t *ju_PImmed1(Pjp_t Pjp)   // used for 1,3,5,6,7 Keys
+        { return(Pjp->jp_PIndex1 + 1); }
 
+#define ju_PImmed3 ju_PImmed1
+#define ju_PImmed5 ju_PImmed1
+#define ju_PImmed6 ju_PImmed1
+#define ju_PImmed7 ju_PImmed1
 
-//                            Set routines
-static void ju_SetIMM01(Pjp_t Pjp, Word_t Value, Word_t Key, uint8_t Type)
-        { 
-            Pjp->Jp_Addr0  = Value; 
-            Pjp->jp_Addr1 = Key;
-            Pjp->jp_Type  = Type;  // hi-byte of Addr1
-        } 
+static uint16_t *ju_PImmed2(Pjp_t Pjp)  // 2 byte Keys
+        { return(Pjp->jp_PIndex2 + 1); }
+
+static uint32_t *ju_PImmed4(Pjp_t Pjp)  // 4 byte Keys
+        { return(Pjp->jp_PIndex4 + 1); }
 #endif  // JUDY1
 
 // ****************************************************************************
@@ -288,7 +358,7 @@ static void ju_SetIMM01(Pjp_t Pjp, Word_t Value, Word_t Key, uint8_t Type)
 // place.
 
 #define JU_JPBRANCH_POP0(PJP,cPopBytes) \
-        (JU_JPDCDPOP0(PJP) & cJU_POP0MASK(cPopBytes))
+        (ju_DcdPop0(PJP) & cJU_POP0MASK(cPopBytes))
 
 // METHOD FOR DETERMINING IF OBJECTS HAVE ROOM TO GROW:
 //

@@ -76,24 +76,49 @@
 #ifdef  JUDY1
 extern int j__udy1BranchBToBranchL(Pjp_t Pjp, Pjpm_t Pjpm);
 extern int j__udy1LeafB1ToLeaf1(Pjp_t, Pjpm_t);
-extern Word_t j__udy1Leaf1ToLeaf2(uint16_t *, Pjp_t, Word_t, Pjpm_t);
-extern Word_t j__udy1Leaf2ToLeaf3(uint8_t *, Pjp_t, Word_t, Pjpm_t);
+extern Word_t j__udy1Leaf1orB1ToLeaf2(uint16_t *, Pjp_t, Word_t, Pjpm_t);
+extern Word_t j__udy1Leaf2ToLeaf3(uint8_t  *, Pjp_t, Word_t, Pjpm_t);
 extern Word_t j__udy1Leaf3ToLeaf4(uint32_t *, Pjp_t, Word_t, Pjpm_t);
-extern Word_t j__udy1Leaf4ToLeaf5(uint8_t *, Pjp_t, Word_t, Pjpm_t);
-extern Word_t j__udy1Leaf5ToLeaf6(uint8_t *, Pjp_t, Word_t, Pjpm_t);
-extern Word_t j__udy1Leaf6ToLeaf7(uint8_t *, Pjp_t, Word_t, Pjpm_t);
+extern Word_t j__udy1Leaf4ToLeaf5(uint8_t  *, Pjp_t, Word_t, Pjpm_t);
+extern Word_t j__udy1Leaf5ToLeaf6(uint8_t  *, Pjp_t, Word_t, Pjpm_t);
+extern Word_t j__udy1Leaf6ToLeaf7(uint8_t  *, Pjp_t, Word_t, Pjpm_t);
 extern Word_t j__udy1Leaf7ToLeafW(PWord_t, Pjp_t, Word_t, Pjpm_t);
 #else  // JUDYL
 extern int j__udyLBranchBToBranchL(Pjp_t Pjp, Pjpm_t Pjpm);
 extern int j__udyLLeafB1ToLeaf1(Pjp_t, Pjpm_t);
-extern Word_t j__udyLLeaf1ToLeaf2(uint16_t *, Pjv_t, Pjp_t, Word_t, Pjpm_t);
-extern Word_t j__udyLLeaf2ToLeaf3(uint8_t *, Pjv_t, Pjp_t, Word_t, Pjpm_t);
+extern Word_t j__udyLLeaf1orB1ToLeaf2(uint16_t *, Pjv_t, Pjp_t, Word_t, Pjpm_t);
+extern Word_t j__udyLLeaf2ToLeaf3(uint8_t  *, Pjv_t, Pjp_t, Word_t, Pjpm_t);
 extern Word_t j__udyLLeaf3ToLeaf4(uint32_t *, Pjv_t, Pjp_t, Word_t, Pjpm_t);
-extern Word_t j__udyLLeaf4ToLeaf5(uint8_t *, Pjv_t, Pjp_t, Word_t, Pjpm_t);
-extern Word_t j__udyLLeaf5ToLeaf6(uint8_t *, Pjv_t, Pjp_t, Word_t, Pjpm_t);
-extern Word_t j__udyLLeaf6ToLeaf7(uint8_t *, Pjv_t, Pjp_t, Word_t, Pjpm_t);
+extern Word_t j__udyLLeaf4ToLeaf5(uint8_t  *, Pjv_t, Pjp_t, Word_t, Pjpm_t);
+extern Word_t j__udyLLeaf5ToLeaf6(uint8_t  *, Pjv_t, Pjp_t, Word_t, Pjpm_t);
+extern Word_t j__udyLLeaf6ToLeaf7(uint8_t  *, Pjv_t, Pjp_t, Word_t, Pjpm_t);
 extern Word_t j__udyLLeaf7ToLeafW(PWord_t, Pjv_t, Pjp_t, Word_t, Pjpm_t);
 #endif // JUDYL
+
+// The process is reversable by subtracting 1
+#ifdef  JUDY1
+#define	JU_LEAF1DELINPLACE(POP1)	J1_LEAF1GROWINPLACE((POP1) - 1)
+#define	JU_LEAF2DELINPLACE(POP1)	J1_LEAF2GROWINPLACE((POP1) - 1)
+#define	JU_LEAF3DELINPLACE(POP1)	J1_LEAF3GROWINPLACE((POP1) - 1)
+#define	JU_LEAF4DELINPLACE(POP1)	J1_LEAF4GROWINPLACE((POP1) - 1)
+#define	JU_LEAF5DELINPLACE(POP1)	J1_LEAF5GROWINPLACE((POP1) - 1)
+#define	JU_LEAF6DELINPLACE(POP1)	J1_LEAF6GROWINPLACE((POP1) - 1)
+#define	JU_LEAF7DELINPLACE(POP1)	J1_LEAF7GROWINPLACE((POP1) - 1)
+#define	JU_LEAFWDELINPLACE(POP1)	J1_LEAFWGROWINPLACE((POP1) - 1)
+#else   // JUDYL
+#define	JU_LEAF1DELINPLACE(POP1)	JL_LEAF1GROWINPLACE((POP1) - 1)
+#define	JU_LEAF2DELINPLACE(POP1)	JL_LEAF2GROWINPLACE((POP1) - 1)
+#define	JU_LEAF3DELINPLACE(POP1)	JL_LEAF3GROWINPLACE((POP1) - 1)
+#define	JU_LEAF4DELINPLACE(POP1)	JL_LEAF4GROWINPLACE((POP1) - 1)
+#define	JU_LEAF5DELINPLACE(POP1)	JL_LEAF5GROWINPLACE((POP1) - 1)
+#define	JU_LEAF6DELINPLACE(POP1)	JL_LEAF6GROWINPLACE((POP1) - 1)
+#define	JU_LEAF7DELINPLACE(POP1)	JL_LEAF7GROWINPLACE((POP1) - 1)
+#define	JU_LEAFWDELINPLACE(POP1)	JL_LEAFWGROWINPLACE((POP1) - 1)
+#define JL_LEAFVDELINPLACE(POP1)        JL_LEAFVGROWINPLACE((POP1) - 1)
+#endif  // JUDYL
+
+#define JU_BRANCHBJPDELINPLACE(numJPs)  JU_BRANCHBJPGROWINPLACE((numJPs) - 1)
+
 // For convenience in the calling code; "M1" means "minus one":
 // ****************************************************************************
 // __ J U D Y   D E L   W A L K
@@ -123,7 +148,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
               Word_t ParentLevel,       // of parent branch.
               Pjpm_t Pjpm)              // for returning info to top level.
 {
-    Word_t    pop1;                     // of a leaf.
+    Word_t    Pop1;                     // of a leaf.
     Word_t    level;                    // of a leaf.
     uint8_t   digit;                    // from Index, in current branch.
     Word_t    PjllnewRaw;               // address of newly allocated leaf.
@@ -154,7 +179,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // branchs CURRENT population fits in the leaf, even BEFORE deleting one
 // index.
 //
-// Next is a label for branch-type-specific common code.  Variables pop1,
+// Next is a label for branch-type-specific common code.  Variables Pop1,
 // level, digit, and Index are in the context.
 // Support for generic calling of JudyLeaf*ToLeaf*() functions:
 //
@@ -170,86 +195,88 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // Allocate a new leaf, walk the JPs in the old BranchL and pack their contents
 // into the new leaf (of type NewJPType), free the old BranchL, and finally
 // restart the switch to delete Index from the new leaf.  (Note that all
-// BranchLs are the same size.)  Variables Pjp, Pjpm, Pleaf, digit, and pop1
+// BranchLs are the same size.)  Variables Pjp, Pjpm, Pleaf, digit, and Pop1
 // are in the context.
 //        ju_SetDcdPop0(PjpJP, DcdP0);
 //        ju_SetLeafPop0(PjpJP, Pop1 - 1);
 //        ju_SetJpType(PjpJP, cJU_JPLEAF2);
-//        ju_SetBaLPntr(PjpJP, PjllRaw);
+//        ju_SetPntrInJp(PjpJP, PjllRaw);
 //        ju_SetIMM01(Pjp, Value, Key, Type)
-//        ju_SetPjvPntr(Pjp, PjvPntr)
+//        ju_SetPntrInJp(Pjp, PjvPntr)
 // Overall common code for initial BranchL deletion handling:
 //
 // Assert that Index is in the branch, then see if the BranchL should be kept
-// or else compressed to a leaf.  Variables Index, Pjp, and pop1 are in the
+// or else compressed to a leaf.  Variables Index, Pjp, and Pop1 are in the
 // context.
 // END OF MACROS, START OF CASES:
     case cJU_JPBRANCH_L2:
     {
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 2));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 2));
         assert(ParentLevel > (2));
-        pop1 = ju_BranchPop0(Pjp, 2) + 1;
-        if (pop1 > (cJU_LEAF2_MAXPOP1)) /* hysteresis = 1 */
+        Pop1 = ju_BranchPop0(Pjp, 2) + 1;
+        if (Pop1 > (cJU_LEAF2_MAXPOP1)) /* hysteresis = 1 */
         {
             assert((2) >= 2);
             level = (2);
             digit = JU_DIGITATSTATE(Index, 2);
             goto BranchLKeep;
         }
-        assert(pop1 == (cJU_LEAF2_MAXPOP1));
+        assert(Pop1 == (cJU_LEAF2_MAXPOP1));
         {
-            uint16_t *Pleaf;
-            Word_t    PjblRaw;
-            Pjbl_t    Pjbl;
-            int       numJPs;
             if ((PjllnewRaw = j__udyAllocJLL2(cJU_LEAF2_MAXPOP1, Pjpm)) == 0)
                 return (-1);
             Pjllnew = P_JLL(PjllnewRaw);
-            Pleaf = (uint16_t *) Pjllnew;
+            uint16_t *Pleaf = (uint16_t *) Pjllnew;
             JUDYLCODE(Pjv = JL_LEAF2VALUEAREA(Pleaf, cJU_LEAF2_MAXPOP1););
-            PjblRaw = ju_BaLPntr(Pjp);
-            Pjbl = P_JBL(PjblRaw);
-            numJPs = Pjbl->jbl_NumJPs;
+            Word_t PjblRaw = ju_PntrInJp(Pjp);
+            Pjbl_t Pjbl = P_JBL(PjblRaw);
+            int    numJPs = Pjbl->jbl_NumJPs;
             for (offset = 0; offset < numJPs; ++offset)
             {
-                if (ju_Type((Pjbl->jbl_jp) + offset) == cJU_JPIMMED_1_01 + (2) - 2)
+                Word_t pop1;
+                if (ju_Type(Pjbl->jbl_jp + offset) == cJU_JPIMMED_1_01)
                 {
-                    *Pleaf++ = ju_DcdPop0((Pjbl->jbl_jp) + offset);
-                    JUDYLCODE(*Pjv++ = ju_PImmVals((Pjbl->jbl_jp) + offset););
+                    *Pleaf++ = ju_IMM01Key(Pjbl->jbl_jp + offset);
+                    JUDYLCODE(*Pjv++ = ju_ImmVal_01(Pjbl->jbl_jp + offset););
                     continue;           /* for-loop */
                 }
+//printf("Line = %d\n", __LINE__);
 #ifdef  JUDY1
-                pop1 = j__udyLeaf1ToLeaf2(Pleaf, /* null. */ (Pjbl->jbl_jp) + offset,
-                                          JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 2), Pjpm);
+                pop1 = j__udyLeaf1orB1ToLeaf2(Pleaf,      Pjbl->jbl_jp + offset, JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 2), Pjpm);
 #else  // JUDYL
-                pop1 = j__udyLeaf1ToLeaf2(Pleaf, Pjv, (Pjbl->jbl_jp) + offset,
-                                          JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 2), Pjpm);
+                pop1 = j__udyLeaf1orB1ToLeaf2(Pleaf, Pjv, Pjbl->jbl_jp + offset, JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 2), Pjpm);
+                Pjv += pop1;
 #endif // JUDYL
-                Pleaf = (uint16_t *) (((Word_t)Pleaf) + ((2) * pop1));
-                JUDYLCODE(Pjv += pop1;);
+                Pleaf += pop1;
             }
             assert(((((Word_t)Pleaf) - ((Word_t)Pjllnew)) / (2)) == (cJU_LEAF2_MAXPOP1));
             JUDYLCODE(assert ((Pjv - JL_LEAF2VALUEAREA(Pjllnew, cJU_LEAF2_MAXPOP1)) ==
                        (cJU_LEAF2_MAXPOP1)););
             j__udyFreeJBL(PjblRaw, Pjpm);       /* Pjp->jp_Type = (NewJPType);       */
+
             ju_SetJpType(Pjp, cJU_JPLEAF2);     /* Pjp->Jp_Addr0 = PjllnewRaw;        */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            ju_SetLeafPop0(Pjp, cJU_LEAF2_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
+
+//            printf("Pop1 = 0x%lx, ju_LeafPop0(Pjp) = 0x%lx\n", Pop1, ju_LeafPop0(Pjp));
+assert(ju_LeafPop0(Pjp) == (Pop1 - 1));
+
             goto ContinueDelWalk;       /* delete from new leaf */
         }
     }
     case cJU_JPBRANCH_L3:
     {
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 3));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 3));
         assert(ParentLevel > (3));
-        pop1 = ju_BranchPop0(Pjp, 3) + 1;
-        if (pop1 > (cJU_LEAF3_MAXPOP1)) /* hysteresis = 1 */
+        Pop1 = ju_BranchPop0(Pjp, 3) + 1;
+        if (Pop1 > (cJU_LEAF3_MAXPOP1)) /* hysteresis = 1 */
         {
             assert((3) >= 2);
             level = (3);
             digit = JU_DIGITATSTATE(Index, 3);
             goto BranchLKeep;
         }
-        assert(pop1 == (cJU_LEAF3_MAXPOP1));
+        assert(Pop1 == (cJU_LEAF3_MAXPOP1));
         {
             uint8_t  *Pleaf;
             Word_t    PjblRaw;
@@ -260,51 +287,51 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             Pjllnew = P_JLL(PjllnewRaw);
             Pleaf = (uint8_t *) Pjllnew;
             JUDYLCODE(Pjv = JL_LEAF3VALUEAREA(Pleaf, cJU_LEAF3_MAXPOP1););
-            PjblRaw = ju_BaLPntr(Pjp);
+            PjblRaw = ju_PntrInJp(Pjp);
             Pjbl = P_JBL(PjblRaw);
             numJPs = Pjbl->jbl_NumJPs;
             for (offset = 0; offset < numJPs; ++offset)
             {
-                if (ju_Type((Pjbl->jbl_jp) + offset) == cJU_JPIMMED_1_01 + (3) - 2)
+                Word_t pop1;
+                if (ju_Type((Pjbl->jbl_jp) + offset) == cJU_JPIMMED_1_02)
                 {
-                    JU_COPY3_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_DcdPop0((Pjbl->jbl_jp) + offset)));
+                    JU_COPY3_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_IMM01Key((Pjbl->jbl_jp) + offset)));
                     Pleaf += (3);       /* index size = level */
-                    JUDYLCODE(*Pjv++ = ju_PImmVals((Pjbl->jbl_jp) + offset););
+                    JUDYLCODE(*Pjv++ = ju_ImmVal_01((Pjbl->jbl_jp) + offset););
                     continue;           /* for-loop */
                 }
-
 #ifdef  JUDY1
-                pop1 = j__udyLeaf2ToLeaf3(Pleaf, /* null. */ (Pjbl->jbl_jp) + offset,
-                                          JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 3), Pjpm);
+                pop1 = j__udyLeaf2ToLeaf3(Pleaf,      (Pjbl->jbl_jp) + offset, JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 3), Pjpm);
 #else  // JUDYL
-                pop1 = j__udyLeaf2ToLeaf3(Pleaf, Pjv, (Pjbl->jbl_jp) + offset,
-                                          JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 3), Pjpm);
+                pop1 = j__udyLeaf2ToLeaf3(Pleaf, Pjv, (Pjbl->jbl_jp) + offset, JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 3), Pjpm);
+                Pjv += pop1;
 #endif // JUDYL
-                Pleaf = (uint8_t *) (((Word_t)Pleaf) + ((3) * pop1));
-                JUDYLCODE(Pjv += pop1;);
+                Pleaf += (3) * pop1;
             }
             assert(((((Word_t)Pleaf) - ((Word_t)Pjllnew)) / (3)) == (cJU_LEAF3_MAXPOP1));
             JUDYLCODE(assert ((Pjv - JL_LEAF3VALUEAREA(Pjllnew, cJU_LEAF3_MAXPOP1)) ==
                        (cJU_LEAF3_MAXPOP1)););
             j__udyFreeJBL(PjblRaw, Pjpm);       /* Pjp->jp_Type = (NewJPType);       */
+
             ju_SetJpType(Pjp, cJU_JPLEAF3);     /* Pjp->Jp_Addr0 = PjllnewRaw;        */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            ju_SetLeafPop0(Pjp, cJU_LEAF3_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
     }
     case cJU_JPBRANCH_L4:
     {
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 4));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 4));
         assert(ParentLevel > (4));
-        pop1 = ju_BranchPop0(Pjp, 4) + 1;
-        if (pop1 > (cJU_LEAF4_MAXPOP1)) /* hysteresis = 1 */
+        Pop1 = ju_BranchPop0(Pjp, 4) + 1;
+        if (Pop1 > (cJU_LEAF4_MAXPOP1)) /* hysteresis = 1 */
         {
             assert((4) >= 2);
             level = (4);
             digit = JU_DIGITATSTATE(Index, 4);
             goto BranchLKeep;
         }
-        assert(pop1 == (cJU_LEAF4_MAXPOP1));
+        assert(Pop1 == (cJU_LEAF4_MAXPOP1));
         {
             uint32_t *Pleaf;
             Word_t    PjblRaw;
@@ -315,50 +342,50 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             Pjllnew = P_JLL(PjllnewRaw);
             Pleaf = (uint32_t *)Pjllnew;
             JUDYLCODE(Pjv = JL_LEAF4VALUEAREA(Pleaf, cJU_LEAF4_MAXPOP1););
-            PjblRaw = ju_BaLPntr(Pjp);
+            PjblRaw = ju_PntrInJp(Pjp);
             Pjbl = P_JBL(PjblRaw);
             numJPs = Pjbl->jbl_NumJPs;
             for (offset = 0; offset < numJPs; ++offset)
             {
-                if (ju_Type((Pjbl->jbl_jp) + offset) == cJU_JPIMMED_1_01 + (4) - 2)
+                Word_t pop1;
+                if (ju_Type(Pjbl->jbl_jp + offset) == cJU_JPIMMED_1_03)
                 {
-                    *Pleaf++ = ju_DcdPop0((Pjbl->jbl_jp) + offset);
-                    JUDYLCODE(*Pjv++ = ju_PImmVals((Pjbl->jbl_jp) + offset););
+                    *Pleaf++ = ju_IMM01Key(Pjbl->jbl_jp + offset);
+                    JUDYLCODE(*Pjv++ = ju_ImmVal_01(Pjbl->jbl_jp + offset););
                     continue;           /* for-loop */
                 }
-
 #ifdef  JUDY1
-                pop1 = j__udyLeaf3ToLeaf4(Pleaf, /* null. */ (Pjbl->jbl_jp) + offset,
-                                          JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 4), Pjpm);
+                pop1 = j__udyLeaf3ToLeaf4(Pleaf,      (Pjbl->jbl_jp) + offset, JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 4), Pjpm);
 #else  // JUDYL
-                pop1 = j__udyLeaf3ToLeaf4(Pleaf, Pjv, (Pjbl->jbl_jp) + offset,
-                                          JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 4), Pjpm);
+                pop1 = j__udyLeaf3ToLeaf4(Pleaf, Pjv, (Pjbl->jbl_jp) + offset, JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 4), Pjpm);
+                Pjv += pop1;
 #endif // JUDYL
-                Pleaf = (uint32_t *)(((Word_t)Pleaf) + ((4) * pop1));
-                JUDYLCODE(Pjv += pop1;);
+                Pleaf += pop1;
             }
             assert(((((Word_t)Pleaf) - ((Word_t)Pjllnew)) / (4)) == (cJU_LEAF4_MAXPOP1));
             JUDYLCODE(assert ((Pjv - JL_LEAF4VALUEAREA(Pjllnew, cJU_LEAF4_MAXPOP1)) ==
                        (cJU_LEAF4_MAXPOP1)););
             j__udyFreeJBL(PjblRaw, Pjpm);       /* Pjp->jp_Type = (NewJPType);       */
+
             ju_SetJpType(Pjp, cJU_JPLEAF4);     /* Pjp->Jp_Addr0 = PjllnewRaw;        */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            ju_SetLeafPop0(Pjp, cJU_LEAF4_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
     }
     case cJU_JPBRANCH_L5:
     {
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 5));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 5));
         assert(ParentLevel > (5));
-        pop1 = ju_BranchPop0(Pjp, 5) + 1;
-        if (pop1 > (cJU_LEAF5_MAXPOP1)) /* hysteresis = 1 */
+        Pop1 = ju_BranchPop0(Pjp, 5) + 1;
+        if (Pop1 > (cJU_LEAF5_MAXPOP1)) /* hysteresis = 1 */
         {
             assert((5) >= 2);
             level = (5);
             digit = JU_DIGITATSTATE(Index, 5);
             goto BranchLKeep;
         }
-        assert(pop1 == (cJU_LEAF5_MAXPOP1));
+        assert(Pop1 == (cJU_LEAF5_MAXPOP1));
         {
             uint8_t  *Pleaf;
             Word_t    PjblRaw;
@@ -369,51 +396,51 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             Pjllnew = P_JLL(PjllnewRaw);
             Pleaf = (uint8_t *) Pjllnew;
             JUDYLCODE(Pjv = JL_LEAF5VALUEAREA(Pleaf, cJU_LEAF5_MAXPOP1););
-            PjblRaw = ju_BaLPntr(Pjp);
+            PjblRaw = ju_PntrInJp(Pjp);
             Pjbl = P_JBL(PjblRaw);
             numJPs = Pjbl->jbl_NumJPs;
             for (offset = 0; offset < numJPs; ++offset)
             {
-                if (ju_Type((Pjbl->jbl_jp) + offset) == cJU_JPIMMED_1_01 + (5) - 2)
+                Word_t pop1;
+                if (ju_Type(Pjbl->jbl_jp + offset) == cJU_JPIMMED_1_04)
                 {
-                    JU_COPY5_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_DcdPop0((Pjbl->jbl_jp) + offset)));
+                    JU_COPY5_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_IMM01Key(Pjbl->jbl_jp + offset)));
                     Pleaf += (5);       /* index size = level */
-                    JUDYLCODE(*Pjv++ = ju_PImmVals((Pjbl->jbl_jp) + offset););
+                    JUDYLCODE(*Pjv++ = ju_ImmVal_01((Pjbl->jbl_jp) + offset););
                     continue;           /* for-loop */
                 }
-
 #ifdef  JUDY1
-                pop1 = j__udyLeaf4ToLeaf5(Pleaf, /* null. */ (Pjbl->jbl_jp) + offset,
-                                          JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 5), Pjpm);
+                pop1 = j__udyLeaf4ToLeaf5(Pleaf,      (Pjbl->jbl_jp) + offset, JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 5), Pjpm);
 #else  // JUDYL
-                pop1 = j__udyLeaf4ToLeaf5(Pleaf, Pjv, (Pjbl->jbl_jp) + offset,
-                                          JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 5), Pjpm);
+                pop1 = j__udyLeaf4ToLeaf5(Pleaf, Pjv, (Pjbl->jbl_jp) + offset, JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 5), Pjpm);
+                Pjv += pop1;
 #endif // JUDYL
-                Pleaf = (uint8_t *) (((Word_t)Pleaf) + ((5) * pop1));
-                JUDYLCODE(Pjv += pop1;);
+                Pleaf += (5) * pop1;
             }
             assert(((((Word_t)Pleaf) - ((Word_t)Pjllnew)) / (5)) == (cJU_LEAF5_MAXPOP1));
             JUDYLCODE(assert ((Pjv - JL_LEAF5VALUEAREA(Pjllnew, cJU_LEAF5_MAXPOP1)) ==
                        (cJU_LEAF5_MAXPOP1)););
             j__udyFreeJBL(PjblRaw, Pjpm);       /* Pjp->jp_Type = (NewJPType);       */
+
             ju_SetJpType(Pjp, cJU_JPLEAF5);     /* Pjp->Jp_Addr0 = PjllnewRaw;        */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            ju_SetLeafPop0(Pjp, cJU_LEAF5_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
     }
     case cJU_JPBRANCH_L6:
     {
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 6));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 6));
         assert(ParentLevel > (6));
-        pop1 = ju_BranchPop0(Pjp, 6) + 1;
-        if (pop1 > (cJU_LEAF6_MAXPOP1)) /* hysteresis = 1 */
+        Pop1 = ju_BranchPop0(Pjp, 6) + 1;
+        if (Pop1 > (cJU_LEAF6_MAXPOP1)) /* hysteresis = 1 */
         {
             assert((6) >= 2);
             level = (6);
             digit = JU_DIGITATSTATE(Index, 6);
             goto BranchLKeep;
         }
-        assert(pop1 == (cJU_LEAF6_MAXPOP1));
+        assert(Pop1 == (cJU_LEAF6_MAXPOP1));
         {
             uint8_t  *Pleaf;
             Word_t    PjblRaw;
@@ -424,51 +451,51 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             Pjllnew = P_JLL(PjllnewRaw);
             Pleaf = (uint8_t *) Pjllnew;
             JUDYLCODE(Pjv = JL_LEAF6VALUEAREA(Pleaf, cJU_LEAF6_MAXPOP1););
-            PjblRaw = ju_BaLPntr(Pjp);
+            PjblRaw = ju_PntrInJp(Pjp);
             Pjbl = P_JBL(PjblRaw);
             numJPs = Pjbl->jbl_NumJPs;
             for (offset = 0; offset < numJPs; ++offset)
             {
-                if (ju_Type((Pjbl->jbl_jp) + offset) == cJU_JPIMMED_1_01 + (6) - 2)
+                Word_t pop1;
+                if (ju_Type((Pjbl->jbl_jp) + offset) == cJU_JPIMMED_1_05)
                 {
-                    JU_COPY6_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_DcdPop0((Pjbl->jbl_jp) + offset)));
+                    JU_COPY6_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_IMM01Key(Pjbl->jbl_jp + offset)));
                     Pleaf += (6);       /* index size = level */
-                    JUDYLCODE(*Pjv++ = ju_PImmVals((Pjbl->jbl_jp) + offset););
+                    JUDYLCODE(*Pjv++ = ju_ImmVal_01((Pjbl->jbl_jp) + offset););
                     continue;           /* for-loop */
                 }
-
 #ifdef  JUDY1
-                pop1 = j__udyLeaf5ToLeaf6(Pleaf, /* null. */ (Pjbl->jbl_jp) + offset,
-                                          JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 6), Pjpm);
+                pop1 = j__udyLeaf5ToLeaf6(Pleaf,      (Pjbl->jbl_jp) + offset, JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 6), Pjpm);
 #else  // JUDYL
-                pop1 = j__udyLeaf5ToLeaf6(Pleaf, Pjv, (Pjbl->jbl_jp) + offset,
-                                          JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 6), Pjpm);
+                pop1 = j__udyLeaf5ToLeaf6(Pleaf, Pjv, (Pjbl->jbl_jp) + offset, JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 6), Pjpm);
+                Pjv += pop1;
 #endif // JUDYL
-                Pleaf = (uint8_t *) (((Word_t)Pleaf) + ((6) * pop1));
-                JUDYLCODE(Pjv += pop1;);
+                Pleaf += (6) * pop1;
             }
             assert(((((Word_t)Pleaf) - ((Word_t)Pjllnew)) / (6)) == (cJU_LEAF6_MAXPOP1));
             JUDYLCODE(assert ((Pjv - JL_LEAF6VALUEAREA(Pjllnew, cJU_LEAF6_MAXPOP1)) ==
                        (cJU_LEAF6_MAXPOP1)););
             j__udyFreeJBL(PjblRaw, Pjpm);       /* Pjp->jp_Type = (NewJPType);       */
+
             ju_SetJpType(Pjp, cJU_JPLEAF6);     /* Pjp->Jp_Addr0 = PjllnewRaw;        */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            ju_SetLeafPop0(Pjp, cJU_LEAF6_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
     }
     case cJU_JPBRANCH_L7:
     {
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 7));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 7));
         assert(ParentLevel > (7));
-        pop1 = ju_BranchPop0(Pjp, 7) + 1;
-        if (pop1 > (cJU_LEAF7_MAXPOP1)) /* hysteresis = 1 */
+        Pop1 = ju_BranchPop0(Pjp, 7) + 1;
+        if (Pop1 > (cJU_LEAF7_MAXPOP1)) /* hysteresis = 1 */
         {
             assert((7) >= 2);
             level = (7);
             digit = JU_DIGITATSTATE(Index, 7);
             goto BranchLKeep;
         }
-        assert(pop1 == (cJU_LEAF7_MAXPOP1));
+        assert(Pop1 == (cJU_LEAF7_MAXPOP1));
         {
             uint8_t  *Pleaf;
             Word_t    PjblRaw;
@@ -479,34 +506,36 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             Pjllnew = P_JLL(PjllnewRaw);
             Pleaf = (uint8_t *) Pjllnew;
             JUDYLCODE(Pjv = JL_LEAF7VALUEAREA(Pleaf, cJU_LEAF7_MAXPOP1););
-            PjblRaw = ju_BaLPntr(Pjp);
+            PjblRaw = ju_PntrInJp(Pjp);
             Pjbl = P_JBL(PjblRaw);
             numJPs = Pjbl->jbl_NumJPs;
             for (offset = 0; offset < numJPs; ++offset)
             {
+                Word_t pop1;
                 if (ju_Type((Pjbl->jbl_jp) + offset) == cJU_JPIMMED_1_01 + (7) - 2)
                 {
-                    JU_COPY7_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_DcdPop0((Pjbl->jbl_jp) + offset)));
+                    Word_t pop1;
+                    JU_COPY7_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_IMM01Key((Pjbl->jbl_jp) + offset)));
                     Pleaf += (7);       /* index size = level */
-                    JUDYLCODE(*Pjv++ = ju_PImmVals((Pjbl->jbl_jp) + offset););
+                    JUDYLCODE(*Pjv++ = ju_ImmVal_01((Pjbl->jbl_jp) + offset););
                     continue;           /* for-loop */
                 }
 #ifdef  JUDY1
-                pop1 = j__udyLeaf6ToLeaf7(Pleaf, /* null. */ (Pjbl->jbl_jp) + offset,
-                                          JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 7), Pjpm);
+                pop1 = j__udyLeaf6ToLeaf7(Pleaf,      (Pjbl->jbl_jp) + offset, JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 7), Pjpm);
 #else  // JUDYL
-                pop1 = j__udyLeaf6ToLeaf7(Pleaf, Pjv, (Pjbl->jbl_jp) + offset,
-                                          JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 7), Pjpm);
+                pop1 = j__udyLeaf6ToLeaf7(Pleaf, Pjv, (Pjbl->jbl_jp) + offset, JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], 7), Pjpm);
+                Pjv += pop1;
 #endif // JUDYL
-                Pleaf = (uint8_t *) (((Word_t)Pleaf) + ((7) * pop1));
-                JUDYLCODE(Pjv += pop1;);
+                Pleaf += (7) * pop1;
             }
             assert(((((Word_t)Pleaf) - ((Word_t)Pjllnew)) / (7)) == (cJU_LEAF7_MAXPOP1));
             JUDYLCODE(assert ((Pjv - JL_LEAF7VALUEAREA(Pjllnew, cJU_LEAF7_MAXPOP1)) ==
                        (cJU_LEAF7_MAXPOP1)););
             j__udyFreeJBL(PjblRaw, Pjpm);       /* Pjp->jp_Type = (NewJPType);       */
+
             ju_SetJpType(Pjp, cJU_JPLEAF7);     /* Pjp->Jp_Addr0 = PjllnewRaw;        */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            ju_SetLeafPop0(Pjp, cJU_LEAF7_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
     }
@@ -525,14 +554,19 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 //
 // Come here with level and digit set.
       BranchLKeep:
-        Pjbl = P_JBL(ju_BaLPntr(Pjp));
+        Pjbl = P_JBL(ju_PntrInJp(Pjp));
         numJPs = Pjbl->jbl_NumJPs;
         assert(numJPs > 0);
         DBGCODE(parentJPtype = ju_Type(Pjp););
-// Search for a match to the digit (valid Index => must find digit):
-        for (offset = 0; (Pjbl->jbl_Expanse[offset]) != digit; ++offset)
-            assert(offset < numJPs - 1);
-        Pjp = (Pjbl->jbl_jp) + offset;
+
+//      Search for a match to the digit (valid Index => must find digit):
+        offset = j__udySearchBranchL(Pjbl->jbl_Expanse, Pjbl->jbl_NumJPs, digit);
+        assert(offset >= 0);
+
+//        for (offset = 0; (Pjbl->jbl_Expanse[offset]) != digit; ++offset)
+//            assert(offset < numJPs - 1);
+
+        Pjp = Pjbl->jbl_jp + offset;
 // If not at a (deletable) JPIMMED_*_01, continue the walk (to descend through
 // the BranchL):
         assert(level >= 2);
@@ -542,7 +576,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // Immed from the BranchL:
 //
 // Note:  A BranchL has a fixed size and format regardless of numJPs.
-        assert(ju_DcdPop0(Pjp) == JU_TRIMTODCDSIZE(Index));
+        assert(ju_IMM01Key(Pjp) == JU_TrimToIMM01(Index));
         JU_DELETEINPLACE(Pjbl->jbl_Expanse, numJPs, offset, ignore);
         JU_DELETEINPLACEJP(Pjbl->jbl_jp, numJPs, offset, ignore);
 // If only one index left in the BranchL, indicate this to the caller:
@@ -561,7 +595,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // Allocate a new leaf, walk the JPs in the old BranchB (one bitmap subexpanse
 // at a time) and pack their contents into the new leaf (of type NewJPType),
 // free the old BranchB, and finally restart the switch to delete Index from
-// the new leaf.  Variables Pjp, Pjpm, Pleaf, digit, and pop1 are in the
+// the new leaf.  Variables Pjp, Pjpm, Pleaf, digit, and Pop1 are in the
 // context.
 //
 // Note:  Its no accident that the interface to JU_BRANCHB_COMPRESS() is
@@ -570,95 +604,113 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // Overall common code for initial BranchB deletion handling:
 //
 // Assert that Index is in the branch, then see if the BranchB should be kept
-// or else compressed to a leaf.  Variables Index, Pjp, and pop1 are in the
+// or else compressed to a leaf.  Variables Index, Pjp, and Pop1 are in the
 // context.
 // END OF MACROS, START OF CASES:
 //
 // Note:  Its no accident that the macro calls for these cases is nearly
 // identical to the code for BranchLs.
+//
+//  Replace Branch_Bx with Leafx, if the BranchBx falls below max population of Leafx
     case cJU_JPBRANCH_B2:
     {
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 2));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 2));
         assert(ParentLevel > (2));
-        pop1 = ju_BranchPop0(Pjp, 2) + 1;
-        if (pop1 > (cJU_LEAF2_MAXPOP1)) /* hysteresis = 1 */
+        Pop1 = ju_BranchPop0(Pjp, 2) + 1;
+
+
+//printf("\n=====0=====Branch_B2 pop1 = %lu TotPop1 = %lu\n", Pop1, Pjpm->jpm_Pop0 + 1);
+
+
+        if (Pop1 > cJU_LEAF2_MAXPOP1) /* hysteresis = 1 */
         {
-            assert((2) >= 2);
             level = (2);
             digit = JU_DIGITATSTATE(Index, 2);
             goto BranchBKeep;
         }
-        assert(pop1 == (cJU_LEAF2_MAXPOP1));
+        assert(Pop1 == cJU_LEAF2_MAXPOP1);
         {
-            uint16_t *Pleaf;
-            Word_t    PjbbRaw;          /* BranchB to compress */
-            Pjbb_t    Pjbb;
-            Word_t    subexp;           /* current subexpanse number    */
-            BITMAPB_t bitmap;           /* portion for this subexpanse  */
-            Word_t    Pjp2Raw;          /* one subexpanses subarray     */
-            Pjp_t     Pjp2;
+//          Pop of Branch_B2 is low enough to put into a Leaf2
             if ((PjllnewRaw = j__udyAllocJLL2(cJU_LEAF2_MAXPOP1, Pjpm)) == 0)
                 return (-1);
-            Pjllnew = P_JLL(PjllnewRaw);
-            Pleaf = (uint16_t *) Pjllnew;
-            JUDYLCODE(Pjv = JL_LEAF2VALUEAREA(Pleaf, cJU_LEAF2_MAXPOP1););
-            PjbbRaw = ju_BaLPntr(Pjp);
-            Pjbb = P_JBB(PjbbRaw);
-            for (subexp = 0; subexp < cJU_NUMSUBEXPB; ++subexp)
+            Pjll_t Pjllnew  = P_JLL(PjllnewRaw);
+            uint16_t *PLeaf2 = (uint16_t *) Pjllnew;
+            JUDYLCODE(Pjv   = JL_LEAF2VALUEAREA(PLeaf2, cJU_LEAF2_MAXPOP1););
+            Word_t PjbbRaw  = ju_PntrInJp(Pjp);
+            Pjbb_t Pjbb     = P_JBB(PjbbRaw);
+
+//printf("\n=====1=====Branch_B2 cJU_NUMSUBEXPB = %d\n", (int)cJU_NUMSUBEXPB);
+            for (int subexp = 0; subexp < cJU_NUMSUBEXPB; subexp++)
             {
-                if ((bitmap = JU_JBB_BITMAP(Pjbb, subexp)) == 0)
+                BITMAPB_t bitmap;       // portion for this subexpanse
+
+                bitmap = JU_JBB_BITMAP(Pjbb, subexp);
+
+//printf("\n=====2=====Branch_B2 subpop1[%d] bitmap = 0x%lx\n", subexp, bitmap);
+
+                if (bitmap == 0)
                     continue;           /* empty subexpanse */
-                digit = subexp * cJU_BITSPERSUBEXPB;
-                Pjp2Raw = JU_JBB_PJP(Pjbb, subexp);
-                Pjp2 = P_JP(Pjp2Raw);
+
+                Word_t subPop1 = j__udyCountBitsB(bitmap);
+                assert(subPop1);
+
+                digit           = subexp * cJU_BITSPERSUBEXPB;
+                Word_t Pjp2Raw  = JU_JBB_PJP(Pjbb, subexp);
+                Pjp_t  Pjp2     = P_JP(Pjp2Raw);
                 assert(Pjp2 != (Pjp_t) NULL);
-                for (offset = 0; bitmap != 0; bitmap >>= 1, ++digit)
+
+                for (offset = 0; bitmap != 0; bitmap >>= 1, digit++)
                 {
-                    if (!(bitmap & 1))
+                    if ((bitmap & 1) == 0)
                         continue;       /* empty sub-subexpanse */
                     ++offset;           /* before any continue */
-                    if (ju_Type(Pjp2 + offset - 1) == cJU_JPIMMED_1_01 + (2) - 2)
+//                  Probably many IMMEDs, so take a shortcut
+                    if (ju_Type(Pjp2 + offset - 1) == 0) assert(0);
+//#ifdef diag
+                    if (ju_Type(Pjp2 + offset - 1) == cJU_JPIMMED_1_01)
                     {
-                        *Pleaf++ = ju_DcdPop0(Pjp2 + offset - 1);
-                        JUDYLCODE(*Pjv++ = ju_PImmVals(Pjp2 + offset - 1););
+
+ //printf("Immed Key = 0x%016lx\n", ju_IMM01Key(Pjp2 + offset - 1));
+
+                        *PLeaf2++ = ju_IMM01Key(Pjp2 + offset - 1);
+                        JUDYLCODE(*Pjv++ = ju_ImmVal_01(Pjp2 + offset - 1););
                         continue;       /* for-loop */
                     }
+//#endif  // diag
+
+//printf("Line = %d\n", __LINE__);
 #ifdef  JUDY1
-                    pop1 =
-                        j__udyLeaf1ToLeaf2(Pleaf, /* null. */ Pjp2 + offset - 1,
-                                           JU_DIGITTOSTATE(digit, 2), Pjpm);
+                    Word_t pop1 = j__udyLeaf1orB1ToLeaf2(PLeaf2,      Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 2), Pjpm);
 #else  // JUDYL
-                    pop1 =
-                        j__udyLeaf1ToLeaf2(Pleaf, Pjv, Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 2),
-                                           Pjpm);
+                    Word_t pop1 = j__udyLeaf1orB1ToLeaf2(PLeaf2, Pjv, Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 2), Pjpm);
+                    Pjv += pop1;
 #endif // JUDYL
-                    Pleaf = (uint16_t *) (((Word_t)Pleaf) + ((2) * pop1));      // ????????????????
-                    JUDYLCODE(Pjv += pop1;);
+                    PLeaf2 += pop1;
                 }
                 j__udyFreeJBBJP(Pjp2Raw, /* pop1 = */ offset, Pjpm);
             }
-            assert(((((Word_t)Pleaf) - ((Word_t)Pjllnew)) / (2)) == (cJU_LEAF2_MAXPOP1));
-            JUDYLCODE(assert ((Pjv - JL_LEAF2VALUEAREA(Pjllnew, cJU_LEAF2_MAXPOP1)) ==
-                       (cJU_LEAF2_MAXPOP1)););
+            assert((PLeaf2 - (uint16_t *)Pjllnew)  == cJU_LEAF2_MAXPOP1);
+            JUDYLCODE(assert ((Pjv - JL_LEAF2VALUEAREA(Pjllnew, cJU_LEAF2_MAXPOP1)) == cJU_LEAF2_MAXPOP1););
             j__udyFreeJBB(PjbbRaw, Pjpm);       /* Pjp->jp_Type = (NewJPType);       */
+
             ju_SetJpType(Pjp, cJU_JPLEAF2);     /* Pjp->Jp_Addr0 = PjllnewRaw;        */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            ju_SetLeafPop0(Pjp, cJU_LEAF2_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
     }
     case cJU_JPBRANCH_B3:
     {
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 3));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 3));
         assert(ParentLevel > (3));
-        pop1 = ju_BranchPop0(Pjp, 3) + 1;
-        if (pop1 > (cJU_LEAF3_MAXPOP1)) /* hysteresis = 1 */
+        Pop1 = ju_BranchPop0(Pjp, 3) + 1;
+        if (Pop1 > (cJU_LEAF3_MAXPOP1)) /* hysteresis = 1 */
         {
-            assert((3) >= 2);
             level = (3);
             digit = JU_DIGITATSTATE(Index, 3);
             goto BranchBKeep;
         }
-        assert(pop1 == (cJU_LEAF3_MAXPOP1));
+        assert(Pop1 == (cJU_LEAF3_MAXPOP1));
         {
             uint8_t  *Pleaf;
             Word_t    PjbbRaw;          /* BranchB to compress */
@@ -672,7 +724,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             Pjllnew = P_JLL(PjllnewRaw);
             Pleaf = (uint8_t *) Pjllnew;
             JUDYLCODE(Pjv = JL_LEAF3VALUEAREA(Pleaf, cJU_LEAF3_MAXPOP1););
-            PjbbRaw = ju_BaLPntr(Pjp);
+            PjbbRaw = ju_PntrInJp(Pjp);
             Pjbb = P_JBB(PjbbRaw);
             for (subexp = 0; subexp < cJU_NUMSUBEXPB; ++subexp)
             {
@@ -684,27 +736,26 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
                 assert(Pjp2 != (Pjp_t) NULL);
                 for (offset = 0; bitmap != 0; bitmap >>= 1, ++digit)
                 {
+                    Word_t pop1;
                     if (!(bitmap & 1))
                         continue;       /* empty sub-subexpanse */
                     ++offset;           /* before any continue */
+                    if (ju_Type(Pjp2 + offset - 1) == 0) assert(0);
                     if (ju_Type(Pjp2 + offset - 1) == cJU_JPIMMED_1_01 + (3) - 2)
                     {
-                        JU_COPY3_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_DcdPop0(Pjp2 + offset - 1)));
+//                        JU_COPY3_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_DcdPop0(Pjp2 + offset - 1)));
+                        JU_COPY3_LONG_TO_PINDEX(Pleaf, ju_IMM01Key(Pjp2 + offset - 1));
+                        JUDYLCODE(*Pjv++ = ju_ImmVal_01(Pjp2 + offset - 1););
                         Pleaf += (3);   /* index size = level */
-                        JUDYLCODE(*Pjv++ = ju_PImmVals(Pjp2 + offset - 1););
                         continue;       /* for-loop */
                     }
 #ifdef  JUDY1
-                    pop1 =
-                        j__udyLeaf2ToLeaf3(Pleaf, /* null. */ Pjp2 + offset - 1,
-                                           JU_DIGITTOSTATE(digit, 3), Pjpm);
+                    pop1 = j__udyLeaf2ToLeaf3(Pleaf,      Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 3), Pjpm);
 #else  // JUDYL
-                    pop1 =
-                        j__udyLeaf2ToLeaf3(Pleaf, Pjv, Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 3),
-                                           Pjpm);
+                    pop1 = j__udyLeaf2ToLeaf3(Pleaf, Pjv, Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 3), Pjpm);
+                    Pjv += pop1;
 #endif // JUDYL
-                    Pleaf = (uint8_t *) (((Word_t)Pleaf) + ((3) * pop1));
-                    JUDYLCODE(Pjv += pop1;);
+                    Pleaf += (3) * pop1;
                 }
                 j__udyFreeJBBJP(Pjp2Raw, /* pop1 = */ offset, Pjpm);
             }
@@ -712,24 +763,26 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             JUDYLCODE(assert ((Pjv - JL_LEAF3VALUEAREA(Pjllnew, cJU_LEAF3_MAXPOP1)) ==
                        (cJU_LEAF3_MAXPOP1)););
             j__udyFreeJBB(PjbbRaw, Pjpm);       /* Pjp->jp_Type = (NewJPType);       */
+
             ju_SetJpType(Pjp, cJU_JPLEAF3);     /* Pjp->Jp_Addr0 = PjllnewRaw;        */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            ju_SetLeafPop0(Pjp, cJU_LEAF3_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
     }
     case cJU_JPBRANCH_B4:
     {
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 4));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 4));
         assert(ParentLevel > (4));
-        pop1 = ju_BranchPop0(Pjp, 4) + 1;
-        if (pop1 > (cJU_LEAF4_MAXPOP1)) /* hysteresis = 1 */
+        Pop1 = ju_BranchPop0(Pjp, 4) + 1;
+        if (Pop1 > (cJU_LEAF4_MAXPOP1)) /* hysteresis = 1 */
         {
             assert((4) >= 2);
             level = (4);
             digit = JU_DIGITATSTATE(Index, 4);
             goto BranchBKeep;
         }
-        assert(pop1 == (cJU_LEAF4_MAXPOP1));
+        assert(Pop1 == (cJU_LEAF4_MAXPOP1));
         {
             uint32_t *Pleaf;
             Word_t    PjbbRaw;          /* BranchB to compress */
@@ -743,7 +796,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             Pjllnew = P_JLL(PjllnewRaw);
             Pleaf = (uint32_t *)Pjllnew;
             JUDYLCODE(Pjv = JL_LEAF4VALUEAREA(Pleaf, cJU_LEAF4_MAXPOP1););
-            PjbbRaw = ju_BaLPntr(Pjp);
+            PjbbRaw = ju_PntrInJp(Pjp);
             Pjbb = P_JBB(PjbbRaw);
             for (subexp = 0; subexp < cJU_NUMSUBEXPB; ++subexp)
             {
@@ -755,26 +808,24 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
                 assert(Pjp2 != (Pjp_t) NULL);
                 for (offset = 0; bitmap != 0; bitmap >>= 1, ++digit)
                 {
+                    Word_t pop1;
                     if (!(bitmap & 1))
                         continue;       /* empty sub-subexpanse */
                     ++offset;           /* before any continue */
+                    if (ju_Type(Pjp2 + offset - 1) == 0) assert(0);
                     if (ju_Type(Pjp2 + offset - 1) == cJU_JPIMMED_1_01 + (4) - 2)
                     {
-                        *Pleaf++ = ju_DcdPop0(Pjp2 + offset - 1);
-                        JUDYLCODE(*Pjv++ = ju_PImmVals(Pjp2 + offset - 1););
+                        *Pleaf++ = ju_IMM01Key(Pjp2 + offset - 1);
+                        JUDYLCODE(*Pjv++ = ju_ImmVal_01(Pjp2 + offset - 1););
                         continue;       /* for-loop */
                     }
 #ifdef  JUDY1
-                    pop1 =
-                        j__udyLeaf3ToLeaf4(Pleaf, /* null. */ Pjp2 + offset - 1,
-                                           JU_DIGITTOSTATE(digit, 4), Pjpm);
+                    pop1 = j__udyLeaf3ToLeaf4(Pleaf,      Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 4), Pjpm);
 #else  // JUDYL
-                    pop1 =
-                        j__udyLeaf3ToLeaf4(Pleaf, Pjv, Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 4),
-                                           Pjpm);
+                    pop1 = j__udyLeaf3ToLeaf4(Pleaf, Pjv, Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 4), Pjpm);
+                    Pjv += pop1;
 #endif // JUDYL
-                    Pleaf = (uint32_t *)(((Word_t)Pleaf) + ((4) * pop1));
-                    JUDYLCODE(Pjv += pop1;);
+                    Pleaf += pop1;
                 }
                 j__udyFreeJBBJP(Pjp2Raw, /* pop1 = */ offset, Pjpm);
             }
@@ -782,24 +833,26 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             JUDYLCODE(assert ((Pjv - JL_LEAF4VALUEAREA(Pjllnew, cJU_LEAF4_MAXPOP1)) ==
                        (cJU_LEAF4_MAXPOP1)););
             j__udyFreeJBB(PjbbRaw, Pjpm);       /* Pjp->jp_Type = (NewJPType);       */
+
             ju_SetJpType(Pjp, cJU_JPLEAF4);     /* Pjp->Jp_Addr0 = PjllnewRaw;        */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            ju_SetLeafPop0(Pjp, cJU_LEAF4_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
     }
     case cJU_JPBRANCH_B5:
     {
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 5));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 5));
         assert(ParentLevel > (5));
-        pop1 = ju_BranchPop0(Pjp, 5) + 1;
-        if (pop1 > (cJU_LEAF5_MAXPOP1)) /* hysteresis = 1 */
+        Pop1 = ju_BranchPop0(Pjp, 5) + 1;
+        if (Pop1 > (cJU_LEAF5_MAXPOP1)) /* hysteresis = 1 */
         {
             assert((5) >= 2);
             level = (5);
             digit = JU_DIGITATSTATE(Index, 5);
             goto BranchBKeep;
         }
-        assert(pop1 == (cJU_LEAF5_MAXPOP1));
+        assert(Pop1 == (cJU_LEAF5_MAXPOP1));
         {
             uint8_t  *Pleaf;
             Word_t    PjbbRaw;          /* BranchB to compress */
@@ -813,7 +866,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             Pjllnew = P_JLL(PjllnewRaw);
             Pleaf = (uint8_t *) Pjllnew;
             JUDYLCODE(Pjv = JL_LEAF5VALUEAREA(Pleaf, cJU_LEAF5_MAXPOP1););
-            PjbbRaw = ju_BaLPntr(Pjp);
+            PjbbRaw = ju_PntrInJp(Pjp);
             Pjbb = P_JBB(PjbbRaw);
             for (subexp = 0; subexp < cJU_NUMSUBEXPB; ++subexp)
             {
@@ -825,27 +878,25 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
                 assert(Pjp2 != (Pjp_t) NULL);
                 for (offset = 0; bitmap != 0; bitmap >>= 1, ++digit)
                 {
+                    Word_t pop1;
                     if (!(bitmap & 1))
                         continue;       /* empty sub-subexpanse */
                     ++offset;           /* before any continue */
-                    if (ju_Type(Pjp2 + offset - 1) == cJU_JPIMMED_1_01 + (5) - 2)
+                    if (ju_Type(Pjp2 + offset - 1) == 0) assert(0);
+                    if (ju_Type(Pjp2 + offset - 1) == cJU_JPIMMED_1_04)
                     {
-                        JU_COPY5_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_DcdPop0(Pjp2 + offset - 1)));
+                        JU_COPY5_LONG_TO_PINDEX(Pleaf, ju_IMM01Key(Pjp2 + offset - 1));
                         Pleaf += (5);   /* index size = level */
-                        JUDYLCODE(*Pjv++ = ju_PImmVals(Pjp2 + offset - 1););
+                        JUDYLCODE(*Pjv++ = ju_ImmVal_01(Pjp2 + offset - 1););
                         continue;       /* for-loop */
                     }
 #ifdef  JUDY1
-                    pop1 =
-                        j__udyLeaf4ToLeaf5(Pleaf, /* null. */ Pjp2 + offset - 1,
-                                           JU_DIGITTOSTATE(digit, 5), Pjpm);
+                    pop1 = j__udyLeaf4ToLeaf5(Pleaf,      Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 5), Pjpm);
 #else  // JUDYL
-                    pop1 =
-                        j__udyLeaf4ToLeaf5(Pleaf, Pjv, Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 5),
-                                           Pjpm);
+                    pop1 = j__udyLeaf4ToLeaf5(Pleaf, Pjv, Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 5), Pjpm);
+                    Pjv += pop1;
 #endif // JUDYL
-                    Pleaf = (uint8_t *) (((Word_t)Pleaf) + ((5) * pop1));
-                    JUDYLCODE(Pjv += pop1;);
+                    Pleaf += (5) * pop1;
                 }
                 j__udyFreeJBBJP(Pjp2Raw, /* pop1 = */ offset, Pjpm);
             }
@@ -853,24 +904,26 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             JUDYLCODE(assert ((Pjv - JL_LEAF5VALUEAREA(Pjllnew, cJU_LEAF5_MAXPOP1)) ==
                        (cJU_LEAF5_MAXPOP1)););
             j__udyFreeJBB(PjbbRaw, Pjpm);       /* Pjp->jp_Type = (NewJPType);       */
+
             ju_SetJpType(Pjp, cJU_JPLEAF5);     /* Pjp->Jp_Addr0 = PjllnewRaw;        */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            ju_SetLeafPop0(Pjp, cJU_LEAF5_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
     }
     case cJU_JPBRANCH_B6:
     {
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 6));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 6));
         assert(ParentLevel > (6));
-        pop1 = ju_BranchPop0(Pjp, 6) + 1;
-        if (pop1 > (cJU_LEAF6_MAXPOP1)) /* hysteresis = 1 */
+        Pop1 = ju_BranchPop0(Pjp, 6) + 1;
+        if (Pop1 > (cJU_LEAF6_MAXPOP1)) /* hysteresis = 1 */
         {
             assert((6) >= 2);
             level = (6);
             digit = JU_DIGITATSTATE(Index, 6);
             goto BranchBKeep;
         }
-        assert(pop1 == (cJU_LEAF6_MAXPOP1));
+        assert(Pop1 == (cJU_LEAF6_MAXPOP1));
         {
             uint8_t  *Pleaf;
             Word_t    PjbbRaw;          /* BranchB to compress */
@@ -884,7 +937,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             Pjllnew = P_JLL(PjllnewRaw);
             Pleaf = (uint8_t *) Pjllnew;
             JUDYLCODE(Pjv = JL_LEAF6VALUEAREA(Pleaf, cJU_LEAF6_MAXPOP1););
-            PjbbRaw = ju_BaLPntr(Pjp);
+            PjbbRaw = ju_PntrInJp(Pjp);
             Pjbb = P_JBB(PjbbRaw);
             for (subexp = 0; subexp < cJU_NUMSUBEXPB; ++subexp)
             {
@@ -896,27 +949,25 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
                 assert(Pjp2 != (Pjp_t) NULL);
                 for (offset = 0; bitmap != 0; bitmap >>= 1, ++digit)
                 {
+                    Word_t pop1;
                     if (!(bitmap & 1))
                         continue;       /* empty sub-subexpanse */
                     ++offset;           /* before any continue */
+                    if (ju_Type(Pjp2 + offset - 1) == 0) assert(0);
                     if (ju_Type(Pjp2 + offset - 1) == cJU_JPIMMED_1_01 + (6) - 2)
                     {
-                        JU_COPY6_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_DcdPop0(Pjp2 + offset - 1)));
+                        JU_COPY6_LONG_TO_PINDEX(Pleaf, ju_IMM01Key(Pjp2 + offset - 1));
                         Pleaf += (6);   /* index size = level */
-                        JUDYLCODE(*Pjv++ = ju_PImmVals(Pjp2 + offset - 1););
+                        JUDYLCODE(*Pjv++ = ju_ImmVal_01(Pjp2 + offset - 1););
                         continue;       /* for-loop */
                     }
 #ifdef  JUDY1
-                    pop1 =
-                        j__udyLeaf5ToLeaf6(Pleaf, /* null. */ Pjp2 + offset - 1,
-                                           JU_DIGITTOSTATE(digit, 6), Pjpm);
+                    pop1 = j__udyLeaf5ToLeaf6(Pleaf,      Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 6), Pjpm);
 #else  // JUDYL
-                    pop1 =
-                        j__udyLeaf5ToLeaf6(Pleaf, Pjv, Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 6),
-                                           Pjpm);
+                    pop1 = j__udyLeaf5ToLeaf6(Pleaf, Pjv, Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 6), Pjpm);
+                    Pjv += pop1;
 #endif // JUDYL
-                    Pleaf = (uint8_t *) (((Word_t)Pleaf) + ((6) * pop1));
-                    JUDYLCODE(Pjv += pop1;);
+                    Pleaf += (6) * pop1;
                 }
                 j__udyFreeJBBJP(Pjp2Raw, /* pop1 = */ offset, Pjpm);
             }
@@ -924,24 +975,26 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             JUDYLCODE(assert ((Pjv - JL_LEAF6VALUEAREA(Pjllnew, cJU_LEAF6_MAXPOP1)) ==
                        (cJU_LEAF6_MAXPOP1)););
             j__udyFreeJBB(PjbbRaw, Pjpm);       /* Pjp->jp_Type = (NewJPType);       */
+
             ju_SetJpType(Pjp, cJU_JPLEAF6);     /* Pjp->Jp_Addr0 = PjllnewRaw;        */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            ju_SetLeafPop0(Pjp, cJU_LEAF6_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
     }
     case cJU_JPBRANCH_B7:
     {
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 7));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 7));
         assert(ParentLevel > (7));
-        pop1 = ju_BranchPop0(Pjp, 7) + 1;
-        if (pop1 > (cJU_LEAF7_MAXPOP1)) /* hysteresis = 1 */
+        Pop1 = ju_BranchPop0(Pjp, 7) + 1;
+        if (Pop1 > (cJU_LEAF7_MAXPOP1)) /* hysteresis = 1 */
         {
             assert((7) >= 2);
             level = (7);
             digit = JU_DIGITATSTATE(Index, 7);
             goto BranchBKeep;
         }
-        assert(pop1 == (cJU_LEAF7_MAXPOP1));
+        assert(Pop1 == (cJU_LEAF7_MAXPOP1));
         {
             uint8_t  *Pleaf;
             Word_t    PjbbRaw;          /* BranchB to compress */
@@ -955,7 +1008,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             Pjllnew = P_JLL(PjllnewRaw);
             Pleaf = (uint8_t *) Pjllnew;
             JUDYLCODE(Pjv = JL_LEAF7VALUEAREA(Pleaf, cJU_LEAF7_MAXPOP1););
-            PjbbRaw = ju_BaLPntr(Pjp);
+            PjbbRaw = ju_PntrInJp(Pjp);
             Pjbb = P_JBB(PjbbRaw);
             for (subexp = 0; subexp < cJU_NUMSUBEXPB; ++subexp)
             {
@@ -967,36 +1020,35 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
                 assert(Pjp2 != (Pjp_t) NULL);
                 for (offset = 0; bitmap != 0; bitmap >>= 1, ++digit)
                 {
+                    Word_t pop1;
                     if (!(bitmap & 1))
                         continue;       /* empty sub-subexpanse */
                     ++offset;           /* before any continue */
+                    if (ju_Type(Pjp2 + offset - 1) == 0) assert(0);
                     if (ju_Type(Pjp2 + offset - 1) == cJU_JPIMMED_1_01 + (7) - 2)
                     {
-                        JU_COPY7_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_DcdPop0(Pjp2 + offset - 1)));
+                        JU_COPY7_LONG_TO_PINDEX(Pleaf, ju_IMM01Key(Pjp2 + offset - 1));
                         Pleaf += (7);   /* index size = level */
-                        JUDYLCODE(*Pjv++ = ju_PImmVals(Pjp2 + offset - 1););
+                        JUDYLCODE(*Pjv++ = ju_ImmVal_01(Pjp2 + offset - 1););
                         continue;       /* for-loop */
                     }
 #ifdef  JUDY1
-                    pop1 =
-                        j__udyLeaf6ToLeaf7(Pleaf, /* null. */ Pjp2 + offset - 1,
-                                           JU_DIGITTOSTATE(digit, 7), Pjpm);
+                    pop1 = j__udyLeaf6ToLeaf7(Pleaf,      Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 7), Pjpm);
 #else  // JUDYL
-                    pop1 =
-                        j__udyLeaf6ToLeaf7(Pleaf, Pjv, Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 7),
-                                           Pjpm);
+                    pop1 = j__udyLeaf6ToLeaf7(Pleaf, Pjv, Pjp2 + offset - 1, JU_DIGITTOSTATE(digit, 7), Pjpm);
+                    Pjv += pop1;
 #endif // JUDYL
-                    Pleaf = (uint8_t *) (((Word_t)Pleaf) + ((7) * pop1));
-                    JUDYLCODE(Pjv += pop1;);
+                    Pleaf += (7) * pop1;
                 }
                 j__udyFreeJBBJP(Pjp2Raw, /* pop1 = */ offset, Pjpm);
             }
             assert(((((Word_t)Pleaf) - ((Word_t)Pjllnew)) / (7)) == (cJU_LEAF7_MAXPOP1));
-            JUDYLCODE(assert ((Pjv - JL_LEAF7VALUEAREA(Pjllnew, cJU_LEAF7_MAXPOP1)) ==
-                       (cJU_LEAF7_MAXPOP1)););
+            JUDYLCODE(assert ((Pjv - JL_LEAF7VALUEAREA(Pjllnew, cJU_LEAF7_MAXPOP1)) == (cJU_LEAF7_MAXPOP1)););
             j__udyFreeJBB(PjbbRaw, Pjpm);       /* Pjp->jp_Type = (NewJPType);       */
+
             ju_SetJpType(Pjp, cJU_JPLEAF7);     /* Pjp->Jp_Addr0 = PjllnewRaw;        */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            ju_SetLeafPop0(Pjp, cJU_LEAF7_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
     }
@@ -1021,7 +1073,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 //
 // Come here with level and digit set.
       BranchBKeep:
-        Pjbb = P_JBB(ju_BaLPntr(Pjp));
+        Pjbb = P_JBB(ju_PntrInJp(Pjp));
         subexp = digit / cJU_BITSPERSUBEXPB;
         bitmap = JU_JBB_BITMAP(Pjbb, subexp);
         bitmask = JU_BITPOSMASKB(digit);
@@ -1029,15 +1081,17 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         DBGCODE(parentJPtype = ju_Type(Pjp););
 // Compute digits offset into the bitmap, with a fast method if all bits are
 // set:
-        offset = j__udyCountBitsB(bitmap & JU_MASKLOWEREXC(bitmask));
-//            offset = ((bitmap == (cJU_FULLBITMAPB)) ?
-//                      digit % cJU_BITSPERSUBEXPB :
-//                      j__udyCountBitsB(bitmap & JU_MASKLOWEREXC(bitmask)));
+//        offset = j__udyCountBitsB(bitmap & JU_MASKLOWEREXC(bitmask));
+          offset = ((bitmap == (cJU_FULLBITMAPB)) ?
+
+                      digit % cJU_BITSPERSUBEXPB :
+                      j__udyCountBitsB(bitmap & JU_MASKLOWEREXC(bitmask)));
         Pjp2Raw = JU_JBB_PJP(Pjbb, subexp);
         Pjp2 = P_JP(Pjp2Raw);
         assert(Pjp2 != (Pjp_t) NULL);   // valid subexpanse pointer.
 // If not at a (deletable) JPIMMED_*_01, continue the walk (to descend through
 // the BranchB):
+        if (ju_Type(Pjp2 + offset) == 0) assert(0);
         if (ju_Type(Pjp2 + offset) != cJU_JPIMMED_1_01 + level - 2)
         {
             Pjp = Pjp2 + offset;
@@ -1045,7 +1099,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         }
 // At JPIMMED_*_01:  Ensure the index is in the right expanse, then delete the
 // Immed from the BranchB:
-        assert(ju_DcdPop0(Pjp2 + offset) == JU_TRIMTODCDSIZE(Index));
+        assert(ju_IMM01Key(Pjp2 + offset) == JU_TrimToIMM01(Index));
 // If only one index is left in the subexpanse, free the JP array:
         if ((numJPs = j__udyCountBitsB(bitmap)) == 1)
         {
@@ -1053,7 +1107,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             JU_JBB_PJP(Pjbb, subexp) = 0;
         }
 // Shrink JP array in-place:
-        else if (JU_BRANCHBJPGROWINPLACE(numJPs - 1))
+        else if (JU_BRANCHBJPDELINPLACE(numJPs))
         {
             assert(numJPs > 0);
             JU_DELETEINPLACEJP(Pjp2, numJPs, offset, ignore);
@@ -1117,7 +1171,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // Allocate a new leaf, walk the JPs in the old BranchU and pack their contents
 // into the new leaf (of type NewJPType), free the old BranchU, and finally
 // restart the switch to delete Index from the new leaf.  Variables Pjp, Pjpm,
-// digit, and pop1 are in the context.
+// digit, and Pop1 are in the context.
 //
 // Note:  Its no accident that the interface to JU_BRANCHU_COMPRESS() is
 // nearly identical to JU_BRANCHL_COMPRESS(); just NullJPType is added.  The
@@ -1133,7 +1187,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // Overall common code for initial BranchU deletion handling:
 //
 // Assert that Index is in the branch, then see if a BranchU should be kept or
-// else compressed to a leaf.  Variables level, Index, Pjp, and pop1 are in the
+// else compressed to a leaf.  Variables level, Index, Pjp, and Pop1 are in the
 // context.
 //
 // Note:  BranchU handling differs from BranchL and BranchB as described above.
@@ -1144,74 +1198,135 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // parameters only needed for BranchUs.
     case cJU_JPBRANCH_U2:
     {
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 2));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 2));
         assert(ParentLevel > (2));
         DBGCODE(parentJPtype = ju_Type(Pjp););
-        pop1 = ju_BranchPop0(Pjp, 2) + 1;
-        if (pop1 > (cJU_LEAF2_MAXPOP1)) /* hysteresis = 1 */
+        Pop1 = ju_BranchPop0(Pjp, 2) + 1;
+        if (Pop1 > (cJU_LEAF2_MAXPOP1)) /* hysteresis = 1 */
         {
             level = (2);                
-            Pjbu_t    Pjbu = P_JBU(ju_BaLPntr(Pjp));
+            Pjbu_t    Pjbu = P_JBU(ju_PntrInJp(Pjp));
             Pjp = Pjbu->jbu_jp + JU_DIGITATSTATE(Index, 2);
             break;                      /* descend to next level */
         }
-        assert(pop1 == (cJU_LEAF2_MAXPOP1));
+        assert(Pop1 == (cJU_LEAF2_MAXPOP1));
         {
             uint16_t *Pleaf;
-            Word_t    PjbuRaw = ju_BaLPntr(Pjp);
-            Pjp_t     Pjp2 = P_JBU(ju_BaLPntr(Pjp))->jbu_jp;
+            Word_t    PjbuRaw = ju_PntrInJp(Pjp);
+            Pjp_t     Pjp2 = P_JBU(ju_PntrInJp(Pjp))->jbu_jp;   // 1st Pjp_t
             Word_t    ldigit;           /* larger than uint8_t */
             if ((PjllnewRaw = j__udyAllocJLL2(cJU_LEAF2_MAXPOP1, Pjpm)) == 0)
                 return (-1);
             Pjllnew = P_JLL(PjllnewRaw);
             Pleaf = (uint16_t *) Pjllnew;
             JUDYLCODE(Pjv = JL_LEAF2VALUEAREA(Pleaf, cJU_LEAF2_MAXPOP1););
-            for (ldigit = 0; ldigit < cJU_BRANCHUNUMJPS; ++ldigit, ++Pjp2)
+
+#ifdef  DEBUG
+printf("Del U2: Reached cJU_LEAF2_MAXPOP1, convert to L2 Line = %d\n", (int)__LINE__);
+            JUDYLCODE(Pjv_t  PjvBeg = Pjv;);
+            int    POP1 = 0;
+            int    pOP1 = 0;
+#endif  // DEBUG
+
+//            for (ldigit = 0; ldigit < cJU_BRANCHUNUMJPS; ++ldigit, ++Pjp2)
+            for (ldigit = 0; ldigit < 256; ++ldigit, ++Pjp2)
             {                           /* fast-process common types: */
-                if (ju_Type(Pjp2) == (cJU_JPNULL1))
+                if (ju_Type(Pjp2) == cJU_JPNULL1)
                     continue;
-                if (ju_Type(Pjp2) == cJU_JPIMMED_1_01 + (2) - 2)
+
+                if (ju_Type(Pjp2) == cJU_JPIMMED_1_01)
                 {
-                    *Pleaf++ = ju_DcdPop0(Pjp2);
-                    JUDYLCODE(*Pjv++ = ju_PImmVals(Pjp2););
+                    *Pleaf++ = ju_IMM01Key(Pjp2);
+                    JUDYLCODE(*Pjv++ = ju_ImmVal_01(Pjp2););
+#ifdef  DEBUG
+                    printf("\nDel U2: -----------jp_t = cJU_JPIMMED_1_01\n");
+                    POP1++;
+                    pOP1++;
+#endif  // DEBUG
                     continue;           /* for-loop */
                 }
 #ifdef  JUDY1
-                pop1 =
-                    j__udyLeaf1ToLeaf2(Pleaf, /* null. */ Pjp2, JU_DIGITTOSTATE(ldigit, 2), Pjpm);
+#ifdef  diag
+                if (ju_Type(Pjp2) > cJ1_JLEAFMAX)
+                {
+                    uint8_t ty = ju_Type(Pjp2);
+
+                    if (ty == cJ1_JPIMMED_1_01)
+                    {
+//                        printf("Del U2: cJ1_JPIMMED_1_01\n");
+                        pOP1++;
+                    }
+                    else
+                    {
+////                        printf("Del U2: cJ1_JPIMMED_1_%02d , jp_Type = %d\n", ty - (int)cJ1_JPIMMED_1_02 + 2, ty);
+                        pOP1 += ty - (int)cJ1_JPIMMED_1_02 + 2;
+                    }
+                }
+                else
+                {
+                    if (ju_Type(Pjp2) == cJU_JPLEAF1)
+//                        printf("cJU_JPLEAF1, jp_Type = %d, pop1 = %d\n", ju_Type(Pjp2), (int)ju_LeafPop0(Pjp2) + 1);
+
+                    if (ju_Type(Pjp2) == cJ1_JPLEAF_B1)
+                    {
+                        Word_t BitCnt = 0;
+                        Pjlb_t Pjlb = P_JLB(ju_PntrInJp(Pjp2));
+
+                        for (int ii = 0; ii < 4; ii++)
+                            BitCnt += j__udyCountBitsL(JU_JLB_BITMAP(Pjlb, ii));
+
+//                        printf("\ncJU_JPLEAF_B1, jp_Type = %d, pop1 = %d, BitCnt = %d\n", ju_Type(Pjp2), (int)ju_LeafPop0(Pjp2) + 1, (int)BitCnt);
+                    }
+
+                    pOP1 += (int)ju_LeafPop0(Pjp2) + 1;
+                }
+#endif  // diag
+
+//printf("\nDel U2:++++++++++++++++++++++Line = %d, pOP1 + %d, Pjp # = %d\n", __LINE__, pOP1, (int)ldigit);
+                Word_t pop1 = j__udyLeaf1orB1ToLeaf2(Pleaf,      Pjp2, JU_DIGITTOSTATE(ldigit, 2), Pjpm);
 #else  // JUDYL
-                pop1 = j__udyLeaf1ToLeaf2(Pleaf, Pjv, Pjp2, JU_DIGITTOSTATE(ldigit, 2), Pjpm);
+                Word_t pop1 = j__udyLeaf1orB1ToLeaf2(Pleaf, Pjv, Pjp2, JU_DIGITTOSTATE(ldigit, 2), Pjpm);
+                Pjv        += pop1;
 #endif // JUDYL
-                Pleaf = (uint16_t *) (((Word_t)Pleaf) + ((2) * pop1));
-                JUDYLCODE(Pjv += pop1;);
+                Pleaf      += pop1;
+#ifdef  DEBUG
+                POP1       += pop1;
+                pOP1        = POP1;
+#endif  // DEBUG
+
             }
+
+//printf("\n=======After j__udyLeaf1orB1ToLeaf2+Pop inc %d, pOP1 = %d, cJU_LEAF2_MAXPOP1 = %d\n", POP1, pOP1, (int)cJU_LEAF2_MAXPOP1);
+
             assert(((((Word_t)Pleaf) - ((Word_t)Pjllnew)) / (2)) == (cJU_LEAF2_MAXPOP1));
             JUDYLCODE(assert ((Pjv - JL_LEAF2VALUEAREA(Pjllnew, cJU_LEAF2_MAXPOP1)) ==
                        (cJU_LEAF2_MAXPOP1)););
             j__udyFreeJBU(PjbuRaw, Pjpm);       /* Pjp->jp_Type = (NewJPType);       */
+
             ju_SetJpType(Pjp, cJU_JPLEAF2);     /* Pjp->Jp_Addr0 = PjllnewRaw;        */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            ju_SetLeafPop0(Pjp, cJU_LEAF2_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
     }
     case cJU_JPBRANCH_U3:
     {
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 3));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 3));
         assert(ParentLevel > (3));
         DBGCODE(parentJPtype = ju_Type(Pjp););
-        pop1 = ju_BranchPop0(Pjp, 3) + 1;
-        if (pop1 > (cJU_LEAF3_MAXPOP1)) /* hysteresis = 1 */
+        Pop1 = ju_BranchPop0(Pjp, 3) + 1;
+        if (Pop1 > (cJU_LEAF3_MAXPOP1)) /* hysteresis = 1 */
         {
             level = (3);
-            Pjbu_t    Pjbu = P_JBU(ju_BaLPntr(Pjp));
+            Pjbu_t    Pjbu = P_JBU(ju_PntrInJp(Pjp));
             Pjp = Pjbu->jbu_jp + JU_DIGITATSTATE(Index, 3);
             break;                      /* descend to next level */
         }
-        assert(pop1 == (cJU_LEAF3_MAXPOP1));
+        assert(Pop1 == (cJU_LEAF3_MAXPOP1));
         {
             uint8_t  *Pleaf;
-            Word_t    PjbuRaw = ju_BaLPntr(Pjp);
-            Pjp_t     Pjp2 = P_JBU(ju_BaLPntr(Pjp))->jbu_jp;
+            Word_t    PjbuRaw = ju_PntrInJp(Pjp);
+            Pjp_t     Pjp2 = P_JBU(ju_PntrInJp(Pjp))->jbu_jp;
             Word_t    ldigit;           /* larger than uint8_t */
             if ((PjllnewRaw = j__udyAllocJLL3(cJU_LEAF3_MAXPOP1, Pjpm)) == 0)
                 return (-1);
@@ -1220,51 +1335,53 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             JUDYLCODE(Pjv = JL_LEAF3VALUEAREA(Pleaf, cJU_LEAF3_MAXPOP1););
             for (ldigit = 0; ldigit < cJU_BRANCHUNUMJPS; ++ldigit, ++Pjp2)
             {                           /* fast-process common types: */
+                Word_t pop1;
                 if (ju_Type(Pjp2) == (cJU_JPNULL2))
                     continue;
-                if (ju_Type(Pjp2) == cJU_JPIMMED_1_01 + (3) - 2)
+                if (ju_Type(Pjp2) == cJU_JPIMMED_1_02)
                 {
-                    JU_COPY3_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_DcdPop0(Pjp2)));
+                    JU_COPY3_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_IMM01Key(Pjp2)));
                     Pleaf += (3);       /* index size = level */
-                    JUDYLCODE(*Pjv++ = ju_PImmVals(Pjp2););
+                    JUDYLCODE(*Pjv++ = ju_ImmVal_01(Pjp2););
                     continue;           /* for-loop */
                 }
 #ifdef  JUDY1
-                pop1 =
-                    j__udyLeaf2ToLeaf3(Pleaf, /* null. */ Pjp2, JU_DIGITTOSTATE(ldigit, 3), Pjpm);
+                pop1 = j__udyLeaf2ToLeaf3(Pleaf,      Pjp2, JU_DIGITTOSTATE(ldigit, 3), Pjpm);
 #else  // JUDYL
                 pop1 = j__udyLeaf2ToLeaf3(Pleaf, Pjv, Pjp2, JU_DIGITTOSTATE(ldigit, 3), Pjpm);
+                Pjv += pop1;
 #endif // JUDYL
-                Pleaf = (uint8_t *) (((Word_t)Pleaf) + ((3) * pop1));
-                JUDYLCODE(Pjv += pop1;);
+                Pleaf += (3) * pop1;
             }
             assert(((((Word_t)Pleaf) - ((Word_t)Pjllnew)) / (3)) == (cJU_LEAF3_MAXPOP1));
             JUDYLCODE(assert ((Pjv - JL_LEAF3VALUEAREA(Pjllnew, cJU_LEAF3_MAXPOP1)) ==
                        (cJU_LEAF3_MAXPOP1)););
             j__udyFreeJBU(PjbuRaw, Pjpm);       /* Pjp->jp_Type = (NewJPType);       */
+
             ju_SetJpType(Pjp, cJU_JPLEAF3);     /* Pjp->Jp_Addr0 = PjllnewRaw;        */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            ju_SetLeafPop0(Pjp, cJU_LEAF3_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
     }
     case cJU_JPBRANCH_U4:
     {
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 4));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 4));
         assert(ParentLevel > (4));
         DBGCODE(parentJPtype = ju_Type(Pjp););
-        pop1 = ju_BranchPop0(Pjp, 4) + 1;
-        if (pop1 > (cJU_LEAF4_MAXPOP1)) /* hysteresis = 1 */
+        Pop1 = ju_BranchPop0(Pjp, 4) + 1;
+        if (Pop1 > (cJU_LEAF4_MAXPOP1)) /* hysteresis = 1 */
         {
             level = (4);
-            Pjbu_t    Pjbu = P_JBU(ju_BaLPntr(Pjp));
+            Pjbu_t    Pjbu = P_JBU(ju_PntrInJp(Pjp));
             Pjp = Pjbu->jbu_jp + JU_DIGITATSTATE(Index, 4);
             break;                      /* descend to next level */
         }
-        assert(pop1 == (cJU_LEAF4_MAXPOP1));
+        assert(Pop1 == (cJU_LEAF4_MAXPOP1));
         {
             uint32_t *Pleaf;
-            Word_t    PjbuRaw = ju_BaLPntr(Pjp);
-            Pjp_t     Pjp2 = P_JBU(ju_BaLPntr(Pjp))->jbu_jp;
+            Word_t    PjbuRaw = ju_PntrInJp(Pjp);
+            Pjp_t     Pjp2 = P_JBU(ju_PntrInJp(Pjp))->jbu_jp;
             Word_t    ldigit;           /* larger than uint8_t */
             if ((PjllnewRaw = j__udyAllocJLL4(cJU_LEAF4_MAXPOP1, Pjpm)) == 0)
                 return (-1);
@@ -1273,50 +1390,52 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             JUDYLCODE(Pjv = JL_LEAF4VALUEAREA(Pleaf, cJU_LEAF4_MAXPOP1););
             for (ldigit = 0; ldigit < cJU_BRANCHUNUMJPS; ++ldigit, ++Pjp2)
             {                           /* fast-process common types: */
+                Word_t pop1;
                 if (ju_Type(Pjp2) == (cJU_JPNULL3))
                     continue;
-                if (ju_Type(Pjp2) == cJU_JPIMMED_1_01 + (4) - 2)
+                if (ju_Type(Pjp2) == cJU_JPIMMED_1_03)
                 {
-                    *Pleaf++ = ju_DcdPop0(Pjp2);
-                    JUDYLCODE(*Pjv++ = ju_PImmVals(Pjp2););
+                    *Pleaf++ = ju_IMM01Key(Pjp2);
+                    JUDYLCODE(*Pjv++ = ju_ImmVal_01(Pjp2););
                     continue;           /* for-loop */
                 }
 #ifdef  JUDY1
-                pop1 =
-                    j__udyLeaf3ToLeaf4(Pleaf, /* null. */ Pjp2, JU_DIGITTOSTATE(ldigit, 4), Pjpm);
+                pop1 = j__udyLeaf3ToLeaf4(Pleaf,      Pjp2, JU_DIGITTOSTATE(ldigit, 4), Pjpm);
 #else  // JUDYL
                 pop1 = j__udyLeaf3ToLeaf4(Pleaf, Pjv, Pjp2, JU_DIGITTOSTATE(ldigit, 4), Pjpm);
+                Pjv += pop1;
 #endif // JUDYL
-                Pleaf = (uint32_t *)(((Word_t)Pleaf) + ((4) * pop1));
-                JUDYLCODE(Pjv += pop1;);
+                Pleaf += pop1;
             }
             assert(((((Word_t)Pleaf) - ((Word_t)Pjllnew)) / (4)) == (cJU_LEAF4_MAXPOP1));
             JUDYLCODE(assert ((Pjv - JL_LEAF4VALUEAREA(Pjllnew, cJU_LEAF4_MAXPOP1)) ==
                        (cJU_LEAF4_MAXPOP1)););
             j__udyFreeJBU(PjbuRaw, Pjpm);       /* Pjp->jp_Type = (NewJPType);       */
+
             ju_SetJpType(Pjp, cJU_JPLEAF4);     /* Pjp->Jp_Addr0 = PjllnewRaw;        */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            ju_SetLeafPop0(Pjp, cJU_LEAF4_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
     }
     case cJU_JPBRANCH_U5:
     {
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 5));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 5));
         assert(ParentLevel > (5));
         DBGCODE(parentJPtype = ju_Type(Pjp););
-        pop1 = ju_BranchPop0(Pjp, 5) + 1;
-        if (pop1 > (cJU_LEAF5_MAXPOP1)) /* hysteresis = 1 */
+        Pop1 = ju_BranchPop0(Pjp, 5) + 1;
+        if (Pop1 > (cJU_LEAF5_MAXPOP1)) /* hysteresis = 1 */
         {
             level = (5);
-            Pjbu_t    Pjbu = P_JBU(ju_BaLPntr(Pjp));
+            Pjbu_t    Pjbu = P_JBU(ju_PntrInJp(Pjp));
             Pjp = Pjbu->jbu_jp + JU_DIGITATSTATE(Index, 5);
             break;                      /* descend to next level */
         }
-        assert(pop1 == (cJU_LEAF5_MAXPOP1));
+        assert(Pop1 == (cJU_LEAF5_MAXPOP1));
         {
             uint8_t  *Pleaf;
-            Word_t    PjbuRaw = ju_BaLPntr(Pjp);
-            Pjp_t     Pjp2 = P_JBU(ju_BaLPntr(Pjp))->jbu_jp;
+            Word_t    PjbuRaw = ju_PntrInJp(Pjp);
+            Pjp_t     Pjp2 = P_JBU(ju_PntrInJp(Pjp))->jbu_jp;
             Word_t    ldigit;           /* larger than uint8_t */
             if ((PjllnewRaw = j__udyAllocJLL5(cJU_LEAF5_MAXPOP1, Pjpm)) == 0)
                 return (-1);
@@ -1325,51 +1444,53 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             JUDYLCODE(Pjv = JL_LEAF5VALUEAREA(Pleaf, cJU_LEAF5_MAXPOP1););
             for (ldigit = 0; ldigit < cJU_BRANCHUNUMJPS; ++ldigit, ++Pjp2)
             {                           /* fast-process common types: */
+                Word_t pop1;
                 if (ju_Type(Pjp2) == (cJU_JPNULL4))
                     continue;
-                if (ju_Type(Pjp2) == cJU_JPIMMED_1_01 + (5) - 2)
+                if (ju_Type(Pjp2) == cJU_JPIMMED_1_04)
                 {
-                    JU_COPY5_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_DcdPop0(Pjp2)));
+                    JU_COPY5_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_IMM01Key(Pjp2)));
                     Pleaf += (5);       /* index size = level */
-                    JUDYLCODE(*Pjv++ = ju_PImmVals(Pjp2););
+                    JUDYLCODE(*Pjv++ = ju_ImmVal_01(Pjp2););
                     continue;           /* for-loop */
                 }
 #ifdef  JUDY1
-                pop1 =
-                    j__udyLeaf4ToLeaf5(Pleaf, /* null. */ Pjp2, JU_DIGITTOSTATE(ldigit, 5), Pjpm);
+                pop1 = j__udyLeaf4ToLeaf5(Pleaf,      Pjp2, JU_DIGITTOSTATE(ldigit, 5), Pjpm);
 #else  // JUDYL
                 pop1 = j__udyLeaf4ToLeaf5(Pleaf, Pjv, Pjp2, JU_DIGITTOSTATE(ldigit, 5), Pjpm);
+                Pjv += pop1;
 #endif // JUDYL
-                Pleaf = (uint8_t *) (((Word_t)Pleaf) + ((5) * pop1));
-                JUDYLCODE(Pjv += pop1;);
+                Pleaf += (5) * pop1;
             }
             assert(((((Word_t)Pleaf) - ((Word_t)Pjllnew)) / (5)) == (cJU_LEAF5_MAXPOP1));
             JUDYLCODE(assert ((Pjv - JL_LEAF5VALUEAREA(Pjllnew, cJU_LEAF5_MAXPOP1)) ==
                        (cJU_LEAF5_MAXPOP1)););
             j__udyFreeJBU(PjbuRaw, Pjpm);       /* Pjp->jp_Type = (NewJPType);       */
+
             ju_SetJpType(Pjp, cJU_JPLEAF5);     /* Pjp->Jp_Addr0 = PjllnewRaw;        */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            ju_SetLeafPop0(Pjp, cJU_LEAF5_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
     }
     case cJU_JPBRANCH_U6:
     {
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 6));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 6));
         assert(ParentLevel > (6));
         DBGCODE(parentJPtype = ju_Type(Pjp););
-        pop1 = ju_BranchPop0(Pjp, 6) + 1;
-        if (pop1 > (cJU_LEAF6_MAXPOP1)) /* hysteresis = 1 */
+        Pop1 = ju_BranchPop0(Pjp, 6) + 1;
+        if (Pop1 > (cJU_LEAF6_MAXPOP1)) /* hysteresis = 1 */
         {
             level = (6);
-            Pjbu_t    Pjbu = P_JBU(ju_BaLPntr(Pjp));
+            Pjbu_t    Pjbu = P_JBU(ju_PntrInJp(Pjp));
             Pjp = Pjbu->jbu_jp + JU_DIGITATSTATE(Index, 6);
             break;                      /* descend to next level */
         }
-        assert(pop1 == (cJU_LEAF6_MAXPOP1));
+        assert(Pop1 == (cJU_LEAF6_MAXPOP1));
         {
             uint8_t  *Pleaf;
-            Word_t    PjbuRaw = ju_BaLPntr(Pjp);
-            Pjp_t     Pjp2 = P_JBU(ju_BaLPntr(Pjp))->jbu_jp;
+            Word_t    PjbuRaw = ju_PntrInJp(Pjp);
+            Pjp_t     Pjp2 = P_JBU(ju_PntrInJp(Pjp))->jbu_jp;
             Word_t    ldigit;           /* larger than uint8_t */
             if ((PjllnewRaw = j__udyAllocJLL6(cJU_LEAF6_MAXPOP1, Pjpm)) == 0)
                 return (-1);
@@ -1378,51 +1499,53 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             JUDYLCODE(Pjv = JL_LEAF6VALUEAREA(Pleaf, cJU_LEAF6_MAXPOP1););
             for (ldigit = 0; ldigit < cJU_BRANCHUNUMJPS; ++ldigit, ++Pjp2)
             {                           /* fast-process common types: */
+                Word_t pop1;
                 if (ju_Type(Pjp2) == (cJU_JPNULL5))
                     continue;
-                if (ju_Type(Pjp2) == cJU_JPIMMED_1_01 + (6) - 2)
+                if (ju_Type(Pjp2) == cJU_JPIMMED_1_05)
                 {
-                    JU_COPY6_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_DcdPop0(Pjp2)));
+                    JU_COPY6_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_IMM01Key(Pjp2)));
                     Pleaf += (6);       /* index size = level */
-                    JUDYLCODE(*Pjv++ = ju_PImmVals(Pjp2););
+                    JUDYLCODE(*Pjv++ = ju_ImmVal_01(Pjp2););
                     continue;           /* for-loop */
                 }
 #ifdef  JUDY1
-                pop1 =
-                    j__udyLeaf5ToLeaf6(Pleaf, /* null. */ Pjp2, JU_DIGITTOSTATE(ldigit, 6), Pjpm);
+                pop1 = j__udyLeaf5ToLeaf6(Pleaf,      Pjp2, JU_DIGITTOSTATE(ldigit, 6), Pjpm);
 #else  // JUDYL
                 pop1 = j__udyLeaf5ToLeaf6(Pleaf, Pjv, Pjp2, JU_DIGITTOSTATE(ldigit, 6), Pjpm);
+                Pjv += pop1;
 #endif // JUDYL
-                Pleaf = (uint8_t *) (((Word_t)Pleaf) + ((6) * pop1));
-                JUDYLCODE(Pjv += pop1;);
+                Pleaf += (6) * pop1;
             }
             assert(((((Word_t)Pleaf) - ((Word_t)Pjllnew)) / (6)) == (cJU_LEAF6_MAXPOP1));
             JUDYLCODE(assert ((Pjv - JL_LEAF6VALUEAREA(Pjllnew, cJU_LEAF6_MAXPOP1)) ==
                        (cJU_LEAF6_MAXPOP1)););
             j__udyFreeJBU(PjbuRaw, Pjpm);       /* Pjp->jp_Type = (NewJPType);       */
+
             ju_SetJpType(Pjp, cJU_JPLEAF6);     /* Pjp->Jp_Addr0 = PjllnewRaw;        */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            ju_SetLeafPop0(Pjp, cJU_LEAF6_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
     }
     case cJU_JPBRANCH_U7:
     {
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 7));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 7));
         assert(ParentLevel > (7));
         DBGCODE(parentJPtype = ju_Type(Pjp););
-        pop1 = ju_BranchPop0(Pjp, 7) + 1;
-        if (pop1 > (cJU_LEAF7_MAXPOP1)) /* hysteresis = 1 */
+        Pop1 = ju_BranchPop0(Pjp, 7) + 1;
+        if (Pop1 > (cJU_LEAF7_MAXPOP1)) /* hysteresis = 1 */
         {
             level = (7);
-            Pjbu_t    Pjbu = P_JBU(ju_BaLPntr(Pjp));
+            Pjbu_t    Pjbu = P_JBU(ju_PntrInJp(Pjp));
             Pjp = Pjbu->jbu_jp + JU_DIGITATSTATE(Index, 7);
             break;                      /* descend to next level */
         }
-        assert(pop1 == (cJU_LEAF7_MAXPOP1));
+        assert(Pop1 == (cJU_LEAF7_MAXPOP1));
         {
             uint8_t  *Pleaf;
-            Word_t    PjbuRaw = ju_BaLPntr(Pjp);
-            Pjp_t     Pjp2 = P_JBU(ju_BaLPntr(Pjp))->jbu_jp;
+            Word_t    PjbuRaw = ju_PntrInJp(Pjp);
+            Pjp_t     Pjp2 = P_JBU(ju_PntrInJp(Pjp))->jbu_jp;
             Word_t    ldigit;           /* larger than uint8_t */
             if ((PjllnewRaw = j__udyAllocJLL7(cJU_LEAF7_MAXPOP1, Pjpm)) == 0)
                 return (-1);
@@ -1431,30 +1554,32 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             JUDYLCODE(Pjv = JL_LEAF7VALUEAREA(Pleaf, cJU_LEAF7_MAXPOP1););
             for (ldigit = 0; ldigit < cJU_BRANCHUNUMJPS; ++ldigit, ++Pjp2)
             {                           /* fast-process common types: */
+                Word_t pop1;
                 if (ju_Type(Pjp2) == (cJU_JPNULL6))
                     continue;
-                if (ju_Type(Pjp2) == cJU_JPIMMED_1_01 + (7) - 2)
+                if (ju_Type(Pjp2) == cJU_JPIMMED_1_06)
                 {
-                    JU_COPY7_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_DcdPop0(Pjp2)));
+                    JU_COPY7_LONG_TO_PINDEX(Pleaf, (Word_t)(ju_IMM01Key(Pjp2)));
                     Pleaf += (7);       /* index size = level */
-                    JUDYLCODE(*Pjv++ = ju_PImmVals(Pjp2););
+                    JUDYLCODE(*Pjv++ = ju_ImmVal_01(Pjp2););
                     continue;           /* for-loop */
                 }
 #ifdef  JUDY1
-                pop1 =
-                    j__udyLeaf6ToLeaf7(Pleaf, /* null. */ Pjp2, JU_DIGITTOSTATE(ldigit, 7), Pjpm);
+                pop1 = j__udyLeaf6ToLeaf7(Pleaf,      Pjp2, JU_DIGITTOSTATE(ldigit, 7), Pjpm);
 #else  // JUDYL
                 pop1 = j__udyLeaf6ToLeaf7(Pleaf, Pjv, Pjp2, JU_DIGITTOSTATE(ldigit, 7), Pjpm);
+                Pjv += pop1;
 #endif // JUDYL
-                Pleaf = (uint8_t *) (((Word_t)Pleaf) + ((7) * pop1));
-                JUDYLCODE(Pjv += pop1;);
+                Pleaf += (7) * pop1;
             }
             assert(((((Word_t)Pleaf) - ((Word_t)Pjllnew)) / (7)) == (cJU_LEAF7_MAXPOP1));
             JUDYLCODE(assert ((Pjv - JL_LEAF7VALUEAREA(Pjllnew, cJU_LEAF7_MAXPOP1)) ==
                        (cJU_LEAF7_MAXPOP1)););
             j__udyFreeJBU(PjbuRaw, Pjpm);       /* Pjp->jp_Type = (NewJPType);       */
+
             ju_SetJpType(Pjp, cJU_JPLEAF7);     /* Pjp->Jp_Addr0 = PjllnewRaw;        */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            ju_SetLeafPop0(Pjp, cJU_LEAF7_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
     }
@@ -1465,8 +1590,8 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
     {
         DBGCODE(parentJPtype = ju_Type(Pjp););
         level = cJU_ROOTSTATE;
-//            Pjp   = P_JP(ju_BaLPntr(Pjp)) + JU_DIGITATSTATE(Index, cJU_ROOTSTATE);
-        Pjbu_t    Pjbu = P_JBU(ju_BaLPntr(Pjp));
+//            Pjp   = P_JP(ju_PntrInJp(Pjp)) + JU_DIGITATSTATE(Index, cJU_ROOTSTATE);
+        Pjbu_t    Pjbu = P_JBU(ju_PntrInJp(Pjp));
         Pjp = Pjbu->jbu_jp + JU_DIGITATSTATE(Index, cJU_ROOTSTATE);
         break;
     }
@@ -1508,7 +1633,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 //
 // This is only possible when the current leaf is under a narrow pointer
 // ((ParentLevel - 1) > cIS) and its population fits in a higher-level leaf.
-// Variables ParentLevel, pop1, PjllnewRaw, Pjllnew, Pjpm, and Index are in the
+// Variables ParentLevel, Pop1, PjllnewRaw, Pjllnew, Pjpm, and Index are in the
 // context.
 //
 // Note:  Doing an "uplevel" doesnt occur until the old leaf can be compressed
@@ -1520,7 +1645,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // Note:  010327:  Fixed bug where the jp_DcdPopO next-uplevel digit (byte)
 // above the current Pop0 value was not being cleared.  When upleveling, one
 // digit in jp_DcdPopO "moves" from being part of the Dcd subfield to the Pop0
-// subfield, but since a leaf maxpop1 is known to be <= 1 byte in size, the new
+// subfield, but since a leaf maxPop1 is known to be <= 1 byte in size, the new
 // Pop0 byte should always be zero.  This is easy to overlook because
 // JU_JPLEAF_POP0() "knows" to only use the LSB of Pop0 (for efficiency) and
 // ignore the other bytes...  Until someone uses cJU_POP0MASK() instead of
@@ -1535,7 +1660,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // Note:  Theres no way here to go from Leaf3 [Leaf7] to LEAFW on a 32-bit
 // [64-bit] system.  Thats handled in the main code, because its different in
 // that a JPM is involved.
-// Compress a Leaf* with pop1 = 2, or a JPIMMED_*_02, into a JPIMMED_*_01:
+// Compress a Leaf* with Pop1 = 2, or a JPIMMED_*_02, into a JPIMMED_*_01:
 //
 // Copy whichever Index is NOT being deleted (and assert that the other one is
 // found; Index must be valid).  This requires special handling of the Index
@@ -1544,7 +1669,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // including Jp_Addr0.
 // Compress a Leaf* into a JPIMMED_*_0[2+]:
 //
-// This occurs as soon as its possible, with hysteresis = 0.  Variables pop1,
+// This occurs as soon as its possible, with hysteresis = 0.  Variables Pop1,
 // Pleaf, offset, and Pjpm are in the context.
 //
 // TBD:  Explain why hysteresis = 0 here, rather than > 0.  Probably because
@@ -1563,18 +1688,18 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // Unfortunately, this requires the calling code to "know" the transition table
 // and call the right macro.
 //
-// This variant compresses a Leaf* with pop1 = 2 into a JPIMMED_*_01:
+// This variant compresses a Leaf* with Pop1 = 2 into a JPIMMED_*_01:
 #endif // JUDYL
 // See comments above about these:
 //
 // Note:  Here "23" means index size 2 or 3, and "47" means 4..7.
 // Compress a Leaf* in place:
 //
-// Here hysteresis = 0 (no memory is wasted).  Variables pop1, Pleaf, and
+// Here hysteresis = 0 (no memory is wasted).  Variables Pop1, Pleaf, and
 // offset, and for JudyL, Pjv, are in the context.
 // Compress a Leaf* into a smaller memory object of the same JP type:
 //
-// Variables PjllnewRaw, Pjllnew, Pleafpop1, Pjpm, PleafRaw, Pleaf, and offset
+// Variables PjllnewRaw, Pjllnew, PleafPop1, Pjpm, PleafRaw, Pleaf, and offset
 // are in the context.
 // Overall common code for Leaf* deletion handling:
 //
@@ -1584,7 +1709,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // - shrunk in place (JU_LEAF_INPLACE()), or if none of those, then
 // - shrink the leaf to a smaller chunk of memory (JU_LEAF_SHRINK()).
 //
-// Variables Pjp, pop1, Index, and offset are in the context.
+// Variables Pjp, Pop1, Index, and offset are in the context.
 // The *Up parameters refer to a leaf one level up, if there is any.
 // END OF MACROS, START OF CASES:
 //
@@ -1593,181 +1718,204 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
     {
         Word_t    PleafRaw;
         uint8_t  *Pleaf;
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 1));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 1));
         assert(ParentLevel > (1));
-        PleafRaw = ju_BaLPntr(Pjp);
+        PleafRaw = ju_PntrInJp(Pjp);
         Pleaf = (uint8_t *) P_JLL(PleafRaw);
-        pop1 = ju_LeafPop0(Pjp) + 1;
-        assert(((ParentLevel - 1) == (1)) || (pop1 >= (cJU_LEAF2_MAXPOP1)));
-        if (((ParentLevel - 1) > (1)) /* under narrow pointer */  && (pop1 == (cJU_LEAF2_MAXPOP1)))
+        Pop1 = ju_LeafPop0(Pjp) + 1;
+        assert(((ParentLevel - 1) == (1)) || (Pop1 == (cJU_LEAF2_MAXPOP1)));
+        if (((ParentLevel - 1) > (1)) /* under narrow pointer */  && (Pop1 == (cJU_LEAF2_MAXPOP1)))
         { /* hysteresis = 1       */
             Word_t    D_cdP0;
+
             if ((PjllnewRaw = j__udyAllocJLL2(cJU_LEAF2_MAXPOP1, Pjpm)) == 0)
                 return (-1);
             Pjllnew = P_JLL(PjllnewRaw);
+//printf("Line = %d\n", __LINE__);
 #ifdef  JUDYL
             Pjv = JL_LEAF2VALUEAREA((uint16_t *) Pjllnew, cJU_LEAF2_MAXPOP1);
-            (void)j__udyLeaf1ToLeaf2((uint16_t *) Pjllnew, Pjv, Pjp, Index & cJU_DCDMASK(1),
-                                      Pjpm);
+            (void)j__udyLeaf1orB1ToLeaf2((uint16_t *) Pjllnew, Pjv, Pjp, Index & cJU_DCDMASK(1), Pjpm);
 #else  // JUDY1
-            (void)j__udyLeaf1ToLeaf2((uint16_t *) Pjllnew, /* null */ Pjp, Index & cJU_DCDMASK(1),
-                                      Pjpm);
+            (void)j__udyLeaf1orB1ToLeaf2((uint16_t *) Pjllnew,      Pjp, Index & cJU_DCDMASK(1), Pjpm);
 #endif // JUDY1
             D_cdP0 = (~cJU_MASKATSTATE((1) + 1)) & ju_DcdPop0(Pjp);
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+
             ju_SetDcdPop0(Pjp, D_cdP0);
             ju_SetJpType(Pjp, cJU_JPLEAF2);
+            ju_SetLeafPop0(Pjp, cJU_LEAF2_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
 //      else Not under a narrow pointer, can make an IMMED1?
-        offset = j__udySearchLeaf1(Pleaf, pop1, Index, 1 * 8);
+
+        offset = j__udySearchLeaf1(Pleaf, Pop1, Index, 1 * 8);
         assert(offset >= 0);            /* Index must be valid */
-        JUDYLCODE(Pjv = JL_LEAF1VALUEAREA(Pleaf, pop1););
-        assert(pop1 > (cJU_IMMED1_MAXPOP1));
-        if ((pop1 - 1) == (cJU_IMMED1_MAXPOP1)) 
+        JUDYLCODE(Pjv = JL_LEAF1VALUEAREA(Pleaf, Pop1););
+        assert(Pop1 > (cJU_IMMED1_MAXPOP1));
+        if ((Pop1 - 1) == (cJU_IMMED1_MAXPOP1)) 
         { /* hysteresis = 0 */
-            Word_t    PjllRaw = ju_BaLPntr(Pjp);
+            Word_t    PjllRaw = ju_PntrInJp(Pjp);
             Word_t    PjvnewRaw;
 #ifdef  JUDYL
             Pjv_t     Pjvnew;
-            if ((PjvnewRaw = j__udyLAllocJV(pop1 - 1, Pjpm)) == 0)
+            if ((PjvnewRaw = j__udyLAllocJV(Pop1 - 1, Pjpm)) == 0)
                 return (-1);
             Pjvnew = P_JV(PjvnewRaw);
-            JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 1);
+            JU_DELETECOPY(Pjvnew, Pjv, Pop1, offset, 1);
 #endif // JUDYL
-
-            JU_DELETECOPY((uint8_t *) ju_PImmed1(Pjp), Pleaf, pop1, offset, 1);
-
-            j__udyFreeJLL1(PjllRaw, pop1, Pjpm);
+            JU_DELETECOPY(ju_PImmed1(Pjp), Pleaf, Pop1, offset, 1);
+            j__udyFreeJLL1(PjllRaw, Pop1, Pjpm);
 #ifdef  JUDYL
-            /* Pjp->jp_PValue = PjvnewRaw;      */
-            ju_SetPjvPntr(Pjp, PjvnewRaw);
+            ju_SetPntrInJp(Pjp, PjvnewRaw);
 #endif // JUDYL
             /* Pjp->jp_Type = (BaseJPType) - 2 + (MaxPop1); */
             ju_SetJpType(Pjp, (cJU_JPIMMED_1_02) - 2 + (cJU_IMMED1_MAXPOP1));
             return (1);
         }
 //      else  No, therefore just shrink the Leaf1
-        if (JU_LEAF1GROWINPLACE(pop1 - 1))
+        if (JU_LEAF1DELINPLACE(Pop1))
         { /* hysteresis = 0 */
-            JU_DELETEINPLACE(Pleaf, pop1, offset, 1);
-            JU_PADLEAF1(Pleaf, pop1 - 1);
+            JU_DELETEINPLACE(Pleaf, Pop1, offset, 1);
+            JU_PADLEAF1(Pleaf, Pop1 - 1);
 #ifdef  JUDYL
-            JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
+            JU_DELETEINPLACE(Pjv, Pop1, offset, ignore);
 #endif // JUDYL
+
+#ifdef PCAS
+//            printf("Line = %d\n", __LINE__);
+#endif  // PCAS
+            goto UpdateLeafPop0AndReturnTrue; // requires Pjp and Pop1
+
+// entry Pjp and Pop1
+UpdateLeafPop0AndReturnTrue:    // requires Pjp and Pop1 
+            ju_SetLeafPop0(Pjp, Pop1 - 2);
+#ifdef PCAS
+//            printf("ju_LeafPop0(Pjp) = 0x%lx, ju_DcdPop0(Pjp) = 0x%016lx\n", ju_LeafPop0(Pjp), ju_DcdPop0(Pjp));
+#endif  // PCAS
+            assert((ju_LeafPop0(Pjp) + 1) == (ju_DcdPop0(Pjp) & 0xFF));
+
             return (1);
         }
         else                            // Shrink the Leaf1 size into another Alloc
         {
-            if ((PjllnewRaw = j__udyAllocJLL1(pop1 - 1, Pjpm)) == 0)
+            if ((PjllnewRaw = j__udyAllocJLL1(Pop1 - 1, Pjpm)) == 0)
                 return (-1);
             Pjllnew = P_JLL(PjllnewRaw);
 #ifdef  JUDYL
-            Pjv_t     Pjvnew = JL_LEAF1VALUEAREA(Pjllnew, pop1 - 1);
-            JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 1);        // and Value area
+            Pjv_t     Pjvnew = JL_LEAF1VALUEAREA(Pjllnew, Pop1 - 1);
+            JU_DELETECOPY(Pjvnew, Pjv, Pop1, offset, 1);        // and Value area
 #endif // JUDYL
-            JU_DELETECOPY((uint8_t *) Pjllnew, Pleaf, pop1, offset, 1);
-            JU_PADLEAF1(Pjllnew, pop1 - 1);
-            j__udyFreeJLL1(PleafRaw, pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw; */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
-            return (1);
+            JU_DELETECOPY((uint8_t *) Pjllnew, Pleaf, Pop1, offset, 1);
+            JU_PADLEAF1(Pjllnew, Pop1 - 1);
+            j__udyFreeJLL1(PleafRaw, Pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw; */
+
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
+#ifdef PCAS
+//            printf("Line = %d\n", __LINE__);
+#endif  // PCAS
+            goto UpdateLeafPop0AndReturnTrue; // requires Pjp and Pop1
         }
     }
-// A complicating factor is that for JudyL & 32-bit, a Leaf2 must go directly
-// to an Immed 2_01 and a Leaf3 must go directly to an Immed 3_01:
-//
-// Leaf2 [[ => 2_07..04 ] => 2_03 => 2_02 ] => 2_01
-// Leaf3 [[ => 3_05..03 ] => 3_02         ] => 3_01
-//
-// Hence use JU_LEAF_TOIMMED_23 instead of JU_LEAF_TOIMMED in the cases below,
-// and also the parameters ToImmed and, for odd index sizes, CopyPIndex, are
-// required.
     case cJU_JPLEAF2:
     {
         Word_t    PleafRaw;
         uint16_t *Pleaf;
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 2));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 2));
         assert(ParentLevel > (2));
-        PleafRaw = ju_BaLPntr(Pjp);
+        PleafRaw = ju_PntrInJp(Pjp);
         Pleaf = (uint16_t *) P_JLL(PleafRaw);
-        pop1 = ju_LeafPop0(Pjp) + 1;
-        assert(((ParentLevel - 1) == (2)) || (pop1 >= (cJU_LEAF3_MAXPOP1)));
-        if (((ParentLevel - 1) > (2)) /* under narrow pointer */  && (pop1 == (cJU_LEAF3_MAXPOP1)))
+        Pop1 = ju_LeafPop0(Pjp) + 1;
+        assert(((ParentLevel - 1) == (2)) || (Pop1 >= (cJU_LEAF3_MAXPOP1)));
+        if (((ParentLevel - 1) > (2)) /* under narrow pointer */  && (Pop1 == (cJU_LEAF3_MAXPOP1)))
         { /* hysteresis = 1       */
             Word_t    D_cdP0;
             if ((PjllnewRaw = j__udyAllocJLL3(cJU_LEAF3_MAXPOP1, Pjpm)) == 0)
                 return (-1);
             Pjllnew = P_JLL(PjllnewRaw);
-            JUDYLCODE(Pjv = JL_LEAF3VALUEAREA((uint8_t *) Pjllnew, cJU_LEAF3_MAXPOP1););
 #ifdef  JUDY1
-            (void)j__udyLeaf2ToLeaf3((uint8_t *) Pjllnew, /* null. */ Pjp, Index & cJU_DCDMASK(2),
-                                     Pjpm);
+            (void)j__udyLeaf2ToLeaf3((uint8_t *) Pjllnew,      Pjp, Index & cJU_DCDMASK(2), Pjpm);
 #else  // JUDYL
-            (void)j__udyLeaf2ToLeaf3((uint8_t *) Pjllnew, Pjv, Pjp, Index & cJU_DCDMASK(2),
-                                      Pjpm);
+            Pjv = JL_LEAF3VALUEAREA((uint8_t *) Pjllnew, cJU_LEAF3_MAXPOP1);
+            (void)j__udyLeaf2ToLeaf3((uint8_t *) Pjllnew, Pjv, Pjp, Index & cJU_DCDMASK(2), Pjpm);
 #endif // JUDYL
             D_cdP0 = (~cJU_MASKATSTATE((2) + 1)) & ju_DcdPop0(Pjp);
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+
             ju_SetDcdPop0(Pjp, D_cdP0);
+            ju_SetLeafPop0(Pjp, cJU_LEAF3_MAXPOP1 - 1);
             ju_SetJpType(Pjp, cJU_JPLEAF3);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
-        offset = j__udySearchLeaf2(Pleaf, pop1, Index, 2 * 8);
+        offset = j__udySearchLeaf2(Pleaf, Pop1, Index, 2 * 8);
         assert(offset >= 0);            /* Index must be valid */
-        JUDYLCODE(Pjv = JL_LEAF2VALUEAREA(Pleaf, pop1););
-        assert(pop1 > (cJU_IMMED2_MAXPOP1));
-        if ((pop1 - 1) == (cJU_IMMED2_MAXPOP1)) /* hysteresis = 0 */
+        JUDYLCODE(Pjv = JL_LEAF2VALUEAREA(Pleaf, Pop1););
+        assert(Pop1 > (cJU_IMMED2_MAXPOP1));
+        if ((Pop1 - 1) == (cJU_IMMED2_MAXPOP1)) /* hysteresis = 0 */
         {
-            Word_t    PjllRaw = ju_BaLPntr(Pjp);
+            Word_t    PjllRaw = ju_PntrInJp(Pjp);
 #ifdef  JUDY1
-            JU_DELETECOPY((uint16_t *) ju_PImmed1(Pjp), Pleaf, pop1, offset, 2);
+            JU_DELETECOPY(ju_PImmed2(Pjp), Pleaf, Pop1, offset, 2);
             ju_SetJpType(Pjp, (cJU_JPIMMED_2_02) - 1 + (cJU_IMMED2_MAXPOP1) - 1);
-            j__udyFreeJLL2(PjllRaw, pop1, Pjpm);
-#else  // JUDYL
+            j__udyFreeJLL2(PjllRaw, Pop1, Pjpm);
+#endif  // JUDY1
+
+#ifdef  JUDYL
             Word_t    PjvnewRaw;
             Pjv_t     Pjvnew;
-            if ((PjvnewRaw = j__udyLAllocJV(pop1 - 1, Pjpm)) == 0)
+            if ((PjvnewRaw = j__udyLAllocJV(Pop1 - 1, Pjpm)) == 0)
                 return (-1);
-            JUDYLCODE(Pjvnew = P_JV(PjvnewRaw););
-            JU_DELETECOPY((uint16_t *) ju_PImmed1(Pjp), Pleaf, pop1, offset, 2);
-            JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 2);
-            j__udyFreeJLL2(PjllRaw, pop1, Pjpm);        /* Pjp->jp_PValue = PjvnewRaw;      */
-            ju_SetPjvPntr(Pjp, PjvnewRaw);      /* Pjp->jp_Type = (BaseJPType) - 2 + (MaxPop1); */
+            Pjvnew = P_JV(PjvnewRaw);
+            JU_DELETECOPY(ju_PImmed2(Pjp), Pleaf, Pop1, offset, 2);
+            JU_DELETECOPY(Pjvnew, Pjv, Pop1, offset, 2);
+            j__udyFreeJLL2(PjllRaw, Pop1, Pjpm);        /* Pjp->jp_PValue = PjvnewRaw;      */
+
             ju_SetJpType(Pjp, (cJU_JPIMMED_2_02) - 2 + (cJU_IMMED2_MAXPOP1));
+            ju_SetPntrInJp(Pjp, PjvnewRaw);      /* Pjp->jp_Type = (BaseJPType) - 2 + (MaxPop1); */
 #endif // JUDYL
             return (1);
         }
-        if (JU_LEAF2GROWINPLACE(pop1 - 1))      /* hysteresis = 0 */
+        if (JU_LEAF2DELINPLACE(Pop1))      /* hysteresis = 0 */
         {
-            JU_DELETEINPLACE(Pleaf, pop1, offset, 2);
-            JU_PADLEAF2(Pleaf, pop1 - 1);
+            JU_DELETEINPLACE(Pleaf, Pop1, offset, 2);
+            JU_PADLEAF2(Pleaf, Pop1 - 1);
 #ifdef JUDYL
-            JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
-            return (1);
+            JU_DELETEINPLACE(Pjv, Pop1, offset, ignore);
+#ifdef PCAS
+            printf("Line = %d\n", __LINE__);
+#endif  // PCAS
+            goto UpdateLeafPop0AndReturnTrue; // requires Pjp and Pop1
         }
         {
             Pjv_t Pjvnew;
-            if ((PjllnewRaw = j__udyAllocJLL2(pop1 - 1, Pjpm)) == 0)
+            if ((PjllnewRaw = j__udyAllocJLL2(Pop1 - 1, Pjpm)) == 0)
                 return (-1);
             Pjllnew = P_JLL(PjllnewRaw);
-            Pjvnew = JL_LEAF2VALUEAREA(Pjllnew, pop1 - 1);
-            JU_DELETECOPY((uint16_t *) Pjllnew, Pleaf, pop1, offset, 2);
-            JU_PADLEAF2(Pjllnew, pop1 - 1);
-            JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 2);
-            j__udyFreeJLL2(PleafRaw, pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw;    */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            Pjvnew = JL_LEAF2VALUEAREA(Pjllnew, Pop1 - 1);
+            JU_DELETECOPY((uint16_t *) Pjllnew, Pleaf, Pop1, offset, 2);
+            JU_PADLEAF2(Pjllnew, Pop1 - 1);
+            JU_DELETECOPY(Pjvnew, Pjv, Pop1, offset, 2);
+            j__udyFreeJLL2(PleafRaw, Pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw;    */
+
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
 #endif // JUDYL
-            return (1);
+#ifdef PCAS
+            printf("Line = %d\n", __LINE__);
+#endif  // PCAS
+            goto UpdateLeafPop0AndReturnTrue; // requires Pjp and Pop1
         }
 #ifdef  JUDY1
-        if ((PjllnewRaw = j__udyAllocJLL2(pop1 - 1, Pjpm)) == 0)
+        if ((PjllnewRaw = j__udyAllocJLL2(Pop1 - 1, Pjpm)) == 0)
             return (-1);
         Pjllnew = P_JLL(PjllnewRaw);
-        JU_DELETECOPY((uint16_t *) Pjllnew, Pleaf, pop1, offset, 2);
-        JU_PADLEAF2(Pjllnew, pop1 - 1);
-        j__udyFreeJLL2(PleafRaw, pop1, Pjpm);   /*   Pjp->Jp_Addr0 = PjllnewRaw;     */
-        ju_SetBaLPntr(Pjp, PjllnewRaw);
-        return (1);
+        JU_DELETECOPY((uint16_t *) Pjllnew, Pleaf, Pop1, offset, 2);
+        JU_PADLEAF2(Pjllnew, Pop1 - 1);
+        j__udyFreeJLL2(PleafRaw, Pop1, Pjpm);   /*   Pjp->Jp_Addr0 = PjllnewRaw;     */
+
+        ju_SetPntrInJp(Pjp, PjllnewRaw);
+#ifdef PCAS
+            printf("Line = %d\n", __LINE__);
+#endif  // PCAS
+        goto UpdateLeafPop0AndReturnTrue; // requires Pjp and Pop1
 #endif // JUDY1
     }
 // On 32-bit there is no transition to "uplevel" for a Leaf3, so use
@@ -1776,86 +1924,86 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
     {
         Word_t    PleafRaw;
         uint8_t  *Pleaf;
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 3));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 3));
         assert(ParentLevel > (3));
-        PleafRaw = ju_BaLPntr(Pjp);
+        PleafRaw = ju_PntrInJp(Pjp);
         Pleaf = (uint8_t *) P_JLL(PleafRaw);
-        pop1 = ju_LeafPop0(Pjp) + 1;
-        assert(((ParentLevel - 1) == (3)) || (pop1 >= (cJU_LEAF4_MAXPOP1)));
-        if (((ParentLevel - 1) > (3)) /* under narrow pointer */  && (pop1 == (cJU_LEAF4_MAXPOP1)))     
+        Pop1 = ju_LeafPop0(Pjp) + 1;
+        assert(((ParentLevel - 1) == (3)) || (Pop1 >= (cJU_LEAF4_MAXPOP1)));
+        if (((ParentLevel - 1) > (3)) /* under narrow pointer */  && (Pop1 == (cJU_LEAF4_MAXPOP1)))     
         { /* hysteresis = 1       */
             Word_t    D_cdP0;
             if ((PjllnewRaw = j__udyAllocJLL4(cJU_LEAF4_MAXPOP1, Pjpm)) == 0)
                 return (-1);
             Pjllnew = P_JLL(PjllnewRaw);
-            JUDYLCODE(Pjv = JL_LEAF4VALUEAREA((uint32_t *)Pjllnew, cJU_LEAF4_MAXPOP1););
 #ifdef  JUDY1
-            (void)j__udyLeaf3ToLeaf4((uint32_t *)Pjllnew, /* null. */ Pjp, Index & cJU_DCDMASK(3),
-                                     Pjpm);
+            (void)j__udyLeaf3ToLeaf4((uint32_t *)Pjllnew,      Pjp, Index & cJU_DCDMASK(3), Pjpm);
 #else  // JUDYL
-            (void)j__udyLeaf3ToLeaf4((uint32_t *)Pjllnew, Pjv, Pjp, Index & cJU_DCDMASK(3),
-                                      Pjpm);
+            Pjv = JL_LEAF4VALUEAREA((uint32_t *)Pjllnew, cJU_LEAF4_MAXPOP1);
+            (void)j__udyLeaf3ToLeaf4((uint32_t *)Pjllnew, Pjv, Pjp, Index & cJU_DCDMASK(3), Pjpm);
 #endif // JUDYL
             D_cdP0 = (~cJU_MASKATSTATE((3) + 1)) & ju_DcdPop0(Pjp);
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+
             ju_SetDcdPop0(Pjp, D_cdP0);
             ju_SetJpType(Pjp, cJU_JPLEAF4);
+            ju_SetLeafPop0(Pjp, cJU_LEAF4_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
-        offset = j__udySearchLeaf3(Pleaf, pop1, Index, 3 * 8);
+        offset = j__udySearchLeaf3(Pleaf, Pop1, Index, 3 * 8);
         assert(offset >= 0);            /* Index must be valid */
-        JUDYLCODE(Pjv = JL_LEAF3VALUEAREA(Pleaf, pop1););
-        assert(pop1 > (cJU_IMMED3_MAXPOP1));
-        if ((pop1 - 1) == (cJU_IMMED3_MAXPOP1)) /* hysteresis = 0 */
+        JUDYLCODE(Pjv = JL_LEAF3VALUEAREA(Pleaf, Pop1););
+        assert(Pop1 > (cJU_IMMED3_MAXPOP1));
+        if ((Pop1 - 1) == (cJU_IMMED3_MAXPOP1)) /* hysteresis = 0 */
         {
-            Word_t    PjllRaw = ju_BaLPntr(Pjp);
+            Word_t    PjllRaw = ju_PntrInJp(Pjp);
 #ifdef  JUDY1
-            JU_DELETECOPY_ODD((uint8_t *) ju_PImmed1(Pjp), Pleaf, pop1, offset, 3);
+            JU_DELETECOPY_ODD(ju_PImmed3(Pjp), Pleaf, Pop1, offset, 3);
             ju_SetJpType(Pjp, (cJU_JPIMMED_3_02) - 1 + (cJU_IMMED3_MAXPOP1) - 1);
-            j__udyFreeJLL3(PjllRaw, pop1, Pjpm);
+            j__udyFreeJLL3(PjllRaw, Pop1, Pjpm);
 #else  // JUDYL
             Word_t    PjvnewRaw;
             Pjv_t     Pjvnew;
-            if ((PjvnewRaw = j__udyLAllocJV(pop1 - 1, Pjpm)) == 0)
+            if ((PjvnewRaw = j__udyLAllocJV(Pop1 - 1, Pjpm)) == 0)
                 return (-1);
             JUDYLCODE(Pjvnew = P_JV(PjvnewRaw););
-            JU_DELETECOPY_ODD((uint8_t *) ju_PImmed1(Pjp), Pleaf, pop1, offset, 3);
-            JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 3);
-            j__udyFreeJLL3(PjllRaw, pop1, Pjpm);
-            ju_SetPjvPntr(Pjp, PjvnewRaw);
+            JU_DELETECOPY_ODD(ju_PImmed3(Pjp), Pleaf, Pop1, offset, 3);
+            JU_DELETECOPY(Pjvnew, Pjv, Pop1, offset, 3);
+            j__udyFreeJLL3(PjllRaw, Pop1, Pjpm);
+
             ju_SetJpType(Pjp, (cJU_JPIMMED_3_02) - 2 + (cJU_IMMED3_MAXPOP1));
+            ju_SetPntrInJp(Pjp, PjvnewRaw);
 #endif // JUDYL
             return (1);
         }
-        if (JU_LEAF3GROWINPLACE(pop1 - 1))      /* hysteresis = 0 */
+//      else  still bigger than an IMMED
+        if (JU_LEAF3DELINPLACE(Pop1))      /* hysteresis = 0 */
         {
-            JU_DELETEINPLACE_ODD(Pleaf, pop1, offset, 3);
+            JU_DELETEINPLACE_ODD(Pleaf, Pop1, offset, 3);
 #ifdef JUDYL
-            JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
-            return (1);
+            JU_DELETEINPLACE(Pjv, Pop1, offset, ignore);
+#endif  // JUDYL
+#ifdef PCAS
+            printf("Line = %d\n", __LINE__);
+#endif  // PCAS
+            goto UpdateLeafPop0AndReturnTrue; // requires Pjp and Pop1
         }
-        {
-            Pjv_t Pjvnew;
-            if ((PjllnewRaw = j__udyAllocJLL3(pop1 - 1, Pjpm)) == 0)
-                return (-1);
-            Pjllnew = P_JLL(PjllnewRaw);
-            Pjvnew = JL_LEAF3VALUEAREA(Pjllnew, pop1 - 1);
-            JU_DELETECOPY_ODD((uint8_t *) Pjllnew, Pleaf, pop1, offset, 3);
-            JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 3);
-            j__udyFreeJLL3(PleafRaw, pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw;    */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
-#endif // JUDYL
-            return (1);
-        }
-#ifdef  JUDY1
-        if ((PjllnewRaw = j__udyAllocJLL3(pop1 - 1, Pjpm)) == 0)
+//      else    must allocate less memory
+        if ((PjllnewRaw = j__udyAllocJLL3(Pop1 - 1, Pjpm)) == 0)
             return (-1);
         Pjllnew = P_JLL(PjllnewRaw);
-        JU_DELETECOPY_ODD((uint8_t *) Pjllnew, Pleaf, pop1, offset, 3);
-        j__udyFreeJLL3(PleafRaw, pop1, Pjpm);   /*   Pjp->Jp_Addr0 = PjllnewRaw;     */
-        ju_SetBaLPntr(Pjp, PjllnewRaw);
-        return (1);
-#endif // JUDY1
+        JU_DELETECOPY_ODD((uint8_t *) Pjllnew, Pleaf, Pop1, offset, 3);
+#ifdef  JUDYL
+        Pjv_t Pjvnew = JL_LEAF3VALUEAREA(Pjllnew, Pop1 - 1);
+        JU_DELETECOPY(Pjvnew, Pjv, Pop1, offset, 3);
+#endif  // JUDYL
+        j__udyFreeJLL3(PleafRaw, Pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw;    */
+
+        ju_SetPntrInJp(Pjp, PjllnewRaw);
+#ifdef PCAS
+            printf("Line = %d\n", __LINE__);
+#endif  // PCAS
+        goto UpdateLeafPop0AndReturnTrue; // requires Pjp and Pop1
     }
 // A complicating factor is that for JudyL & 64-bit, a Leaf[4-7] must go
 // directly to an Immed [4-7]_01:
@@ -1870,43 +2018,43 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
     {
         Word_t    PleafRaw;
         uint32_t *Pleaf;
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 4));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 4));
         assert(ParentLevel > (4));
-        PleafRaw = ju_BaLPntr(Pjp);
+        PleafRaw = ju_PntrInJp(Pjp);
         Pleaf = (uint32_t *)P_JLL(PleafRaw);
-        pop1 = ju_LeafPop0(Pjp) + 1;
-        assert(((ParentLevel - 1) == (4)) || (pop1 >= (cJU_LEAF5_MAXPOP1)));
-        if (((ParentLevel - 1) > (4)) /* under narrow pointer */  && (pop1 == (cJU_LEAF5_MAXPOP1)))     
+        Pop1 = ju_LeafPop0(Pjp) + 1;
+        assert(((ParentLevel - 1) == (4)) || (Pop1 >= (cJU_LEAF5_MAXPOP1)));
+        if (((ParentLevel - 1) > (4)) /* under narrow pointer */  && (Pop1 == (cJU_LEAF5_MAXPOP1)))     
         { /* hysteresis = 1       */
             Word_t    D_cdP0;
             if ((PjllnewRaw = j__udyAllocJLL5(cJU_LEAF5_MAXPOP1, Pjpm)) == 0)
                 return (-1);
             Pjllnew = P_JLL(PjllnewRaw);
-            JUDYLCODE(Pjv = JL_LEAF5VALUEAREA((uint8_t *) Pjllnew, cJU_LEAF5_MAXPOP1););
 #ifdef  JUDY1
-            (void)j__udyLeaf4ToLeaf5((uint8_t *) Pjllnew, /* null. */ Pjp, Index & cJU_DCDMASK(4),
-                                     Pjpm);
+            (void)j__udyLeaf4ToLeaf5((uint8_t *) Pjllnew,      Pjp, Index & cJU_DCDMASK(4), Pjpm);
 #else  // JUDYL
-            (void)j__udyLeaf4ToLeaf5((uint8_t *) Pjllnew, Pjv, Pjp, Index & cJU_DCDMASK(4),
-                                      Pjpm);
+            Pjv = JL_LEAF5VALUEAREA((uint8_t *) Pjllnew, cJU_LEAF5_MAXPOP1);
+            (void)j__udyLeaf4ToLeaf5((uint8_t *) Pjllnew, Pjv, Pjp, Index & cJU_DCDMASK(4), Pjpm);
 #endif // JUDYL
             D_cdP0 = (~cJU_MASKATSTATE((4) + 1)) & ju_DcdPop0(Pjp);
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+
             ju_SetDcdPop0(Pjp, D_cdP0);
             ju_SetJpType(Pjp, cJU_JPLEAF5);
+            ju_SetLeafPop0(Pjp, cJU_LEAF5_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
-        offset = j__udySearchLeaf4(Pleaf, pop1, Index, 4 * 8);
+        offset = j__udySearchLeaf4(Pleaf, Pop1, Index, 4 * 8);
         assert(offset >= 0);            /* Index must be valid */
-        JUDYLCODE(Pjv = JL_LEAF4VALUEAREA(Pleaf, pop1););
-        assert(pop1 > (cJU_IMMED4_MAXPOP1));
-        if ((pop1 - 1) == (cJU_IMMED4_MAXPOP1)) /* hysteresis = 0 */
+        JUDYLCODE(Pjv = JL_LEAF4VALUEAREA(Pleaf, Pop1););
+        assert(Pop1 > (cJU_IMMED4_MAXPOP1));
+        if ((Pop1 - 1) == (cJU_IMMED4_MAXPOP1)) /* hysteresis = 0 */
         {
-            Word_t    PjllRaw = ju_BaLPntr(Pjp);
+            Word_t    PjllRaw = ju_PntrInJp(Pjp);
 #ifdef  JUDY1
-            JU_DELETECOPY((uint32_t *)ju_PImmed1(Pjp), Pleaf, pop1, offset, 4);
+            JU_DELETECOPY(ju_PImmed4(Pjp), Pleaf, Pop1, offset, 4);
             ju_SetJpType(Pjp, (cJ1_JPIMMED_4_02) - 1 + (cJU_IMMED4_MAXPOP1) - 1);
-            j__udyFreeJLL4(PjllRaw, pop1, Pjpm);
+            j__udyFreeJLL4(PjllRaw, Pop1, Pjpm);
 #else  // JUDYL
             {
                 Word_t    D_cdP0;
@@ -1916,85 +2064,83 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
                 D_cdP0 = (Index & cJU_DCDMASK(4)) | Pleaf[offset];
                 A_ddr = Pjv[offset];
                 ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_4_01);
-//                ju_SetBaLPntr(Pjp, A_ddr);
+
+//                ju_SetPntrInJp(Pjp, A_ddr);
 //                ju_SetDcdPop0(Pjp, D_cdP0);
 //                ju_SetJpType(Pjp, T_ype);
             }
-            j__udyFreeJLL4(PjllRaw, pop1, Pjpm);
+            j__udyFreeJLL4(PjllRaw, Pop1, Pjpm);
 #endif // JUDYL
             return (1);
         }
-        if (JU_LEAF4GROWINPLACE(pop1 - 1))      /* hysteresis = 0 */
+        if (JU_LEAF4DELINPLACE(Pop1))      /* hysteresis = 0 */
         {
-            JU_DELETEINPLACE(Pleaf, pop1, offset, 4);
+            JU_DELETEINPLACE(Pleaf, Pop1, offset, 4);
 #ifdef JUDYL
-            JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
-            return (1);
+            JU_DELETEINPLACE(Pjv, Pop1, offset, ignore);
+#endif  // JUDYL
+#ifdef PCAS
+            printf("Line = %d\n", __LINE__);
+#endif  // PCAS
+            goto UpdateLeafPop0AndReturnTrue; // requires Pjp and Pop1
         }
-        {
-            Pjv_t Pjvnew;
-            if ((PjllnewRaw = j__udyAllocJLL4(pop1 - 1, Pjpm)) == 0)
-                return (-1);
-            Pjllnew = P_JLL(PjllnewRaw);
-            Pjvnew = JL_LEAF4VALUEAREA(Pjllnew, pop1 - 1);
-            JU_DELETECOPY((uint32_t *)Pjllnew, Pleaf, pop1, offset, 4);
-            JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 4);
-            j__udyFreeJLL4(PleafRaw, pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw;    */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
-#endif // JUDYL
-            return (1);
-        }
-#ifdef  JUDY1
-        if ((PjllnewRaw = j__udyAllocJLL4(pop1 - 1, Pjpm)) == 0)
+        if ((PjllnewRaw = j__udyAllocJLL4(Pop1 - 1, Pjpm)) == 0)
             return (-1);
         Pjllnew = P_JLL(PjllnewRaw);
-        JU_DELETECOPY((uint32_t *)Pjllnew, Pleaf, pop1, offset, 4);
-        j__udyFreeJLL4(PleafRaw, pop1, Pjpm);   /*   Pjp->Jp_Addr0 = PjllnewRaw;     */
-        ju_SetBaLPntr(Pjp, PjllnewRaw);
-        return (1);
-#endif // JUDY1
+        JU_DELETECOPY((uint32_t *)Pjllnew, Pleaf, Pop1, offset, 4);
+#ifdef JUDYL
+        Pjv_t Pjvnew = JL_LEAF4VALUEAREA(Pjllnew, Pop1 - 1);
+        JU_DELETECOPY(Pjvnew, Pjv, Pop1, offset, 4);
+#endif  // JUDYL
+        j__udyFreeJLL4(PleafRaw, Pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw;    */
+
+        ju_SetPntrInJp(Pjp, PjllnewRaw);
+#ifdef PCAS
+            printf("Line = %d\n", __LINE__);
+#endif  // PCAS
+        goto UpdateLeafPop0AndReturnTrue; // requires Pjp and Pop1
     }
     case cJU_JPLEAF5:
     {
         Word_t    PleafRaw;
         uint8_t  *Pleaf;
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 5));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 5));
         assert(ParentLevel > (5));
-        PleafRaw = ju_BaLPntr(Pjp);
+        PleafRaw = ju_PntrInJp(Pjp);
         Pleaf = (uint8_t *) P_JLL(PleafRaw);
-        pop1 = ju_LeafPop0(Pjp) + 1;
-        assert(((ParentLevel - 1) == (5)) || (pop1 >= (cJU_LEAF6_MAXPOP1)));
-        if (((ParentLevel - 1) > (5)) /* under narrow pointer */  && (pop1 == (cJU_LEAF6_MAXPOP1)))
+        Pop1 = ju_LeafPop0(Pjp) + 1;
+        assert(((ParentLevel - 1) == (5)) || (Pop1 >= (cJU_LEAF6_MAXPOP1)));
+        if (((ParentLevel - 1) > (5)) /* under narrow pointer */  && (Pop1 == (cJU_LEAF6_MAXPOP1)))
         { /* hysteresis = 1       */
             Word_t    D_cdP0;
             if ((PjllnewRaw = j__udyAllocJLL6(cJU_LEAF6_MAXPOP1, Pjpm)) == 0)
                 return (-1);
             Pjllnew = P_JLL(PjllnewRaw);
-            JUDYLCODE(Pjv = JL_LEAF6VALUEAREA((uint8_t *) Pjllnew, cJU_LEAF6_MAXPOP1););
 #ifdef  JUDY1
-            (void)j__udyLeaf5ToLeaf6((uint8_t *) Pjllnew, /* null. */ Pjp, Index & cJU_DCDMASK(5),
-                                     Pjpm);
+            (void)j__udyLeaf5ToLeaf6((uint8_t *) Pjllnew,      Pjp, Index & cJU_DCDMASK(5), Pjpm);
 #else  // JUDYL
-            (void)j__udyLeaf5ToLeaf6((uint8_t *) Pjllnew, Pjv, Pjp, Index & cJU_DCDMASK(5),
-                                     Pjpm);
+            Pjv = JL_LEAF6VALUEAREA((uint8_t *) Pjllnew, cJU_LEAF6_MAXPOP1);
+            (void)j__udyLeaf5ToLeaf6((uint8_t *) Pjllnew, Pjv, Pjp, Index & cJU_DCDMASK(5), Pjpm);
 #endif // JUDYL
             D_cdP0 = (~cJU_MASKATSTATE((5) + 1)) & ju_DcdPop0(Pjp);
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+
             ju_SetDcdPop0(Pjp, D_cdP0);
             ju_SetJpType(Pjp, cJU_JPLEAF6);
+            ju_SetLeafPop0(Pjp, cJU_LEAF6_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
-        offset = j__udySearchLeaf5(Pleaf, pop1, Index, 5 * 8);
+        offset = j__udySearchLeaf5(Pleaf, Pop1, Index, 5 * 8);
         assert(offset >= 0);            /* Index must be valid */
-        JUDYLCODE(Pjv = JL_LEAF5VALUEAREA(Pleaf, pop1););
-        assert(pop1 > (cJU_IMMED5_MAXPOP1));
-        if ((pop1 - 1) == (cJU_IMMED5_MAXPOP1)) /* hysteresis = 0 */
+        JUDYLCODE(Pjv = JL_LEAF5VALUEAREA(Pleaf, Pop1););
+        assert(Pop1 > (cJU_IMMED5_MAXPOP1));
+        if ((Pop1 - 1) == (cJU_IMMED5_MAXPOP1)) /* hysteresis = 0 */
         {
-            Word_t    PjllRaw = ju_BaLPntr(Pjp);
+            Word_t    PjllRaw = ju_PntrInJp(Pjp);
 #ifdef  JUDY1
-            JU_DELETECOPY_ODD((uint8_t *) ju_PImmed1(Pjp), Pleaf, pop1, offset, 5);
+            JU_DELETECOPY_ODD(ju_PImmed5(Pjp), Pleaf, Pop1, offset, 5);
             ju_SetJpType(Pjp, (cJ1_JPIMMED_5_02) - 1 + (cJU_IMMED5_MAXPOP1) - 1);
-            j__udyFreeJLL5(PjllRaw, pop1, Pjpm);
+            j__udyFreeJLL5(PjllRaw, Pop1, Pjpm);
 #else  // JUDYL
             {
                 Word_t    D_cdP0;
@@ -2004,86 +2150,85 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
                 JU_COPY5_PINDEX_TO_LONG(D_cdP0, &(Pleaf[offset ? 0 : 5]));
                 D_cdP0 |= Index & cJU_DCDMASK(5);
                 A_ddr = Pjv[offset ? 0 : 1];
+
                 ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_5_01);
-//                ju_SetBaLPntr(Pjp, A_ddr);
+//                ju_SetPntrInJp(Pjp, A_ddr);
 //                ju_SetDcdPop0(Pjp, D_cdP0);
 //                ju_SetJpType(Pjp, T_ype);
             }
-            j__udyFreeJLL5(PjllRaw, pop1, Pjpm);        /* Pjp->jp_Type = (Immed01JPType);        */
+            j__udyFreeJLL5(PjllRaw, Pop1, Pjpm);        /* Pjp->jp_Type = (Immed01JPType);        */
 #endif // JUDYL
             return (1);
         }
-        if (JU_LEAF5GROWINPLACE(pop1 - 1))      /* hysteresis = 0 */
+        if (JU_LEAF5DELINPLACE(Pop1))      /* hysteresis = 0 */
         {
-            JU_DELETEINPLACE_ODD(Pleaf, pop1, offset, 5);
+            JU_DELETEINPLACE_ODD(Pleaf, Pop1, offset, 5);
 #ifdef JUDYL
-            JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
-            return (1);
-        }
-        {
-            Pjv_t Pjvnew;
-            if ((PjllnewRaw = j__udyAllocJLL5(pop1 - 1, Pjpm)) == 0)
-                return (-1);
-            Pjllnew = P_JLL(PjllnewRaw);
-            Pjvnew = JL_LEAF5VALUEAREA(Pjllnew, pop1 - 1);
-            JU_DELETECOPY_ODD((uint8_t *) Pjllnew, Pleaf, pop1, offset, 5);
-            JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 5);
-            j__udyFreeJLL5(PleafRaw, pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw;    */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            JU_DELETEINPLACE(Pjv, Pop1, offset, ignore);
 #endif // JUDYL
-            return (1);
+#ifdef PCAS
+            printf("Line = %d\n", __LINE__);
+#endif  // PCAS
+            goto UpdateLeafPop0AndReturnTrue; // requires Pjp and Pop1
         }
-#ifdef  JUDY1
-        if ((PjllnewRaw = j__udyAllocJLL5(pop1 - 1, Pjpm)) == 0)
+//      else must allocate smaller Leaf
+        if ((PjllnewRaw = j__udyAllocJLL5(Pop1 - 1, Pjpm)) == 0)
             return (-1);
         Pjllnew = P_JLL(PjllnewRaw);
-        JU_DELETECOPY_ODD((uint8_t *) Pjllnew, Pleaf, pop1, offset, 5);
-        j__udyFreeJLL5(PleafRaw, pop1, Pjpm);   /*   Pjp->Jp_Addr0 = PjllnewRaw;     */
-        ju_SetBaLPntr(Pjp, PjllnewRaw);
-        return (1);
-#endif // JUDY1
+        JU_DELETECOPY_ODD((uint8_t *) Pjllnew, Pleaf, Pop1, offset, 5);
+#ifdef JUDYL
+        Pjv_t Pjvnew = JL_LEAF5VALUEAREA(Pjllnew, Pop1 - 1);
+        JU_DELETECOPY(Pjvnew, Pjv, Pop1, offset, 5);
+#endif // JUDYL
+        j__udyFreeJLL5(PleafRaw, Pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw;    */
+
+        ju_SetPntrInJp(Pjp, PjllnewRaw);
+#ifdef PCAS
+            printf("Line = %d\n", __LINE__);
+#endif  // PCAS
+        goto UpdateLeafPop0AndReturnTrue; // requires Pjp and Pop1
     }
     case cJU_JPLEAF6:
     {
         Word_t    PleafRaw;
         uint8_t  *Pleaf;
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 6));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 6));
         assert(ParentLevel > (6));
-        PleafRaw = ju_BaLPntr(Pjp);
+        PleafRaw = ju_PntrInJp(Pjp);
         Pleaf = (uint8_t *) P_JLL(PleafRaw);
-        pop1 = ju_LeafPop0(Pjp) + 1;
-        assert(((ParentLevel - 1) == (6)) || (pop1 >= (cJU_LEAF7_MAXPOP1)));
-        if (((ParentLevel - 1) > (6)) /* under narrow pointer */  && (pop1 == (cJU_LEAF7_MAXPOP1)))     /* hysteresis = 1       */
+        Pop1 = ju_LeafPop0(Pjp) + 1;
+        assert(((ParentLevel - 1) == (6)) || (Pop1 >= (cJU_LEAF7_MAXPOP1)));
+        if (((ParentLevel - 1) > (6)) /* under narrow pointer */  && (Pop1 == (cJU_LEAF7_MAXPOP1)))     /* hysteresis = 1       */
         {
             Word_t    D_cdP0;
             if ((PjllnewRaw = j__udyAllocJLL7(cJU_LEAF7_MAXPOP1, Pjpm)) == 0)
                 return (-1);
             Pjllnew = P_JLL(PjllnewRaw);
-            JUDYLCODE(Pjv = JL_LEAF7VALUEAREA((uint8_t *) Pjllnew, cJU_LEAF7_MAXPOP1););
 #ifdef  JUDY1
-            (void)j__udyLeaf6ToLeaf7((uint8_t *) Pjllnew, /* null. */ Pjp, Index & cJU_DCDMASK(6),
-                                     Pjpm);
+            (void)j__udyLeaf6ToLeaf7((uint8_t *) Pjllnew,      Pjp, Index & cJU_DCDMASK(6), Pjpm);
 #else  // JUDYL
-            (void)j__udyLeaf6ToLeaf7((uint8_t *) Pjllnew, Pjv, Pjp, Index & cJU_DCDMASK(6),
-                                     Pjpm);
+            Pjv = JL_LEAF7VALUEAREA((uint8_t *) Pjllnew, cJU_LEAF7_MAXPOP1);
+            (void)j__udyLeaf6ToLeaf7((uint8_t *) Pjllnew, Pjv, Pjp, Index & cJU_DCDMASK(6), Pjpm);
 #endif // JUDYL
             D_cdP0 = (~cJU_MASKATSTATE((6) + 1)) & ju_DcdPop0(Pjp);
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+
             ju_SetDcdPop0(Pjp, D_cdP0);
             ju_SetJpType(Pjp, cJU_JPLEAF7);
+            ju_SetLeafPop0(Pjp, cJU_LEAF7_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
-        offset = j__udySearchLeaf6(Pleaf, pop1, Index, 6 * 8);
+        offset = j__udySearchLeaf6(Pleaf, Pop1, Index, 6 * 8);
         assert(offset >= 0);            /* Index must be valid */
-        JUDYLCODE(Pjv = JL_LEAF6VALUEAREA(Pleaf, pop1););
-        assert(pop1 > (cJU_IMMED6_MAXPOP1));
-        if ((pop1 - 1) == (cJU_IMMED6_MAXPOP1)) /* hysteresis = 0 */
+        JUDYLCODE(Pjv = JL_LEAF6VALUEAREA(Pleaf, Pop1););
+        assert(Pop1 > (cJU_IMMED6_MAXPOP1));
+        if ((Pop1 - 1) == (cJU_IMMED6_MAXPOP1)) /* hysteresis = 0 */
         {
-            Word_t    PjllRaw = ju_BaLPntr(Pjp);
+            Word_t    PjllRaw = ju_PntrInJp(Pjp);
 #ifdef  JUDY1
-            JU_DELETECOPY_ODD((uint8_t *) ju_PImmed1(Pjp), Pleaf, pop1, offset, 6);
+            JU_DELETECOPY_ODD(ju_PImmed6(Pjp), Pleaf, Pop1, offset, 6);
             ju_SetJpType(Pjp, (cJ1_JPIMMED_6_02) - 1 + (cJU_IMMED6_MAXPOP1) - 1);
-            j__udyFreeJLL6(PjllRaw, pop1, Pjpm);
+            j__udyFreeJLL6(PjllRaw, Pop1, Pjpm);
 #else  // JUDYL
             {
                 Word_t    D_cdP0;
@@ -2093,44 +2238,43 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
                 JU_COPY6_PINDEX_TO_LONG(D_cdP0, &(Pleaf[offset ? 0 : 6]));
                 D_cdP0 |= Index & cJU_DCDMASK(6);
                 A_ddr = Pjv[offset ? 0 : 1];
+
                 ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_6_01);
-//                ju_SetBaLPntr(Pjp, A_ddr);
+//                ju_SetPntrInJp(Pjp, A_ddr);
 //                ju_SetDcdPop0(Pjp, D_cdP0);
 //                ju_SetJpType(Pjp, T_ype);
             }
-            j__udyFreeJLL6(PjllRaw, pop1, Pjpm);        /* Pjp->jp_Type = (Immed01JPType);        */
+            j__udyFreeJLL6(PjllRaw, Pop1, Pjpm);        /* Pjp->jp_Type = (Immed01JPType);        */
 #endif // JUDYL
             return (1);
         }
-        if (JU_LEAF6GROWINPLACE(pop1 - 1))      /* hysteresis = 0 */
+        if (JU_LEAF6DELINPLACE(Pop1))      /* hysteresis = 0 */
         {
-            JU_DELETEINPLACE_ODD(Pleaf, pop1, offset, 6);
+            JU_DELETEINPLACE_ODD(Pleaf, Pop1, offset, 6);
 #ifdef JUDYL
-            JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
-            return (1);
-        }
-        {
-            Pjv_t Pjvnew;
-            if ((PjllnewRaw = j__udyAllocJLL6(pop1 - 1, Pjpm)) == 0)
-                return (-1);
-            Pjllnew = P_JLL(PjllnewRaw);
-            Pjvnew = JL_LEAF6VALUEAREA(Pjllnew, pop1 - 1);
-            JU_DELETECOPY_ODD((uint8_t *) Pjllnew, Pleaf, pop1, offset, 6);
-            JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 6);
-            j__udyFreeJLL6(PleafRaw, pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw;    */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            JU_DELETEINPLACE(Pjv, Pop1, offset, ignore);
 #endif // JUDYL
-            return (1);
+#ifdef PCAS
+            printf("Line = %d\n", __LINE__);
+#endif  // PCAS
+            goto UpdateLeafPop0AndReturnTrue; // requires Pjp and Pop1
         }
-#ifdef  JUDY1
-        if ((PjllnewRaw = j__udyAllocJLL6(pop1 - 1, Pjpm)) == 0)
+//      else  Must allocate smaller Leaf
+        if ((PjllnewRaw = j__udyAllocJLL6(Pop1 - 1, Pjpm)) == 0)
             return (-1);
         Pjllnew = P_JLL(PjllnewRaw);
-        JU_DELETECOPY_ODD((uint8_t *) Pjllnew, Pleaf, pop1, offset, 6);
-        j__udyFreeJLL6(PleafRaw, pop1, Pjpm);   /*   Pjp->Jp_Addr0 = PjllnewRaw;     */
-        ju_SetBaLPntr(Pjp, PjllnewRaw);
-        return (1);
-#endif // JUDY1
+        JU_DELETECOPY_ODD((uint8_t *) Pjllnew, Pleaf, Pop1, offset, 6);
+#ifdef JUDYL
+        Pjv_t Pjvnew = JL_LEAF6VALUEAREA(Pjllnew, Pop1 - 1);
+        JU_DELETECOPY(Pjvnew, Pjv, Pop1, offset, 6);
+#endif // JUDYL
+        j__udyFreeJLL6(PleafRaw, Pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw;    */
+
+        ju_SetPntrInJp(Pjp, PjllnewRaw);
+#ifdef PCAS
+            printf("Line = %d\n", __LINE__);
+#endif  // PCAS
+        goto UpdateLeafPop0AndReturnTrue; // requires Pjp and Pop1
     }
 // There is no transition to "uplevel" for a Leaf7, so use JU_LEAF_UPLEVEL_NONE
 // instead of JU_LEAF_UPLEVEL, and ignore all of the parameters to that macro:
@@ -2138,22 +2282,22 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
     {
         Word_t    PleafRaw;
         uint8_t  *Pleaf;
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 7));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 7));
         assert(ParentLevel > (7));
-        PleafRaw = ju_BaLPntr(Pjp);
+        PleafRaw = ju_PntrInJp(Pjp);
         Pleaf = (uint8_t *) P_JLL(PleafRaw);
-        pop1 = ju_LeafPop0(Pjp) + 1; /* null. */ ;
-        offset = j__udySearchLeaf7(Pleaf, pop1, Index, 7 * 8);
+        Pop1 = ju_LeafPop0(Pjp) + 1; /* null. */ ;
+        offset = j__udySearchLeaf7(Pleaf, Pop1, Index, 7 * 8);
         assert(offset >= 0);            /* Index must be valid */
-        JUDYLCODE(Pjv = JL_LEAF7VALUEAREA(Pleaf, pop1););
-        assert(pop1 > (cJU_IMMED7_MAXPOP1));
-        if ((pop1 - 1) == (cJU_IMMED7_MAXPOP1)) /* hysteresis = 0 */
+        JUDYLCODE(Pjv = JL_LEAF7VALUEAREA(Pleaf, Pop1););
+        assert(Pop1 > (cJU_IMMED7_MAXPOP1));
+        if ((Pop1 - 1) == (cJU_IMMED7_MAXPOP1)) /* hysteresis = 0 */
         {
-            Word_t    PjllRaw = ju_BaLPntr(Pjp);
+            Word_t    PjllRaw = ju_PntrInJp(Pjp);
 #ifdef  JUDY1
-            JU_DELETECOPY_ODD((uint8_t *) ju_PImmed1(Pjp), Pleaf, pop1, offset, 7);
+            JU_DELETECOPY_ODD(ju_PImmed7(Pjp), Pleaf, Pop1, offset, 7);
             ju_SetJpType(Pjp, (cJ1_JPIMMED_7_02) - 1 + (cJU_IMMED7_MAXPOP1) - 1);
-            j__udyFreeJLL7(PjllRaw, pop1, Pjpm);
+            j__udyFreeJLL7(PjllRaw, Pop1, Pjpm);
 #else  // JUDYL
             {
                 Word_t    D_cdP0;
@@ -2163,191 +2307,216 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
                 JU_COPY7_PINDEX_TO_LONG(D_cdP0, &(Pleaf[offset ? 0 : 7]));
                 D_cdP0 |= Index & cJU_DCDMASK(7);
                 A_ddr = Pjv[offset ? 0 : 1];
+
                 ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_7_01);
-//                ju_SetBaLPntr(Pjp, A_ddr);
+//                ju_SetPntrInJp(Pjp, A_ddr);
 //                ju_SetDcdPop0(Pjp, D_cdP0);
 //                ju_SetJpType(Pjp, T_ype);
             }
-            j__udyFreeJLL7(PjllRaw, pop1, Pjpm);        /* Pjp->jp_Type = (Immed01JPType);        */
+            j__udyFreeJLL7(PjllRaw, Pop1, Pjpm);        /* Pjp->jp_Type = (Immed01JPType);        */
 #endif // JUDYL
             return (1);
         }
-        if (JU_LEAF7GROWINPLACE(pop1 - 1))      /* hysteresis = 0 */
+//      else
+        if (JU_LEAF7DELINPLACE(Pop1))      /* hysteresis = 0 */
         {
-            JU_DELETEINPLACE_ODD(Pleaf, pop1, offset, 7);
+            JU_DELETEINPLACE_ODD(Pleaf, Pop1, offset, 7);
 #ifdef JUDYL
-            JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
-            return (1);
-        }
-        {
-            Pjv_t Pjvnew;
-            if ((PjllnewRaw = j__udyAllocJLL7(pop1 - 1, Pjpm)) == 0)
-                return (-1);
-            Pjllnew = P_JLL(PjllnewRaw);
-            Pjvnew = JL_LEAF7VALUEAREA(Pjllnew, pop1 - 1);
-            JU_DELETECOPY_ODD((uint8_t *) Pjllnew, Pleaf, pop1, offset, 7);
-            JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, 7);
-            j__udyFreeJLL7(PleafRaw, pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw;    */
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            JU_DELETEINPLACE(Pjv, Pop1, offset, ignore);
 #endif // JUDYL
-            return (1);
+#ifdef PCAS
+            printf("Line = %d\n", __LINE__);
+#endif  // PCAS
+            goto UpdateLeafPop0AndReturnTrue; // requires Pjp and Pop1
         }
-#ifdef  JUDY1
-        if ((PjllnewRaw = j__udyAllocJLL7(pop1 - 1, Pjpm)) == 0)
+        if ((PjllnewRaw = j__udyAllocJLL7(Pop1 - 1, Pjpm)) == 0)
             return (-1);
         Pjllnew = P_JLL(PjllnewRaw);
-        JU_DELETECOPY_ODD((uint8_t *) Pjllnew, Pleaf, pop1, offset, 7);
-        j__udyFreeJLL7(PleafRaw, pop1, Pjpm);   /*   Pjp->Jp_Addr0 = PjllnewRaw;     */
-        ju_SetBaLPntr(Pjp, PjllnewRaw);
-        return (1);
-#endif // JUDY1
+        JU_DELETECOPY_ODD((uint8_t *) Pjllnew, Pleaf, Pop1, offset, 7);
+#ifdef JUDYL
+        Pjv_t Pjvnew = JL_LEAF7VALUEAREA(Pjllnew, Pop1 - 1);
+        JU_DELETECOPY(Pjvnew, Pjv, Pop1, offset, 7);
+#endif // JUDYL
+        j__udyFreeJLL7(PleafRaw, Pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw;    */
+
+        ju_SetPntrInJp(Pjp, PjllnewRaw);
+#ifdef PCAS
+            printf("Line = %d\n", __LINE__);
+#endif  // PCAS
+        goto UpdateLeafPop0AndReturnTrue; // requires Pjp and Pop1
     }
 // ****************************************************************************
 // BITMAP LEAF:
     case cJU_JPLEAF_B1:
     {
+        Word_t    PjlbRaw = ju_PntrInJp(Pjp);
+        Pjlb_t    Pjlb    = P_JLB(PjlbRaw); // pointer to bitmap part of the leaf.
 #ifdef JUDYL
-        Word_t    PjvnewRaw;            // new value area.
         Pjv_t     Pjvnew;
         Word_t    subexp;               // 1 of 8 subexpanses in bitmap.
-        Pjlb_t    Pjlb;                 // pointer to bitmap part of the leaf.
         BITMAPL_t bitmap;               // for one subexpanse.
         BITMAPL_t bitmask;              // bit set for Indexs digit.
 #endif // JUDYL
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 1));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 1));
         assert(ParentLevel > 1);
-        // valid Index:
-        assert(JU_BITMAPTESTL(P_JLB(ju_BaLPntr(Pjp)), Index));
-        pop1 = ju_LeafPop0(Pjp) + 1;
+        assert(ju_LeafPop0(Pjp) == (ju_DcdPop0(Pjp) & 0xFF));
+        assert(JU_BITMAPTESTL(P_JLB(ju_PntrInJp(Pjp)), Index)); // valid Index:
+
+        Pop1 = ju_LeafPop0(Pjp) + 1;
+//printf("Del B1: Pop1 = %d, Parentlevel = %d, Line = %d\n", (int)Pop1, (int)ParentLevel, (int)__LINE__);
+//        assert(Pop1 > cJU_IMMED1_MAXPOP1);
 // Like a Leaf1, see if its under a narrow pointer and can become a Leaf2
 // (hysteresis = 1):
 //  This code may not work!!!!! (dlb) and probally not good for a large Leaf2
-        assert(((ParentLevel - 1) == (1)) || (pop1 >= (cJU_LEAF2_MAXPOP1)));
-        if (((ParentLevel - 1) > (1)) /* under narrow pointer */  && (pop1 == (cJU_LEAF2_MAXPOP1)))
+//        assert(((ParentLevel - 1) == (1)) || (Pop1 == (cJU_LEAF2_MAXPOP1)));
+        if (((ParentLevel - 1) > (1)) /* under narrow pointer */  && (Pop1 == (cJU_LEAF2_MAXPOP1)))
         { /* hysteresis = 1       */
-            Word_t    D_cdP0;
             if ((PjllnewRaw = j__udyAllocJLL2(cJU_LEAF2_MAXPOP1, Pjpm)) == 0)
                 return (-1);
             Pjllnew = P_JLL(PjllnewRaw);
-            JUDYLCODE(Pjv = JL_LEAF2VALUEAREA((uint16_t *) Pjllnew, cJU_LEAF2_MAXPOP1););
+           
+//          Change this LeafB1 to a Leaf2
+//printf("Del B1: Pop1 = %d, Parentlevel = %d, ToLeaf2, Line = %d\n", (int)Pop1, (int)ParentLevel, (int)__LINE__);
 #ifdef  JUDY1
-            (void)j__udyLeaf1ToLeaf2((uint16_t *) Pjllnew, /* null. */ Pjp, Index & cJU_DCDMASK(1),
-                                     Pjpm);
+            (void)j__udyLeaf1orB1ToLeaf2((uint16_t *) Pjllnew,      Pjp, Index & cJU_DCDMASK(1), Pjpm);
 #else  // JUDYL
-            (void)j__udyLeaf1ToLeaf2((uint16_t *) Pjllnew, Pjv, Pjp, Index & cJU_DCDMASK(1),
-                                     Pjpm);
+            Pjv = JL_LEAF2VALUEAREA((uint16_t *) Pjllnew, cJU_LEAF2_MAXPOP1);
+            (void)j__udyLeaf1orB1ToLeaf2((uint16_t *) Pjllnew, Pjv, Pjp, Index & cJU_DCDMASK(1), Pjpm);
 #endif // JUDYL
-            D_cdP0 = (~cJU_MASKATSTATE((1) + 1)) & ju_DcdPop0(Pjp);
-            ju_SetBaLPntr(Pjp, PjllnewRaw);
+            Word_t D_cdP0 = (~cJU_MASKATSTATE((1) + 1)) & ju_DcdPop0(Pjp);
+
             ju_SetDcdPop0(Pjp, D_cdP0);
             ju_SetJpType(Pjp, cJU_JPLEAF2);
-            goto ContinueDelWalk;       /* delete from new leaf */
+            ju_SetLeafPop0(Pjp, cJU_LEAF2_MAXPOP1 - 1);
+            ju_SetPntrInJp(Pjp, PjllnewRaw);
+            goto ContinueDelWalk;       /* now go delete from new leaf2 */
         }
-#ifdef  JUDY1
-// Handle the unusual special case, on Judy1 64-bit only, where a LeafB1 goes
+// Handle the special case, on Judy1, where a LeafB1 may go
 // directly to a JPIMMED_1_15; as described in comments in Judy1.h and
 // JudyIns.c.  Copy 1-byte indexes from old LeafB1 to the Immed:
-        if (cJ1_LEAF1_MAXPOP1 < cJ1_IMMED1_MAXPOP1)     // no Leaf1 - compile out
+
+#ifdef  JUDY1   // ==================================
+
+//      If JUDY1 does not have a LEAF1 so convert to IMMED_1_15
+//        if (cJU_LEAF1_MAXPOP1 < cJU_IMMED1_MAXPOP1)     // if NO Leaf1 - compile out
+        if (cJ1_IMMED1_MAXPOP1 >= cJ1_LEAF1_MAXPOP1)  // if NO Leaf1 - compile out
         {
-            if ((pop1 - 1) == cJ1_IMMED1_MAXPOP1)       // hysteresis = 0.
+            if (Pop1 == (cJU_IMMED1_MAXPOP1 + 1))       // hysteresis = 0.
             {
-                Word_t    PjlbRaw;      // bitmap in old leaf.
-                Pjlb_t    Pjlb;
-                uint8_t  *Pleafnew;     // JPIMMED as a pointer.
-                Word_t    ldigit;       // larger than uint8_t.
-                PjlbRaw = ju_BaLPntr(Pjp);
-                Pjlb = P_JLB(PjlbRaw);
-                Pleafnew = ju_PImmed1(Pjp);
-                JU_BITMAPCLEARL(Pjlb, Index);   // unset Indexs bit.
+//printf("Del B1: change to cJ1_JPIMMED_1_15, Pop1 = %d, cJU_IMMED1_MAXPOP1 = %d, Key = 0x%lx, Line = %d\n", (int)Pop1, (int)cJU_IMMED1_MAXPOP1, Index, (int)__LINE__);
+                Word_t     ldigit;                      // larger than uint8_t.
+                uint8_t   *Pleaf1new = ju_PImmed1(Pjp); // pointer to IMMEDs
+
+                JU_BITMAPCLEARL(Pjlb, Index);           // unset Indexs bit.
 
 // TBD:  This is very slow, there must be a better way:
-                for (ldigit = 0; ldigit < cJU_BRANCHUNUMJPS; ++ldigit)
+//                                                256
+//                for (ldigit = 0; ldigit < cJU_BRANCHUNUMJPS; ldigit++)
+                for (ldigit = 0; ldigit < 256; ldigit++)
                 {
                     if (JU_BITMAPTESTL(Pjlb, ldigit))
-                    {
-                        *Pleafnew++ = ldigit;
-                        assert((Pleafnew - ju_PImmed1(Pjp)) <= cJU_IMMED1_MAXPOP1);
-                    }
+                        *Pleaf1new++ = ldigit;          // only 15 of 256
                 }
-                j__udyFreeJLB1(PjlbRaw, Pjpm);  // only in BranchU ??
-//                Pjp->jp_Type = cJ1_JPIMMED_1_15;
+                j__udyFreeJLB1(PjlbRaw, Pjpm);          // Free LeafB1
                 ju_SetJpType(Pjp, cJ1_JPIMMED_1_15);
-                return (1);
+                return (1);                             // done
             }
         }
-        else
+        else  // Judy1 HAS a Leaf1
         {
-//      else if Bigger than Immeds
-#endif // JUDY1
-
-// Compress LeafB1 to a Leaf1:
-//
-// Note:  4.37 of this file contained alternate code for Judy1 only that simply
-// cleared the bit and allowed the LeafB1 to go below cJU_LEAF1_MAXPOP1.  This
-// was the ONLY case where a malloc failure was not fatal; however, it violated
-// the critical assumption that the tree is always kept in least-compressed
-// form.
-            if (pop1 == cJU_LEAF1_MAXPOP1)      // hysteresis = 1.
+//          Compress LeafB1 to a Leaf1:
+            if (Pop1 == cJU_LEAF1_MAXPOP1)      // hysteresis = 1.
             {
+////printf("Del B1: change to cJU_LEAF1_MAXPOP1, Pop1 = %d, Line = %d\n", (int)Pop1, (int)__LINE__);
                 if (j__udyLeafB1ToLeaf1(Pjp, Pjpm) == -1)
                     return (-1);
-                goto ContinueDelWalk;   // delete Index in new Leaf1.
+//              jp_Type and Pointer and Free of B1 is done here
+                goto ContinueDelWalk;           // delete Index in new Leaf1.
             }
-#ifdef  JUDY1
         }
-        // unset Indexs bit:
-        JU_BITMAPCLEARL(P_JLB(ju_BaLPntr(Pjp)), Index);
-        return (1);
-#endif // JUDY1
-// This is very different from Judy1 because of the need to manage the value
-// area:
-//
-// Get last byte to decode from Index, and pointer to bitmap leaf:
+//printf("Del B1: Just Clear Bit, Pop1 = %d\n", (int)Pop1);
+//      Just unset Indexs bit and continue
+        JU_BITMAPCLEARL(P_JLB(ju_PntrInJp(Pjp)), Index);
+
+#ifdef PCAS
+        printf("Del B1:=========Pop1 = %d ========Line = %d\n", (int)Pop1, __LINE__);
+#endif  // PCAS
+        goto UpdateLeafPop0AndReturnTrue;  // requires Pjp and Pop1
+
+#endif  // JUDY1 ==================================
+
 #ifdef  JUDYL
+        if (Pop1 == cJU_LEAF1_MAXPOP1)      // hysteresis = 1.
+        {
+            if (j__udyLeafB1ToLeaf1(Pjp, Pjpm) == -1)
+                return (-1);
+//          jp_Type and Pointer and Free of B1 is done here
+            goto ContinueDelWalk;           // delete Index in new Leaf1.
+        }
+
+// This is very different from Judy1 because of the need to manage the Value area:
+// Get last byte to decode from Index, and pointer to bitmap leaf:
+
         digit = JU_DIGITATSTATE(Index, 1);
-        Pjlb = P_JLB(ju_BaLPntr(Pjp));
-// Prepare additional values:
+        Pjlb = P_JLB(ju_PntrInJp(Pjp));
+
+//      Prepare additional values:
         subexp = digit / cJU_BITSPERSUBEXPL;    // which subexpanse.
-        bitmap = JU_JLB_BITMAP(Pjlb, subexp);   // subexps 32-bit map.
+        bitmap = JU_JLB_BITMAP(Pjlb, subexp);   // subexps 64-bit map.
         PjvRaw = JL_JLB_PVALUE(Pjlb, subexp);   // corresponding values.
         Pjv = P_JV(PjvRaw);
         bitmask = JU_BITPOSMASKL(digit);        // mask for Index.
-        assert(bitmap & bitmask);       // Index must be valid.
-        if (bitmap == cJU_FULLBITMAPL)  // full bitmap, take shortcut:
+
+        assert(bitmap & bitmask);               // Index must be valid.
+
+//printf("\n-----------LeafB1: bitmap = 0x%016lx, bitmask = 0x%016lx, LeafPop = 0x%lx, Pop1 = 0x%lx, digit = 0x%x, Index = 0x%016lx\n", bitmap, bitmask, ju_LeafPop0(Pjp), Pop1, (int)digit, Index);
+
+//  Note: this should be for a uncompressed Value area
+        Word_t pop1;
+        if (bitmap == cJU_FULLBITMAPL)          // full bitmap, take shortcut:
         {
             pop1 = cJU_BITSPERSUBEXPL;
             offset = digit % cJU_BITSPERSUBEXPL;
         }
         else                            // compute subexpanse pop1 and value area offset:
         {
-            pop1 = j__udyCountBitsL(bitmap);
+            pop1   = j__udyCountBitsL(bitmap);
             offset = j__udyCountBitsL(bitmap & (bitmask - 1));
         }
-// Handle solitary Index remaining in subexpanse:
+// Handle solitary Index remaining in this subexpanse:
         if (pop1 == 1)
         {
             j__udyLFreeJV(PjvRaw, 1, Pjpm);
-            JL_JLB_PVALUE(Pjlb, subexp) = 0;
-            JU_JLB_BITMAP(Pjlb, subexp) = 0;
-            return (1);
+            JL_JLB_PVALUE(Pjlb, subexp) = 0;            // mark subexpanse null Values
+            JU_JLB_BITMAP(Pjlb, subexp) = 0;            // mark bitmap 0
+#ifdef PCAS
+            printf("Del B1: Line = %d, Pop1 = %d\n", __LINE__, (int)Pop1);
+#endif  // PCAS
+            goto UpdateLeafPop0AndReturnTrue;  // requires Pjp and Pop1
         }
 // Shrink value area in place or move to a smaller value area:
-        if (JL_LEAFVGROWINPLACE(pop1 - 1))      // hysteresis = 0.
+        if (JL_LEAFVDELINPLACE(pop1))      // hysteresis = 0.
         {
             JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
         }
-        else
+        else    // allocate a smaller Value area
         {
-            if ((PjvnewRaw = j__udyLAllocJV(pop1 - 1, Pjpm)) == 0)
+            Word_t PjvnewRaw = j__udyLAllocJV(pop1 - 1, Pjpm);
+            if (PjvnewRaw == 0)
                 return (-1);
             Pjvnew = P_JV(PjvnewRaw);
             JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, ignore);
             j__udyLFreeJV(PjvRaw, pop1, Pjpm);
             JL_JLB_PVALUE(Pjlb, subexp) = PjvnewRaw;
         }
-        JU_JLB_BITMAP(Pjlb, subexp) ^= bitmask; // clear Indexs bit.
-        return (1);
-#endif // JUDYL
+//        JU_JLB_BITMAP(Pjlb, subexp) ^= bitmask; // clear Indexs bit.
+        JU_BITMAPCLEARL(Pjlb, Index);
+#ifdef PCAS
+        printf("Del B1: Line = %d, Pop1 = %d\n", __LINE__, (int)Pop1);
+#endif  // PCAS
+        goto UpdateLeafPop0AndReturnTrue;   // requires Pjp and Pop1
+
+#endif  // JUDYL ==================================
     }                                   // case.
 
 // ****************************************************************************
@@ -2363,20 +2532,29 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         Word_t    PjlbRaw;
         Pjlb_t    Pjlb;
         Word_t    subexp;
-        assert(!ju_DcdNonMatchKey(Index, Pjp, 2));
+        assert(!ju_DcdNotMatchKey(Index, Pjp, 2));
         assert(ParentLevel > 1);        // see above.
+
+#ifdef PCAS
+        printf("Del B1: cJ1_JPFULLPOPU1, ju_LeafPop0(Pjp) = 0x%lx, ju_DcdPop0(Pjp) = 0x%016lx\n", ju_LeafPop0(Pjp), ju_DcdPop0(Pjp));
+#endif  // PCAS
+
+        Pop1 = ju_LeafPop0(Pjp) + 1;
+        assert(Pop1 == 256);
+
         if ((PjlbRaw = j__udyAllocJLB1(Pjpm)) == 0)
             return (-1);
         Pjlb = P_JLB(PjlbRaw);
-// Fully populate the leaf, then unset Indexs bit:
+// Fully populate the leaf, then unset Key bit:
         for (subexp = 0; subexp < cJU_NUMSUBEXPL; ++subexp)
             JU_JLB_BITMAP(Pjlb, subexp) = cJU_FULLBITMAPL;
-        JU_BITMAPCLEARL(Pjlb, Index);
-//            Pjp->Jp_Addr0 = PjlbRaw;
-        ju_SetBaLPntr(Pjp, PjlbRaw);
-//            Pjp->jp_Type = cJU_JPLEAF_B1;
+
+        JU_BITMAPCLEARL(Pjlb, Index);   // delete key
+
         ju_SetJpType(Pjp, cJU_JPLEAF_B1);
-        return (1);
+//        ju_SetLeafPop0(Pjp, cJU_JPFULLPOPU1_POP0 - 1);
+        ju_SetPntrInJp(Pjp, PjlbRaw);
+        goto UpdateLeafPop0AndReturnTrue;   // requires Pjp and Pop1
     }
 // ****************************************************************************
 #endif // JUDY1
@@ -2410,61 +2588,61 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 // Core code for deleting one Index (and for JudyL, its value area) from a
 // larger Immed:
 //
-// Variables Pleaf, pop1, and offset are in the context.
+// Variables Pleaf, Pop1, and offset are in the context.
 #ifdef JUDYL
 // For JudyL the value area might need to be shrunk:
 #endif // JUDYL
 // Delete one Index from a larger Immed where no restructuring is required:
 //
-// Variables pop1, Pjp, offset, and Index are in the context.
+// Variables Pop1, Pjp, offset, and Index are in the context.
 // END OF MACROS, START OF CASES:
 // Single Index remains in Immed; convert JP to null:
     case cJU_JPIMMED_1_01:
     {
         assert(parentJPtype == (cJU_JPBRANCH_U2));
-        assert(ju_DcdPop0(Pjp) == JU_TRIMTODCDSIZE(Index));
+        assert(ju_IMM01Key(Pjp) == JU_TrimToIMM01(Index));
         ju_SetIMM01(Pjp, 0, 0, cJU_JPNULL1);
         return (1);
     }
     case cJU_JPIMMED_2_01:
     {
         assert(parentJPtype == (cJU_JPBRANCH_U3));
-        assert(ju_DcdPop0(Pjp) == JU_TRIMTODCDSIZE(Index));
+        assert(ju_IMM01Key(Pjp) == JU_TrimToIMM01(Index));
         ju_SetIMM01(Pjp, 0, 0, cJU_JPNULL2);
         return (1);
     }
     case cJU_JPIMMED_3_01:
     {
         assert(parentJPtype == (cJU_JPBRANCH_U4));
-        assert(ju_DcdPop0(Pjp) == JU_TRIMTODCDSIZE(Index));
+        assert(ju_IMM01Key(Pjp) == JU_TrimToIMM01(Index));
         ju_SetIMM01(Pjp, 0, 0, cJU_JPNULL3);
         return (1);
     }
     case cJU_JPIMMED_4_01:
     {
         assert(parentJPtype == (cJU_JPBRANCH_U5));
-        assert(ju_DcdPop0(Pjp) == JU_TRIMTODCDSIZE(Index));
+        assert(ju_IMM01Key(Pjp) == JU_TrimToIMM01(Index));
         ju_SetIMM01(Pjp, 0, 0, cJU_JPNULL4);
         return (1);
     }
     case cJU_JPIMMED_5_01:
     {
         assert(parentJPtype == (cJU_JPBRANCH_U6));
-        assert(ju_DcdPop0(Pjp) == JU_TRIMTODCDSIZE(Index));
+        assert(ju_IMM01Key(Pjp) == JU_TrimToIMM01(Index));
         ju_SetIMM01(Pjp, 0, 0, cJU_JPNULL5);
         return (1);
     }
     case cJU_JPIMMED_6_01:
     {
         assert(parentJPtype == (cJU_JPBRANCH_U7));
-        assert(ju_DcdPop0(Pjp) == JU_TRIMTODCDSIZE(Index));
+        assert(ju_IMM01Key(Pjp) == JU_TrimToIMM01(Index));
         ju_SetIMM01(Pjp, 0, 0, cJU_JPNULL6);
         return (1);
     }
     case cJU_JPIMMED_7_01:
     {
         assert(parentJPtype == (cJU_JPBRANCH_U));
-        assert(ju_DcdPop0(Pjp) == JU_TRIMTODCDSIZE(Index));
+        assert(ju_IMM01Key(Pjp) == JU_TrimToIMM01(Index));
         ju_SetIMM01(Pjp, 0, 0, cJU_JPNULL7);
         return (1);
     }
@@ -2473,9 +2651,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
     {
         uint8_t  *Pleaf;
         assert((ParentLevel - 1) == (1));
-        Pleaf = (uint8_t *) ju_PImmed1(Pjp);
+        Pleaf = ju_PImmed1(Pjp);
 #ifdef JUDYL
-        PjvRaw = ju_PImmVals(Pjp);
+        PjvRaw = ju_PntrInJp(Pjp);
         Pjv = P_JV(PjvRaw);
 #endif // JUDYL
         {
@@ -2485,8 +2663,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             assert(Pleaf[offset ? 0 : 1] == JU_LEASTBYTES(Index, 1));
             D_cdP0 = (Index & cJU_DCDMASK(1)) | Pleaf[offset];
             JUDYLCODE(A_ddr = Pjv[offset];);
+
             ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_1_01);
-//            ju_SetBaLPntr(Pjp, A_ddr);
+//            ju_SetPntrInJp(Pjp, A_ddr);
 //            ju_SetDcdPop0(Pjp, D_cdP0);
 //            ju_SetJpType(Pjp, T_ype);
         }
@@ -2513,33 +2692,34 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
     {
         uint8_t  *Pleaf;
         assert((ParentLevel - 1) == (1));
-        Pleaf = (uint8_t *) ju_PImmed1(Pjp);
+        Pleaf = ju_PImmed1(Pjp);
 #ifdef JUDYL
-        PjvRaw = ju_PImmVals(Pjp);
+        PjvRaw = ju_PntrInJp(Pjp);
         Pjv = P_JV(PjvRaw);
 #endif // JUDYL
-        pop1 = (ju_Type(Pjp)) - (cJU_JPIMMED_1_02) + 2;
-        offset = j__udySearchLeaf1(Pleaf, pop1, Index, 1 * 8);
+        Pop1 = (ju_Type(Pjp)) - (cJU_JPIMMED_1_02) + 2;
+        offset = j__udySearchLeaf1(Pleaf, Pop1, Index, 1 * 8);
         assert(offset >= 0);            /* Index must be valid */
 #ifdef  JUDY1
-        JU_DELETEINPLACE(Pleaf, pop1, offset, 1);      /*  --(Pjp->jp_Type);       */
+        JU_DELETEINPLACE(Pleaf, Pop1, offset, 1);      /*  --(Pjp->jp_Type);       */
 #else  // JUDYL
-        if (JL_LEAFVGROWINPLACE(pop1 - 1))      /* hysteresis = 0 */
+        if (JL_LEAFVDELINPLACE(Pop1))      /* hysteresis = 0 */
         {
-            JU_DELETEINPLACE(Pleaf, pop1, offset, 1);
-            JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
+            JU_DELETEINPLACE(Pleaf, Pop1, offset, 1);
+            JU_DELETEINPLACE(Pjv, Pop1, offset, ignore);
         }
         else
         {
             Word_t    PjvnewRaw;
             Pjv_t     Pjvnew;
-            if ((PjvnewRaw = j__udyLAllocJV(pop1 - 1, Pjpm)) == 0)
+            if ((PjvnewRaw = j__udyLAllocJV(Pop1 - 1, Pjpm)) == 0)
                 return (-1);
             Pjvnew = P_JV(PjvnewRaw);
-            JU_DELETEINPLACE(Pleaf, pop1, offset, 1);
-            JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, ignore);
-            j__udyLFreeJV(PjvRaw, pop1, Pjpm);  /*    Pjp->jp_PValue = PjvnewRaw;     */
-            ju_SetPjvPntr(Pjp, PjvnewRaw);
+            JU_DELETEINPLACE(Pleaf, Pop1, offset, 1);
+            JU_DELETECOPY(Pjvnew, Pjv, Pop1, offset, ignore);
+            j__udyLFreeJV(PjvRaw, Pop1, Pjpm);  /*    Pjp->jp_PValue = PjvnewRaw;     */
+
+            ju_SetPntrInJp(Pjp, PjvnewRaw);
         }                               /*   --(Pjp->jp_Type);       */
 #endif // JUDYL
         ju_SetJpType(Pjp, ju_Type(Pjp) - 1);
@@ -2549,9 +2729,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
     {
         uint16_t *Pleaf;
         assert((ParentLevel - 1) == (2));
-        Pleaf = (uint16_t *) ju_PImmed1(Pjp);
+        Pleaf = ju_PImmed2(Pjp);
 #ifdef JUDYL
-        PjvRaw = ju_PImmVals(Pjp);
+        PjvRaw = ju_PntrInJp(Pjp);
         Pjv = P_JV(PjvRaw);
 #endif // JUDYL
         {
@@ -2561,8 +2741,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             assert(Pleaf[offset ? 0 : 1] == JU_LEASTBYTES(Index, 2));
             D_cdP0 = (Index & cJU_DCDMASK(2)) | Pleaf[offset];
             JUDYLCODE(A_ddr = Pjv[offset];);
+
             ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_2_01);
-//            ju_SetBaLPntr(Pjp, A_ddr);
+//            ju_SetPntrInJp(Pjp, A_ddr);
 //            ju_SetDcdPop0(Pjp, D_cdP0);
 //            ju_SetJpType(Pjp, T_ype);
         }                               /*  Pjp->jp_Type = (NewJPType);   */
@@ -2581,33 +2762,34 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
     {
         uint16_t *Pleaf;
         assert((ParentLevel - 1) == (2));
-        Pleaf = (uint16_t *) ju_PImmed1(Pjp);
+        Pleaf = ju_PImmed2(Pjp);
 #ifdef JUDYL
-        PjvRaw = ju_PImmVals(Pjp);
+        PjvRaw = ju_PntrInJp(Pjp);
         Pjv = P_JV(PjvRaw);
 #endif // JUDYL
-        pop1 = (ju_Type(Pjp)) - (cJU_JPIMMED_2_02) + 2;
-        offset = j__udySearchLeaf2(Pleaf, pop1, Index, 2 * 8);
+        Pop1 = (ju_Type(Pjp)) - (cJU_JPIMMED_2_02) + 2;
+        offset = j__udySearchLeaf2(Pleaf, Pop1, Index, 2 * 8);
         assert(offset >= 0);            /* Index must be valid */
 #ifdef  JUDY1
-        JU_DELETEINPLACE(Pleaf, pop1, offset, 2);      /*  --(Pjp->jp_Type);       */
+        JU_DELETEINPLACE(Pleaf, Pop1, offset, 2);      /*  --(Pjp->jp_Type);       */
 #else  // JUDYL
-        if (JL_LEAFVGROWINPLACE(pop1 - 1))      /* hysteresis = 0 */
+        if (JL_LEAFVDELINPLACE(Pop1))      /* hysteresis = 0 */
         {
-            JU_DELETEINPLACE(Pleaf, pop1, offset, 2);
-            JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
+            JU_DELETEINPLACE(Pleaf, Pop1, offset, 2);
+            JU_DELETEINPLACE(Pjv, Pop1, offset, ignore);
         }
         else
         {
             Word_t    PjvnewRaw;
             Pjv_t     Pjvnew;
-            if ((PjvnewRaw = j__udyLAllocJV(pop1 - 1, Pjpm)) == 0)
+            if ((PjvnewRaw = j__udyLAllocJV(Pop1 - 1, Pjpm)) == 0)
                 return (-1);
             Pjvnew = P_JV(PjvnewRaw);
-            JU_DELETEINPLACE(Pleaf, pop1, offset, 2);
-            JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, ignore);
-            j__udyLFreeJV(PjvRaw, pop1, Pjpm);  /*    Pjp->jp_PValue = PjvnewRaw;     */
-            ju_SetPjvPntr(Pjp, PjvnewRaw);
+            JU_DELETEINPLACE(Pleaf, Pop1, offset, 2);
+            JU_DELETECOPY(Pjvnew, Pjv, Pop1, offset, ignore);
+            j__udyLFreeJV(PjvRaw, Pop1, Pjpm);  /*    Pjp->jp_PValue = PjvnewRaw;     */
+
+            ju_SetPntrInJp(Pjp, PjvnewRaw);
         }                               /*   --(Pjp->jp_Type);       */
 #endif // JUDYL
         ju_SetJpType(Pjp, ju_Type(Pjp) - 1);
@@ -2617,9 +2799,9 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
     {
         uint8_t  *Pleaf;
         assert((ParentLevel - 1) == (3));
-        Pleaf = (uint8_t *) ju_PImmed1(Pjp);
+        Pleaf = ju_PImmed3(Pjp);
 #ifdef JUDYL
-        PjvRaw = ju_PImmVals(Pjp);
+        PjvRaw = ju_PntrInJp(Pjp);
         Pjv = P_JV(PjvRaw);
 #endif // JUDYL
         {
@@ -2633,7 +2815,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             A_ddr = Pjv[offset ? 0 : 1];
 #endif  // JUDYL
             ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_3_01);
-//            ju_SetBaLPntr(Pjp, A_ddr);
+//            ju_SetPntrInJp(Pjp, A_ddr);
 //            ju_SetDcdPop0(Pjp, D_cdP0);
 //            ju_SetJpType(Pjp, T_ype);
         }                               /* Pjp->jp_Type = (NewJPType);   */
@@ -2649,11 +2831,11 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
     {
         uint8_t  *Pleaf;
         assert((ParentLevel - 1) == (3));
-        Pleaf = (uint8_t *) ju_PImmed1(Pjp);
-        pop1 = (ju_Type(Pjp)) - (cJU_JPIMMED_3_02) + 2;
-        offset = j__udySearchLeaf3(Pleaf, pop1, Index, 3 * 8);
+        Pleaf = ju_PImmed3(Pjp);
+        Pop1 = (ju_Type(Pjp)) - (cJU_JPIMMED_3_02) + 2;
+        offset = j__udySearchLeaf3(Pleaf, Pop1, Index, 3 * 8);
         assert(offset >= 0);            /* Index must be valid */
-        JU_DELETEINPLACE_ODD(Pleaf, pop1, offset, 3);  /*  --(Pjp->jp_Type);       */
+        JU_DELETEINPLACE_ODD(Pleaf, Pop1, offset, 3);  /*  --(Pjp->jp_Type);       */
         ju_SetJpType(Pjp, ju_Type(Pjp) - 1);
         return (1);
     }
@@ -2661,7 +2843,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
     {
         uint32_t *Pleaf;
         assert((ParentLevel - 1) == (4));
-        Pleaf = (uint32_t *)ju_PImmed1(Pjp);
+        Pleaf = ju_PImmed4(Pjp);
         {
             Word_t    D_cdP0;
             Word_t    A_ddr = 0;
@@ -2669,7 +2851,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             assert(Pleaf[offset ? 0 : 1] == JU_LEASTBYTES(Index, 4));
             D_cdP0 = (Index & cJU_DCDMASK(4)) | Pleaf[offset];
             ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_4_01);
-//            ju_SetBaLPntr(Pjp, A_ddr);
+//            ju_SetPntrInJp(Pjp, A_ddr);
 //            ju_SetDcdPop0(Pjp, D_cdP0);
 //            ju_SetJpType(Pjp, T_ype);
         }                               /*  Pjp->jp_Type = (NewJPType);   */
@@ -2679,11 +2861,11 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
     {
         uint32_t *Pleaf;
         assert((ParentLevel - 1) == (4));
-        Pleaf = (uint32_t *)ju_PImmed1(Pjp);
-        pop1 = (ju_Type(Pjp)) - (cJ1_JPIMMED_4_02) + 2;
-        offset = j__udySearchLeaf4(Pleaf, pop1, Index, 4 * 8);
+        Pleaf = ju_PImmed4(Pjp);
+        Pop1 = (ju_Type(Pjp)) - (cJ1_JPIMMED_4_02) + 2;
+        offset = j__udySearchLeaf4(Pleaf, Pop1, Index, 4 * 8);
         assert(offset >= 0);            /* Index must be valid */
-        JU_DELETEINPLACE(Pleaf, pop1, offset, 4);      /*  --(Pjp->jp_Type);       */
+        JU_DELETEINPLACE(Pleaf, Pop1, offset, 4);      /*  --(Pjp->jp_Type);       */
         ju_SetJpType(Pjp, ju_Type(Pjp) - 1);
         return (1);
     }
@@ -2691,7 +2873,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
     {
         uint8_t  *Pleaf;
         assert((ParentLevel - 1) == (5));
-        Pleaf = (uint8_t *) ju_PImmed1(Pjp);
+        Pleaf = ju_PImmed5(Pjp);
         {
             Word_t    D_cdP0;
             Word_t    A_ddr = 0;
@@ -2700,7 +2882,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             JU_COPY5_PINDEX_TO_LONG(D_cdP0, &(Pleaf[offset ? 0 : 5]));
             D_cdP0 |= Index & cJU_DCDMASK(5);
             ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_5_01);
-//            ju_SetBaLPntr(Pjp, A_ddr);
+//            ju_SetPntrInJp(Pjp, A_ddr);
 //            ju_SetDcdPop0(Pjp, D_cdP0);
 //            ju_SetJpType(Pjp, T_ype);
         }                               /* Pjp->jp_Type = (NewJPType);   */
@@ -2710,11 +2892,11 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
     {
         uint8_t  *Pleaf;
         assert((ParentLevel - 1) == (5));
-        Pleaf = (uint8_t *) ju_PImmed1(Pjp);
-        pop1 = (ju_Type(Pjp)) - (cJ1_JPIMMED_5_02) + 2;
-        offset = j__udySearchLeaf5(Pleaf, pop1, Index, 5 * 8);
+        Pleaf = ju_PImmed5(Pjp);
+        Pop1 = (ju_Type(Pjp)) - (cJ1_JPIMMED_5_02) + 2;
+        offset = j__udySearchLeaf5(Pleaf, Pop1, Index, 5 * 8);
         assert(offset >= 0);            /* Index must be valid */
-        JU_DELETEINPLACE_ODD(Pleaf, pop1, offset, 5);  /*  --(Pjp->jp_Type);       */
+        JU_DELETEINPLACE_ODD(Pleaf, Pop1, offset, 5);  /*  --(Pjp->jp_Type);       */
         ju_SetJpType(Pjp, ju_Type(Pjp) - 1);
         return (1);
     }
@@ -2722,7 +2904,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
     {
         uint8_t  *Pleaf;
         assert((ParentLevel - 1) == (6));
-        Pleaf = (uint8_t *) ju_PImmed1(Pjp);
+        Pleaf = ju_PImmed6(Pjp);
         {
             Word_t    D_cdP0;
             Word_t    A_ddr = 0;
@@ -2731,7 +2913,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             JU_COPY6_PINDEX_TO_LONG(D_cdP0, &(Pleaf[offset ? 0 : 6]));
             D_cdP0 |= Index & cJU_DCDMASK(6);
             ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_6_01);
-//            ju_SetBaLPntr(Pjp, A_ddr);
+//            ju_SetPntrInJp(Pjp, A_ddr);
 //            ju_SetDcdPop0(Pjp, D_cdP0);
 //            ju_SetJpType(Pjp, T_ype);
         }                               /* Pjp->jp_Type = (NewJPType);   */
@@ -2741,7 +2923,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
     {
         uint8_t  *Pleaf;
         assert((ParentLevel - 1) == (7));
-        Pleaf = (uint8_t *) ju_PImmed1(Pjp);
+        Pleaf = ju_PImmed7(Pjp);
         {
             Word_t    D_cdP0;
             Word_t    A_ddr = 0;
@@ -2750,7 +2932,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
             JU_COPY7_PINDEX_TO_LONG(D_cdP0, &(Pleaf[offset ? 0 : 7]));
             D_cdP0 |= Index & cJU_DCDMASK(7);
             ju_SetIMM01(Pjp, A_ddr, D_cdP0, cJU_JPIMMED_7_01);
-//            ju_SetBaLPntr(Pjp, A_ddr);
+//            ju_SetPntrInJp(Pjp, A_ddr);
 //            ju_SetDcdPop0(Pjp, D_cdP0);
 //            ju_SetJpType(Pjp, T_ype);
         }                               /* Pjp->jp_Type = (NewJPType);   */
@@ -2781,7 +2963,6 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         {
         case 1:
         {
-//                jp_t JP = *Pjp;
             Word_t    DcdP0;
             DcdP0 = ju_DcdPop0(Pjp) - 1;        // decrement count.
             ju_SetDcdPop0(Pjp, DcdP0);
@@ -2789,7 +2970,7 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
         }
         case 2:                        // collapse BranchL to single JP; see above:
         {
-            Word_t    PjblRaw = ju_BaLPntr(Pjp);
+            Word_t    PjblRaw = ju_PntrInJp(Pjp);
             Pjbl_t    Pjbl = P_JBL(PjblRaw);
             *Pjp = Pjbl->jbl_jp[0];
             j__udyFreeJBL(PjblRaw, Pjpm);
@@ -2809,15 +2990,17 @@ j__udyDelWalk(Pjp_t Pjp,                // current JP under which to delete.
 FUNCTION int
 Judy1Unset(PPvoid_t PPArray,            // in which to delete.
            Word_t Index,                // to delete.
-           PJError_t PJError)           // optional, for returning error info.
+           PJError_t PJError            // optional, for returning error info.
+          )
 #else  // JUDYL
 FUNCTION int
 JudyLDel(PPvoid_t PPArray,              // in which to delete.
          Word_t Index,                  // to delete.
-         PJError_t PJError)             // optional, for returning error info.
+         PJError_t PJError              // optional, for returning error info.
+        )
 #endif                                  // JUDYL
 {
-    Word_t    pop1;                     // population of leaf.
+    Word_t    Pop1;                     // population of leaf.
     int       offset;                   // at which to delete Index.
 #ifdef  JUDY1
     int       retcode;                  // return code from Judy1Test().
@@ -2830,22 +3013,31 @@ JudyLDel(PPvoid_t PPArray,              // in which to delete.
         JU_SET_ERRNO(PJError, JU_ERRNO_NULLPPARRAY);
         return (JERRI);
     }
+
+#ifdef  TRACEJPD
+    {
+#ifdef JUDY1
+        printf("\n---Judy1Unset, Key = 0x%016lx, Array Pop1 = %lu\n", 
+            (Word_t)Index, JU_LEAFW_POP0(*PPArray) + 1); // TotalPop0 = 0 (== 1 at base 1)
+#else /* JUDYL */
+        printf("\n---JudyLDel, Key = 0x%016lx, Array Pop1 = %lu\n", 
+            (Word_t)Index, JU_LEAFW_POP0(*PPArray) + 1); // TotalPop0 = 0 (== 1 at base 1)
+#endif /* JUDYL */
+    }
+#endif  // TRACEJPD
+
 // CHECK IF INDEX IS INVALID:
 //
 // If so, theres nothing to do.  This saves a lot of time.  Pass through
-// PJError, if any, from the "get" function.
+// PJError, if any, from the "get" function. -- Get does not return PJError now
 #ifdef  JUDY1
-    if ((retcode = j__udy1Test(*PPArray, Index, PJError)) == JERRI)
-#else  // JUDYL
-    if ((PPvalue = j__udyLGet(*PPArray, Index, PJError)) == PPJERR)
-#endif // JUDYL
-        return (JERRI);
-#ifdef  JUDY1
-    if (retcode == 0)
-#else  // JUDYL
-    if (PPvalue == (PPvoid_t) NULL)
-#endif // JUDYL
+    if (j__udy1Test(*PPArray, Index, PJE0) == 0)        // Index not in Array - Done
         return (0);
+#else  // JUDYL
+    if (j__udyLGet (*PPArray, Index, PJE0) == 0)         // Index not in Array - Done
+        return (0);
+#endif // JUDYL
+
 // ****************************************************************************
 // PROCESS TOP LEVEL (LEAFW) BRANCHES AND LEAVES:
 // ****************************************************************************
@@ -2860,77 +3052,59 @@ JudyLDel(PPvoid_t PPArray,              // in which to delete.
 #endif // JUDYL
         Pjllw_t   Pjllw = P_JLLW(*PPArray);     // first word of leaf.
         Pjllw_t   Pjllwnew;             // replacement leaf.
-//        pop1 = Pjllw[0] + 1;            // first word of leaf is pop0.
-        pop1 = Pjllw->jlw_Population0 + 1;      // first word of leaf is pop0.
-// Delete single (last) Index from array:
-        if (pop1 == 1)
+        Pop1 = Pjllw->jlw_Population0 + 1;      // first word of leaf is pop0.
+//      Delete single (last) Index from array:
+        if (Pop1 == 1)
         {
-            j__udyFreeJLLW(Pjllw, /* pop1 = */ 1, (Pjpm_t) NULL);
+            j__udyFreeJLLW(Pjllw, /* Pop1 = */ 1, (Pjpm_t) NULL);
             *PPArray = (Pvoid_t)NULL;
             return (1);
         }
 // Locate Index in compressible leaf:
-//        offset = j__udySearchLeafW(Pjllw + 1, pop1, Index);
-        offset = j__udySearchLeafW(Pjllw->jlw_Leaf, pop1, Index);
+        offset = j__udySearchLeafW(Pjllw->jlw_Leaf, Pop1, Index);
         assert(offset >= 0);            // Index must be valid.
 #ifdef JUDYL
-        Pjv = JL_LEAFWVALUEAREA(Pjllw, pop1);
+        Pjv = JL_LEAFWVALUEAREA(Pjllw, Pop1);
 #endif // JUDYL
+
 // Delete Index in-place:
 //
-// Note:  "Grow in place from pop1 - 1" is the logical inverse of, "shrink in
-// place from pop1."  Also, Pjllw points to the count word, so skip that for
+// Note:  "Grow in place from Pop1 - 1" is the logical inverse of, "shrink in
+// place from Pop1."  Also, Pjllw points to the count word, so skip that for
 // doing the deletion.
-//   printf("\n --- Before Key = 0x%016lx pop1 = %ld, offset = %d\n", Pjllw->jlw_Leaf[offset], pop1, offset);
-//   for (int ii = 0; ii < pop1; ii++)
-//   {
-//       printf("   %3d = 0x%016lx\n", ii, Pjllw->jlw_Leaf[ii]);
-//   }
-        if (JU_LEAFWGROWINPLACE(pop1 - 1))
+        if (JU_LEAFWDELINPLACE(Pop1))
         {
-//            JU_DELETEINPLACE(Pjllw + 1, pop1, offset, ignore);
-            JU_DELETEINPLACE(Pjllw->jlw_Leaf, pop1, offset, ignore);
-//   printf("\n --- After - Deleteinplace   = %ld\n", pop1 - 1);
-//   for (int ii = 0; ii < (pop1 - 1); ii++)
-//   {
-//       printf("   %3d = 0x%016lx\n",  ii, Pjllw->jlw_Leaf[ii]);
-//   }
-//   printf("\n");
-
+            JU_DELETEINPLACE(Pjllw->jlw_Leaf, Pop1, offset, ignore);
 #ifdef JUDYL
-//              also delete from value area:
-            JU_DELETEINPLACE(Pjv, pop1, offset, ignore);
+//          also delete from value area:
+            JU_DELETEINPLACE(Pjv, Pop1, offset, ignore);
 #endif // JUDYL
-//            --(Pjllw[0]);                // decrement population.
-            --(Pjllw->jlw_Population0); // decrement population.
-            return (1);
+            Pjllw->jlw_Population0--;   // decrement population in Leafw
+//          no jp_t yet to decrement
+            return (1);                 // Done
         }
-// Allocate new leaf for use in either case below:
-        Pjllwnew = j__udyAllocJLLW(pop1 - 1);
-        JU_CHECKALLOC(Pjllw_t, Pjllwnew, JERRI);
-// Shrink to smaller LEAFW:
-//
-// Note:  Skip the first word = pop0 in each leaf.
-//        Pjllwnew[0] = (pop1 - 1) - 1;
-        Pjllwnew->jlw_Population0 = (pop1 - 1) - 1;
-//        JU_DELETECOPY(Pjllwnew + 1, Pjllw + 1, pop1, offset, ignore);
-        JU_DELETECOPY(Pjllwnew->jlw_Leaf, Pjllw->jlw_Leaf, pop1, offset, ignore);
-//   printf("\n --- After - Deletecopy      = %ld\n", pop1 - 1);
-//   for (int ii = 0; ii < (pop1 - 1); ii++)
-//   {
-//       printf("   %3d = 0x%016lx\n",  ii, Pjllw->jlw_Leaf[ii]);
-//   }
-//   printf("\n");
+//      Allocate new leaf for use in either case below:
+        Pjllwnew = j__udyAllocJLLW(Pop1 - 1);
+//        JU_CHECKALLOC(Pjllw_t, Pjllwnew, JERRI);
+        if (Pjllwnew < (Pjllw_t) cBPW)   
+        {                                               
+            JU_SET_ERRNO(PJError, JU_ALLOC_ERRNO(Pjllwnew));
+            return(JERRI);
+        }
+//      Shrink to smaller LEAFW:
+        Pjllwnew->jlw_Population0 = (Pop1 - 1) - 1;
+        JU_DELETECOPY(Pjllwnew->jlw_Leaf, Pjllw->jlw_Leaf, Pop1, offset, ignore);
 #ifdef JUDYL
-        Pjvnew = JL_LEAFWVALUEAREA(Pjllwnew, pop1 - 1);
-        JU_DELETECOPY(Pjvnew, Pjv, pop1, offset, ignore);
+        Pjvnew = JL_LEAFWVALUEAREA(Pjllwnew, Pop1 - 1);
+        JU_DELETECOPY(Pjvnew, Pjv, Pop1, offset, ignore);
 #endif // JUDYL
-        j__udyFreeJLLW(Pjllw, pop1, (Pjpm_t) NULL);
+        j__udyFreeJLLW(Pjllw, Pop1, (Pjpm_t) NULL);
 ////        *PPArray = (Pvoid_t)  Pjllwnew | cJU_LEAFW);
         *PPArray = (Pvoid_t)Pjllwnew;
-        return (1);
+        return (1);     // success 
     }
     else
+
 // ****************************************************************************
 // JRP BRANCH:
 //
@@ -2945,13 +3119,14 @@ JudyLDel(PPvoid_t PPArray,              // in which to delete.
 #endif // JUDYL
         Pjllw_t   Pjllwnew;             // replacement leaf.
         Pjpm = P_JPM(*PPArray);         // top object in array (tree).
-        Pjp = &(Pjpm->jpm_JP);          // next object (first branch or leaf).
-        assert(((Pjpm->jpm_JP.jp_Type) == cJU_JPBRANCH_L)
-               || ((Pjpm->jpm_JP.jp_Type) == cJU_JPBRANCH_B)
-               || ((Pjpm->jpm_JP.jp_Type) == cJU_JPBRANCH_U));
+//        Pjp = &(Pjpm->jpm_JP);          // next object (first branch or leaf).
+        Pjp = Pjpm->jpm_JP + 0;         // next object (first branch or leaf).
+
+//        assert(((Pjpm->jpm_JP.jp_Type) == cJU_JPBRANCH_L)
+//               || ((Pjpm->jpm_JP.jp_Type) == cJU_JPBRANCH_B)
+//               || ((Pjpm->jpm_JP.jp_Type) == cJU_JPBRANCH_U));
 
 #ifdef TRACEJPD
-        Pjpm = P_JPM(*PPArray);
         j__udyIndex = Index;
         j__udyPopulation = Pjpm->jpm_Pop0;
 #endif
@@ -2973,7 +3148,9 @@ JudyLDel(PPvoid_t PPArray,              // in which to delete.
             JU_COPY_ERRNO(PJError, Pjpm);
             return (JERRI);
         }
-        --(Pjpm->jpm_Pop0);             // success; decrement total population.
+        Pjpm->jpm_Pop0--;             // success; decrement total population.
+        ju_SetDcdPop0(Pjp, ju_DcdPop0(Pjp) - 1);        // decrement DcdPop0
+
         if ((Pjpm->jpm_Pop0 + 1) != cJU_LEAFW_MAXPOP1)
         {
             return (1);
@@ -2982,7 +3159,12 @@ JudyLDel(PPvoid_t PPArray,              // in which to delete.
 //
         Pjllwnew = j__udyAllocJLLW(cJU_LEAFW_MAXPOP1);
         PWord_t   PLeafWnew = Pjllwnew->jlw_Leaf;
-        JU_CHECKALLOC(Pjllw_t, Pjllwnew, JERRI);
+//        JU_CHECKALLOC(Pjllw_t, Pjllwnew, JERRI);
+        if (Pjllwnew < (Pjllw_t) cBPW)   
+        {                                               
+            JU_SET_ERRNO(PJError, JU_ALLOC_ERRNO(Pjllwnew));
+            return(JERRI);
+        }
 // Plug leaf into root pointer and set population count:
 ////        *PPArray  = (Pvoid_t) ((Word_t) Pjllwnew | cJU_LEAFW);
         *PPArray = (Pvoid_t)Pjllwnew;
@@ -2991,32 +3173,40 @@ JudyLDel(PPvoid_t PPArray,              // in which to delete.
 #endif // JUDYL
 //        *Pjllwnew++ = cJU_LEAFW_MAXPOP1 - 1;     // set pop0.
         Pjllwnew->jlw_Population0 = cJU_LEAFW_MAXPOP1 - 1;      // set pop0.
+
         switch (ju_Type(Pjp))
         {
+        case cJU_JPLEAF7:
+        {
+            Word_t   PLeaf7Raw  = ju_PntrInJp(Pjp);
+            uint8_t *Pjll7      = P_JLL(PLeaf7Raw);
+
+            (void) j__udyLeaf7ToLeafW(
+                        PLeafWnew,      // destination leaf.
+#ifdef JUDYL
+                        Pjv,            // destination value part of leaf.
+#endif  // JUDYL
+                        Pjp,            // 7-byte-index object from which to copy.
+                        Index & cJU_DCDMASK(7), // most-significant byte, prefix to each Index.
+                        Pjpm);  // for global accounting.
+            break;
+        }
 // JPBRANCH_L:  Copy each JPs indexes to the new LEAFW and free the old
 // branch:
         case cJU_JPBRANCH_L:
         {
-            Word_t    PjblRaw = ju_BaLPntr(Pjp);
+            Word_t    PjblRaw = ju_PntrInJp(Pjp);
             Pjbl_t    Pjbl = P_JBL(PjblRaw);
             for (offset = 0; offset < Pjbl->jbl_NumJPs; ++offset)
             {
+                Word_t pop1;
 #ifdef  JUDY1
-                pop1 = j__udyLeaf7ToLeafW(PLeafWnew,    /* null. */
-                                          (Pjbl->jbl_jp) + offset,
-                                          JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset],
-                                                          cJU_BYTESPERWORD), Pjpm);
+                pop1 = j__udyLeaf7ToLeafW(PLeafWnew,      (Pjbl->jbl_jp) + offset, JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], cJU_BYTESPERWORD), Pjpm);
 #else  // JUDYL
-                pop1 = j__udyLeaf7ToLeafW(PLeafWnew, Pjv,
-                                          (Pjbl->jbl_jp) + offset,
-                                          JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset],
-                                                          cJU_BYTESPERWORD), Pjpm);
-#endif // JUDYL
-//                Pjllwnew += pop1;        // advance through indexes.
-                PLeafWnew += pop1;      // advance through indexes.
-#ifdef JUDYL
+                pop1 = j__udyLeaf7ToLeafW(PLeafWnew, Pjv, (Pjbl->jbl_jp) + offset, JU_DIGITTOSTATE(Pjbl->jbl_Expanse[offset], cJU_BYTESPERWORD), Pjpm);
                 Pjv += pop1;            // advance through values.
 #endif // JUDYL
+                PLeafWnew += pop1;      // advance through indexes.
             }
             j__udyFreeJBL(PjblRaw, Pjpm);
             break;                      // delete Index from new LEAFW.
@@ -3025,7 +3215,7 @@ JudyLDel(PPvoid_t PPArray,              // in which to delete.
 // branch, including each JP subarray:
         case cJU_JPBRANCH_B:
         {
-            Word_t    PjbbRaw = ju_BaLPntr(Pjp);
+            Word_t    PjbbRaw = ju_PntrInJp(Pjp);
             Pjbb_t    Pjbb = P_JBB(PjbbRaw);
             Word_t    subexp;           // current subexpanse number.
             BITMAPB_t bitmap;           // portion for this subexpanse.
@@ -3043,18 +3233,13 @@ JudyLDel(PPvoid_t PPArray,              // in which to delete.
 // offset for each populated subexpanse; until no more set bits:
                 for (offset = 0; bitmap != 0; bitmap >>= 1, ++digit)
                 {
+                    Word_t pop1;
                     if (!(bitmap & 1))  // skip empty sub-subexpanse.
                         continue;
 #ifdef  JUDY1
-                    pop1 = j__udyLeaf7ToLeafW(PLeafWnew,        /* null. */
-                                              Pjp2 + offset, JU_DIGITTOSTATE(digit,
-                                                                             cJU_BYTESPERWORD),
-                                              Pjpm);
+                    pop1 = j__udyLeaf7ToLeafW(PLeafWnew,      Pjp2 + offset, JU_DIGITTOSTATE(digit, cJU_BYTESPERWORD), Pjpm);
 #else  // JUDYL
-                    pop1 = j__udyLeaf7ToLeafW(PLeafWnew, Pjv,
-                                              Pjp2 + offset, JU_DIGITTOSTATE(digit,
-                                                                             cJU_BYTESPERWORD),
-                                              Pjpm);
+                    pop1 = j__udyLeaf7ToLeafW(PLeafWnew, Pjv, Pjp2 + offset, JU_DIGITTOSTATE(digit, cJU_BYTESPERWORD), Pjpm);
 #endif // JUDYL
                     PLeafWnew += pop1;  // advance through indexes.
 #ifdef JUDYL
@@ -3071,11 +3256,12 @@ JudyLDel(PPvoid_t PPArray,              // in which to delete.
 // branch:
         case cJU_JPBRANCH_U:
         {
-            Word_t    PjbuRaw = ju_BaLPntr(Pjp);
+            Word_t    PjbuRaw = ju_PntrInJp(Pjp);
             Pjbu_t    Pjbu = P_JBU(PjbuRaw);
             Word_t    ldigit;           // larger than uint8_t.
             for (Pjp = Pjbu->jbu_jp, ldigit = 0; ldigit < cJU_BRANCHUNUMJPS; ++Pjp, ++ldigit)
             {
+                Word_t pop1;
 // Shortcuts, to save a little time for possibly big branches:
                 if ((ju_Type(Pjp)) == cJU_JPNULLMAX)    // skip null JP.
                     continue;
@@ -3083,35 +3269,48 @@ JudyLDel(PPvoid_t PPArray,              // in which to delete.
 // code?
                 if ((ju_Type(Pjp)) == cJU_JPIMMED_7_01)
                 {                       // single Immed:
-                    *PLeafWnew++ = JU_DIGITTOSTATE(ldigit, cJU_BYTESPERWORD) | ju_DcdPop0(Pjp);
+                    Word_t pop1;
+                    *PLeafWnew++ = JU_DIGITTOSTATE(ldigit, cJU_BYTESPERWORD) | ju_IMM01Key(Pjp);
 #ifdef JUDYL
-                    *Pjv++ = ju_PImmVals(Pjp);  // copy value area.
+                    *Pjv++ = ju_ImmVal_01(Pjp);  // copy value area.
 #endif // JUDYL
                     continue;
                 }
 #ifdef  JUDY1
-                pop1 = j__udyLeaf7ToLeafW(PLeafWnew,    /* null. */
-                                          Pjp, JU_DIGITTOSTATE(ldigit, cJU_BYTESPERWORD), Pjpm);
+                pop1 = j__udyLeaf7ToLeafW(PLeafWnew,      Pjp, JU_DIGITTOSTATE(ldigit, cJU_BYTESPERWORD), Pjpm);
 #else  // JUDYL
-                pop1 =
-                    j__udyLeaf7ToLeafW(PLeafWnew, Pjv, Pjp,
-                                       JU_DIGITTOSTATE(ldigit, cJU_BYTESPERWORD), Pjpm);
-#endif // JUDYL
-                PLeafWnew += pop1;      // advance through indexes.
-#ifdef JUDYL
+                pop1 = j__udyLeaf7ToLeafW(PLeafWnew, Pjv, Pjp, JU_DIGITTOSTATE(ldigit, cJU_BYTESPERWORD), Pjpm);
                 Pjv += pop1;            // advance through values.
 #endif // JUDYL
+                PLeafWnew += pop1;      // advance through indexes.
             }
             j__udyFreeJBU(PjbuRaw, Pjpm);
             break;                      // delete Index from new LEAFW.
         }                               // case cJU_JPBRANCH_U.
+        case cJU_JPLEAF6:
+            printf("Found LEAF6 --- need to putin LEAFW\n");
+            break;
+        case cJU_JPLEAF5:
+            printf("Found LEAF5 --- need to putin LEAFW\n");
+            break;
+        case cJU_JPLEAF4:
+            printf("Found LEAF4 --- need to putin LEAFW\n");
+            break;
+        case cJU_JPLEAF3:
+            printf("Found LEAF3 --- need to putin LEAFW\n");
+            break;
+        case cJU_JPLEAF2:
+            printf("Found LEAF2 --- need to putin LEAFW\n");
+            break;
+
 // INVALID JP TYPE in jpm_t struct
         default:
             JU_SET_ERRNO_NONNULL(Pjpm, JU_ERRNO_CORRUPT);
             return (JERRI);
-        }                               // end switch on sub-JP type.
+        }       // end switch
 // FREE JPM (no longer needed):
         j__udyFreeJPM(Pjpm, (Pjpm_t) NULL);
         return (1);
     }
- /*NOTREACHED*/}                        // Judy1Unset() / JudyLDel()
+}
+ /*NOTREACHED*/                        // Judy1Unset() / JudyLDel()

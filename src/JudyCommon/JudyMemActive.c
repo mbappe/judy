@@ -63,7 +63,7 @@ FUNCTION Word_t JudyLMemActive
 	else
 	{
 	    Pjpm_t Pjpm = P_JPM(PArray);
-	    return(j__udyGetMemActive(&Pjpm->jpm_JP) + sizeof(jpm_t));
+	    return(j__udyGetMemActive(Pjpm->jpm_JP + 0) + sizeof(jpm_t));
 	}
 
 } // JudyMemActive()
@@ -90,7 +90,7 @@ FUNCTION static Word_t j__udyGetMemActive(
 	case cJU_JPBRANCH_L7:
 	case cJU_JPBRANCH_L:
 	{
-	    Pjbl_t Pjbl = P_JBL(ju_BaLPntr(Pjp));
+	    Pjbl_t Pjbl = P_JBL(ju_PntrInJp(Pjp));
 
 	    for (offset = 0; offset < (Pjbl->jbl_NumJPs); ++offset)
 	        Bytes += j__udyGetMemActive((Pjbl->jbl_jp) + offset);
@@ -108,7 +108,7 @@ FUNCTION static Word_t j__udyGetMemActive(
 	{
 	    Word_t subexp;
 	    Word_t jpcount;
-	    Pjbb_t Pjbb = P_JBB(ju_BaLPntr(Pjp));
+	    Pjbb_t Pjbb = P_JBB(ju_PntrInJp(Pjp));
 
 	    for (subexp = 0; subexp < cJU_NUMSUBEXPB; ++subexp)
 	    {
@@ -133,7 +133,7 @@ FUNCTION static Word_t j__udyGetMemActive(
 	case cJU_JPBRANCH_U7:
 	case cJU_JPBRANCH_U:
         {
-	    Pjbu_t Pjbu = P_JBU(ju_BaLPntr(Pjp));
+	    Pjbu_t Pjbu = P_JBU(ju_PntrInJp(Pjp));
 
             for (offset = 0; offset < cJU_BRANCHUNUMJPS; ++offset)
 	    {

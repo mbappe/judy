@@ -474,7 +474,8 @@ main(int argc, char *argv[])
 
 #ifndef NO_TEST_NEXT_EMPTY // for turn-on testing
 //      Test JLNE, J1NE
-        TestJudyNextEmpty(J1, JL, LowIndex, Delta);
+/////////////////////////////////        TestJudyNextEmpty(J1, JL, LowIndex, Delta);
+        TestJudyNextEmpty(J1, JL, LowIndex, TotalPop);
 
 //      Test JLPE, J1PE
         TestJudyPrevEmpty(J1, JL, HighIndex, Delta);
@@ -1070,7 +1071,17 @@ TestJudyPrevEmpty(void *J1, void *JL, Word_t HighIndex, Word_t Elements)
             break;
         }
         if (J1index != JLindex)
+        {
+            Word_t ErrorL = JLindex;
+            Word_t Error1 = J1index;
+
+            (void)JudyLNext(JL, &ErrorL, NULL); // Get next one
+            (void)Judy1Next(J1, &Error1, NULL); // Get next one
+
+            printf("J1index = 0x%016lx (should be 0x%016lx)\n", J1index, Error1 - 1);
+            printf("JLindex = 0x%016lx (should be 0x%016lx)\n", JLindex, ErrorL - 1);
             FAILURE("JLPE != J1PE returned index at", elm);
+        }
 
         if (pFlag)
         {

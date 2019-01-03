@@ -61,7 +61,7 @@ FUNCTION void GenTable(
     int		 ValueBytes,	// bytes per Value
     int		 OffsetWords)	// 1 for LEAFW
 {
-    int *	 PAllocSizes = AllocSizes;
+    int        * PAllocSizes = AllocSizes;
     int		 OWord;
     int		 CurWord;
     int		 IWord;
@@ -75,13 +75,13 @@ FUNCTION void GenTable(
     int		 MaxWords;
 
     MaxWords  =	ROUNDUP((IndexBytes + ValueBytes) * LeafSize, BPW, OffsetWords);
-    Words[0]  = 0;
+    Words [0] = 0;
     Offset[0] = 0;
     CurWord   = TERMINATOR;
 
 // Walk through all number of Indexes in table:
 
-    for (Index = 1; /* null */; ++Index)
+    for (Index = 1; /* null */; Index++)
     {
 
 // Calculate byte required for next size:
@@ -119,8 +119,14 @@ FUNCTION void GenTable(
 
 // Save words required and last word:
 
-        if (*PAllocSizes < MaxWords) { CurWord = Words[Index] = *PAllocSizes; }
-        else                         { CurWord = Words[Index] = MaxWords; }
+        if (*PAllocSizes < MaxWords) 
+        { 
+            CurWord = Words[Index] = *PAllocSizes; 
+        }
+        else                         
+        { 
+            CurWord = Words[Index] = MaxWords; 
+        }
 
     } // for each index
 
@@ -203,18 +209,15 @@ FUNCTION int main()
     }
 #endif  // JUDYL
 
-    fprintf(fd,"// This file is created by src/JudyTables.c -- DO NOT EDIT!\n");
-//    fprintf(fd,"// @(#) From generation tool: $Revision: 1.3 $ $Source: /home/doug/judy-1.0.5_PSplit_goto_newLeaf3_U2_1K_1_L765_5th_cleanedup_again/src/JudyCommon/RCS/JudyTables.c,v $\n");
+    fprintf(fd,"// This file is created by src/JudyTables.c -- DO NOT EDIT!!\n");
     fprintf(fd,"//\n\n");
-
 
 #ifdef JUDY1
 // ================================ Judy1 =================================
 
     fprintf(fd,"#include \"Judy1.h\"\n");
 
-    fprintf(fd,"// Leave the malloc() sizes readable in the binary (via "
-	   "strings(1)):\n");
+    fprintf(fd,"// Leave the malloc() sizes readable in the binary (via strings(1)):\n");
     fprintf(fd,"const char * Judy1MallocSizes = \"Judy1MallocSizes =");
 
     for (ii = 0; AllocSizes[ii] != TERMINATOR; ii++)
@@ -230,11 +233,10 @@ FUNCTION int main()
             (int)cJ1_LEAF2_MAXPOP1,
             (int)cJ1_LEAF1_MAXPOP1);
 
-    GenTable("j__1_BranchBJP","cJU_BITSPERSUBEXPB",sizeof(jp_t), cJU_BITSPERSUBEXPB, 0, 1);
-    GenTable("j__1_BranchQ","cJU_SUBEXPPERSTATE",sizeof(jp_t), cJU_SUBEXPPERSTATE, 0, 6);
+    GenTable("j__1_BranchBJP","cJU_BITSPERSUBEXPB",sizeof(jp_t), cJU_BITSPERSUBEXPB, 0, 0);
 
-    GenTable("j__1_Leaf1", "cJ1_LEAF1_MAXPOP1", 1, cJ1_LEAF1_MAXPOP1, 0, 1);
-    GenTable("j__1_Leaf2", "cJ1_LEAF2_MAXPOP1", 2, cJ1_LEAF2_MAXPOP1, 0, 1);
+    GenTable("j__1_Leaf1", "cJ1_LEAF1_MAXPOP1", 1, cJ1_LEAF1_MAXPOP1, 0, 0);
+    GenTable("j__1_Leaf2", "cJ1_LEAF2_MAXPOP1", 2, cJ1_LEAF2_MAXPOP1, 0, 0);
     GenTable("j__1_Leaf3", "cJ1_LEAF3_MAXPOP1", 3, cJ1_LEAF3_MAXPOP1, 0, 0);
     GenTable("j__1_Leaf4", "cJ1_LEAF4_MAXPOP1", 4, cJ1_LEAF4_MAXPOP1, 0, 0);
     GenTable("j__1_Leaf5", "cJ1_LEAF5_MAXPOP1", 5, cJ1_LEAF5_MAXPOP1, 0, 0);
@@ -255,7 +257,7 @@ FUNCTION int main()
     for (ii = 0; AllocSizes[ii] != TERMINATOR; ii++)
 	fprintf(fd,"%d,", AllocSizes[ii]);
 
-    fprintf(fd," LW=%d L7=%d L6=%d L5=%d L4=%d L3=%d L2=%d L1=%d\";\n\n", 
+    fprintf(fd," LW=%d L7=%d L6=%d L5=%d L4=%d L3=%d L2=%d L1=%d V=%d\";\n\n", 
             (int)cJL_LEAFW_MAXPOP1,
             (int)cJL_LEAF7_MAXPOP1,
             (int)cJL_LEAF6_MAXPOP1,
@@ -263,13 +265,13 @@ FUNCTION int main()
             (int)cJL_LEAF4_MAXPOP1,
             (int)cJL_LEAF3_MAXPOP1,
             (int)cJL_LEAF2_MAXPOP1,
-            (int)cJL_LEAF1_MAXPOP1);
+            (int)cJL_LEAF1_MAXPOP1,
+            (int)cJU_BITSPERSUBEXPL);
 
-    GenTable("j__L_BranchBJP","cJU_BITSPERSUBEXPB",sizeof(jp_t), cJU_BITSPERSUBEXPB, 0, 1);
-    GenTable("j__L_BranchQ","cJU_SUBEXPPERSTATE",sizeof(jp_t), cJU_SUBEXPPERSTATE, 0, 6);
+    GenTable("j__L_BranchBJP","cJU_BITSPERSUBEXPB",sizeof(jp_t), cJU_BITSPERSUBEXPB, 0, 0);
 
-    GenTable("j__L_Leaf1", "cJL_LEAF1_MAXPOP1",  1, cJL_LEAF1_MAXPOP1,  BPW, 1);
-    GenTable("j__L_Leaf2", "cJL_LEAF2_MAXPOP1",  2, cJL_LEAF2_MAXPOP1,  BPW, 1);
+    GenTable("j__L_Leaf1", "cJL_LEAF1_MAXPOP1",  1, cJL_LEAF1_MAXPOP1,  BPW, 0);
+    GenTable("j__L_Leaf2", "cJL_LEAF2_MAXPOP1",  2, cJL_LEAF2_MAXPOP1,  BPW, 0);
     GenTable("j__L_Leaf3", "cJL_LEAF3_MAXPOP1",  3, cJL_LEAF3_MAXPOP1,  BPW, 0);
     GenTable("j__L_Leaf4", "cJL_LEAF4_MAXPOP1",  4, cJL_LEAF4_MAXPOP1,  BPW, 0);
     GenTable("j__L_Leaf5", "cJL_LEAF5_MAXPOP1",  5, cJL_LEAF5_MAXPOP1,  BPW, 0);

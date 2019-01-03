@@ -75,7 +75,12 @@ FUNCTION int j__udyInsertBranch(
 //	the new intervening BranchL:
 
 	do { ++BranchLevel; } while ((XorExp >>= cJU_BITSPERBYTE));
+
 	assert((BranchLevel > 1) && (BranchLevel < cJU_ROOTSTATE));
+
+#ifdef PCAS
+        printf("---j__udyInsertBranch - Index = 0x%lx, Level=%lu\n", Index, BranchLevel);
+#endif  // PCAS
 
 //	Get the MSB (highest digit) that differs between the old expanse and
 //	the new Index to insert:
@@ -103,7 +108,7 @@ FUNCTION int j__udyInsertBranch(
 	if (Ret == -1) return(-1);
 
 //	Get Pjp to the NULL of where to do insert
-	PjpNull	= (P_JBL(ju_BaLPntr(Pjp))->jbl_jp) + Inew;
+	PjpNull	= (P_JBL(ju_PntrInJp(Pjp))->jbl_jp) + Inew;
 
 //	Convert to a cJU_JPIMMED_*_01 at the correct level:
 //	Build JP and set type below to: cJU_JPIMMED_X_01
@@ -111,7 +116,9 @@ FUNCTION int j__udyInsertBranch(
         ju_SetIMM01(PjpNull, 0, Index, cJU_JPIMMED_1_01 - 2 + BranchLevel);
 
 //	Return pointer to Value area in cJU_JPIMMED_X_01
-	JUDYLCODE(Pjpm->jpm_PValue = (Pjv_t) PjpNull;)
+#ifdef  JUDYL
+	Pjpm->jpm_PValue = ju_PImmVal_01(PjpNull);
+#endif  // JUDYL
 
 //	The old JP now points to a BranchL that is at higher level.  Therefore
 //	it contains excess DCD bits (in the least significant position) that
@@ -135,7 +142,7 @@ FUNCTION int j__udyInsertBranch(
 	DCDMask		 = ~DCDMask & JU_JPDCDPOP0(Pjp);
 //        JP = *Pjp;
 //        JU_JPSETADT(Pjp, JP.Jp_Addr0, DCDMask, JP.jp_Type);
-//        JU_JPSETADT(Pjp, ju_BaLPntr(&JP), DCDMask, ju_Type(&JP));
+//        JU_JPSETADT(Pjp, ju_PntrInJp(&JP), DCDMask, ju_Type(&JP));
         ju_SetDcdPop0(Pjp, DCDMask);
 
 	return(1);

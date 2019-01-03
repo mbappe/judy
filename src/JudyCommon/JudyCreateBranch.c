@@ -57,7 +57,7 @@ FUNCTION int j__udyCreateBranchL(
 	assert(ExpCnt <= cJU_BRANCHLMAXJPS);
 
 #ifdef  PCAS
-        printf("\n=========== j__udyCreateBranchL(ExpCnt = %d)\n", (int)ExpCnt);
+        printf("\n=========== j__udyCreateBranchL(jp_t = %d)\n", (int)ExpCnt);
 #endif  //  PCAS
 
 	PjblRaw	= j__udyAllocJBL(Pjpm);
@@ -81,14 +81,14 @@ FUNCTION int j__udyCreateBranchL(
 
 ////printf("Create BranchL: S Type = %d\n", ju_Type(&PJPs[ii]));
 ////printf("Create BranchL: D Type = %d\n", ju_Type(&Pjbl->jbl_jp[ii]));
-////printf("Create BranchL: S BaL = 0x%lx\n", ju_BaLPntr(PJPs + ii));
-////printf("Create BranchL: D BaL = 0x%lx\n", ju_BaLPntr(Pjbl->jbl_jp + ii));
+////printf("Create BranchL: S BaL = 0x%lx\n", ju_PntrInJp(PJPs + ii));
+////printf("Create BranchL: D BaL = 0x%lx\n", ju_PntrInJp(Pjbl->jbl_jp + ii));
 
 ////        }
 
 //	Pass back new pointer to the Linear branch in JP
 //	Pjp->Jp_Addr0 = PjblRaw;
-        ju_SetBaLPntr(Pjp, PjblRaw);
+        ju_SetPntrInJp(Pjp, PjblRaw);
 
 	return(1);
 
@@ -204,7 +204,7 @@ FUNCTION int j__udyCreateBranchB(
 // Pass back some of the JP to the new Bitmap branch:
 
 //	Pjp->Jp_Addr0 = PjbbRaw;
-        ju_SetBaLPntr(Pjp, PjbbRaw);
+        ju_SetPntrInJp(Pjp, PjbbRaw);
 
 	return(1);
 
@@ -248,7 +248,7 @@ FUNCTION int j__udyCreateBranchU(
         jpLevel = ju_Type(Pjp) - cJU_JPBRANCH_B2;
 
 #ifdef  PCAS
-        printf("\n==========1 j__udyCreateBranchU(%d)\n", jpLevel);
+        printf("\n==========1 j__udyCreateBranchU at level(%d), jp_t - %d\n", jpLevel + 2, (int)Pjbb->jbb_numPtrs);
 #endif  // PCAS
 
 //        JU_JPSETADT(&JPNull, 0, 0, cJU_JPNULL1 + jpLevel);
@@ -256,7 +256,7 @@ FUNCTION int j__udyCreateBranchU(
 
 // Get the pointer to the BranchB:
 
-	PjbbRaw	= ju_BaLPntr(Pjp);
+	PjbbRaw	= ju_PntrInJp(Pjp);
 	Pjbb	= P_JBB(PjbbRaw);
 
 //	Set the pointer to the Uncompressed branch
@@ -343,7 +343,7 @@ FUNCTION int j__udyCreateBranchU(
 	j__udyFreeJBB(PjbbRaw, Pjpm);
 
 //	Pjp->Jp_Addr0  = PjbuRaw;
-        ju_SetBaLPntr(Pjp, PjbuRaw);
+        ju_SetPntrInJp(Pjp, PjbuRaw);
 
 //        jpLevel = JU_JPTYPE(Pjp) - cJU_JPBRANCH_B2;
 //        jpLevel = ju_Type(Pjp) - cJU_JPBRANCH_B2;

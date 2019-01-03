@@ -101,6 +101,8 @@
 #define	cJU_JPBRANCH_U		cJ1_JPBRANCH_U
 //#define	cJU_JPBRANCH_UN	        cJ1_JPBRANCH_UN
 #define	cJU_JPLEAF1		cJ1_JPLEAF1
+#define cJU_JPLEAF1I            cJ1_JPLEAF1I
+#define cJU_JPLEAF1U            cJ1_JPLEAF1U
 //#define	cJU_JPLEAF1N	        cJ1_JPLEAF1N
 #define	cJU_JPLEAF2		cJ1_JPLEAF2
 //#define	cJU_JPLEAF2N    	cJ1_JPLEAF2N
@@ -130,7 +132,7 @@
 #define	cJU_JPIMMED_1_05	cJ1_JPIMMED_1_05
 #define	cJU_JPIMMED_1_06	cJ1_JPIMMED_1_06
 #define	cJU_JPIMMED_1_07	cJ1_JPIMMED_1_07
-//				cJ1_JPIMMED_1_08
+#define	cJU_JPIMMED_1_08	cJ1_JPIMMED_1_08
 //				cJ1_JPIMMED_1_09
 //				cJ1_JPIMMED_1_10
 //				cJ1_JPIMMED_1_11
@@ -140,7 +142,7 @@
 //				cJ1_JPIMMED_1_15
 #define	cJU_JPIMMED_2_02	cJ1_JPIMMED_2_02
 #define	cJU_JPIMMED_2_03	cJ1_JPIMMED_2_03
-//				cJ1_JPIMMED_2_04
+#define	cJU_JPIMMED_2_04	cJ1_JPIMMED_2_04
 //				cJ1_JPIMMED_2_05
 //				cJ1_JPIMMED_2_06
 //				cJ1_JPIMMED_2_07
@@ -148,7 +150,7 @@
 //				cJ1_JPIMMED_3_03
 //				cJ1_JPIMMED_3_04
 //				cJ1_JPIMMED_3_05
-//				cJ1_JPIMMED_4_02
+#define	cJU_JPIMMED_4_02	cJ1_JPIMMED_4_02
 //				cJ1_JPIMMED_4_03
 //				cJ1_JPIMMED_5_02
 //				cJ1_JPIMMED_5_03
@@ -211,6 +213,8 @@
 #define	cJU_JPBRANCH_U		cJL_JPBRANCH_U
 //#define	cJU_JPBRANCH_UN 	cJL_JPBRANCH_UN
 #define	cJU_JPLEAF1		cJL_JPLEAF1
+#define cJU_JPLEAF1I            cJL_JPLEAF1I
+#define cJU_JPLEAF1U            cJL_JPLEAF1U
 //#define	cJU_JPLEAF1N    	cJL_JPLEAF1N
 #define	cJU_JPLEAF2		cJL_JPLEAF2
 //#define	cJU_JPLEAF2N    	cJL_JPLEAF2N
@@ -239,9 +243,12 @@
 #define	cJU_JPIMMED_1_05	cJL_JPIMMED_1_05
 #define	cJU_JPIMMED_1_06	cJL_JPIMMED_1_06
 #define	cJU_JPIMMED_1_07	cJL_JPIMMED_1_07
+#define	cJU_JPIMMED_1_08	cJL_JPIMMED_1_08
 #define	cJU_JPIMMED_2_02	cJL_JPIMMED_2_02
 #define	cJU_JPIMMED_2_03	cJL_JPIMMED_2_03
+#define	cJU_JPIMMED_2_04	cJL_JPIMMED_2_04
 #define	cJU_JPIMMED_3_02	cJL_JPIMMED_3_02
+#define	cJU_JPIMMED_4_02	cJL_JPIMMED_4_02
 #define	cJU_JPIMMED_CAP		cJL_JPIMMED_CAP
 
 #endif // JUDYL
@@ -303,7 +310,7 @@
 
 #define	j__udyBranchBToBranchL	j__udy1BranchBToBranchL
 #define	j__udyLeafB1ToLeaf1	j__udy1LeafB1ToLeaf1
-#define	j__udyLeaf1ToLeaf2	j__udy1Leaf1ToLeaf2
+#define	j__udyLeaf1orB1ToLeaf2	j__udy1Leaf1orB1ToLeaf2
 #define	j__udyLeaf2ToLeaf3	j__udy1Leaf2ToLeaf3
 #define	j__udyLeaf3ToLeaf4	j__udy1Leaf3ToLeaf4
 #define	j__udyLeaf4ToLeaf5	j__udy1Leaf4ToLeaf5
@@ -404,7 +411,7 @@
 
 #define	j__udyBranchBToBranchL	j__udyLBranchBToBranchL
 #define	j__udyLeafB1ToLeaf1	j__udyLLeafB1ToLeaf1
-#define	j__udyLeaf1ToLeaf2	j__udyLLeaf1ToLeaf2
+#define	j__udyLeaf1orB1ToLeaf2	j__udyLLeaf1orB1ToLeaf2
 #define	j__udyLeaf2ToLeaf3	j__udyLLeaf2ToLeaf3
 #define	j__udyLeaf3ToLeaf4	j__udyLLeaf3ToLeaf4
 #define	j__udyLeaf4ToLeaf5	j__udyLLeaf4ToLeaf5
