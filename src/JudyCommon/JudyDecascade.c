@@ -538,6 +538,8 @@ FUNCTION Word_t  j__udyLeaf1orB1ToLeaf2(
             break;
 
 	} // switch
+        return (0);
+
 //printf("\n===============++++++++++++++++++++++++++++++++++===FAILED jpType = %d\n", ju_Type(Pjp));
 
 } // j__udyLeaf1orB1ToLeaf2()
@@ -638,8 +640,7 @@ printf("j__udyLeaf2ToLeaf3, Pop0 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop0(Pjp
             break;
 
 	} // switch
-
-	return(0);
+	return (0);
 
 } // j__udyLeaf2ToLeaf3()
 
@@ -733,6 +734,7 @@ printf("j__udyLeaf3ToLeaf4, Pop0 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop0(Pjp
             break;
 
 	} // switch
+        return (0);
 
 } // j__udyLeaf3ToLeaf4()
 
@@ -829,8 +831,7 @@ printf("j__udyLeaf4ToLeaf5, Pop0 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop0(Pjp
             break;
 
 	} // switch
-
-	return(0);
+	return (0);
 
 } // j__udyLeaf4ToLeaf5()
 
@@ -918,7 +919,6 @@ printf("j__udyLeaf5ToLeaf6, Pop0 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop0(Pjp
             break;
 
 	} // switch
-
 	return(0);
 
 } // j__udyLeaf5ToLeaf6()
@@ -1005,7 +1005,6 @@ printf("j__udyLeaf6ToLeaf7, Pop0 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop0(Pjp
             break;
 
 	} // switch
-
 	return(0);
 
 } // j__udyLeaf6ToLeaf7()
@@ -1096,7 +1095,6 @@ printf("j__udyLeaf7ToLeafW, Pop0 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop0(Pjp
             break;
 
 	} // switch
-
 	return(0);
 
 } // j__udyLeaf7ToLeafW()
