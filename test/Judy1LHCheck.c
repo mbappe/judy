@@ -35,9 +35,6 @@
 #define JudyLDump(wRoot, nBitsLeft, wKeyPrefix)
 #endif // !defined(JUDYL_V2) && !defined(JUDYL_DUMP)
 
-// In case we want to set j__MFlag to 1 to get JudyMalloc to log mmap/munmap.
-extern Word_t j__MFlag;
-
 // Compile:
 // # cc -O Judy1LHCheck.c -lm -lJudy -o Judy1LHCheck
 
@@ -72,17 +69,23 @@ Word_t TestJudyGet(void *J1, void *JL, void *JH, Word_t Seed, Word_t Elements);
 
 int TestJudyCount(void *J1, void *JL, Word_t LowIndex, Word_t Elements);
 
-#if ! defined(NO_TEST_NEXT) // for turn-on testing
+#ifdef NO_TEST_NEXT // for turn-on testing
+  #define NO_TEST_NEXT_EMPTY // NO_TEST_NEXT ==> NO_TEST_NEXT_EMPTY
+#else // NO_TEST_NEXT
 
 Word_t TestJudyNext(void *J1, void *JL, Word_t LowIndex, Word_t Elements);
 
 int TestJudyPrev(void *J1, void *JL, Word_t HighIndex, Word_t Elements);
 
+#endif // #else NO_TEST_NEXT
+
+#ifndef NO_TEST_NEXT_EMPTY // for turn-on testing
+
 int TestJudyNextEmpty(void *J1, void *JL, Word_t LowIndex, Word_t Elements);
 
 int TestJudyPrevEmpty(void *J1, void *JL, Word_t HighIndex, Word_t Elements);
 
-#endif // ! defined(NO_TEST_NEXT)
+#endif // NO_TEST_NEXT_EMPTY
 
 Word_t MagicList[] =
 {
@@ -241,8 +244,6 @@ GetNextIndex(Word_t Index)
 int
 main(int argc, char *argv[])
 {
-    // Set j__MFlag to one to get JudyMalloc to dump mmap/munmap.
-    //j__MFlag = 1;
 //  Names of Judy Arrays
 #ifdef DEBUG
     // Make sure the word before and after J1's root word is zero. It's
@@ -464,23 +465,21 @@ main(int argc, char *argv[])
         {
             TestJudyCount(J1, JL, LowIndex, Delta);
         }
-#if ! defined(NO_TEST_NEXT)
+#ifndef NO_TEST_NEXT // for turn-on testing
         Word_t HighIndex; (void)HighIndex;
 //      Test JLN, J1N
         HighIndex = TestJudyNext(J1, JL, (Word_t)0, TotalPop);
 
 //      Test JLP, J1P
         TestJudyPrev(J1, JL, (Word_t)~0, TotalPop);
-
+#endif // #ifndef NO_TEST_NEXT
 #ifndef NO_TEST_NEXT_EMPTY // for turn-on testing
 //      Test JLNE, J1NE
-/////////////////////////////////        TestJudyNextEmpty(J1, JL, LowIndex, Delta);
-        TestJudyNextEmpty(J1, JL, LowIndex, TotalPop);
+        TestJudyNextEmpty(J1, JL, LowIndex, Delta);
 
 //      Test JLPE, J1PE
         TestJudyPrevEmpty(J1, JL, HighIndex, Delta);
-#endif // NO_TEST_NEXT_EMPTY
-#endif // ! defined(NO_TEST_NEXT)
+#endif // #ifndef NO_TEST_NEXT_EMPTY
 
 //      Test JLD, J1U
         if (dFlag)
@@ -834,7 +833,7 @@ TestJudyCount(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
 #endif // defined(USE_JUDY1_NEXT_IN_COUNT)
         // Count test depends on Next.
         // But it doesn't require both Judy1Next and JudyLNext.
-#if ! defined(NO_TEST_NEXT)
+#ifndef NO_TEST_NEXT
   #if defined(USE_JUDY1_NEXT_IN_COUNT)
         PValue = (PWord_t)JudyLNext(JL, &TstIndex, NULL);
   #else // defined(USE_JUDY1_NEXT_IN_COUNT)
@@ -842,20 +841,20 @@ TestJudyCount(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
   #endif // defined(USE_JUDY1_NEXT_IN_COUNT)
         if (TstIndex != TstIndex1) {
             if ((PValue != NULL) || (Rc == 1)) {
-                printf("PValue = %p Rc = %d\n", (void*)PValue, Rc);
                 Word_t LastIndex1 = -1;
                 Judy1Last(J1, &LastIndex1, NULL);
                 Word_t LastIndexL = -1;
                 JudyLLast(JL, &LastIndexL, NULL);
+                printf("PValue = %p Rc = %d\n", (void*)PValue, Rc);
                 printf("Elements = %zd\n", Elements);
-                printf("LastIndexL = %zd LastIndex1 = %zd\n",
-                       LastIndexL, LastIndex1);
-                printf("Next TstIndex = %zd != TstIndex1 = %zd\n",
-                       TstIndex, TstIndex1);
+                printf("LastIndexL = %zd 0x%zx LastIndex1 = %zd 0x%zx\n",
+                       LastIndexL, LastIndexL, LastIndex1, LastIndex1);
+                printf("Next TstIndex = %zd 0x%zx != TstIndex1 = %zd 0x%zx\n",
+                       TstIndex, TstIndex, TstIndex1, TstIndex1);
                 FAILURE("Count at", elm);
             }
         }
-#endif // ! defined(NO_TEST_NEXT)
+#endif // #ifndef NO_TEST_NEXT
     }
     return(0);
 }
@@ -886,7 +885,7 @@ Word_t TestJudyNext(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
         if (JLindex != J1index)
         {
             printf("JudyLNext = %zx Judy1Next = %zx\n", JLindex, J1index);
-            FAILURE("JudyLNext & Judy1Next ret different PIndex at", elm);
+            FAILURE("JudyLNext & Judy1Next ret different *PIndex at", elm);
         }
 
         JPindex = J1index;              // save the last found index
@@ -1070,16 +1069,11 @@ TestJudyPrevEmpty(void *J1, void *JL, Word_t HighIndex, Word_t Elements)
             }
             break;
         }
-        if (J1index != JLindex)
-        {
-            Word_t ErrorL = JLindex;
-            Word_t Error1 = J1index;
-
-            (void)JudyLNext(JL, &ErrorL, NULL); // Get next one
-            (void)Judy1Next(J1, &Error1, NULL); // Get next one
-
-            printf("J1index = 0x%016lx (should be 0x%016lx)\n", J1index, Error1 - 1);
-            printf("JLindex = 0x%016lx (should be 0x%016lx)\n", JLindex, ErrorL - 1);
+        if (J1index != JLindex) {
+            printf("JLPE != J1PE Key 0x%zx J1PE 0x%zx JLPE 0x%zx\n",
+                    PrevKey, J1index, JLindex);
+            Judy1Dump((Word_t)J1, sizeof(Word_t) * 8, 0);
+            JudyLDump((Word_t)JL, sizeof(Word_t) * 8, 0);
             FAILURE("JLPE != J1PE returned index at", elm);
         }
 

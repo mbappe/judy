@@ -959,12 +959,12 @@ PrintHeaderX(const char *strFirstCol, int nRow)
         printf(nRow ? "      " : "  L2/K");
         printf(nRow ? "      " : "  L1/K");
         printf(nRow ? "      " : "  B1/K");
-#if defined(MIKEY)
+#if defined(MIKEY_1)
         // Doug's code doesn't have a B2 yet.
         if (J1Flag) {
             printf(nRow ? "      " : "  B2/K"); // big bitmap leaf words per key
         } else
-#endif // defined(MIKEY)
+#endif // defined(MIKEY_1)
         printf(nRow ? "      " : "  JV/K");
 
         printf(nRow ? "      " : " %%MEff");
@@ -1897,6 +1897,12 @@ main(int argc, char *argv[])
                 FAILURE("-k is not compatible with -B:DFGNOoS", 0);
             }
         }
+
+        // We allow -E/--splay-key-bits=0x5555555555555555 with -k/--lfsr-only
+        // because we were able to tweak the lfsr code to act like -E without
+        // doing a PDEP and with zero additional cost over a regular lfsr.
+        // We do this by splaying an lfsr magic number seed at the outset and
+        // shifting by two instead of one within the lfsr itself.
         if (bSplayKeyBitsFlag) {
             if (wSplayMask !=
 #if defined(__LP64__) || defined(_WIN64)
@@ -2571,11 +2577,11 @@ main(int argc, char *argv[])
         printf("# COLHEAD %2d L2  - Leaf 2 Byte Key/Key\n", Col++);
         printf("# COLHEAD %2d L1  - Leaf 1 Byte Key/Key\n", Col++);
         printf("# COLHEAD %2d B1  - Bitmap Leaf 1 Bit Key/Key\n", Col++);
-#if defined(MIKEY)
+#if defined(MIKEY_1)
         if (J1Flag) {
             printf("# COLHEAD %2d B2  - Big bitmap leaf/Key\n", Col++);
         } else
-#endif // defined(MIKEY)
+#endif // defined(MIKEY_1)
         printf("# COLHEAD %2d VA  - Value area Words/Key\n", Col++);
 
         printf("# COLHEAD %2d %%MEff - %% RAM JudyMalloc()ed vs mmap()ed from Kernel\n", Col++);
@@ -4123,15 +4129,13 @@ TestJudyIns(void **J1, void **JL, void **JH, PNewSeed_t PSeed, Word_t Elements)
                                     printf("\nTstKey = 0x%" PRIxPTR"\n", TstKey);
                                     FAILURE("JudyLIns failed with NULL after Insert", TstKey);
                                 }
+#ifdef MIKEY_L
                                 if (PValueNew != PValue)
                                 {
-#ifdef MIKEY
                                     FAILURE("Second JudyLIns failed with"
                                             " wrong PValue after Insert",
                                             TstKey);
-#else // MIKEY
-#ifdef  diag
-// very annoying for now (dlb)
+  #if 0
                                     // Doug's code isn't strict about this yet
                                     // because it modifies the array on the way
                                     // down.
@@ -4143,9 +4147,9 @@ TestJudyIns(void **J1, void **JL, void **JH, PNewSeed_t PSeed, Word_t Elements)
                                     printf("- ValueNew = 0x%" PRIxPTR
                                            ", Valueold = 0x%" PRIxPTR"\n",
                                            *PValueNew, *PValue);
-#endif  //  diag
-#endif // #else MIKEY
+  #endif // 0
                                 }
+#endif // MIKEY_L
                                 if (*PValueNew != TstKey)
                                 {
                                     printf("\n*PValueNew = 0x%" PRIxPTR"\n", *PValueNew);
@@ -5119,9 +5123,10 @@ TestJudyNext(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                     if (J1KeyBefore == J1LastKey)
                     {
                         if ((Rc == 1)
-  #ifdef MIKEY // Doug's code fails with this test.
+  // Judy 1.0.5 did not preserve the key value on next/prev failure.
+  #ifndef NO_PRESERVED_KEY
                             || (J1Key != J1KeyBefore)
-  #endif // MIKEY
+  #endif // #ifndef NO_PRESERVED_KEY
                             )
                         {
                             printf("\n");
@@ -5130,6 +5135,12 @@ TestJudyNext(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                             printf("\nElements = %" PRIuPTR
                                    ", elm = %" PRIuPTR"\n",
                                    Elements, elm);
+  #ifndef NO_PRESERVED_KEY
+                            if (Rc != 1) {
+                                printf("Build with -DNO_PRESERVED_KEY"
+                                printf(" to disable this test.");
+                            }
+  #endif // #ifndef NO_PRESERVED_KEY
                             FAILURE("J1N succeeded on last key J1Key", J1Key);
                         }
                         if (Elements == 1) {
@@ -5203,9 +5214,9 @@ TestJudyNext(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                     if (JLKeyBefore == JLLastKey)
                     {
                         if ((PValue != NULL)
-  #ifdef MIKEY // Doug's code fails with this test.
+  #ifndef NO_PRESERVED_KEY
                             || (JLKey != JLKeyBefore)
-  #endif // MIKEY
+  #endif // #ifndef NO_PRESERVED_KEY
                             )
                         {
                             printf("\n");
@@ -5214,6 +5225,12 @@ TestJudyNext(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                             printf("\nElements = %" PRIuPTR
                                    ", elm = %" PRIuPTR"\n",
                                    Elements, elm);
+  #ifndef NO_PRESERVED_KEY
+                            if (PValue == NULL) {
+                                printf("Build with -DNO_PRESERVED_KEY"
+                                printf(" to disable this test.");
+                            }
+  #endif // #ifndef NO_PRESERVED_KEY
                             FAILURE("JLN succeeded on last key JLKey", JLKey);
                         }
                         if (Elements == 1) {
@@ -5323,9 +5340,9 @@ TestJudyPrev(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                     if (J1KeyBefore == J1FirstKey)
                     {
                         if ((Rc == 1)
-  #ifdef MIKEY // Judy fails this test
+  #ifndef NO_PRESERVED_KEY
                             || (J1Key != J1KeyBefore)
-  #endif // MIKEY
+  #endif // #ifndef NO_PRESERVED_KEY
                             )
                         {
                             printf("\n");
@@ -5334,6 +5351,12 @@ TestJudyPrev(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                             printf("\nElements = %" PRIuPTR
                                    ", elm = %" PRIuPTR"\n",
                                    Elements, elm);
+  #ifndef NO_PRESERVED_KEY
+                            if (Rc != 1) {
+                                printf("Build with -DNO_PRESERVED_KEY"
+                                printf(" to disable this test.");
+                            }
+  #endif // #ifndef NO_PRESERVED_KEY
                             FAILURE("J1P succeeded on first key J1Key", J1Key);
                         }
                         if (Elements == 1) {
@@ -5408,9 +5431,9 @@ TestJudyPrev(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                     if (JLKeyBefore == JLFirstKey)
                     {
                         if ((PValue != NULL)
-  #ifdef MIKEY // Judy fails this test
+  #ifndef NO_PRESERVED_KEY
                             || (JLKey != JLKeyBefore)
-  #endif // MIKEY
+  #endif // #ifndef NO_PRESERVED_KEY
                             )
                         {
                             printf("\n");
@@ -5419,6 +5442,12 @@ TestJudyPrev(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                             printf("\nElements = %" PRIuPTR
                                    ", elm = %" PRIuPTR"\n",
                                    Elements, elm);
+  #ifndef NO_PRESERVED_KEY
+                            if (PValue == NULL) {
+                                printf("Build with -DNO_PRESERVED_KEY"
+                                printf(" to disable this test.");
+                            }
+  #endif // #ifndef NO_PRESERVED_KEY
                             FAILURE("JLP succeeded on first key JLKey", JLKey);
                         }
                         if (Elements == 1) {
@@ -5506,8 +5535,9 @@ TestJudyNextEmpty(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                     Word_t J1KeyBefore = J1Key;
                     Rc = Judy1NextEmpty(J1, &J1Key, PJE0);
                     if ((Rc != 1)
-                        && (Judy1Count(J1, J1KeyBefore, -1, PJE0)
-                            != -J1KeyBefore))
+                        && ((Judy1Count(J1, J1KeyBefore, -1, PJE0)
+                                != -J1KeyBefore)
+                            || (J1Key != J1KeyBefore)))
                     {
                         printf("\n");
                         Judy1Dump((Word_t)J1, sizeof(Word_t) * 8, 0);
@@ -5548,8 +5578,9 @@ TestJudyNextEmpty(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                     Word_t JLKeyBefore = JLKey;
                     Rc = JudyLNextEmpty(JL, &JLKey, PJE0);
                     if ((Rc != 1)
-                        && (JudyLCount(JL, JLKeyBefore, -1, PJE0)
-                            != -JLKeyBefore))
+                        && ((JudyLCount(JL, JLKeyBefore, -1, PJE0)
+                                != -JLKeyBefore)
+                            || (JLKey != JLKeyBefore)))
                     {
                         FAILURE("JudyLNextEmpty Rcode != 1 Key", JLKeyBefore);
                     }
@@ -5787,10 +5818,11 @@ TestJudyDel(void **J1, void **JL, void **JH, PNewSeed_t PSeed, Word_t Elements)
                         else if (*PValueNew != TstKey)
                         {
                             printf("\n--- JudyLGet wrong value before JudyLDel"
-                                   "\nKey   = 0x%" PRIxPTR
-                                   "\nValue = 0x%" PRIxPTR"",
+                                   ", Key = 0x%" PRIxPTR
+                                   ", Value = 0x%" PRIxPTR"",
                                    TstKey, *PValueNew);
-                            FAILURE("JudyLGet wrong value before JudyLDel", TstKey);
+                            FAILURE("JudyLGet wrong value before JudyLDel",
+                                    TstKey);
                         }
                     }
 
