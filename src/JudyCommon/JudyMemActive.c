@@ -204,8 +204,8 @@ LeafWords:
 	case cJU_JPIMMED_1_05:	return(J__Mpy * 5);
 	case cJU_JPIMMED_1_06:	return(J__Mpy * 6);
 	case cJU_JPIMMED_1_07:	return(J__Mpy * 7);
+	case cJU_JPIMMED_1_08:	return(J__Mpy * 8);
 #ifdef  JUDY1
-	case cJ1_JPIMMED_1_08:	return(0);
 	case cJ1_JPIMMED_1_09:	return(0);
 	case cJ1_JPIMMED_1_10:	return(0);
 	case cJ1_JPIMMED_1_11:	return(0);

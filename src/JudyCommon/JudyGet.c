@@ -96,7 +96,7 @@ FUNCTION PPvoid_t j__udyLGet (Pcvoid_t PArray,  // from which to retrieve.
         goto NotFoundExit;
 
 #ifdef  TRACEJPG
-    if (startpop && (j__udyPopulation >= startpop))
+//    if (startpop && (j__udyPopulation >= startpop))
     {
 #ifdef JUDY1
         printf("\n0x%lx j__udy1Test, Key = 0x%016lx, Array Pop1 = %lu\n", 
@@ -411,7 +411,6 @@ Leaf1Exit:
 Leaf2Exit:
             posidx = j__udySearchLeaf2(Pjll, Pop1, Index, 2 * 8);
             goto CommonLeafExit;                // posidx & Pjv(only JudyL)
-
         }
 
         case cJU_JPLEAF3:
@@ -561,7 +560,8 @@ Leaf7Exit: // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
 #endif /* BMVALUE */
 
 //          Get raw pointer to Value area
-            Word_t PjvRaw = Pjlb->jLlb_jLlbs[subexp].jLlbs_PV_Raw;
+//            Word_t PjvRaw = Pjlb->jLlb_jLlbs[subexp].jLlbs_PV_Raw;
+            Word_t PjvRaw = JL_JLB_PVALUE(Pjlb, subexp);
 
 #ifdef  UNCOMPVALUE
             if (PjvRaw & 1)     // check if uncompressed Value area
@@ -635,7 +635,6 @@ Leaf7Exit: // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
         case cJ1_JPIMMED_1_10:
         case cJ1_JPIMMED_1_09:
 #endif  // JUDY1
-
         case cJU_JPIMMED_1_08:
         case cJU_JPIMMED_1_07:
         case cJU_JPIMMED_1_06:
@@ -1475,6 +1474,7 @@ CommonLeafExit:
 
         case cJU_JPLEAF4:
         {
+//printf("Get-F4: ju_LeafPop0(Pjp) = 0x%lx, ju_DcdPop0(Pjp) = 0x%016lx, Key = 0x%016lx\n", ju_LeafPop0(Pjp), ju_DcdPop0(Pjp), Index);
             assert(ju_LeafPop0(Pjp) == (ju_DcdPop0(Pjp) & 0xFF));
             if (ju_DcdNotMatchKey(Index, Pjp, 4)) break;
 
@@ -1607,7 +1607,8 @@ Leaf7Exit:
 #endif /* BMVALUE */
 
 //          Get raw pointer to Value area
-            Word_t PjvRaw = Pjlb->jLlb_jLlbs[subexp].jLlbs_PV_Raw;
+//            Word_t PjvRaw = Pjlb->jLlb_jLlbs[subexp].jLlbs_PV_Raw;
+            Word_t PjvRaw = JL_JLB_PVALUE(Pjlb, subexp);
 
 #ifdef  UNCOMPVALUE
             if (PjvRaw & 1)     // check if uncompressed Value area
@@ -1619,8 +1620,15 @@ Leaf7Exit:
 #endif  // UNCOMPVALUE
             {
                 posidx = j__udyCountBitsL(BitMap & (BitMsk - 1));
+//               posidx = BitMap & 255;
             }
             return((PPvoid_t) (P_JV(PjvRaw) + posidx));
+//#ifdef  POSIDX
+//            return((PPvoid_t) (Pjlb->jLlb_PV_Raw + posidx));
+//#else   //  POSIDX
+//            return((PPvoid_t) (Pjlb->jLlb_PV_Raw + Digit));
+//#endif  //  POSIDX
+
 #endif // JUDYL
 
         } // case cJU_JPLEAF_B1
@@ -1707,17 +1715,17 @@ Leaf7Exit:
         case cJ1_JPIMMED_2_07:
         case cJ1_JPIMMED_2_06:
         case cJ1_JPIMMED_2_05:
-        case cJ1_JPIMMED_2_04:
 #endif  // JUDY1
 
+        case cJU_JPIMMED_2_04:
         case cJU_JPIMMED_2_03:
         case cJU_JPIMMED_2_02:
         {
             Pop1 = ju_Type(Pjp) - cJU_JPIMMED_2_02 + 2;
-            Pjll = (Pjll_t)ju_PImmed2(Pjp);     // Get ^ to Keys
 #ifdef  JUDYL
             Pjv = P_JV(ju_PntrInJp(Pjp));  // ^ immediate values area
 #endif  // JUDYL
+            Pjll = (Pjll_t)ju_PImmed2(Pjp);     // Get ^ to Keys
             posidx = j__udySearchLeaf2(Pjll, Pop1, Index, 2 * 8);
             goto CommonLeafExit;
         }
@@ -1798,7 +1806,7 @@ ReturnCorrupt:
 NotFoundExit:
 
 #ifdef TRACEJPG
-    if (startpop && (j__udyPopulation >= startpop))
+//    if (startpop && (j__udyPopulation >= startpop))
     {
 #ifdef JUDY1
         printf("---Judy1Test   Key = 0x%016lx NOT FOUND\n", Index);

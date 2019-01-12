@@ -238,7 +238,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
 //          Value area is in the new Immed 01 JP:
             Pjp = Pjbl->jbl_jp + offset;
 //            Pjpm->jpm_PValue = (Pjv_t) &Pjp->jp_ValueI;
-            Pjpm->jpm_PValue =  ju_PImmVal_01(Pjp);        // ^ to Immed Values
+            Pjpm->jpm_PValue =  ju_PImmVal_01(Pjp);        // ^ to Immed_01 Value
 #endif /* JUDYL */
             return (1);
         }
@@ -267,7 +267,7 @@ j__udyInsWalk(Pjp_t Pjp,                // current JP to descend.
 // longer.
       ConvertBranchLtoU:
 #ifdef  PCAS
-        printf("\nConvertBranchLtoU Array PoP0 > %d\n", (int)JU_BRANCHL_MAX_POP);
+        printf("\nConvertBranchLtoU Array PoP0 > %d, NumJPs = %d\n", (int)JU_BRANCHL_MAX_POP, Pjbl->jbl_NumJPs);
 #endif  // PCAS
 
 // Allocate memory for an uncompressed branch:
@@ -628,7 +628,7 @@ JudyBranchB:
     {
       if (cJU_IMMED1_MAXPOP1 >= cJU_LEAF1_MAXPOP1)    // produce LeafB1 ?
       {
-          assert(FALSE);        // No Leaf1 in this case JUDY1 only?
+          assert(FALSE);        // No Leaf1 in this case
       }
       else      // LEAF1 exists
       {
@@ -1548,27 +1548,27 @@ JudyBranchB:
         Word_t  oldIndex = ju_IMM01Key(Pjp);
         Word_t  newIndex = JU_TrimToIMM01(Index);
 
-        if (oldIndex == newIndex)
+#ifdef  PCAS
+printf("\nJPIMMED_4_01: oldIndex = 0x%016lx, newIndex = 0x%016lx\n", oldIndex, newIndex);
+#endif  // PCAS
+
+        if (oldIndex == newIndex)                       // Duplicate
         {
 #ifdef JUDYL
-//            Pjpm->jpm_PValue = (Pjv_t) &Pjp->jp_ValueI;
-            Pjpm->jpm_PValue = ju_PImmVal_01(Pjp);   // ^ to Immed_x_01 Value
+            Pjpm->jpm_PValue = ju_PImmVal_01(Pjp);      // ^ to Immed_x_01 Value
 #endif /* JUDYL */
             return (0);
         }
 #ifdef JUDYL
-        Word_t    Pjll4Raw;
-        if ((Pjll4Raw = j__udyAllocJLL4(2, Pjpm)) == 0) 
+//      Note: Special knowledge: we know this is really 3 words
+        Word_t PjvRaw = j__udyLAllocJV(2, Pjpm);
+        if (PjvRaw == 0)    
             return (-1);
-        uint32_t *Pjll4 = (uint32_t *)P_JLL(Pjll4Raw);
-        Pjv_t     Pjv = JL_LEAF4VALUEAREA(Pjll4, 2);                                 //  Where is jp_Type for this
+        Pjv_t  Pjv      = P_JV(PjvRaw);
         Word_t oldValue = ju_ImmVal_01(Pjp);
-#endif /* JUDYL */
-
-#ifdef JUDY1
+        ju_SetPntrInJp(Pjp, PjvRaw);
+#endif  // JUDYL
         uint32_t *Pjll4 = ju_PImmed4(Pjp);
-#endif /* JUDY1 */
-
         if (oldIndex < newIndex)
         {
             Pjll4[0] = oldIndex;
@@ -1589,18 +1589,7 @@ JudyBranchB:
             Pjpm->jpm_PValue = Pjv + 0;
 #endif /* JUDYL */
         }
-#ifdef JUDYL
-        Word_t  D_P0 = Index & cJU_DCDMASK(4);  /* pop0 = 0 */
-//        JU_JPSETADT(Pjp, Pjll4Raw, D_P0, cJU_JPLEAF4);
-        ju_SetDcdPop0(Pjp, D_P0);     // pop0 == 0
-        ju_SetLeafPop0(Pjp, 2 - 1);
-        ju_SetJpType(Pjp, cJU_JPLEAF4);
-        ju_SetPntrInJp(Pjp, Pjll4Raw);
-#endif /* JUDYL */
-
-#ifdef JUDY1
-        ju_SetJpType(Pjp, cJ1_JPIMMED_4_02);
-#endif /* JUDY1 */
+        ju_SetJpType(Pjp, cJU_JPIMMED_4_02);
         return (1);
     }
 
@@ -1781,8 +1770,8 @@ JudyBranchB:
     case cJU_JPIMMED_1_04:
     case cJU_JPIMMED_1_05:
     case cJU_JPIMMED_1_06:
-#ifdef JUDY1
     case cJU_JPIMMED_1_07:
+#ifdef JUDY1
     case cJ1_JPIMMED_1_08:
     case cJ1_JPIMMED_1_09:
     case cJ1_JPIMMED_1_10:
@@ -1802,10 +1791,8 @@ JudyBranchB:
 #endif // JUDYL
 
         exppop1 = ju_Type(Pjp) - (cJU_JPIMMED_1_02) + 2;
-        offset  = j__udySearchLeaf1(ju_PImmed1(Pjp), 
-                                exppop1, Index, 1 * 8);
+        offset  = j__udySearchLeaf1(ju_PImmed1(Pjp), exppop1, Index, 1 * 8);
 #ifdef JUDYL
-//        PjvRaw = Pjp->jp_ValueI;
         PjvRaw = ju_PntrInJp(Pjp);    // Raw ^ to Immed Values
         Pjv = P_JV(PjvRaw);
 #endif  // JUDYL
@@ -1853,7 +1840,7 @@ JudyBranchB:
     case cJ1_JPIMMED_1_15:
 #endif  // JUDY1
 #ifdef  JUDYL
-    case cJL_JPIMMED_1_07:
+    case cJL_JPIMMED_1_08:
 #endif  // JUDYL
     {
         uint8_t *Pjll1 = ju_PImmed1(Pjp);
@@ -1874,7 +1861,8 @@ JudyBranchB:
             return (0);         // Duplicate
         }
 
-        if (cJU_IMMED1_MAXPOP1 >= cJU_LEAF1_MAXPOP1)    // produce LeafB1?
+//      if Leaf1 pop is too small, then go for B1
+        if (cJU_IMMED1_MAXPOP1 >= cJU_LEAF1_MAXPOP1)
         {
 //          Then produce a LeafB1
 
@@ -1887,11 +1875,9 @@ JudyBranchB:
 //	    Copy 1 byte index Leaf to bitmap Leaf
 	    for (int ii = 0; ii < cJU_IMMED1_MAXPOP1; ii++)
                 JU_BITMAPSETL(Pjlb, Pjll1[ii]);
-//          Were done for Judy1
+//          Were done with Judy1, finish up 
 
 #ifdef JUDYL
-//#ifdef BMVALUE 
-//#else 
 //	    Build 4 subexpanse Value leaves from bitmap
 	    for (int ii = 0; ii < cJU_NUMSUBEXPL; ii++)
 	    {
@@ -1927,7 +1913,6 @@ JudyBranchB:
 	        }
 	    }
             j__udyLFreeJV(PjvRaw, cJU_IMMED1_MAXPOP1, Pjpm);
-//#endif  // BMVALUE
 #endif  // JUDYL
 
             Word_t DcdP0 = (Index & cJU_DCDMASK(1)) + cJU_IMMED1_MAXPOP1 - 1;
@@ -1936,9 +1921,9 @@ JudyBranchB:
             ju_SetDcdPop0(Pjp, DcdP0);
             ju_SetLeafPop0(Pjp, DcdP0); // have not done Insert yet
             ju_SetJpType(Pjp, cJU_JPLEAF_B1);
+            goto ContinueInsWalk;       // now go insert the Key into new LeafB1
         }
-//////////#ifdef  JUDYL
-        else //      no, produce a Leaf1
+        else // no B1, so produce Leaf1 from IMMED_1_xx MAX JudyL=8, Judy1=15
         {
             Word_t Pjll1newRaw = j__udyAllocJLL1(cJU_IMMED1_MAXPOP1, Pjpm);
             if (Pjll1newRaw == 0)
@@ -1946,33 +1931,31 @@ JudyBranchB:
             uint8_t *Pjll1new = P_JLL1(Pjll1newRaw);
 
             JU_COPYMEM(Pjll1new, Pjll1, cJU_IMMED1_MAXPOP1);
-//          not necessary since we havent finished 
+//          not necessary since we havent done the inseet yet
 //            JU_PADLEAF1(Pjll1new, cJU_IMMED1_MAXPOP1);
 
 #ifdef JUDYL
-// Blind assumption fix it !!!!!!!!!!!!!!!!!!!!!!!!
             Pjv_t  Pjvnew = JL_LEAF1VALUEAREA(Pjll1new, cJU_IMMED1_MAXPOP1);
-            JU_COPYMEM(Pjvnew, Pjv, cJU_IMMED1_MAXPOP1);
+//          Copy Values from Immed to Leaf
+            JU_COPYMEM(Pjvnew, Pjv, cJU_IMMED1_MAXPOP1);        
             j__udyLFreeJV(PjvRaw, cJU_IMMED1_MAXPOP1, Pjpm);
-#endif /* JUDYL */
+#endif  // JUDYL
 
             Word_t DcdP0 = (Index & cJU_DCDMASK(1)) + cJU_IMMED1_MAXPOP1 - 1;
 //            JU_JPSETADT(Pjp, Pjll1newRaw, DcdP0, cJU_JPLEAF1);
             ju_SetPntrInJp(Pjp, Pjll1newRaw);
             ju_SetDcdPop0(Pjp, DcdP0);
-            ju_SetLeafPop0(Pjp, DcdP0);         // not done Insert yet
+            ju_SetLeafPop0(Pjp, DcdP0); // not done Insert yet
             ju_SetJpType(Pjp, cJU_JPLEAF1);
+            goto ContinueInsWalk;       // now go insert the Key into new Leaf1
         }
-//////#endif  // JUDYL
-
-        goto ContinueInsWalk;          // go insert the Key into new Leaf1
     }
 // cJU_JPIMMED_[2..7]_[02..15] cases that grow in place or cascade:
 //
 // (2_01 => [ 2_02 => 2_03 => [ 2_04..07 => ]] LeafL)
     case cJU_JPIMMED_2_02:
-#ifdef JUDY1
     case cJU_JPIMMED_2_03:
+#ifdef JUDY1
     case cJ1_JPIMMED_2_04:
     case cJ1_JPIMMED_2_05:
     case cJ1_JPIMMED_2_06:
@@ -1983,14 +1966,14 @@ JudyBranchB:
         offset = j__udySearchLeaf2(ju_PImmed2(Pjp), exppop1, Index, 2 * 8);
 
 #ifdef JUDYL
-        Word_t  PjvOldRaw = ju_PntrInJp(Pjp);
-        Pjv_t   PjvOld = P_JV(PjvOldRaw);
+        Word_t  PjvRaw = ju_PntrInJp(Pjp);
+        Pjv_t   Pjv     = P_JV(PjvRaw);
 #endif // JUDYL
 
         if (offset >= 0)
         {
 #ifdef JUDYL
-            Pjpm->jpm_PValue = PjvOld + offset;
+            Pjpm->jpm_PValue = Pjv + offset;
 #endif /* JUDYL */
             return (0);
         }
@@ -1998,19 +1981,24 @@ JudyBranchB:
         JU_INSERTINPLACE(ju_PImmed2(Pjp), exppop1, offset, Index);
 
 #ifdef JUDYL
-// Blind assumption that Value area can hold 3 Values -- fix it !!!!!!!!!!!!!!!!!!!!!!!!
-//        Word_t    PjvnewRaw = j__udyLAllocJV(exppop1 + 1, Pjpm);
-//        if (PjvnewRaw == 0)
-//            return (-1);
-//        Pjv_t Pjvnew = P_JV(PjvnewRaw);
-//        Pleaf = Pjp->jp_LIndex2;
-//        JU_INSERTCOPY(Pjvnew, PjvOld, exppop1, offset, 0);
-//        j__udyLFreeJV(PjvOldRaw, exppop1, Pjpm);
-//        Pjp->jp_PValue = PjvnewRaw;
-        JU_INSERTINPLACE(PjvOld, exppop1, offset, 0);        /* see TBD above about this: */
-//        ju_SetPntrInJp(Pjp, PjvnewRaw);
-        Pjpm->jpm_PValue = PjvOld + offset;
-#endif  // JUDYL
+        if (JL_LEAFVGROWINPLACE(exppop1))       // only 2 to 3
+        {
+            JU_INSERTINPLACE(Pjv, exppop1, offset, 0);
+        }
+        else    // only 3 to 4
+        {
+//          Increase size of value area 3 to 4:
+            Word_t PjvnewRaw = j__udyLAllocJV(exppop1 + 1, Pjpm);
+            if (PjvnewRaw == 0) 
+                return(-1);
+            Pjv_t Pjvnew = P_JV(PjvnewRaw);
+            JU_INSERTCOPY(Pjvnew, Pjv, exppop1, offset, 0);
+            j__udyLFreeJV(PjvRaw, exppop1, Pjpm);
+            ju_SetPntrInJp(Pjp, PjvnewRaw);
+            Pjv = Pjvnew;
+        }
+        Pjpm->jpm_PValue = Pjv + offset;                // new value area.
+#endif // JUDYL
 
 //        ++(Pjp->jp_Type);
         ju_SetJpType(Pjp, ju_Type(Pjp) + 1);
@@ -2018,7 +2006,7 @@ JudyBranchB:
     }
 
 #ifdef JUDYL
-    case cJU_JPIMMED_2_03:
+    case cJL_JPIMMED_2_04:
 #else /* JUDY1 */
     case cJ1_JPIMMED_2_07:
 #endif /* JUDY1 */
@@ -2046,13 +2034,12 @@ JudyBranchB:
         if (Pleaf2newRaw == 0)
             return (-1);
         uint16_t *Pleaf2new = P_JLL(Pleaf2newRaw);
-//        JU_INSERTCOPY((uint16_t *) Pjll, Pjp->jp_LIndex2, 3, offset, Index);
         JU_INSERTCOPY(Pleaf2new, ju_PImmed2(Pjp), exppop1, offset, Index);
 
 #ifdef JUDYL
         Pjv_t   Pjvnew = JL_LEAF2VALUEAREA(Pleaf2new, exppop1 + 1);
         JU_INSERTCOPY(Pjvnew, PjvOld, exppop1, offset, 0);
-        j__udyLFreeJV(PjvOldRaw, /* 3 */ exppop1, Pjpm);
+        j__udyLFreeJV(PjvOldRaw, /* 4 */ exppop1, Pjpm);
         Pjpm->jpm_PValue = Pjvnew + offset;
 #endif  // JUDYL
 
@@ -2132,30 +2119,54 @@ JudyBranchB:
         return (1);
     }
 
-#ifdef JUDY1
 // (4_01 => [[ 4_02..03 => ]] LeafL)
-    case cJ1_JPIMMED_4_02:
+    case cJU_JPIMMED_4_02:
     {
-        uint32_t *Pleaf4;
-        int       offset;
-        exppop1 = ju_Type(Pjp) - (cJ1_JPIMMED_4_02) + 2;
-//        offset = j__udySearchLeaf4(Pjp->jp_1Index4, exppop1, Index);
-        offset = j__udySearchLeaf4(ju_PImmed4(Pjp), exppop1, Index, 4 * 8);
+        uint32_t *Pjll4 = ju_PImmed4(Pjp);
+        int offset      = j__udySearchLeaf4(Pjll4, 2, Index, 4 * 8);
+#ifdef  JUDYL
+        Word_t PjvRaw   = ju_PntrInJp(Pjp);
+        Pjv_t  Pjv      = P_JV(PjvRaw);                     // corresponding values.
+#endif  // JUDYL
         if (offset >= 0)
+        {
+#ifdef  JUDYL
+            Pjpm->jpm_PValue = Pjv + offset;
+#endif  // JUDYL
             return (0);
+        }
         offset = ~offset;
-//        Pjll = Pjp->jp_1Index4;
-        Pleaf4 = ju_PImmed4(Pjp);
-        JU_INSERTINPLACE(Pleaf4, exppop1, offset, Index);
+#ifdef JUDYL
+        Word_t Pleaf4newRaw = j__udyAllocJLL4(2 + 1, Pjpm);
+        if (Pleaf4newRaw == 0)
+            return (-1);
+
+        uint32_t *Pleaf4new = (uint32_t *)P_JLL(Pleaf4newRaw);
+        JU_INSERTCOPY(Pleaf4new, ju_PImmed4(Pjp), 2, offset, Index);
+
+        Pjv_t Pjvnew = JL_LEAF4VALUEAREA(Pleaf4new, 2 + 1);
+        JU_INSERTCOPY(Pjvnew, Pjv, 2, offset, 0);
+        Pjpm->jpm_PValue = Pjvnew + offset;                // new value area.
+        j__udyLFreeJV(PjvRaw, 2, Pjpm);
+
+        Word_t D_P0 = (Index & cJU_DCDMASK(4)) + (2) - 1;
+//        JU_JPSETADT(Pjp, PjllRaw, D_P0, cJU_JPLEAF4);
+        ju_SetPntrInJp(Pjp, Pleaf4newRaw);
+        ju_SetDcdPop0(Pjp, D_P0);
+        ju_SetLeafPop0(Pjp, 3 - 1);
+        ju_SetJpType(Pjp, cJU_JPLEAF4);
+#else   // JUDY1
+        JU_INSERTINPLACE(Pjll4, 2, offset, Index);
 //        ++(Pjp->jp_Type);
-        ju_SetJpType(Pjp, ju_Type(Pjp) + 1);
+        ju_SetJpType(Pjp, cJ1_JPIMMED_4_03);
+#endif  // JUDY1
         return (1);
     }
 
+#ifdef  JUDY1
     case cJ1_JPIMMED_4_03:
     {
         int       offset;
-//        offset = j__udySearchLeaf4(Pjp->jp_1Index4, (3), Index);
         offset = j__udySearchLeaf4(ju_PImmed4(Pjp), (3), Index, 4 * 8);
         if (offset >= 0)
             return (0);
@@ -2170,7 +2181,7 @@ JudyBranchB:
         ju_SetPntrInJp(Pjp, Pleaf4newRaw);
         ju_SetDcdPop0(Pjp, D_P0);
         ju_SetLeafPop0(Pjp, 3);
-        ju_SetJpType(Pjp, cJU_JPLEAF4);
+        ju_SetJpType(Pjp, cJ1_JPLEAF4);
         return (1);
     }
 
@@ -2212,7 +2223,6 @@ JudyBranchB:
 //        JU_JPSETADT(Pjp, PjllRaw, D_P0, cJU_JPLEAF5);
         ju_SetPntrInJp(Pjp, PjllRaw);
         ju_SetDcdPop0(Pjp, D_P0);
-        ju_SetLeafPop0(Pjp, D_P0 + 1);
         ju_SetLeafPop0(Pjp, 3);
         ju_SetJpType(Pjp, cJU_JPLEAF5);
         return (1);

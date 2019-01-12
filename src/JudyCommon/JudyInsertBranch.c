@@ -65,8 +65,8 @@ FUNCTION int j__udyInsertBranch(
 //	Obtain Dcd bits that differ between Index and JP, shifted so the
 //	digit for BranchLevel is the LSB:
 
-	XorExp = ((Index ^ JU_JPDCDPOP0(Pjp)) & (cJU_ALLONES >> cJU_BITSPERBYTE))
-	       >> (BranchLevel * cJU_BITSPERBYTE);
+	XorExp = (Index ^ JU_JPDCDPOP0(Pjp)) >> (BranchLevel * cJU_BITSPERBYTE);
+//	XorExp = ((Index ^ JU_JPDCDPOP0(Pjp)) & (cJU_ALLONES >> cJU_BITSPERBYTE)) >> (BranchLevel * cJU_BITSPERBYTE);
 	assert(XorExp);		// Index must be an outlier.
 
 //	Count levels between object under narrow pointer and the level at which
@@ -76,7 +76,7 @@ FUNCTION int j__udyInsertBranch(
 
 	do { ++BranchLevel; } while ((XorExp >>= cJU_BITSPERBYTE));
 
-	assert((BranchLevel > 1) && (BranchLevel < cJU_ROOTSTATE));
+//	assert((BranchLevel > 1) && (BranchLevel < cJU_ROOTSTATE));
 
 #ifdef PCAS
         printf("---j__udyInsertBranch - Index = 0x%lx, Level=%lu\n", Index, BranchLevel);

@@ -53,18 +53,18 @@
 // OVERVIEW OF Judy*Prev():
 //
 // Use a reentrant switch statement (state machine, SM1 = "get") to decode the
-// callers *PIndex-1, starting with the (PArray), through branches, if
-// any, down to an immediate or a leaf.  Look for *PIndex-1 in that leaf, and
+// callers Index-1, starting with the (PArray), through branches, if
+// any, down to an immediate or a leaf.  Look for Index-1 in that leaf, and
 // if found, return it.
 //
 // A dead end is either a branch that does not contain a JP for the appropriate
-// digit in *PIndex-1, or a leaf that does not contain the undecoded digits of
-// *PIndex-1.  Upon reaching a dead end, backtrack through the leaf/branches
+// digit in *ndex-1, or a leaf that does not contain the undecoded digits of
+// Index-1.  Upon reaching a dead end, backtrack through the leaf/branches
 // that were just traversed, using a list (history) of parent JPs that is built
 // while going forward in SM1Get.  Start with the current leaf or branch.  In a
-// backtracked leaf, look for an Index less than *PIndex-1.  In each
+// backtracked leaf, look for an Index less than Index-1.  In each
 // backtracked branch, look "sideways" for the next JP, if any, lower than the
-// one for the digit (from *PIndex-1) that was previously decoded.  While
+// one for the digit (from Index-1) that was previously decoded.  While
 // backtracking, if a leaf has no previous Index or a branch has no lower JP,
 // go to its parent branch in turn.  Upon reaching the JRP, return failure, "no
 // previous Index".  The backtrack process is sufficiently different from
@@ -81,20 +81,20 @@
 // "Decode" bytes in JPs complicate this process a little.  In SM1Get, when a
 // JP is a narrow pointer, that is, when states are skipped (so the skipped
 // digits are stored in jp_DcdPopO), compare the relevant digits to the same
-// digits in *PIndex-1.  If they are EQUAL, proceed in SM1Get as before.  If
+// digits in Index-1.  If they are EQUAL, proceed in SM1Get as before.  If
 // jp_DcdPopOs digits are GREATER, treat the JP as a dead end and proceed in
 // SM2Backtrack.  If jp_DcdPopOs digits are LESS, treat the JP as if it had
 // just been found during a backtrack and proceed directly in SM3Findlimit.
 //
 // Note that Decode bytes can be ignored in SM3Findlimit; they dont matter.
 // Also note that in practice the Decode bytes are routinely compared with
-// *PIndex-1 because thats simpler and no slower than first testing for
+// Index-1 because thats simpler and no slower than first testing for
 // narrowness.
 //
 // Decode bytes also make it unnecessary to construct the Index to return (the
-// revised *PIndex) during the search.  This step is deferred until finding an
+// revised Index) during the search.  This step is deferred until finding an
 // Index during backtrack or findlimit, before returning it.  The first digit
-// of *PIndex is derived (saved) based on which JP is used in a JRP branch.
+// of Index is derived (saved) based on which JP is used in a JRP branch.
 // The remaining digits are obtained from the jp_DcdPopO field in the JP (if
 // any) above the immediate or leaf containing the found (prev) Index, plus the
 // remaining digit(s) in the immediate or leaf itself.  In the case of a LEAFW,
@@ -108,12 +108,12 @@
 // the branch handling cases in SM1Get do some shortcutting (sideways
 // searching) to avoid pushing history and calling SM2Backtrack unnecessarily.
 //
-// Upon reaching an Index to return after backtracking, *PIndex must be
+// Upon reaching an Index to return after backtracking, Index must be
 // modified to the found Index.  In principle this could be done by building
 // the Index from a saved rootdigit (in the top branch) plus the Dcd bytes from
 // the parent JP plus the appropriate Index bytes from the leaf.  However,
 // Immediates are difficult because their parent JPs lack one (last) digit.  So
-// instead just build the *PIndex to return "top down" while backtracking and
+// instead just build the Index to return "top down" while backtracking and
 // findlimiting.
 //
 // This function is written iteratively for speed, rather than recursively.
@@ -127,7 +127,7 @@
 // (decoding), and restarting from the top upon a dead end.
 //
 // A lookahead means noting the last branch traversed which contained a
-// non-null JP lower than the one specified by a digit in *PIndex-1, and
+// non-null JP lower than the one specified by a digit in Index-1, and
 // returning to that point for SM3Findlimit.  This seems like a good idea, and
 // should be pretty cheap for linear and bitmap branches, but it could result
 // in up to 31 unnecessary additional cache line fills (in extreme cases) for
@@ -139,7 +139,7 @@
 // list length will be an issue.)
 //
 // Restarting at the top of the Judy array after a dead end requires a careful
-// modification of *PIndex-1 to decrement the digit for the parent branch and
+// modification of Index-1 to decrement the digit for the parent branch and
 // set the remaining lower digits to all 1s.  This must be repeated each time a
 // parent branch contains another dead end, so even though it should all happen
 // in cache, the CPU time can be excessive.  (For JudySL or an equivalent
@@ -147,7 +147,7 @@
 // "circular" list and a restart-at-top when the list is backtracked to
 // exhaustion.)
 //
-// Why search for *PIndex-1 instead of *PIndex during SM1Get?  In rare
+// Why search for Index-1 instead of Index during SM1Get?  In rare
 // instances this prevents an unnecessary decode down the wrong path followed
 // by a backtrack; its pretty cheap to set up initially; and it means the
 // SM1Get machine can simply return if/when it finds that Index.
@@ -164,7 +164,7 @@
 // The Judy*Next() code is nearly a perfect mirror of the Judy*Prev() code.
 // See the Judy*Prev() overview comments, and mentally switch the following:
 //
-// - "*PIndex-1"  => "*PIndex+1"
+// - "Index-1"  => "Index+1"
 // - "less than"  => "greater than"
 // - "lower"      => "higher"
 // - "lowest"     => "highest"
@@ -184,14 +184,6 @@
 
 //#define Printf  printf
 #define Printf(...) 
-
-//#undef JU_RET_FOUND
-// #ifdef JUDYPREV
-// #define JU_RET_FOUND    { Printf("--Returned JudyPrev: *PIndex = 0x%016lx\n", *PIndex); return(1); }
-// #else
-// #define JU_RET_FOUND    { Printf("--Returned JudyNext: *PIndex = 0x%016lx\n", *PIndex); return(1); }
-// #endif
-
 
 #ifdef JUDY1
 #ifdef JUDYPREV
@@ -216,6 +208,7 @@ FUNCTION PPvoid_t JudyLNext
 	Pjbl_t	  Pjbl;		// Pjp->Jp_Addr0 masked and cast to types:
 	Pjbb_t	  Pjbb;
 	Pjbu_t	  Pjbu;
+        Word_t    Index;        // Staged *PIndex
 
 // Note:  The following initialization is not strictly required but it makes
 // gcc -Wall happy because there is an "impossible" path from Immed handling to
@@ -230,13 +223,6 @@ FUNCTION PPvoid_t JudyLNext
 	int	  subexp;	// subexpanse in a bitmap branch.
 	Word_t	  bitposmask;	// bit in bitmap for Index.
 
-#ifdef JUDYPREV
-        Printf("\n\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
-        Printf("----Entry--JudyPrev           (0x%016lx)\n", *PIndex);
-#else
-        Printf("\n\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
-        Printf("----Entry--JudyNext           (0x%016lx)\n", *PIndex);
-#endif
 
 // History for SM2Backtrack:
 //
@@ -367,8 +353,8 @@ FUNCTION PPvoid_t JudyLNext
 
 // CHECK DECODE BYTES:
 //
-// Check Decode bytes in a JP against the equivalent portion of *PIndex.  If
-// *PIndex is lower (for Judy*Prev()) or higher (for Judy*Next()), this JP is a
+// Check Decode bytes in a JP against the equivalent portion of Index.  If
+// Index is lower (for Judy*Prev()) or higher (for Judy*Next()), this JP is a
 // dead end (the same as if it had been absent in a linear or bitmap branch or
 // null in an uncompressed branch), enter SM2Backtrack; otherwise enter
 // SM3Findlimit to find the highest/lowest Index under this JP, as if the code
@@ -381,9 +367,9 @@ FUNCTION PPvoid_t JudyLNext
 #endif
 
 #define	CHECKDCD(cState)						\
-	if (ju_DcdNotMatchKey(*PIndex, Pjp, cState))	                \
+	if (ju_DcdNotMatchKey(Index, Pjp, cState))	                \
 	{								\
-	    if ((*PIndex	      & cJU_DCDMASK(cState))		\
+	    if ((Index	      & cJU_DCDMASK(cState))		\
 	      CDcmp__(ju_DcdPop0(Pjp) & cJU_DCDMASK(cState)))		\
 	    {								\
 		goto SM2Backtrack;					\
@@ -400,17 +386,17 @@ Printf("\n FAILED CDcmp -- going to SM3Findlimit\n");                   \
 
 #define	SM1PREPB(cState,Next)				\
 	state = (cState);				\
-	digit = JU_DIGITATSTATE(*PIndex, cState);	\
+	digit = JU_DIGITATSTATE(Index, cState);	\
 	goto Next
 
 
 // PREPARE TO HANDLE A LEAFW OR JRP BRANCH IN SM3:
 //
-// Optionally save Dcd bytes into *PIndex, then save state and jump to common
+// Optionally save Dcd bytes into Index, then save state and jump to common
 // code for multiple cases.
 
 #define	SM3PREPB_DCD(cState,Next)			\
-	JU_SETDCD(*PIndex, Pjp, cState);	        \
+	JU_SETDCD(Index, Pjp, cState);	        \
 	SM3PREPB(cState,Next)
 
 #define	SM3PREPB(cState,Next)  state = (cState); goto Next
@@ -419,10 +405,10 @@ Printf("\n FAILED CDcmp -- going to SM3Findlimit\n");                   \
 // ----------------------------------------------------------------------------
 // CHECK FOR SHORTCUTS:
 //
-// Error out if PIndex is null.  Execute JU_RET_NOTFOUND if the Judy array is
-// empty or *PIndex is already the minimum/maximum Index possible.
+// Error out if Index is null.  Execute JU_RET_NOTFOUND if the Judy array is
+// empty or Index is already the minimum/maximum Index possible.
 //
-// Note:  As documented, in case of failure *PIndex may be modified.
+// Note:  As documented, in case of failure Index may be modified.
 
 	if (PIndex == (PWord_t) NULL)
 	{
@@ -431,18 +417,27 @@ Printf("\n FAILED CDcmp -- going to SM3Findlimit\n");                   \
 	    JUDY1CODE(return(JERRI ););
 	    JUDYLCODE(return(PPJERR););
 	}
+        Index = *PIndex;                // get staged copy
+
+#ifdef JUDYPREV
+        Printf("\n\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+        Printf("----Entry--JudyPrev           (0x%016lx)\n", Index);
+#else
+        Printf("\n\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+        Printf("----Entry--JudyNext           (0x%016lx)\n", Index);
+#endif
 
 	if (PArray == (Pvoid_t) NULL) 
 	    JU_RET_NOTFOUND;
 
 #ifdef JUDYPREV
-	if (*PIndex == 0)               // already at min
+	if (Index == 0)               // already at min
 	    JU_RET_NOTFOUND;
-        (*PIndex)--;                    // set to one less
+        Index--;                    // set to one less
 #else   // JUDYNEXT
-	if (*PIndex == cJU_ALLONES)     // already at max
+	if (Index == cJU_ALLONES)     // already at max
 	    JU_RET_NOTFOUND;
-        (*PIndex)++;                    // set to one more
+        Index++;                    // set to one more
 #endif  // JUDYNEXT
 
 
@@ -454,19 +449,20 @@ Printf("\n FAILED CDcmp -- going to SM3Findlimit\n");                   \
 
 // ROOT-STATE LEAF that starts with a Pop0 word; just look within the leaf:
 //
-// If *PIndex is in the leaf, return it; otherwise return the Index, if any,
+// If Index is in the leaf, return it; otherwise return the Index, if any,
 // below where it would belong.
 
 	if (JU_LEAFW_POP0(PArray) < cJU_LEAFW_MAXPOP1)  // is it a LEAFW
 	{
 	    Pjllw_t Pjllw = P_JLLW(PArray);	        // leafW.
 	    pop1 = Pjllw->jlw_Population0 + 1;
-	    offset = j__udySearchLeafW(Pjllw->jlw_Leaf, pop1, *PIndex);
+	    offset = j__udySearchLeafW(Pjllw->jlw_Leaf, pop1, Index);
 
 	    if (offset >= 0)                            // at beginning
             {
 //              Index is present.
-		JU_RET_FOUND_LEAFW(Pjllw, pop1, offset);// *PIndex is set.
+                *PIndex = Index;
+		JU_RET_FOUND_LEAFW(Pjllw, pop1, offset);// Index is set.
 	    }
             offset = ~offset;                           // location of hole
 
@@ -478,7 +474,8 @@ Printf("\n FAILED CDcmp -- going to SM3Findlimit\n");                   \
             else
             {
                 offset--;                               // Prev exists
-	        *PIndex = Pjllw->jlw_Leaf[offset];      // next-left Index
+	        Index = Pjllw->jlw_Leaf[offset];      // next-left Index
+                *PIndex = Index;
 	        JU_RET_FOUND_LEAFW(Pjllw, pop1, offset);
             }
 #else   // JUDYNEXT
@@ -488,7 +485,8 @@ Printf("\n FAILED CDcmp -- going to SM3Findlimit\n");                   \
             }
             else 
             {                                           // Next exists
-	        *PIndex = Pjllw->jlw_Leaf[offset];      // next-right Index
+	        Index = Pjllw->jlw_Leaf[offset];      // next-right Index
+                *PIndex = Index;
 	        JU_RET_FOUND_LEAFW(Pjllw, pop1, offset);
             }
 #endif  // JUDYNEXT
@@ -503,11 +501,11 @@ Printf("\n FAILED CDcmp -- going to SM3Findlimit\n");                   \
 // ============================================================================
 // STATE MACHINE 1 -- GET INDEX:
 //
-// Search for *PIndex (already decremented/incremented so as to be inclusive).
+// Search for Index (already decremented/incremented so as to be inclusive).
 // If found, return it.  Otherwise in theory hand off to SM2Backtrack or
 // SM3Findlimit, but in practice "shortcut" by first sideways searching the
 // current branch or leaf upon hitting a dead end.  During sideways search,
-// modify *PIndex to a new path taken.
+// modify Index to a new path taken.
 //
 // ENTRY:  Pjp points to next JP to interpret, whose Decode bytes have not yet
 // been checked.  This JP is not yet listed in history.
@@ -533,7 +531,7 @@ Printf("\ngoto SM1Get, jp_Type= %d\n", ju_Type(Pjp));
 // LINEAR BRANCH:
 //
 // Check Decode bytes, if any, in the current JP, then search for a JP for the
-// next digit in *PIndex.
+// next digit in Index.
 
 	case cJU_JPBRANCH_L2: CHECKDCD(2); SM1PREPB(2, SM1BranchL);
 	case cJU_JPBRANCH_L3: CHECKDCD(3); SM1PREPB(3, SM1BranchL);
@@ -549,7 +547,7 @@ SM1BranchL:
 Printf("\ngoto SM1BranchL\n");
 	    Pjbl = P_JBL(ju_PntrInJp(Pjp));
 
-// Found JP matching current digit in *PIndex; record parent JP and the next
+// Found JP matching current digit in Index; record parent JP and the next
 // JPs offset, and iterate to the next JP:
 
 
@@ -565,7 +563,7 @@ Printf("\n---offset from j__udySearchBranchL = %d\n", offset);
 	    }
             offset = ~offset;                   // hole position
 
-// Dead end, no JP in BranchL for next digit in *PIndex:
+// Dead end, no JP in BranchL for next digit in Index:
 //
 // Get the ideal location of digits JP, and if theres no next-left/right JP
 // in the BranchL, shortcut and start backtracking one level up; ignore the
@@ -582,9 +580,9 @@ Printf("BRANCH_L offset =%d\n", offset);
 #endif  // JUDYNEXT
 
 // Theres a next-left/right JP in the current BranchL; save its digit in
-// *PIndex and shortcut to SM3Findlimit:
+// Index and shortcut to SM3Findlimit:
 
-	    JU_SETDIGIT(*PIndex, Pjbl->jbl_Expanse[offset], state);
+	    JU_SETDIGIT(Index, Pjbl->jbl_Expanse[offset], state);
 	    Pjp = (Pjbl->jbl_jp) + offset;
 	    goto SM3Findlimit;
 
@@ -593,7 +591,7 @@ Printf("BRANCH_L offset =%d\n", offset);
 // BITMAP BRANCH:
 //
 // Check Decode bytes, if any, in the current JP, then look for a JP for the
-// next digit in *PIndex.
+// next digit in Index.
 
 	case cJU_JPBRANCH_B2: CHECKDCD(2); SM1PREPB(2, SM1BranchB);
 	case cJU_JPBRANCH_B3: CHECKDCD(3); SM1PREPB(3, SM1BranchB);
@@ -621,7 +619,7 @@ Printf("\ngoto SM1BranchB\n");
 	    // right range:
 	    assert((offset >= -1) && (offset < (int) cJU_BITSPERSUBEXPB));
 
-// Found JP matching current digit in *PIndex:
+// Found JP matching current digit in Index:
 //
 // Record the parent JP and the next JPs offset; and iterate to the next JP.
 
@@ -645,7 +643,7 @@ Printf("\n---offset from BRANCH_B = %d\n", offset);
 		goto SM1Get;		// iterate to next JP.
 	    }
 
-// Dead end, no JP in BranchB for next digit in *PIndex:
+// Dead end, no JP in BranchB for next digit in Index:
 //
 // If theres a next-left/right JP in the current BranchB, shortcut to
 // SM3Findlimit.  Note:  offset is already set to the correct value for the
@@ -676,13 +674,13 @@ Printf("\n---offset from BRANCH_B = %d\n", offset);
 		offset = 0;
 #endif
 
-// Save the next-left/right JPs digit in *PIndex:
+// Save the next-left/right JPs digit in Index:
 
 SM1BranchBFindlimit:
 Printf("\ngoto SM1BranchBFindlimit\n");
 		JU_BITMAPDIGITB(digit, subexp, JU_JBB_BITMAP(Pjbb, subexp),
 				offset);
-		JU_SETDIGIT(*PIndex, digit, state);
+		JU_SETDIGIT(Index, digit, state);
 
 		if ((Pjp = P_JP(JU_JBB_PJP(Pjbb, subexp))) == (Pjp_t) NULL)
 		{
@@ -708,7 +706,7 @@ Printf("\ngoto SM1BranchBFindlimit\n");
 // UNCOMPRESSED BRANCH:
 //
 // Check Decode bytes, if any, in the current JP, then look for a JP for the
-// next digit in *PIndex.
+// next digit in Index.
 
 	case cJU_JPBRANCH_U2: CHECKDCD(2); SM1PREPB(2, SM1BranchU);
 	case cJU_JPBRANCH_U3: CHECKDCD(3); SM1PREPB(3, SM1BranchU);
@@ -725,7 +723,7 @@ Printf("\ngoto SM1BranchU\n");
 	    Pjbu = P_JBU(ju_PntrInJp(Pjp));
 	    Pjp2 = (Pjbu->jbu_jp) + digit;
 
-// Found JP matching current digit in *PIndex:
+// Found JP matching current digit in Index:
 //
 // Record the parent JP and the next JPs digit, and iterate to the next JP.
 //
@@ -741,10 +739,10 @@ Printf("\ngoto SM1BranchU\n");
 		goto SM1Get;
 	    }
 
-// Dead end, no JP in BranchU for next digit in *PIndex:
+// Dead end, no JP in BranchU for next digit in Index:
 //
 // Search for a next-left/right JP in the current BranchU, and if one is found,
-// save its digit in *PIndex and shortcut to SM3Findlimit:
+// save its digit in Index and shortcut to SM3Findlimit:
 
 #ifdef JUDYPREV
 	    while (digit >= 1)
@@ -753,7 +751,7 @@ Printf("\ngoto SM1BranchU\n");
 		if (JPNULL(ju_Type(Pjp))) 
                     continue;
 
-		JU_SETDIGIT(*PIndex, digit, state);
+		JU_SETDIGIT(Index, digit, state);
 		goto SM3Findlimit;
             }
 #else   // JUDYNEXT
@@ -763,7 +761,7 @@ Printf("\ngoto SM1BranchU\n");
 		if (JPNULL(ju_Type(Pjp))) 
                     continue;
 
-		JU_SETDIGIT(*PIndex, digit, state);
+		JU_SETDIGIT(Index, digit, state);
 		goto SM3Findlimit;
 	    }
 #endif  // JUDYNEXT
@@ -780,14 +778,14 @@ Printf("\ngoto SM1BranchU\n");
 // LINEAR LEAF:
 //
 // Check Decode bytes, if any, in the current JP, then search the leaf for
-// *PIndex.
+// Index.
 
 #define	SM1LEAFL(Func,Exp)					\
 	Pjll   = P_JLL(ju_PntrInJp(Pjp));		        \
         assert(ju_LeafPop0(Pjp) == (ju_DcdPop0(Pjp) & 0xFF));   \
 	pop1   = ju_LeafPop0(Pjp) + 1;	                        \
-	offset = Func(Pjll, pop1, *PIndex, Exp);		\
-Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offset, ~offset, pop1, *PIndex);    \
+	offset = Func(Pjll, pop1, Index, Exp);		        \
+Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offset, ~offset, pop1, Index);    \
 	goto SM1LeafLImm
 
 	case cJU_JPLEAF1:  CHECKDCD(1); SM1LEAFL(j__udySearchLeaf1, 1 * 8);
@@ -804,6 +802,7 @@ Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offs
 SM1LeafLImm:
 Printf("\ngoto SM1LeafLImm\n");
 
+            *PIndex = Index;
 #ifdef  JUDYL
 	    if (offset >= 0)		// *PIndex is in LeafL / Immed.
 	    {				// JudyL is trickier...
@@ -855,15 +854,15 @@ Printf("\ngoto SM1LeafLImm\n");
 		    JUDYLCODE(return(PPJERR););
                 }
                 }
-	    } // found *PIndex
+	    } // found Index
 #endif // JUDYL
 
 #ifdef  JUDY1
-	    if (offset >= 0)		// *PIndex is in LeafL / Immed.
+	    if (offset >= 0)		// Index is in LeafL / Immed.
 		JU_RET_FOUND;
 #endif  // JUDY1
 
-// Dead end, no Index in LeafL / Immed for remaining digit(s) in *PIndex:
+// Dead end, no Index in LeafL / Immed for remaining digit(s) in Index:
 //
 // Get the ideal location of Index, and if theres no next-left/right Index in
 // the LeafL / Immed, shortcut and start backtracking one level up; ignore the
@@ -883,7 +882,7 @@ Printf("\ngoto SM1LeafLImm\n");
 #endif
 
 // Theres a next-left/right Index in the current LeafL / Immed; shortcut by
-// copying its digit(s) to *PIndex and returning it.
+// copying its digit(s) to Index and returning it.
 //
 // Unfortunately this is pretty hairy, especially avoiding endian issues.
 //
@@ -896,14 +895,16 @@ Printf("\ngoto SM1LeafLImm\n");
 	    {
 	    case cJU_JPLEAF1:
             {
-		JU_SETDIGIT1(*PIndex, ((uint8_t *) Pjll)[offset]);
+		JU_SETDIGIT1(Index, ((uint8_t *) Pjll)[offset]);
+                *PIndex = Index;
 		JU_RET_FOUND_LEAF1(Pjll, pop1, offset);
             }
 
 	    case cJU_JPLEAF2:
             {
-		*PIndex = (*PIndex & (~JU_LEASTBYTESMASK(2)))
+		Index = (Index & (~JU_LEASTBYTESMASK(2)))
 			| ((uint16_t *) Pjll)[offset];
+                *PIndex = Index;
 		JU_RET_FOUND_LEAF2(Pjll, pop1, offset);
             }
 
@@ -911,14 +912,16 @@ Printf("\ngoto SM1LeafLImm\n");
 	    {
 		Word_t lsb;
 		JU_COPY3_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (3 * offset));
-		*PIndex = (*PIndex & (~JU_LEASTBYTESMASK(3))) | lsb;
+		Index = (Index & (~JU_LEASTBYTESMASK(3))) | lsb;
+                *PIndex = Index;
 		JU_RET_FOUND_LEAF3(Pjll, pop1, offset);
 	    }
 
 	    case cJU_JPLEAF4:
             {
-		*PIndex = (*PIndex & (~JU_LEASTBYTESMASK(4)))
+		Index = (Index & (~JU_LEASTBYTESMASK(4)))
 			| ((uint32_t *) Pjll)[offset];
+                *PIndex = Index;
 		JU_RET_FOUND_LEAF4(Pjll, pop1, offset);
             }
 
@@ -926,7 +929,8 @@ Printf("\ngoto SM1LeafLImm\n");
 	    {
 		Word_t lsb;
 		JU_COPY5_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (5 * offset));
-		*PIndex = (*PIndex & (~JU_LEASTBYTESMASK(5))) | lsb;
+		Index = (Index & (~JU_LEASTBYTESMASK(5))) | lsb;
+                *PIndex = Index;
 		JU_RET_FOUND_LEAF5(Pjll, pop1, offset);
 	    }
 
@@ -934,7 +938,8 @@ Printf("\ngoto SM1LeafLImm\n");
 	    {
 		Word_t lsb;
 		JU_COPY6_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (6 * offset));
-		*PIndex = (*PIndex & (~JU_LEASTBYTESMASK(6))) | lsb;
+		Index = (Index & (~JU_LEASTBYTESMASK(6))) | lsb;
+                *PIndex = Index;
 		JU_RET_FOUND_LEAF6(Pjll, pop1, offset);
 	    }
 
@@ -942,11 +947,12 @@ Printf("\ngoto SM1LeafLImm\n");
 	    {
 		Word_t lsb;
 		JU_COPY7_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (7 * offset));
-		*PIndex = (*PIndex & (~JU_LEASTBYTESMASK(7))) | lsb;
+		Index = (Index & (~JU_LEASTBYTESMASK(7))) | lsb;
+                *PIndex = Index;
 		JU_RET_FOUND_LEAF7(Pjll, pop1, offset);
 	    }
 
-#define	SET_01(cState)  JU_SETDIGITS(*PIndex, ju_IMM01Key(Pjp), cState)
+#define	SET_01(cState)  JU_SETDIGITS(Index, ju_IMM01Key(Pjp), cState)
 
 	    case cJU_JPIMMED_1_01: SET_01(1); goto SM1Imm_01;
 	    case cJU_JPIMMED_2_01: SET_01(2); goto SM1Imm_01;
@@ -958,6 +964,7 @@ Printf("\ngoto SM1LeafLImm\n");
 
 SM1Imm_01:      
 Printf("\ngoto SM1Imm_01\n");
+            *PIndex = Index;
             JU_RET_FOUND_IMM_01(Pjp);
 
 // Shorthand for where to find start of Index bytes array:
@@ -988,7 +995,8 @@ Printf("\ngoto SM1Imm_01\n");
 	    case cJ1_JPIMMED_1_15:
 #endif
             {
-		JU_SETDIGIT1(*PIndex, (PJI_1)[offset]);
+		JU_SETDIGIT1(Index, (PJI_1)[offset]);
+                *PIndex = Index;
 		JU_RET_FOUND_IMM(Pjp, offset);
             }
 
@@ -1002,9 +1010,10 @@ Printf("\ngoto SM1Imm_01\n");
 	    case cJ1_JPIMMED_2_07:
 #endif
             {
-		*PIndex = (*PIndex & (~JU_LEASTBYTESMASK(2)))
+		Index = (Index & (~JU_LEASTBYTESMASK(2)))
 			| (PJI_2)[offset];
 
+                *PIndex = Index;
 		JU_RET_FOUND_IMM(Pjp, offset);
             }
 
@@ -1018,22 +1027,25 @@ Printf("\ngoto SM1Imm_01\n");
 	    {
 		Word_t lsb;
 		JU_COPY3_PINDEX_TO_LONG(lsb, (PJI_3) + (3 * offset));
-		*PIndex = (*PIndex & (~JU_LEASTBYTESMASK(3))) | lsb;
+		Index = (Index & (~JU_LEASTBYTESMASK(3))) | lsb;
+                *PIndex = Index;
 		JU_RET_FOUND_IMM(Pjp, offset);
 	    }
 
 	    case cJU_JPIMMED_4_02:
             {
-		*PIndex = (*PIndex & (~JU_LEASTBYTESMASK(4)))
+		Index = (Index & (~JU_LEASTBYTESMASK(4)))
 			| (PJI_4)[offset];
+                *PIndex = Index;
 		JU_RET_FOUND_IMM(Pjp, offset);
             }
 
 #ifdef  JUDY1
 	    case cJ1_JPIMMED_4_03:
             {
-		*PIndex = (*PIndex & (~JU_LEASTBYTESMASK(4)))
+		Index = (Index & (~JU_LEASTBYTESMASK(4)))
 			| (PJI_4)[offset];
+                *PIndex = Index;
 		JU_RET_FOUND_IMM(Pjp, offset);
             }
 
@@ -1042,7 +1054,8 @@ Printf("\ngoto SM1Imm_01\n");
 	    {
 		Word_t lsb;
 		JU_COPY5_PINDEX_TO_LONG(lsb, (PJI_5) + (5 * offset));
-		*PIndex = (*PIndex & (~JU_LEASTBYTESMASK(5))) | lsb;
+		Index = (Index & (~JU_LEASTBYTESMASK(5))) | lsb;
+                *PIndex = Index;
 		JU_RET_FOUND_IMM(Pjp, offset);
 	    }
 
@@ -1050,7 +1063,8 @@ Printf("\ngoto SM1Imm_01\n");
 	    {
 		Word_t lsb;
 		JU_COPY6_PINDEX_TO_LONG(lsb, (PJI_6) + (6 * offset));
-		*PIndex = (*PIndex & (~JU_LEASTBYTESMASK(6))) | lsb;
+		Index = (Index & (~JU_LEASTBYTESMASK(6))) | lsb;
+                *PIndex = Index;
 		JU_RET_FOUND_IMM(Pjp, offset);
 	    }
 
@@ -1058,13 +1072,14 @@ Printf("\ngoto SM1Imm_01\n");
 	    {
 		Word_t lsb;
 		JU_COPY7_PINDEX_TO_LONG(lsb, (PJI_7) + (7 * offset));
-		*PIndex = (*PIndex & (~JU_LEASTBYTESMASK(7))) | lsb;
+		Index = (Index & (~JU_LEASTBYTESMASK(7))) | lsb;
+                *PIndex = Index;
 		JU_RET_FOUND_IMM(Pjp, offset);
 	    }
 
 #endif // JUDY1
 
-	    } // switch for not-found *PIndex
+	    } // switch for not-found Index
 
 	    JU_SET_ERRNO(PJError, JU_ERRNO_CORRUPT);	// impossible?
             assert(0);
@@ -1076,7 +1091,7 @@ Printf("\ngoto SM1Imm_01\n");
 // BITMAP LEAF:
 //
 // Check Decode bytes, if any, in the current JP, then look in the leaf for
-// *PIndex.
+// Index.
 
 	case cJU_JPLEAF_B1:
 	{
@@ -1084,12 +1099,12 @@ Printf("\ngoto SM1Imm_01\n");
 	    CHECKDCD(1);
 
 	    Pjlb	= P_JLB(ju_PntrInJp(Pjp));
-	    digit       = JU_DIGITATSTATE(*PIndex, 1);
+	    digit       = JU_DIGITATSTATE(Index, 1);
 	    subexp      = JU_SUBEXPL(digit);
 	    bitposmask  = JU_BITPOSMASKL(digit);
 	    assert(subexp < cJU_NUMSUBEXPL);	// falls in expected range.
 
-// *PIndex exists in LeafB1:
+// Index exists in LeafB1:
 
 //	    if (JU_BITMAPTESTL(Pjlb, digit))			// slower.
 	    if (JU_JLB_BITMAP(Pjlb, subexp) & bitposmask)	// faster.
@@ -1097,11 +1112,12 @@ Printf("\ngoto SM1Imm_01\n");
 #ifdef JUDYL				// needs offset at this point:
 		offset = SEARCHBITMAPL(JU_JLB_BITMAP(Pjlb, subexp), digit, bitposmask);
 #endif
+                *PIndex = Index;
 		JU_RET_FOUND_LEAF_B1(Pjlb, subexp, offset);
 //	== return((PPvoid_t) (P_JV(JL_JLB_PVALUE(Pjlb, subexp)) + (offset)));
 	    }
 
-// Dead end, no Index in LeafB1 for remaining digit in *PIndex:
+// Dead end, no Index in LeafB1 for remaining digit in Index:
 //
 // If theres a next-left/right Index in the current LeafB1, which for
 // Judy*Next() is true if any bits are set for higher Indexes, shortcut by
@@ -1138,12 +1154,13 @@ Printf("\ngoto SM1Imm_01\n");
 		offset = 0;
 #endif
 
-// Save the next-left/right Indexess digit in *PIndex:
+// Save the next-left/right Indexess digit in Index:
 
 SM1LeafB1Findlimit:
 Printf("\ngoto SM1LeafB1Findlimit\n");
 		JU_BITMAPDIGITL(digit, subexp, JU_JLB_BITMAP(Pjlb, subexp), offset);
-		JU_SETDIGIT1(*PIndex, digit);
+		JU_SETDIGIT1(Index, digit);
+                *PIndex = Index;
 		JU_RET_FOUND_LEAF_B1(Pjlb, subexp, offset);
 //	== return((PPvoid_t) (P_JV(JL_JLB_PVALUE(Pjlb, subexp)) + (offset)));
 	    }
@@ -1161,12 +1178,13 @@ Printf("\ngoto SM1LeafB1Findlimit\n");
 // ----------------------------------------------------------------------------
 // FULL POPULATION:
 //
-// If the Decode bytes match, *PIndex is found (without modification).
+// If the Decode bytes match, Index is found (without modification).
 
 	case cJ1_JPFULLPOPU1:
         {
 
 	    CHECKDCD(1);
+            *PIndex = Index;
 	    JU_RET_FOUND_FULLPOPU1;
         }
 #endif  // JUDY1
@@ -1184,7 +1202,7 @@ Printf("\ngoto SM1LeafB1Findlimit\n");
 #ifdef orig1
 #define	SM1IMM(Func,cPop1, cIMMS)				\
 	SM1IMM_SETPOP1(cPop1);				        \
-	offset = Func((Pjll_t) (PJI_1), cPop1, *PIndex);	\
+	offset = Func((Pjll_t) (PJI_1), cPop1, Index);	\
 	goto SM1LeafLImm
 #else   // orig1
 
@@ -1195,16 +1213,16 @@ Printf("\ngoto SM1LeafB1Findlimit\n");
         switch (cIMMs)                                              \
         {                                                           \
         case 1:                                                     \
-	    offset = Func((Pjll_t) (PJI_1), cPop1, *PIndex, Exp);   \
+	    offset = Func((Pjll_t) (PJI_1), cPop1, Index, Exp);   \
             break;                                                  \
         case 2:                                                     \
-	    offset = Func((Pjll_t) (PJI_2), cPop1, *PIndex, Exp);   \
+	    offset = Func((Pjll_t) (PJI_2), cPop1, Index, Exp);   \
             break;                                                  \
         case 3:                                                     \
-	    offset = Func((Pjll_t) (PJI_3), cPop1, *PIndex, Exp);   \
+	    offset = Func((Pjll_t) (PJI_3), cPop1, Index, Exp);   \
             break;                                                  \
         case 4:                                                     \
-	    offset = Func((Pjll_t) (PJI_4), cPop1, *PIndex, Exp);   \
+	    offset = Func((Pjll_t) (PJI_4), cPop1, Index, Exp);   \
             break;                                                  \
         default:                                                    \
             assert(0);                                              \
@@ -1218,25 +1236,25 @@ Printf("\ngoto SM1LeafB1Findlimit\n");
         switch (cIMMs)                                              \
         {                                                           \
         case 1:                                                     \
-	    offset = Func((Pjll_t) (PJI_1), cPop1, *PIndex, Exp);   \
+	    offset = Func((Pjll_t) (PJI_1), cPop1, Index, Exp);   \
             break;                                                  \
         case 2:                                                     \
-	    offset = Func((Pjll_t) (PJI_2), cPop1, *PIndex, Exp);   \
+	    offset = Func((Pjll_t) (PJI_2), cPop1, Index, Exp);   \
             break;                                                  \
         case 3:                                                     \
-	    offset = Func((Pjll_t) (PJI_3), cPop1, *PIndex, Exp);   \
+	    offset = Func((Pjll_t) (PJI_3), cPop1, Index, Exp);   \
             break;                                                  \
         case 4:                                                     \
-	    offset = Func((Pjll_t) (PJI_4), cPop1, *PIndex, Exp);   \
+	    offset = Func((Pjll_t) (PJI_4), cPop1, Index, Exp);   \
             break;                                                  \
         case 5:                                                     \
-	    offset = Func((Pjll_t) (PJI_5), cPop1, *PIndex, Exp);   \
+	    offset = Func((Pjll_t) (PJI_5), cPop1, Index, Exp);   \
             break;                                                  \
         case 6:                                                     \
-	    offset = Func((Pjll_t) (PJI_6), cPop1, *PIndex, Exp);   \
+	    offset = Func((Pjll_t) (PJI_6), cPop1, Index, Exp);   \
             break;                                                  \
         case 7:                                                     \
-	    offset = Func((Pjll_t) (PJI_7), cPop1, *PIndex, Exp);   \
+	    offset = Func((Pjll_t) (PJI_7), cPop1, Index, Exp);   \
             break;                                                  \
         default:                                                    \
             assert(0);                                              \
@@ -1248,7 +1266,7 @@ Printf("\ngoto SM1LeafB1Findlimit\n");
 
 // Special case for Pop1 = 1 Immediate JPs:
 //
-// If *PIndex is in the immediate, offset is 0, otherwise the binary NOT of the
+// If Index is in the immediate, offset is 0, otherwise the binary NOT of the
 // offset where it belongs, 0 or 1, same as from the search functions.
 
 #ifdef JUDYPREV
@@ -1259,8 +1277,8 @@ Printf("\ngoto SM1LeafB1Findlimit\n");
 
 #define	SM1IMM_01							\
 	SM1IMM_01_SETPOP1;						\
-	offset = ((ju_IMM01Key(Pjp) <  JU_TrimToIMM01(*PIndex)) ? ~1 :  \
-		  (ju_IMM01Key(Pjp) == JU_TrimToIMM01(*PIndex)) ?  0 :  \
+	offset = ((ju_IMM01Key(Pjp) <  JU_TrimToIMM01(Index)) ? ~1 :    \
+		  (ju_IMM01Key(Pjp) == JU_TrimToIMM01(Index)) ?  0 :    \
 							           ~0); \
 	goto SM1LeafLImm
 
@@ -1351,13 +1369,13 @@ Printf("\ngoto SM1LeafB1Findlimit\n");
 //
 // Look for the next-left/right JP in a branch, backing up the history list as
 // necessary.  Upon finding a next-left/right JP, modify the corresponding
-// digit in *PIndex before passing control to SM3Findlimit.
+// digit in Index before passing control to SM3Findlimit.
 //
 // Note:  As described earlier, only branch JPs are expected here; other types
 // fall into the default case.
 //
 // Note:  If a found JP contains needed Dcd bytes, thats OK, theyre copied to
-// *PIndex in SM3Findlimit.
+// Index in SM3Findlimit.
 //
 // TBD:  This code has a lot in common with similar code in the shortcut cases
 // in SM1Get.  Can combine this code somehow?
@@ -1399,11 +1417,11 @@ Printf("\ngoto SM2Branch_L%ld, offset = %d\n", state, offset);
 #endif
 
 // Theres a next-left/right JP in the current BranchL; save its digit in
-// *PIndex and continue with SM3Findlimit:
+// Index and continue with SM3Findlimit:
 
-Printf("\nBRANCH_L%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d\n", state, *PIndex, offset);
-	    JU_SETDIGIT(*PIndex, Pjbl->jbl_Expanse[offset], state);
-Printf("\nBRANCH_L%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d\n", state, *PIndex, offset);
+Printf("\nBRANCH_L%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d\n", state, Index, offset);
+	    JU_SETDIGIT(Index, Pjbl->jbl_Expanse[offset], state);
+Printf("\nBRANCH_L%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d\n", state, Index, offset);
 
 	    Pjp = (Pjbl->jbl_jp) + offset;
 	    goto SM3Findlimit;
@@ -1460,14 +1478,14 @@ Printf("\ngoto SM2BranchB\n");
 		offset = 0;
 #endif
 
-// Save the next-left/right JPs digit in *PIndex:
+// Save the next-left/right JPs digit in Index:
 
 SM2BranchBFindlimit:
 Printf("\ngoto SM2BranchBFindlimit\n");
 		JU_BITMAPDIGITB(digit, subexp, JU_JBB_BITMAP(Pjbb, subexp), offset);
-Printf("\nBRANCH_B%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d\n", state, *PIndex, offset);
-		JU_SETDIGIT(*PIndex, digit, state);
-Printf("\nBRANCH_B%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d\n", state, *PIndex, offset);
+Printf("\nBRANCH_B%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d\n", state, Index, offset);
+		JU_SETDIGIT(Index, digit, state);
+Printf("\nBRANCH_B%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d\n", state, Index, offset);
 
 		if ((Pjp = P_JP(JU_JBB_PJP(Pjbb, subexp))) == (Pjp_t) NULL)
 		{
@@ -1501,7 +1519,7 @@ SM2BranchU:
 Printf("\ngoto SM2BranchU\n");
 
 // Search for a next-left/right JP in the current BranchU, and if one is found,
-// save its digit in *PIndex and continue to SM3Findlimit:
+// save its digit in Index and continue to SM3Findlimit:
 
 	    Pjbu  = P_JBU(ju_PntrInJp(Pjp));
 	    digit = offset;
@@ -1513,7 +1531,7 @@ Printf("\ngoto SM2BranchU\n");
 		if (JPNULL(ju_Type(Pjp))) 
                     continue;
 
-		JU_SETDIGIT(*PIndex, digit, state);
+		JU_SETDIGIT(Index, digit, state);
 		goto SM3Findlimit;
 	    }
 #else
@@ -1523,7 +1541,7 @@ Printf("\ngoto SM2BranchU\n");
 		if (JPNULL(ju_Type(Pjp))) 
                     continue;
 
-		JU_SETDIGIT(*PIndex, digit, state);
+		JU_SETDIGIT(Index, digit, state);
 		goto SM3Findlimit;
 	    }
 #endif  // JUDYNEXT
@@ -1551,7 +1569,7 @@ Printf("\ngoto SM2BranchU\n");
 //
 // Look for the highest/lowest (right/left-most) JP in each branch and the
 // highest/lowest Index in a leaf or immediate, and return it.  While
-// traversing, modify appropriate digit(s) in *PIndex to reflect the path
+// traversing, modify appropriate digit(s) in Index to reflect the path
 // taken, including Dcd bytes in each JP (which could hold critical missing
 // digits for skipped branches).
 //
@@ -1562,7 +1580,7 @@ Printf("\ngoto SM2BranchU\n");
 // impossible to fail, unless the Judy array is corrupt.
 
 SM3Findlimit:		// come or return here for first/next branch/leaf.
-Printf("\ngoto SM3Findlimit, jp_type = %d, Addr0 = 0x%016lx, Addr1 = 0x%016lx, Index = 0x%016lx\n", ju_Type(Pjp), Pjp->jp_Addr0, Pjp->jp_Addr1, *PIndex);
+Printf("\ngoto SM3Findlimit, jp_type = %d, Addr0 = 0x%016lx, Addr1 = 0x%016lx, Index = 0x%016lx\n", ju_Type(Pjp), Pjp->jp_Addr0, Pjp->jp_Addr1, Index);
 
 	switch (ju_Type(Pjp))
 	{
@@ -1570,7 +1588,7 @@ Printf("\ngoto SM3Findlimit, jp_type = %d, Addr0 = 0x%016lx, Addr1 = 0x%016lx, I
 // LINEAR BRANCH:
 //
 // Simply use the highest/lowest (right/left-most) JP in the BranchL, but first
-// copy the Dcd bytes to *PIndex if there are any (only if state <
+// copy the Dcd bytes to Index if there are any (only if state <
 // cJU_ROOTSTATE - 1).
 
 	case cJU_JPBRANCH_L2:  SM3PREPB_DCD(2, SM3BranchL);
@@ -1599,9 +1617,9 @@ Printf("\ngoto SM3BranchL, jp_Type = %d, state - %lu\n", ju_Type(Pjp), state);
 		JUDYLCODE(return(PPJERR););
 	    }
 
-Printf("\nBRANCH_L%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d, LINE=%d\n", state, *PIndex, offset, __LINE__);
-	    JU_SETDIGIT(*PIndex, Pjbl->jbl_Expanse[offset], state);
-Printf("\nBRANCH_L%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LINE=%d\n", state, *PIndex, offset, __LINE__);
+Printf("\nBRANCH_L%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, __LINE__);
+	    JU_SETDIGIT(Index, Pjbl->jbl_Expanse[offset], state);
+Printf("\nBRANCH_L%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, __LINE__);
 
 	    Pjp = Pjbl->jbl_jp + offset;
 	    goto SM3Findlimit;
@@ -1611,7 +1629,7 @@ Printf("\nBRANCH_L%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 //
 // Look for the highest/lowest (right/left-most) non-null subexpanse, then use
 // the highest/lowest JP in that subexpanse, but first copy Dcd bytes, if there
-// are any (only if state < cJU_ROOTSTATE - 1), to *PIndex.
+// are any (only if state < cJU_ROOTSTATE - 1), to Index.
 
 	case cJU_JPBRANCH_B2:  SM3PREPB_DCD(2, SM3BranchB);
 	case cJU_JPBRANCH_B3:  SM3PREPB_DCD(3, SM3BranchB);
@@ -1660,9 +1678,9 @@ Printf("\ngoto SM3BranchB\n");
 
 	    JU_BITMAPDIGITB(digit, subexp, JU_JBB_BITMAP(Pjbb, subexp), offset);
 
-Printf("\nBRANCH_B%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d, LINE=%d\n", state, *PIndex, offset, __LINE__);
-	    JU_SETDIGIT(*PIndex, digit, state);
-Printf("\nBRANCH_B%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LINE=%d\n", state, *PIndex, offset, __LINE__);
+Printf("\nBRANCH_B%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, __LINE__);
+	    JU_SETDIGIT(Index, digit, state);
+Printf("\nBRANCH_B%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, __LINE__);
 
 	    if ((Pjp = P_JP(JU_JBB_PJP(Pjbb, subexp))) == (Pjp_t) NULL)
 	    {
@@ -1680,7 +1698,7 @@ Printf("\nBRANCH_B%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 // UNCOMPRESSED BRANCH:
 //
 // Look for the highest/lowest (right/left-most) non-null JP, and use it, but
-// first copy Dcd bytes to *PIndex if there are any (only if state <
+// first copy Dcd bytes to Index if there are any (only if state <
 // cJU_ROOTSTATE - 1).
 
 	case cJU_JPBRANCH_U2:  SM3PREPB_DCD(2, SM3BranchU);
@@ -1704,9 +1722,9 @@ Printf("\ngoto SM3BranchU\n");
 		if (JPNULL(ju_Type(Pjp))) 
                     continue;
 
-Printf("\nBRANCH_U%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d, LINE=%d\n", state, *PIndex, offset, __LINE__);
-		JU_SETDIGIT(*PIndex, digit, state);
-Printf("\nBRANCH_U%ld  Index = 0x%016lx from After  JU_SETDIGIT, offset = %d, LINE=%d\n", state, *PIndex, offset, __LINE__);
+Printf("\nBRANCH_U%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, __LINE__);
+		JU_SETDIGIT(Index, digit, state);
+Printf("\nBRANCH_U%ld  Index = 0x%016lx from After  JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, __LINE__);
 
 		goto SM3Findlimit;
 	    }
@@ -1717,9 +1735,9 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from After  JU_SETDIGIT, offset = %d, LI
 		if (JPNULL(ju_Type(Pjp))) 
                     continue;
 
-Printf("\nBRANCH_U%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d, LINE=%d\n", state, *PIndex, offset, __LINE__);
-		JU_SETDIGIT(*PIndex, digit, state);
-Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LINE=%d\n", state, *PIndex, offset, __LINE__);
+Printf("\nBRANCH_U%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, __LINE__);
+		JU_SETDIGIT(Index, digit, state);
+Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, __LINE__);
 		goto SM3Findlimit;
 	    }
 #endif
@@ -1737,10 +1755,10 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 //
 // Simply use the highest/lowest (right/left-most) Index in the LeafL, but the
 // details vary depending on leaf Index Size.  First copy Dcd bytes, if there
-// are any (only if state < cJU_ROOTSTATE - 1), to *PIndex.
+// are any (only if state < cJU_ROOTSTATE - 1), to Index.
 
 #define	SM3LEAFLDCD(cState)				\
-	JU_SETDCD(*PIndex, Pjp, cState);	        \
+	JU_SETDCD(Index, Pjp, cState);	        \
 	SM3LEAFLNODCD
 
 #ifdef JUDY1
@@ -1764,15 +1782,17 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 	case cJU_JPLEAF1:
         {
 	    SM3LEAFLDCD(1);
-	    JU_SETDIGIT1(*PIndex, ((uint8_t *) Pjll)[offset]);
+	    JU_SETDIGIT1(Index, ((uint8_t *) Pjll)[offset]);
+            *PIndex = Index;
 	    JU_RET_FOUND_LEAF1(Pjll, pop1, offset);
         }
 
 	case cJU_JPLEAF2:
         {
 	    SM3LEAFLDCD(2);
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(2)))
+	    Index = (Index & (~JU_LEASTBYTESMASK(2)))
 		    | ((uint16_t *) Pjll)[offset];
+            *PIndex = Index;
 	    JU_RET_FOUND_LEAF2(Pjll, pop1, offset);
         }
 
@@ -1781,7 +1801,8 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 	    Word_t lsb;
 	    SM3LEAFLDCD(3);
 	    JU_COPY3_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (3 * offset));
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(3))) | lsb;
+	    Index = (Index & (~JU_LEASTBYTESMASK(3))) | lsb;
+            *PIndex = Index;
 	    JU_RET_FOUND_LEAF3(Pjll, pop1, offset);
 	}
 
@@ -1789,8 +1810,9 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
         {
 
 	    SM3LEAFLDCD(4);
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(4)))
+	    Index = (Index & (~JU_LEASTBYTESMASK(4)))
 		    | ((uint32_t *) Pjll)[offset];
+            *PIndex = Index;
 	    JU_RET_FOUND_LEAF4(Pjll, pop1, offset);
         }
 
@@ -1799,7 +1821,8 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 	    Word_t lsb;
 	    SM3LEAFLDCD(5);
 	    JU_COPY5_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (5 * offset));
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(5))) | lsb;
+	    Index = (Index & (~JU_LEASTBYTESMASK(5))) | lsb;
+            *PIndex = Index;
 	    JU_RET_FOUND_LEAF5(Pjll, pop1, offset);
 	}
 
@@ -1808,7 +1831,8 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 	    Word_t lsb;
 	    SM3LEAFLDCD(6);
 	    JU_COPY6_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (6 * offset));
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(6))) | lsb;
+	    Index = (Index & (~JU_LEASTBYTESMASK(6))) | lsb;
+            *PIndex = Index;
 	    JU_RET_FOUND_LEAF6(Pjll, pop1, offset);
 	}
 
@@ -1818,7 +1842,8 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 //	    SM3LEAFLNODCD;
 	    SM3LEAFLDCD(7);
 	    JU_COPY7_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (7 * offset));
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(7))) | lsb;
+	    Index = (Index & (~JU_LEASTBYTESMASK(7))) | lsb;
+            *PIndex = Index;
 	    JU_RET_FOUND_LEAF7(Pjll, pop1, offset);
 	}
 
@@ -1827,13 +1852,13 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 //
 // Look for the highest/lowest (right/left-most) non-null subexpanse, then use
 // the highest/lowest Index in that subexpanse, but first copy Dcd bytes
-// (always present since state 1 < cJU_ROOTSTATE) to *PIndex.
+// (always present since state 1 < cJU_ROOTSTATE) to Index.
 
 	case cJU_JPLEAF_B1:
 	{
 	    Pjlb_t Pjlb;
 
-	    JU_SETDCD(*PIndex, Pjp, 1);
+	    JU_SETDCD(Index, Pjp, 1);
 
 	    Pjlb   = P_JLB(ju_PntrInJp(Pjp));
 #ifdef JUDYPREV
@@ -1872,7 +1897,8 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 #endif  // JUDYNEXT
 
 	    JU_BITMAPDIGITL(digit, subexp, JU_JLB_BITMAP(Pjlb, subexp), offset);
-	    JU_SETDIGIT1(*PIndex, digit);
+	    JU_SETDIGIT1(Index, digit);
+            *PIndex = Index;
 	    JU_RET_FOUND_LEAF_B1(Pjlb, subexp, offset);
 //	== return((PPvoid_t) (P_JV(JL_JLB_PVALUE(Pjlb, subexp)) + (offset)));
 
@@ -1882,17 +1908,18 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 // ----------------------------------------------------------------------------
 // FULL POPULATION:
 //
-// Copy Dcd bytes to *PIndex (always present since state 1 < cJU_ROOTSTATE),
-// then set the highest/lowest possible digit as the LSB in *PIndex.
+// Copy Dcd bytes to Index (always present since state 1 < cJU_ROOTSTATE),
+// then set the highest/lowest possible digit as the LSB in Index.
 
 	case cJ1_JPFULLPOPU1:
 
-	    JU_SETDCD(   *PIndex, Pjp, 1);
+	    JU_SETDCD(   Index, Pjp, 1);
 #ifdef JUDYPREV
-	    JU_SETDIGIT1(*PIndex, cJU_BITSPERBITMAP - 1);
+	    JU_SETDIGIT1(Index, cJU_BITSPERBITMAP - 1);
 #else
-	    JU_SETDIGIT1(*PIndex, 0);
+	    JU_SETDIGIT1(Index, 0);
 #endif
+            *PIndex = Index;
 	    JU_RET_FOUND_FULLPOPU1;
 #endif // JUDY1
 
@@ -1916,6 +1943,7 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 SM3ReturnImmed01: 
 Printf("\ngoto SM3ReturnImmed01\n");
 
+        *PIndex = Index;
         JU_RET_FOUND_IMM_01(Pjp);
 
 #ifdef JUDYPREV
@@ -1949,7 +1977,8 @@ Printf("\ngoto SM3ReturnImmed01\n");
 SM3Imm1:    
 Printf("\ngoto SM3Imm1\n");
 
-        JU_SETDIGIT1(*PIndex, (PJI_1)[offset]);
+        JU_SETDIGIT1(Index, (PJI_1)[offset]);
+        *PIndex = Index;
 	JU_RET_FOUND_IMM(Pjp, offset);
 
 	case cJU_JPIMMED_2_02: SM3IMM(2, SM3Imm2);
@@ -1965,7 +1994,8 @@ Printf("\ngoto SM3Imm1\n");
 SM3Imm2:
 Printf("\ngoto SM3Imm2\n");
 
-        *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(2))) | (PJI_2)[offset];
+        Index = (Index & (~JU_LEASTBYTESMASK(2))) | (PJI_2)[offset];
+        *PIndex = Index;
 	JU_RET_FOUND_IMM(Pjp, offset);
 
 	case cJU_JPIMMED_3_02: SM3IMM(2, SM3Imm3);
@@ -1981,7 +2011,8 @@ Printf("\ngoto SM3Imm3\n");
 	{
 	    Word_t lsb;
 	    JU_COPY3_PINDEX_TO_LONG(lsb, (PJI_3) + (3 * offset));
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(3))) | lsb;
+	    Index = (Index & (~JU_LEASTBYTESMASK(3))) | lsb;
+            *PIndex = Index;
 	    JU_RET_FOUND_IMM(Pjp, offset);
 	}
 
@@ -1994,7 +2025,8 @@ Printf("\ngoto SM3Imm3\n");
 SM3Imm4:
 Printf("\ngoto SM3Imm5\n");
 
-        *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(4))) | (PJI_4)[offset];
+        Index = (Index & (~JU_LEASTBYTESMASK(4))) | (PJI_4)[offset];
+        *PIndex = Index;
 	JU_RET_FOUND_IMM(Pjp, offset);
 
 #ifdef  JUDY1
@@ -2006,7 +2038,8 @@ Printf("\ngoto SM3Imm5\n");
 	{
 	    Word_t lsb;
 	    JU_COPY5_PINDEX_TO_LONG(lsb, (PJI_5) + (5 * offset));
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(5))) | lsb;
+	    Index = (Index & (~JU_LEASTBYTESMASK(5))) | lsb;
+            *PIndex = Index;
 	    JU_RET_FOUND_IMM(Pjp, offset);
 	}
 
@@ -2017,7 +2050,8 @@ Printf("\ngoto SM3Imm6\n");
 	{
 	    Word_t lsb;
 	    JU_COPY6_PINDEX_TO_LONG(lsb, (PJI_6) + (6 * offset));
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(6))) | lsb;
+	    Index = (Index & (~JU_LEASTBYTESMASK(6))) | lsb;
+            *PIndex = Index;
 	    JU_RET_FOUND_IMM(Pjp, offset);
 	}
 
@@ -2028,7 +2062,8 @@ Printf("\ngoto SM3Imm7\n");
 	{
 	    Word_t lsb;
 	    JU_COPY7_PINDEX_TO_LONG(lsb, (PJI_7) + (7 * offset));
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(7))) | lsb;
+	    Index = (Index & (~JU_LEASTBYTESMASK(7))) | lsb;
+            *PIndex = Index;
 	    JU_RET_FOUND_IMM(Pjp, offset);
 	}
 #endif // JUDY1

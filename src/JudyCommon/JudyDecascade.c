@@ -534,12 +534,11 @@ FUNCTION Word_t  j__udyLeaf1orB1ToLeaf2(
 // UNEXPECTED CASES, including JPNULL1, should be handled by caller:
 
 	default: 
-           break;
+            assert(FALSE); 
+            break;
 
 	} // switch
 //printf("\n===============++++++++++++++++++++++++++++++++++===FAILED jpType = %d\n", ju_Type(Pjp));
-        assert(FALSE); 
-	return(0);
 
 } // j__udyLeaf1orB1ToLeaf2()
 
@@ -567,8 +566,8 @@ FUNCTION Word_t  j__udyLeaf2ToLeaf3(
 	Word_t	  Pop1;		// Indexes in leaf.
 #ifdef  JUDYL
 	Word_t  Pjv2Raw;	// source object value area.
+        Pjv_t   Pjv2;
 #endif
-JUDYLCODE(Pjv_t	  Pjv2;)
 
 #ifdef  PCAS
 printf("j__udyLeaf2ToLeaf3, Pop0 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop0(Pjp), ju_DcdPop0(Pjp));
@@ -611,23 +610,18 @@ printf("j__udyLeaf2ToLeaf3, Pop0 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop0(Pjp
 
 	case cJU_JPIMMED_2_02:
 	case cJU_JPIMMED_2_03:
+	case cJU_JPIMMED_2_04:
 #ifdef  JUDY1
-	case cJ1_JPIMMED_2_04:
 	case cJ1_JPIMMED_2_05:
 	case cJ1_JPIMMED_2_06:
 	case cJ1_JPIMMED_2_07:
 #endif
 	{
-//          BUG, but didnt matter in JudyA
-//            JUDY1CODE(uint16_t * PLeaf2 = (uint16_t *) (Pjp->jp_1Index1);)
-	    JUDY1CODE(uint16_t * PLeaf2 = ju_PImmed2(Pjp));
-//            JUDYLCODE(uint16_t * PLeaf2 = (uint16_t *) (Pjp->jp_LIndex1);)
-	    JUDYLCODE(uint16_t * PLeaf2 = ju_PImmed2(Pjp));
+	    uint16_t * PLeaf2 = ju_PImmed2(Pjp);
 
 	    Pop1 = ju_Type(Pjp) - cJU_JPIMMED_2_02 + 2; assert(Pop1);
 	    j__udyCopy2to3(PLeaf3, PLeaf2, Pop1, MSByte);
 #ifdef JUDYL
-//            Pjv2Raw = Pjp->jp_PValue;
             Pjv2Raw = ju_PntrInJp(Pjp);
 	    Pjv2    = P_JV(Pjv2Raw);
 	    JU_COPYMEM(Pjv3, Pjv2, Pop1);
@@ -639,7 +633,9 @@ printf("j__udyLeaf2ToLeaf3, Pop0 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop0(Pjp
 
 // UNEXPECTED CASES, including JPNULL2, should be handled by caller:
 
-	default: assert(FALSE); break;
+	default: 
+            assert(FALSE); 
+            break;
 
 	} // switch
 
@@ -703,7 +699,6 @@ printf("j__udyLeaf3ToLeaf4, Pop0 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop0(Pjp
 	case cJU_JPIMMED_3_01:
 	{
 	    PLeaf4[0] = ju_IMM01Key(Pjp);	// see above.
-//            JUDYLCODE(Pjv4[0] = Pjp->jp_PValue;)
 	    JUDYLCODE(Pjv4[0] = ju_ImmVal_01(Pjp);)
 	    return(1);
 	}
@@ -733,11 +728,11 @@ printf("j__udyLeaf3ToLeaf4, Pop0 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop0(Pjp
 	    return(Pop1);
 	}
 //      UNEXPECTED CASES, including JPNULL3, should be handled by caller:
-	default: assert(FALSE); break;
+	default: 
+            assert(FALSE); 
+            break;
 
 	} // switch
-
-	return(0);
 
 } // j__udyLeaf3ToLeaf4()
 
@@ -781,6 +776,7 @@ printf("j__udyLeaf4ToLeaf5, Pop0 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop0(Pjp
 	    uint32_t * PLeaf4 = (uint32_t *) P_JLL(ju_PntrInJp(Pjp));
 
 	    Pop1 = ju_LeafPop0(Pjp) + 1;
+            assert(Pop1);
 	    j__udyCopy4to5(PLeaf5, PLeaf4, Pop1, MSByte);
 #ifdef JUDYL
 	    Pjv4 = JL_LEAF4VALUEAREA(PLeaf4, Pop1);
@@ -804,27 +800,33 @@ printf("j__udyLeaf4ToLeaf5, Pop0 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop0(Pjp
 	    return(1);
 	}
 
-
-#ifdef JUDY1
-
 // JPIMMED_4_0[4+]:
 
-	case cJ1_JPIMMED_4_02:
+	case cJU_JPIMMED_4_02:
+#ifdef JUDY1
 	case cJ1_JPIMMED_4_03:
+#endif  // JUDY1
 	{
-//            uint32_t * PLeaf4 = (uint32_t *) (Pjp->jp_1Index1);
 	    uint32_t * PLeaf4 = ju_PImmed4(Pjp);
 
-	    Pop1 = ju_Type(Pjp) - cJ1_JPIMMED_4_02 + 2;
+	    Pop1 = ju_Type(Pjp) - cJU_JPIMMED_4_02 + 2;
 	    j__udyCopy4to5(PLeaf5, PLeaf4, Pop1, MSByte);
+#ifdef JUDYL
+            assert(Pop1 == 2);
+	    Word_t Pjv4Raw = ju_PntrInJp(Pjp);
+	    Pjv4    = P_JV(Pjv4Raw);
+	    JU_COPYMEM(Pjv5, Pjv4, 2);
+	    j__udyLFreeJV(Pjv4Raw, 2, Pjpm);
+#endif  // JUDYL
 	    return(Pop1);
 	}
-#endif // JUDY1
 
 
 // UNEXPECTED CASES, including JPNULL4, should be handled by caller:
 
-	default: assert(FALSE); break;
+	default: 
+            assert(FALSE); 
+            break;
 
 	} // switch
 
@@ -911,7 +913,9 @@ printf("j__udyLeaf5ToLeaf6, Pop0 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop0(Pjp
 
 // UNEXPECTED CASES, including JPNULL5, should be handled by caller:
 
-	default: assert(FALSE); break;
+	default: 
+            assert(FALSE); 
+            break;
 
 	} // switch
 
@@ -996,7 +1000,9 @@ printf("j__udyLeaf6ToLeaf7, Pop0 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop0(Pjp
 
 // UNEXPECTED CASES, including JPNULL6, should be handled by caller:
 
-	default: assert(FALSE); break;
+	default: 
+            assert(FALSE); 
+            break;
 
 	} // switch
 
@@ -1085,7 +1091,9 @@ printf("j__udyLeaf7ToLeafW, Pop0 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop0(Pjp
 
 // UNEXPECTED CASES, including JPNULL7, should be handled by caller:
 
-	default: assert(FALSE); break;
+	default: 
+            assert(FALSE); 
+            break;
 
 	} // switch
 

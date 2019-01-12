@@ -247,10 +247,6 @@ FUNCTION int j__udyCreateBranchU(
 //        jpLevel = JU_JPTYPE(Pjp) - cJU_JPBRANCH_B2;
         jpLevel = ju_Type(Pjp) - cJU_JPBRANCH_B2;
 
-#ifdef  PCAS
-        printf("\n==========1 j__udyCreateBranchU at level(%d), jp_t - %d\n", jpLevel + 2, (int)Pjbb->jbb_numPtrs);
-#endif  // PCAS
-
 //        JU_JPSETADT(&JPNull, 0, 0, cJU_JPNULL1 + jpLevel);
         ju_SetIMM01(&JPNull, 0, 0, cJU_JPNULL1 + jpLevel);
 
@@ -258,6 +254,10 @@ FUNCTION int j__udyCreateBranchU(
 
 	PjbbRaw	= ju_PntrInJp(Pjp);
 	Pjbb	= P_JBB(PjbbRaw);
+
+#ifdef  PCAS
+        printf("\n==========1 j__udyCreateBranchU at level(%d), jp_t - %d\n", jpLevel + 2, (int)Pjbb->jbb_numPtrs);
+#endif  // PCAS
 
 //	Set the pointer to the Uncompressed branch
 #ifdef JU_STAGED_EXP

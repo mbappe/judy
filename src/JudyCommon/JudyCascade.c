@@ -307,13 +307,11 @@ static Word_t j__udyStageJBBtoJBB(
 
 FUNCTION static Word_t j__udyJLL2toJLB1(
 	uint16_t * Pjll,	// array of 16-bit indexes.
-
 #ifdef JUDYL
 	Pjv_t      Pjv,		// array of associated values.
 #endif  // JUDYL
-
 	Word_t     LeafPop1,	// number of indexes/values.
-	Pjpm_t    Pjpm)	// jpm_t for JudyAlloc*()/JudyFree*().
+	Pjpm_t     Pjpm)	// jpm_t for JudyAlloc*()/JudyFree*().
 {
 	Word_t     PjlbRaw;
 	Pjlb_t     Pjlb;
@@ -445,12 +443,55 @@ FUNCTION int j__udyCascade2(
         Pjv_t Pjv = JL_LEAF2VALUEAREA(PLeaf, cJU_LEAF2_MAXPOP1);
 #endif  // JUDYL
 
-//  If Leaf is in 1 expanse -- just compress it to a Bitmap Leaf
+//  If Leaf is in 1 expanse -- just compress it to a Leaf1 or Bitmap Leaf
 
 	CIndex = PLeaf[0];
 	if (!JU_DIGITATSTATE(CIndex ^ PLeaf[cJU_LEAF2_MAXPOP1 - 1], 2))
 	{
+#ifdef  PCAS
+        printf("\n=======NO SPLAY===Cascade2(), LeafPop0 = 0x%x, DcdPop = 0x%lx\n", (int)ju_LeafPop0(Pjp), ju_DcdPop0(Pjp));
+#endif  // PCAS
+//	cJU_JPLEAF1
+            if (cJU_LEAF1_MAXPOP1 == 256)       // Test to NOT have a B1 Leaf
+	    {
+#ifdef  PCAS
+        printf("\n==================Cascade2 create Leaf1 = %d, ", (int)cJU_LEAF2_MAXPOP1);
+#endif  // PCAS
+		Word_t PjllRaw;	 // pointer to new leaf.
+		Pjll_t Pjll;
+//		Get a new Leaf
+		PjllRaw = j__udyAllocJLL1(cJU_LEAF2_MAXPOP1, Pjpm);
+		if (PjllRaw == 0)
+                    return(-1);  // out of memory
+
+		Pjll = P_JLL(PjllRaw);
+
+//		Copy Indexes to new Leaf1
+//	          j__udyCopy2to1(Pjll, PLeaf, cJU_LEAF2_MAXPOP1);
+		JU_COPYMEM((uint8_t *)Pjll, PLeaf, cJU_LEAF2_MAXPOP1);
+//              probably not necessary
+                JU_PADLEAF1(Pjll, cJU_LEAF2_MAXPOP1);
+#ifdef JUDYL
+//		Copy to Values to new Leaf
+		Pjv_t Pjvnew = JL_LEAF1VALUEAREA(Pjll, cJU_LEAF2_MAXPOP1);
+		JU_COPYMEM(Pjvnew, Pjv, cJU_LEAF2_MAXPOP1);
+#endif  // JUDYL
+               Word_t DcdP0 = (ju_DcdPop0(Pjp) & cJU_DCDMASK(2))
+                                |
+                        (CIndex & cJU_DCDMASK(2-1))
+                                |
+                        (cJU_LEAF2_MAXPOP1 - 1);
+//                printf("DcdP0 = 0x%016lx, at Cascade2\n", DcdP0);
+// testing        JU_JPSETADT(Pjp, PjllRaw, DcdP0, cJU_JPLEAF1);
+                ju_SetDcdPop0 (Pjp, DcdP0);
+                ju_SetLeafPop0(Pjp, cJU_LEAF2_MAXPOP1 - 1);
+                ju_SetJpType  (Pjp, cJU_JPLEAF1);
+                ju_SetPntrInJp(Pjp, PjllRaw);
+		return(1); // Success
+	    }
+            else        // create a B1 Leaf if Leaf1 cant handle full 256 population
 //	cJU_JPLEAF_B1
+            {
 #ifdef  PCAS
         printf("\n==================j__udyJLL2toJLB1(SPLAY-UP) - cJU_LEAF2_MAXPOP1 = %d, DcdP0=0x%lx,\n", (int)cJU_LEAF2_MAXPOP1, (CIndex & cJU_DCDMASK(1)) | ju_DcdPop0(Pjp));
 #endif  // PCAS
@@ -469,9 +510,9 @@ FUNCTION int j__udyCascade2(
                 ju_SetLeafPop0(Pjp, cJU_LEAF2_MAXPOP1 - 1);
                 ju_SetJpType(Pjp, cJU_JPLEAF_B1);
                 ju_SetPntrInJp(Pjp, PjlbRaw);
-
 		return(1); // Success
-	}
+	    }
+        }
 
 //  Else in 2+ expanses, splay Leaf into smaller leaves at higher compression
 
@@ -689,6 +730,9 @@ FUNCTION int j__udyCascade3(
 //printf("Index = 0x%lx != last = 0x%lx\n", CIndex, StageA[cJU_LEAF3_MAXPOP1-1]);
 	if (!JU_DIGITATSTATE(CIndex ^ StageA[cJU_LEAF3_MAXPOP1 - 1], 3))
 	{
+#ifdef  PCAS
+        printf("\n=======NO SPLAY===Cascade3(), LeafPop0 = 0x%x, DcdPop = 0x%lx\n", (int)ju_LeafPop0(Pjp), ju_DcdPop0(Pjp));
+#endif  // PCAS
 		Word_t PjllRaw	= j__udyAllocJLL2(cJU_LEAF3_MAXPOP1, Pjpm);
 		if (PjllRaw == 0)
                     return(-1);  // out of memory
@@ -902,6 +946,9 @@ FUNCTION int j__udyCascade4(
 	CIndex = StageA[0];
 	if (!JU_DIGITATSTATE(CIndex ^ StageA[cJU_LEAF4_MAXPOP1 - 1], 4))
 	{
+#ifdef  PCAS
+        printf("\n=======NO SPLAY===Cascade4(), LeafPop0 = 0x%x, DcdPop = 0x%lx\n", (int)ju_LeafPop0(Pjp), ju_DcdPop0(Pjp));
+#endif  // PCAS
 //		Alloc a 3 byte Index Leaf
 		Word_t PjllRaw = j__udyAllocJLL3(cJU_LEAF4_MAXPOP1, Pjpm);
 		if (PjllRaw == 0)
@@ -1105,6 +1152,9 @@ FUNCTION int j__udyCascade5(
 	CIndex = StageA[0];
 	if (!JU_DIGITATSTATE(CIndex ^ StageA[cJU_LEAF5_MAXPOP1-1], 5))
 	{
+#ifdef  PCAS
+        printf("\n=======NO SPLAY===Cascade5(), LeafPop0 = 0x%x, DcdPop = 0x%lx\n", (int)ju_LeafPop0(Pjp), ju_DcdPop0(Pjp));
+#endif  // PCAS
 //		Alloc a 4 byte Index Leaf
 		Word_t PjllRaw = j__udyAllocJLL4(cJU_LEAF5_MAXPOP1, Pjpm);
 		if (PjllRaw == 0)
@@ -1180,18 +1230,28 @@ FUNCTION int j__udyCascade5(
 //printf("\n-----Set IMMED_4_01 in Cascade5, DcdP0 = 0x%016lx, 2nd Word = 0x%016lx\n", PjpJP->jp_Addr0, PjpJP->jp_Addr1);
 #endif  // PCAS
 			}
-#ifdef JUDY1
-			else if (Pop1 <= cJ1_IMMED4_MAXPOP1)
+			else if (Pop1 <= cJU_IMMED4_MAXPOP1)
 			{
-//		cJ1_JPIMMED_4_02..3: Judy1 64
+//		cJL_JPIMMED_4_02   :  JudyL 64
+//		cJ1_JPIMMED_4_02..5:  Judy1 64
+#ifdef JUDYL
+                                assert(Pop1 == 2);
+//				Alloc is 1st in case of malloc fail
+				Word_t PjvnewRaw = j__udyLAllocJV(Pop1, Pjpm);
+				if (PjvnewRaw == 0)
+					FREEALLEXIT(ExpCnt, StageJP, Pjpm);
 
-//                              Copy to Index to JP as an immediate Leaf
+				Pjv_t  Pjvnew = P_JV(PjvnewRaw);
+
+//				Copy to Values to Value Leaf
+				JU_COPYMEM(Pjvnew, Pjv + Start, Pop1);
+//				PjpJP->jp_PValue = PjvnewRaw;
+                                ju_SetPntrInJp(PjpJP, PjvnewRaw);
+#endif  // JUDYL
 				j__udyCopyWto4(ju_PImmed4(PjpJP), StageA + Start, Pop1);
-
-//                              Set pointer, type, population and Index size
-                                ju_SetJpType(PjpJP, cJ1_JPIMMED_4_02 - 2 + Pop1);
+//				Set type, population and Index size
+                                ju_SetJpType(PjpJP, cJU_JPIMMED_4_02 - 2 + Pop1);
 			}
-#endif  // JUDY1
 			else
 			{
 //		cJU_JPLEAF4
@@ -1305,6 +1365,9 @@ FUNCTION int j__udyCascade6(
 	CIndex = StageA[0];
 	if (!JU_DIGITATSTATE(CIndex ^ StageA[cJU_LEAF6_MAXPOP1-1], 6))
 	{
+#ifdef  PCAS
+        printf("\n=======NO SPLAY===Cascade6(), LeafPop0 = 0x%x, DcdPop = 0x%lx\n", (int)ju_LeafPop0(Pjp), ju_DcdPop0(Pjp));
+#endif  // PCAS
 //		Alloc a 5 byte Index Leaf
 		Word_t PjllRaw = j__udyAllocJLL5(cJU_LEAF6_MAXPOP1, Pjpm);
 		if (PjllRaw == 0)
@@ -1506,6 +1569,9 @@ FUNCTION int j__udyCascade7(
 	CIndex = StageA[0];
 	if (!JU_DIGITATSTATE(CIndex ^ StageA[cJU_LEAF7_MAXPOP1 - 1], 7))
 	{
+#ifdef  PCAS
+        printf("\n=======NO SPLAY===Cascade7(), LeafPop0 = 0x%x, DcdPop = 0x%lx\n", (int)ju_LeafPop0(Pjp), ju_DcdPop0(Pjp));
+#endif  // PCAS
 //		Alloc a 6 byte Index Leaf
 		Word_t PjllRaw = j__udyAllocJLL6(cJU_LEAF7_MAXPOP1, Pjpm);
 		if (PjllRaw == 0)

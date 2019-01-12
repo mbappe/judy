@@ -1640,7 +1640,7 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
 //
 // "Shift down" the array elements starting at the Index to be deleted.
 
-#define JU_DELETEINPLACE(PARRAY,POP1,OFFSET,IGNORE)             \
+#define JU_DELETEINPLACE(PARRAY,POP1,OFFSET)                    \
         assert((long) (POP1) > 0);                              \
         assert((Word_t) (OFFSET) < (Word_t) (POP1));            \
         {                                                       \
@@ -1652,10 +1652,7 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
      /*       (PARRAY)[(POP1) - 1] = 0;     zero pad */         \
         }
 
-#define JU_DELETEINPLACEJP(PARRAY,POP1,OFFSET,IGNORE)           \
-        JU_DELETEINPLACE(PARRAY,POP1,OFFSET,IGNORE)
-
-#define JU_DELETEINPLACE(PARRAY,POP1,OFFSET,IGNORE)             \
+#define JU_DELETEINPLACE(PARRAY,POP1,OFFSET)                    \
         assert((long) (POP1) > 0);                              \
         assert((Word_t) (OFFSET) < (Word_t) (POP1));            \
         {                                                       \
@@ -1790,7 +1787,7 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
             memcpy((void *)dest, (void *)src, __n);             \
         }
 
-#define JU_DELETECOPY(PDEST,PSOURCE,POP1,OFFSET,IGNORE)         \
+#define JU_DELETECOPY(PDEST,PSOURCE,POP1,OFFSET)                \
     JU_DELETECOPY_ODD(PDEST,PSOURCE,POP1,OFFSET,sizeof(*(PDEST)))
 
 

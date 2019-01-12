@@ -254,7 +254,7 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 
         cJL_JPIMMED_3_02,       // Index Size = 3, Pop1 = 2.
 
-        cJL_JPIMMED_4_02,       // Index Size = 4, Pop1 = 2.
+        cJL_JPIMMED_4_02,       // Index Size = 4, Pop1 = 2. 86
 
 // This special Type is merely a sentinel for doing relative calculations.
 // This value should not be used in switch statements (to avoid allocating code
@@ -298,7 +298,7 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 #define J_L_MAXB                (sizeof(Word_t) * 103) 
 #define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 17, 21, 27, 33, 41, 51, 65, 83, 103, 129, 159, 199, 249, 321, 519, TERMINATOR }
 
-//#define cJL_LEAF1_MAXWORDS       (27)   // max Pop Leaf1 == 24
+#define cJL_LEAF1_MAXWORDS       (519)   // max Pop Leaf1 == 24
 
 #ifndef cJL_LEAF1_MAXPOP1
 #define cJL_LEAF1_MAXPOP1       (256)
@@ -307,12 +307,15 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 //#define cJL_LEAF2_MAXWORDS      (J_L_MAXB / cJU_BYTESPERWORD)
 //#define cJL_LEAF2_MAXWORDS      ((uint16_t)(320))
 #define cJL_LEAF2_MAXWORDS      (320)
+
+#ifndef cJL_LEAF2_MAXPOP1
 //#define cJL_LEAF2_MAXPOP1       ((cJL_LEAF2_MAXWORDS * 8) / (2 + cJU_BYTESPERWORD))
-//#define cJL_LEAF2_MAXPOP1       (255)
-#define cJL_LEAF2_MAXPOP1       (256)
+#define cJL_LEAF2_MAXPOP1       (255)
 //#define cJL_LEAF2_MAXPOP1       (J_L_MAXB / (2 + cJU_BYTESPERWORD))
 //#define cJL_LEAF2_MAXPOP1       ((uint16_t)((320 * 8) / (2 + cJU_BYTESPERWORD)))
 //#define cJL_LEAF2_MAXPOP1       (J_L_MAXB / (2 + cJU_BYTESPERWORD))
+#endif
+
 #define cJL_LEAF3_MAXPOP1       (J_L_MAXB / (3 + cJU_BYTESPERWORD))
 #define cJL_LEAF4_MAXPOP1       (J_L_MAXB / (4 + cJU_BYTESPERWORD))
 #define cJL_LEAF5_MAXPOP1       (J_L_MAXB / (5 + cJU_BYTESPERWORD))
@@ -328,14 +331,13 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // already lists all the immediates in order by state and size, calculate these
 // values from it to avoid redundancy.
 
-#define cJL_IMMED1_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 1)        // 7
-#define cJL_IMMED2_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 2)        // 3
-#define cJL_IMMED3_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 3)        // 2
-
-#define cJL_IMMED4_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 4)        // 1
-#define cJL_IMMED5_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 5)        // 1
-#define cJL_IMMED6_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 6)        // 1
-#define cJL_IMMED7_MAXPOP1  ((cJU_BYTESPERWORD - 1) / 7)        // 1
+#define cJL_IMMED1_MAXPOP1  ((cJU_BYTESPERWORD - 0) / 1)        // 8
+#define cJL_IMMED2_MAXPOP1  ((cJU_BYTESPERWORD - 0) / 2)        // 4
+#define cJL_IMMED3_MAXPOP1  ((cJU_BYTESPERWORD - 0) / 3)        // 2
+#define cJL_IMMED4_MAXPOP1  ((cJU_BYTESPERWORD - 0) / 4)        // 2
+#define cJL_IMMED5_MAXPOP1  ((cJU_BYTESPERWORD - 0) / 5)        // 1
+#define cJL_IMMED6_MAXPOP1  ((cJU_BYTESPERWORD - 0) / 6)        // 1
+#define cJL_IMMED7_MAXPOP1  ((cJU_BYTESPERWORD - 0) / 7)        // 1
 
 
 // ****************************************************************************
@@ -349,6 +351,7 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 
 #define JL_JLB_BITMAP(Pjlb, Subexp)  ((Pjlb)->jLlb_jLlbs[Subexp].jLlbs_Bitmap)
 #define JL_JLB_PVALUE(Pjlb, Subexp)  ((Pjlb)->jLlb_jLlbs[Subexp].jLlbs_PV_Raw)
+//#define JL_JLB_PVALUE(Pjlb, Subexp)  ((Pjlb)->jLlb_PV_Raw)
 
 typedef struct J__UDYL_LEAF_BITMAP_SUBEXPANSE
 {
@@ -360,7 +363,8 @@ typedef struct J__UDYL_LEAF_BITMAP_SUBEXPANSE
 typedef struct J__UDYL_LEAF_BITMAP
 {
         jLlbs_t jLlb_jLlbs[cJU_NUMSUBEXPL];
-
+//        uint8_t jLlb_Offset[256];
+//        Word_t  jLlb_PV_Raw[];
 } jLlb_t, * PjLlb_t;
 
 // Words per bitmap leaf:

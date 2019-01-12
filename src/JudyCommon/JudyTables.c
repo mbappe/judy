@@ -271,6 +271,7 @@ FUNCTION int main()
     GenTable("j__L_BranchBJP","cJU_BITSPERSUBEXPB",sizeof(jp_t), cJU_BITSPERSUBEXPB, 0, 0);
 
     GenTable("j__L_Leaf1", "cJL_LEAF1_MAXPOP1",  1, cJL_LEAF1_MAXPOP1,  BPW, 0);
+//    GenTable("j__L_Leaf1", "cJL_LEAF1_MAXPOP1",  8, cJL_LEAF1_MAXPOP1,  1, 0);
     GenTable("j__L_Leaf2", "cJL_LEAF2_MAXPOP1",  2, cJL_LEAF2_MAXPOP1,  BPW, 0);
     GenTable("j__L_Leaf3", "cJL_LEAF3_MAXPOP1",  3, cJL_LEAF3_MAXPOP1,  BPW, 0);
     GenTable("j__L_Leaf4", "cJL_LEAF4_MAXPOP1",  4, cJL_LEAF4_MAXPOP1,  BPW, 0);

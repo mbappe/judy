@@ -354,9 +354,11 @@ static  bool_t checked = FALSE; // set upon first entry and check for params.
         case cJL_JPIMMED_1_05:  JPTYPE("cJL_JPIMMED_1_05"); POP_5;      break;
         case cJL_JPIMMED_1_06:  JPTYPE("cJL_JPIMMED_1_06"); POP_6;      break;
         case cJL_JPIMMED_1_07:  JPTYPE("cJL_JPIMMED_1_07"); POP_7;      break;
+        case cJL_JPIMMED_1_08:  JPTYPE("cJL_JPIMMED_1_08"); POP_8;      break;
         case cJL_JPIMMED_2_02:  JPTYPE("cJL_JPIMMED_2_02"); POP_2;      break;
         case cJL_JPIMMED_2_03:  JPTYPE("cJL_JPIMMED_2_03"); POP_3;      break;
         case cJL_JPIMMED_3_02:  JPTYPE("cJL_JPIMMED_3_02"); POP_2;      break;
+        case cJL_JPIMMED_4_02:  JPTYPE("cJL_JPIMMED_4_02"); POP_2;      break;
         case cJL_JPIMMED_CAP:   JPTYPE("cJL_JPIMMED_CAP");      OOPS;
 
 #endif // JUDYL
