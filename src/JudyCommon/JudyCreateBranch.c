@@ -57,7 +57,7 @@ FUNCTION int j__udyCreateBranchL(
 	assert(ExpCnt <= cJU_BRANCHLMAXJPS);
 
 #ifdef  PCAS
-        printf("\n=========== j__udyCreateBranchL(jp_t = %d)\n", (int)ExpCnt);
+        printf("\n=========== j__udyCreateBranchL (num jp_t = %d)\n", (int)ExpCnt);
 #endif  //  PCAS
 
 	PjblRaw	= j__udyAllocJBL(Pjpm);
@@ -87,7 +87,6 @@ FUNCTION int j__udyCreateBranchL(
 ////        }
 
 //	Pass back new pointer to the Linear branch in JP
-//	Pjp->Jp_Addr0 = PjblRaw;
         ju_SetPntrInJp(Pjp, PjblRaw);
 
 	return(1);
@@ -106,7 +105,7 @@ FUNCTION int j__udyCreateBranchL(
 //
 // Return -1 if error (details in Pjpm), otherwise return 1.
 
-FUNCTION int j__udyCreateBranchB(
+FUNCTION int j__udyConvertBranchLtoB(
 	Pjp_t	Pjp,		// Build JPs from this place
 	Pjp_t	PJPs,		// Array of JPs to put into Bitmap branch
 	uint8_t Exp[],		// Array of expanses to put into bitmap
@@ -208,7 +207,7 @@ FUNCTION int j__udyCreateBranchB(
 
 	return(1);
 
-} // j__udyCreateBranchB()
+} // j__udyConvertBranchLtoB()
 
 
 // ****************************************************************************
@@ -256,7 +255,7 @@ FUNCTION int j__udyCreateBranchU(
 	Pjbb	= P_JBB(PjbbRaw);
 
 #ifdef  PCAS
-        printf("\n==========1 j__udyCreateBranchU at level(%d), jp_t - %d\n", jpLevel + 2, (int)Pjbb->jbb_numPtrs);
+        printf("\n==========1 j__udyCreateBranch_U%d, numb jp_ts = %d\n", jpLevel + 2, (int)Pjbb->jbb_numPtrs);
 #endif  // PCAS
 
 //	Set the pointer to the Uncompressed branch

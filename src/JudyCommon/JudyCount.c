@@ -792,9 +792,9 @@ BranchU:
 
 	case cJU_JPLEAF1:
         {
-	    Pjll = P_JLL(ju_PntrInJp(Pjp));
+	    Pjll1_t Pjll1 = P_JLL1(ju_PntrInJp(Pjp));
 	    pop1 = ju_LeafPop0(Pjp) + 1;
-	    offset = j__udySearchLeaf1(Pjll, pop1, Index, 1 * 8);
+	    offset = j__udySearchLeaf1(Pjll1, pop1, Index, 1 * 8);
 	    return(pop1 - offset);
         }
 
@@ -912,7 +912,7 @@ BranchU:
         {
 	    Pjll = P_JLL(ju_PImmed1(Pjp));
             pop1 = ju_Type(Pjp) - cJU_JPIMMED_1_02 + 2;
-	    offset = j__udySearchLeaf1(Pjll, pop1, Index, 1 * 8);
+	    offset = j__udySearchImmed1(Pjll, pop1, Index, 1 * 8);
 	    return(pop1 - offset);
         }
 

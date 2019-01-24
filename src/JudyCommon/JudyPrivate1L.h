@@ -296,7 +296,7 @@
 #define	JU_LEAFWGROWINPLACE(Pop1)	J1_LEAFWGROWINPLACE(Pop1)
 
 #define	j__udyCreateBranchL	j__udy1CreateBranchL
-#define	j__udyCreateBranchB	j__udy1CreateBranchB
+#define	j__udyConvertBranchLtoB	j__udy1ConvertBranchLtoB
 #define	j__udyCreateBranchU	j__udy1CreateBranchU
 #define	j__udyCascade1		j__udy1Cascade1
 #define	j__udyCascade2		j__udy1Cascade2
@@ -306,7 +306,7 @@
 #define	j__udyCascade6		j__udy1Cascade6
 #define	j__udyCascade7		j__udy1Cascade7
 #define	j__udyCascadeL		j__udy1CascadeL
-#define	j__udyInsertBranch	j__udy1InsertBranch
+#define	j__udyInsertBranchL	j__udy1InsertBranchL
 
 #define	j__udyBranchBToBranchL	j__udy1BranchBToBranchL
 #define	j__udyLeafB1ToLeaf1	j__udy1LeafB1ToLeaf1
@@ -397,7 +397,7 @@
 #define	JU_LEAFWGROWINPLACE(Pop1)	JL_LEAFWGROWINPLACE(Pop1)
 
 #define	j__udyCreateBranchL	j__udyLCreateBranchL
-#define	j__udyCreateBranchB	j__udyLCreateBranchB
+#define	j__udyConvertBranchLtoB	j__udyLConvertBranchLtoB
 #define	j__udyCreateBranchU	j__udyLCreateBranchU
 #define	j__udyCascade1		j__udyLCascade1
 #define	j__udyCascade2		j__udyLCascade2
@@ -407,7 +407,7 @@
 #define	j__udyCascade6		j__udyLCascade6
 #define	j__udyCascade7		j__udyLCascade7
 #define	j__udyCascadeL		j__udyLCascadeL
-#define	j__udyInsertBranch	j__udyLInsertBranch
+#define	j__udyInsertBranchL	j__udyLInsertBranchL
 
 #define	j__udyBranchBToBranchL	j__udyLBranchBToBranchL
 #define	j__udyLeafB1ToLeaf1	j__udyLLeafB1ToLeaf1

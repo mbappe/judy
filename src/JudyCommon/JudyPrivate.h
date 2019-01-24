@@ -468,31 +468,31 @@ j__log2(Word_t num)
 // Leaf structures
 typedef struct J_UDY1_LEAF1_STRUCT
 {
-//    Word_t      jl1_pop0;
+    Word_t      jl1_DcdPop0;
     uint8_t     jl1_Leaf[0];
 } jll1_t, *Pjll1_t;
 
 typedef struct J_UDY1_LEAF2_STRUCT
 {
-//    Word_t      jl2_pop0;
+//    uint8_t      jl2_Prefix[8];
     uint16_t     jl2_Leaf[0];
 } jll2_t, *Pjll2_t;
 
 typedef struct J_UDY1_LEAF3_STRUCT
 {
-//    Word_t      jl3_pop0;
+//    Word_t      jl3_DcdPop0;
     uint8_t     jl3_Leaf[0];
 } jll3_t, *Pjll3_t;
 
 typedef struct J_UDY1_LEAF4_STRUCT
 {
-//    Word_t      jl4_pop0;
+//    Word_t      jl4_DcdPop0;
     uint32_t     jl4_Leaf[0];
 } jll4_t, *Pjll4_t;
 
 typedef struct J_UDY1_LEAF5_STRUCT
 {
-//    Word_t      jl5_pop0;
+//    Word_t      jl5_DcdPop0;
     uint8_t     jl5_Leaf[0];
 } jll5_t, *Pjll5_t;
 
@@ -523,26 +523,31 @@ typedef struct J_UDY1_LEAFW_STRUCT
 // Leaf structures
 typedef struct J_UDYL_LEAF1_STRUCT
 {
+    Word_t      jl1_DcdPop0;
     uint8_t     jl1_Leaf[0];
 } jll1_t, *Pjll1_t;
 
 typedef struct J_UDYL_LEAF2_STRUCT
 {
+//    Word_t      jl2_DcdPop0;
     uint16_t     jl2_Leaf[0];
 } jll2_t, *Pjll2_t;
 
 typedef struct J_UDYL_LEAF3_STRUCT
 {
+//    Word_t      jl3_DcdPop0;
     uint8_t     jl3_Leaf[0];
 } jll3_t, *Pjll3_t;
 
 typedef struct J_UDYL_LEAF4_STRUCT
 {
+//    Word_t      jl4_DcdPop0;
     uint32_t     jl4_Leaf[0];
 } jll4_t, *Pjll4_t;
 
 typedef struct J_UDYL_LEAF5_STRUCT
 {
+//    Word_t      jl5_DcdPop0;
     uint8_t     jl5_Leaf[0];
 } jll5_t, *Pjll5_t;
 
@@ -601,7 +606,7 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 #define P_JBB(  ADDR) ((Pjbb_t) (ADDR))  // BranchB.
 #define P_JBU(  ADDR) ((Pjbu_t) (ADDR))  // BranchU.
 #define P_JLL(  ADDR) ((Pjll_t) (ADDR))  // LeafL.
-#define P_JLL1( ADDR) ((Pjll1_t)(ADDR))  // LeafL.
+//#define P_JLL1( ADDR) ((Pjll1_t)(ADDR))  // LeafL.
 #define P_JLL2( ADDR) ((Pjll2_t)(ADDR))  // LeafL.
 #define P_JLL3( ADDR) ((Pjll3_t)(ADDR))  // LeafL.
 #define P_JLL4( ADDR) ((Pjll4_t)(ADDR))  // LeafL.
@@ -614,19 +619,20 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 
 #else   // ! Later
 
-#define P_JLLW( ADDR) ((Pjllw_t) (ADDR))  // root leaf.
+#define P_JLLW( ADDR) ((Pjllw_t) (ADDR)) // root leaf.
 #define P_JPM(  ADDR) ((Pjpm_t) (ADDR))  // root JPM.
 #define P_JBL(  ADDR) ((Pjbl_t) (ADDR))  // BranchL.
 #define P_JBB(  ADDR) ((Pjbb_t) (ADDR))  // BranchB.
 #define P_JBU(  ADDR) ((Pjbu_t) (ADDR))  // BranchU.
 #define P_JLL(  ADDR) ((Pjll_t) (ADDR))  // LeafL.
-#define P_JLL1( ADDR) ((uint8_t  *)(ADDR))  // LeafL.
-#define P_JLL2( ADDR) ((uint16_t *)(ADDR))  // LeafL.
-#define P_JLL3( ADDR) ((uint8_t  *)(ADDR))  // LeafL.
-#define P_JLL4( ADDR) ((uint32_t *)(ADDR))  // LeafL.
-#define P_JLL5( ADDR) ((uint8_t  *)(ADDR))  // LeafL.
-#define P_JLL6( ADDR) ((uint8_t  *)(ADDR))  // LeafL.
-#define P_JLL7( ADDR) ((uint8_t  *)(ADDR))  // LeafL.
+//#define P_JLL1( ADDR) ((uint8_t  *)(ADDR))  // LeafL.
+#define P_JLL1( ADDR) ((Pjll1_t)(ADDR))  // Leaf1.
+#define P_JLL2( ADDR) ((uint16_t *)(ADDR))  // Leaf2.
+#define P_JLL3( ADDR) ((uint8_t  *)(ADDR))  // Leaf3.
+#define P_JLL4( ADDR) ((uint32_t *)(ADDR))  // Leaf4.
+#define P_JLL5( ADDR) ((uint8_t  *)(ADDR))  // Leaf5.
+#define P_JLL6( ADDR) ((uint8_t  *)(ADDR))  // Leaf6.
+#define P_JLL7( ADDR) ((uint8_t  *)(ADDR))  // Leaf7.
 #define P_JLB(  ADDR) ((Pjlb_t) (ADDR))  // LeafB1.
 #define P_JP(   ADDR) ((Pjp_t)  (ADDR))  // JP.
 #endif  // ! Later
@@ -1095,7 +1101,7 @@ j__udyCount64Bits(uint64_t word64)
 ////#define JU_JPLEAF_POP0(PJP)     ju_LeafPop0(PJP)
 
 //#define JU_JPDCDPOP0(PJP)   JU_TrimToIMM01((PJP)->jp_Addr1)
-#define JU_JPDCDPOP0(PJP)       ju_DcdPop0(PJP)
+//#define JU_JPDCDPOP0(PJP)       ju_DcdPop0(PJP)
 
 #ifdef  JU_LITTLE_ENDIAN        // ====================================
 //#define JU_JPDCDPOP0(PJP)   JU_TrimToIMM01((PJP)->jp_Addr1)
@@ -1989,12 +1995,25 @@ static inline int j__udySearchBranchL(uint8_t *Lst, int pop1, uint8_t Exp)
     SEARCHLINARNATIVE(uint8_t, Lst, pop1, Exp, 0); 
 }
 
-static inline int j__udySearchLeaf1(Pjll_t Pjll, int LeafPop1, Word_t Index, int Expanse)
+static inline int j__udySearchImmed1(uint8_t *Pleaf1, int LeafPop1, Word_t Index, int Expanse)
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 1);
     int Start = PSPLIT(LeafPop1, Index, Expanse); 
-    SEARCHLEAFNATIVE(uint8_t,  Pjll, LeafPop1, Index, Start); 
+    SEARCHLEAFNATIVE(uint8_t,  Pleaf1, LeafPop1, Index, Start); 
+}
+
+static inline int j__udySearchRawLeaf1(uint8_t *PLeaf1, int LeafPop1, Word_t Index, int Start)
+{
+    SEARCHLEAFNATIVE(uint8_t, PLeaf1, LeafPop1, (uint8_t)Index, Start); 
+}
+
+static inline int j__udySearchLeaf1(Pjll1_t Pjll1, int LeafPop1, Word_t Index, int Expanse)
+{
+    SEARCHPOPULATION(LeafPop1);
+    Index = JU_LEASTBYTES(Index, 1);
+    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    SEARCHLEAFNATIVE(uint8_t, Pjll1->jl1_Leaf, LeafPop1, Index, Start); 
 }
 
 static inline int j__udySearchLeaf2(Pjll_t Pjll, int LeafPop1, Word_t Index, int Expanse)

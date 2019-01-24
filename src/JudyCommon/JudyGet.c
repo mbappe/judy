@@ -87,6 +87,7 @@ FUNCTION PPvoid_t j__udyLGet (Pcvoid_t PArray,  // from which to retrieve.
     Pjv_t     Pjv;
 #endif  // JUDYL
 
+    Word_t    RawPntr;
     int       posidx;
     uint8_t   Digit = 0;                // byte just decoded from Index.
 
@@ -107,6 +108,8 @@ FUNCTION PPvoid_t j__udyLGet (Pcvoid_t PArray,  // from which to retrieve.
 #endif /* JUDYL */
     }
 #endif  // TRACEJPG
+
+//        Index = Index << 2;
 
 // ****************************************************************************
 // PROCESS TOP LEVEL BRANCHES AND LEAF:
@@ -132,7 +135,6 @@ FUNCTION PPvoid_t j__udyLGet (Pcvoid_t PArray,  // from which to retrieve.
         }
 //      else must be the tree under a jpm_t
         Pjpm = P_JPM(PArray);
-//        Pjp = &(Pjpm->jpm_JP);  // top branch is below JPM.
         Pjp = Pjpm->jpm_JP + 0;  // top branch is below JPM.
 
 #ifdef  TRACEJPG        // TBD: joke?
@@ -149,6 +151,8 @@ ContinueWalk:           // for going down one level in tree; come here with Pjp 
         JudyPrintJP(Pjp, "G", __LINE__);
 #endif  // TRACEJPG
 
+//      Used by many
+        RawPntr = ju_PntrInJp(Pjp);
         switch (ju_Type(Pjp))
         {
 
@@ -173,6 +177,7 @@ ContinueWalk:           // for going down one level in tree; come here with Pjp 
         {
             break;
         }
+
 // ****************************************************************************
 // JPBRANCH_L*:
 //
@@ -228,7 +233,7 @@ ContinueWalk:           // for going down one level in tree; come here with Pjp 
 
 JudyBranchL:
 //            Pjbl = P_JBL(Pjp->jp_Addr0);
-            Pjbl = P_JBL(ju_PntrInJp(Pjp));
+            Pjbl = P_JBL(RawPntr);
 
             posidx = j__udySearchBranchL(Pjbl->jbl_Expanse, Pjbl->jbl_NumJPs, Digit);
 
@@ -299,7 +304,7 @@ JudyBranchL:
 // Common code for all BranchBs; come here with Digit set:
 
 JudyBranchB:
-            Pjbb   = P_JBB(ju_PntrInJp(Pjp));
+            Pjbb   = P_JBB(RawPntr);
             subexp = Digit / cJU_BITSPERSUBEXPB;
 
             BitMap = JU_JBB_BITMAP(Pjbb, subexp);
@@ -322,14 +327,14 @@ JudyBranchB:
 
         case cJU_JPBRANCH_U:
         {
-            Pjp =  P_JBU(ju_PntrInJp(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, cJU_ROOTSTATE);
+            Pjp =  P_JBU(RawPntr)->jbu_jp + JU_DIGITATSTATE(Index, cJU_ROOTSTATE);
             goto ContinueWalk;
         }
 
         case cJU_JPBRANCH_U7:
         {
             if (ju_DcdNotMatchKey(Index, Pjp, 7)) break;
-            Pjp =  P_JBU(ju_PntrInJp(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, 7);
+            Pjp =  P_JBU(RawPntr)->jbu_jp + JU_DIGITATSTATE(Index, 7);
             goto ContinueWalk;
         }
 
@@ -337,7 +342,7 @@ JudyBranchB:
         {
             if (ju_DcdNotMatchKey(Index, Pjp, 6)) break;
 
-            Pjp =  P_JBU(ju_PntrInJp(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, 6);
+            Pjp =  P_JBU(RawPntr)->jbu_jp + JU_DIGITATSTATE(Index, 6);
             goto ContinueWalk;
         }
 
@@ -345,7 +350,7 @@ JudyBranchB:
         {
             if (ju_DcdNotMatchKey(Index, Pjp, 5)) break;
 
-            Pjp =  P_JBU(ju_PntrInJp(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, 5);
+            Pjp =  P_JBU(RawPntr)->jbu_jp + JU_DIGITATSTATE(Index, 5);
             goto ContinueWalk;
         }
 
@@ -353,7 +358,7 @@ JudyBranchB:
         {
             if (ju_DcdNotMatchKey(Index, Pjp, 4)) break;
 
-            Pjp =  P_JBU(ju_PntrInJp(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, 4);
+            Pjp =  P_JBU(RawPntr)->jbu_jp + JU_DIGITATSTATE(Index, 4);
             goto ContinueWalk;
         }
 
@@ -361,7 +366,7 @@ JudyBranchB:
         {
             if (ju_DcdNotMatchKey(Index, Pjp, 3)) break;
 
-            Pjp =  P_JBU(ju_PntrInJp(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, 3);
+            Pjp =  P_JBU(RawPntr)->jbu_jp + JU_DIGITATSTATE(Index, 3);
             goto ContinueWalk;
         }
 
@@ -369,7 +374,7 @@ JudyBranchB:
         {
             if (ju_DcdNotMatchKey(Index, Pjp, 2)) break;
 
-            Pjp =  P_JBU(ju_PntrInJp(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, 2);
+            Pjp =  P_JBU(RawPntr)->jbu_jp + JU_DIGITATSTATE(Index, 2);
             goto ContinueWalk;
         }
 // ****************************************************************************
@@ -380,20 +385,17 @@ JudyBranchB:
 
         case cJU_JPLEAF1:
         {
-            assert(ju_LeafPop0(Pjp) == (ju_DcdPop0(Pjp) & 0xFF));
-            if (ju_DcdNotMatchKey(Index, Pjp, 1)) break;
+//            assert(ju_LeafPop0(Pjp) == (ju_DcdPop0(Pjp) & 0xFF));
+/////////            if (ju_DcdNotMatchKey(Index, Pjp, 1)) break;
+            Pjll1_t Pjll1 = P_JLL1(RawPntr);
+            if (ju_DcdNotMatchKeyLeaf(Index, Pjll1->jl1_DcdPop0, 1)) break;
 
-            Pop1        = ju_LeafPop0(Pjp) + 1;
-            Pjll        = P_JLL(ju_PntrInJp(Pjp));
+            Pop1          = ju_LeafPop0(Pjp) + 1;
 #ifdef  JUDYL
-            Pjv  = JL_LEAF1VALUEAREA(Pjll, Pop1);
+            Pjv  = JL_LEAF1VALUEAREA(Pjll1, Pop1);
 #endif  // JUDYL
-            goto Leaf1Exit;
-
-//          entry Pjll = Leaf1, Pjv = PValue, Pop1 = population, Key = Index
-Leaf1Exit:
-            posidx = j__udySearchLeaf1(Pjll, Pop1, Index, 1 * 8);
-            goto CommonLeafExit;                // posidx & Pjv(only JudyL)
+            posidx = j__udySearchLeaf1(Pjll1, Pop1, Index, 1 * 8);
+            goto CommonLeafExit;                // posidx & (only JudyL) Pjv
         }
 
         case cJU_JPLEAF2:
@@ -401,7 +403,7 @@ Leaf1Exit:
             assert(ju_LeafPop0(Pjp) == (ju_DcdPop0(Pjp) & 0xFF));
             if (ju_DcdNotMatchKey(Index, Pjp, 2)) break;
             Pop1        = ju_LeafPop0(Pjp) + 1;
-            Pjll        = P_JLL(ju_PntrInJp(Pjp));
+            Pjll        = P_JLL(RawPntr);
 #ifdef  JUDYL
             Pjv = JL_LEAF2VALUEAREA(Pjll, Pop1);
 #endif  // JUDYL
@@ -410,7 +412,7 @@ Leaf1Exit:
 //          entry Pjll = Leaf1, Pjv = PValue, Pop1 = population, Key = Index
 Leaf2Exit:
             posidx = j__udySearchLeaf2(Pjll, Pop1, Index, 2 * 8);
-            goto CommonLeafExit;                // posidx & Pjv(only JudyL)
+            goto CommonLeafExit;                // posidx & (only JudyL) Pjv
         }
 
         case cJU_JPLEAF3:
@@ -419,7 +421,7 @@ Leaf2Exit:
             if (ju_DcdNotMatchKey(Index, Pjp, 3)) break;
 
             Pop1        = ju_LeafPop0(Pjp) + 1;
-            Pjll        = P_JLL(ju_PntrInJp(Pjp));
+            Pjll        = P_JLL(RawPntr);
 #ifdef  JUDYL
             Pjv = JL_LEAF3VALUEAREA(Pjll, Pop1);
 #endif  // JUDYL
@@ -427,7 +429,7 @@ Leaf2Exit:
 
 Leaf3Exit: // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
             posidx = j__udySearchLeaf3(Pjll, Pop1, Index, 3 * 8);
-            goto CommonLeafExit;
+            goto CommonLeafExit;                // posidx & (only JudyL) Pjv
         }
 
         case cJU_JPLEAF4:
@@ -436,7 +438,7 @@ Leaf3Exit: // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
             if (ju_DcdNotMatchKey(Index, Pjp, 4)) break;
 
             Pop1        = ju_LeafPop0(Pjp) + 1;
-            Pjll        = P_JLL(ju_PntrInJp(Pjp));
+            Pjll        = P_JLL(RawPntr);
 #ifdef  JUDYL
             Pjv = JL_LEAF4VALUEAREA(Pjll, Pop1);
 #endif  // JUDYL
@@ -444,7 +446,7 @@ Leaf3Exit: // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
             
 Leaf4Exit: // entry Pjll = Leaf4, Pjv = Value, Pop1 = population
             posidx = j__udySearchLeaf4(Pjll, Pop1, Index, 4 * 8);
-            goto CommonLeafExit;
+            goto CommonLeafExit;                // posidx & (only JudyL) Pjv
         }
 
         case cJU_JPLEAF5:
@@ -453,7 +455,7 @@ Leaf4Exit: // entry Pjll = Leaf4, Pjv = Value, Pop1 = population
             if (ju_DcdNotMatchKey(Index, Pjp, 5)) break;
 
             Pop1        = ju_LeafPop0(Pjp) + 1;
-            Pjll        = P_JLL(ju_PntrInJp(Pjp));
+            Pjll        = P_JLL(RawPntr);
 #ifdef  JUDYL
             Pjv = JL_LEAF5VALUEAREA(Pjll, Pop1);
 #endif  // JUDYL
@@ -461,7 +463,7 @@ Leaf4Exit: // entry Pjll = Leaf4, Pjv = Value, Pop1 = population
             
 Leaf5Exit: // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
             posidx = j__udySearchLeaf5(Pjll, Pop1, Index, 5 * 8);
-            goto CommonLeafExit;
+            goto CommonLeafExit;                // posidx & (only JudyL) Pjv
         }
 
         case cJU_JPLEAF6:
@@ -470,7 +472,7 @@ Leaf5Exit: // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
             if (ju_DcdNotMatchKey(Index, Pjp, 6)) break;
 
             Pop1        = ju_LeafPop0(Pjp) + 1;
-            Pjll        = P_JLL(ju_PntrInJp(Pjp));
+            Pjll        = P_JLL(RawPntr);
 #ifdef  JUDYL
             Pjv = JL_LEAF6VALUEAREA(Pjll, Pop1);
 #endif  // JUDYL
@@ -478,7 +480,7 @@ Leaf5Exit: // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
             
 Leaf6Exit: // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
             posidx = j__udySearchLeaf6(Pjll, Pop1, Index, 6 * 8);
-            goto CommonLeafExit;
+            goto CommonLeafExit;                // posidx & (only JudyL) Pjv
         }
 
         case cJU_JPLEAF7:
@@ -488,7 +490,7 @@ Leaf6Exit: // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
             if (ju_DcdNotMatchKey(Index, Pjp, 7)) break;
 
             Pop1        = ju_LeafPop0(Pjp) + 1;
-            Pjll        = P_JLL(ju_PntrInJp(Pjp));
+            Pjll        = P_JLL(RawPntr);
 
 #ifdef diag
 printf("\n------j__Get---------LEAF7\n");
@@ -508,7 +510,7 @@ for(int ii = 0; ii < Pop1; ii++)
             
 Leaf7Exit: // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
             posidx = j__udySearchLeaf7(Pjll, Pop1, Index, 7 * 8);
-            goto CommonLeafExit;
+            goto CommonLeafExit;                // posidx & (only JudyL) Pjv
         }
 
 // ****************************************************************************
@@ -527,7 +529,7 @@ Leaf7Exit: // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
             DIRECTHITS;       // not necessary, because always 100%
             SEARCHPOPULATION(ju_LeafPop0(Pjp) + 1);
 
-            Pjlb   = P_JLB(ju_PntrInJp(Pjp));
+            Pjlb   = P_JLB(RawPntr);
             Digit  = JU_DIGITATSTATE(Index, 1);
             subexp = Digit / cJU_BITSPERSUBEXPL;
 
@@ -645,10 +647,11 @@ Leaf7Exit: // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
         {
             Pop1 = ju_Type(Pjp) - cJU_JPIMMED_1_02 + 2;
 #ifdef  JUDYL
-            Pjv = P_JV(ju_PntrInJp(Pjp));       // Get ^ to Values
+            Pjv = P_JV(RawPntr);       // Get ^ to Values
 #endif  // JUDYL
             Pjll = (Pjll_t)ju_PImmed1(Pjp);     // Get ^ to Keys
-            goto Leaf1Exit;
+            posidx = j__udySearchImmed1(Pjll, Pop1, Index, 1 * 8);
+            goto CommonLeafExit;                // posidx & (only JudyL) Pjv
         }
 
 #ifdef  JUDY1
@@ -663,7 +666,7 @@ Leaf7Exit: // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
         {
             Pop1 = ju_Type(Pjp) - cJU_JPIMMED_2_02 + 2;
 #ifdef  JUDYL
-            Pjv = P_JV(ju_PntrInJp(Pjp));  // ^ immediate values area
+            Pjv = P_JV(RawPntr);  // ^ immediate values area
 #endif  // JUDYL
             Pjll = (Pjll_t)ju_PImmed2(Pjp);
             goto Leaf2Exit;
@@ -679,7 +682,7 @@ Leaf7Exit: // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
         {
             Pop1 = ju_Type(Pjp) - cJU_JPIMMED_3_02 + 2;
 #ifdef  JUDYL
-            Pjv = P_JV(ju_PntrInJp(Pjp));  // ^ immediate values area
+            Pjv = P_JV(RawPntr);  // ^ immediate values area
 #endif  // JUDYL
             Pjll = (Pjll_t)ju_PImmed1(Pjp);
             goto Leaf3Exit;
@@ -689,7 +692,7 @@ Leaf7Exit: // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
         case cJL_JPIMMED_4_02:
         {
             Pop1 = 2;
-            Pjv = P_JV(ju_PntrInJp(Pjp));  // ^ immediate values area
+            Pjv = P_JV(RawPntr);  // ^ immediate values area
             Pjll = (Pjll_t)ju_PImmed4(Pjp);
             goto Leaf4Exit;
         }
@@ -761,7 +764,7 @@ NotFoundExit:
             return((PPvoid_t) NULL);
 #endif  // JUDYL
 
-CommonLeafExit:
+CommonLeafExit:         // posidx & (only JudyL) Pjv
             if (posidx < 0) 
                 goto NotFoundExit;
 #ifdef  JUDY1
@@ -806,6 +809,7 @@ FUNCTION PPvoid_t JudyLGet (Pcvoid_t PArray,     // from which to retrieve.
     Pjv_t     Pjv;
 #endif  // JUDYL
 
+    Word_t    RawPntr;
     int       posidx;
     uint8_t   Digit = 0;                // byte just decoded from Index.
 
@@ -827,8 +831,6 @@ FUNCTION PPvoid_t JudyLGet (Pcvoid_t PArray,     // from which to retrieve.
     }
 #endif  // TRACEJPG
 
-//        Index = Index << 2;
-
 
 // ****************************************************************************
 // PROCESS TOP LEVEL BRANCHES AND LEAF:
@@ -836,7 +838,6 @@ FUNCTION PPvoid_t JudyLGet (Pcvoid_t PArray,     // from which to retrieve.
         if (JU_LEAFW_POP0(PArray) < cJU_LEAFW_MAXPOP1) // must be a LEAFW
         {
             Pjllw_t Pjllw = P_JLLW(PArray);        // first word of leaf.
-
             Pop1   = Pjllw->jlw_Population0 + 1;
 
 //printf("\n--JudyLGet-LEAFW,  Key = 0x%016lx, Array Pop1 = %lu\n", Index, Pop1);
@@ -845,7 +846,6 @@ FUNCTION PPvoid_t JudyLGet (Pcvoid_t PArray,     // from which to retrieve.
             {
                 goto NotFoundExit;              // no jump to middle of switch
             }
-
 #ifdef  JUDY1
             return(1);
 #endif  // JUDY1
@@ -853,13 +853,12 @@ FUNCTION PPvoid_t JudyLGet (Pcvoid_t PArray,     // from which to retrieve.
 #ifdef  JUDYL
             return((PPvoid_t) (JL_LEAFWVALUEAREA(Pjllw, Pop1) + posidx));
 #endif  // JUDYL
-
         }
+//      else must be the tree under a jpm_t
         Pjpm = P_JPM(PArray);
-//        Pjp = &(Pjpm->jpm_JP);  // top branch is below JPM.
         Pjp = Pjpm->jpm_JP + 0;  // top branch is below JPM.
 
-#ifdef  TRACEJPG
+#ifdef  TRACEJPG        // TBD: joke?
         j__udyIndex = Index;
         j__udyPopulation = Pjpm->jpm_Pop0;
 #endif  // TRACEJPG
@@ -867,12 +866,14 @@ FUNCTION PPvoid_t JudyLGet (Pcvoid_t PArray,     // from which to retrieve.
 // ****************************************************************************
 // WALK THE JUDY TREE USING A STATE MACHINE:
 
-ContinueWalk:           // for going down one level; come here with Pjp set.
+ContinueWalk:           // for going down one level in tree; come here with Pjp set.
 
 #ifdef TRACEJPG
         JudyPrintJP(Pjp, "g", __LINE__);
 #endif  // TRACEJPG
 
+//      Used by many
+        RawPntr = ju_PntrInJp(Pjp);
         switch (ju_Type(Pjp))
         {
 
@@ -953,8 +954,7 @@ ContinueWalk:           // for going down one level; come here with Pjp set.
 // Common code for all BranchLs; come here with Digit set:
 
 JudyBranchL:
-//            Pjbl = P_JBL(Pjp->jp_Addr0);
-            Pjbl = P_JBL(ju_PntrInJp(Pjp));
+            Pjbl = P_JBL(RawPntr);
 
             posidx = j__udySearchBranchL(Pjbl->jbl_Expanse, Pjbl->jbl_NumJPs, Digit);
 
@@ -1025,7 +1025,7 @@ JudyBranchL:
 // Common code for all BranchBs; come here with Digit set:
 
 JudyBranchB:
-            Pjbb   = P_JBB(ju_PntrInJp(Pjp));
+            Pjbb   = P_JBB(RawPntr);
             subexp = Digit / cJU_BITSPERSUBEXPB;
 
             BitMap = JU_JBB_BITMAP(Pjbb, subexp);
@@ -1049,14 +1049,14 @@ JudyBranchB:
 
         case cJU_JPBRANCH_U:
         {
-            Pjp =  P_JBU(ju_PntrInJp(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, cJU_ROOTSTATE);
+            Pjp =  P_JBU(RawPntr)->jbu_jp + JU_DIGITATSTATE(Index, cJU_ROOTSTATE);
             goto ContinueWalk;
         }
 
         case cJU_JPBRANCH_U7:
         {
             if (ju_DcdNotMatchKey(Index, Pjp, 7)) break;
-            Pjp =  P_JBU(ju_PntrInJp(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, 7);
+            Pjp =  P_JBU(RawPntr)->jbu_jp + JU_DIGITATSTATE(Index, 7);
             goto ContinueWalk;
         }
 
@@ -1064,7 +1064,7 @@ JudyBranchB:
         {
             if (ju_DcdNotMatchKey(Index, Pjp, 6)) break;
 
-            Pjp =  P_JBU(ju_PntrInJp(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, 6);
+            Pjp =  P_JBU(RawPntr)->jbu_jp + JU_DIGITATSTATE(Index, 6);
             goto ContinueWalk;
         }
 
@@ -1072,7 +1072,7 @@ JudyBranchB:
         {
             if (ju_DcdNotMatchKey(Index, Pjp, 5)) break;
 
-            Pjp =  P_JBU(ju_PntrInJp(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, 5);
+            Pjp =  P_JBU(RawPntr)->jbu_jp + JU_DIGITATSTATE(Index, 5);
             goto ContinueWalk;
         }
 
@@ -1080,7 +1080,7 @@ JudyBranchB:
         {
             if (ju_DcdNotMatchKey(Index, Pjp, 4)) break;
 
-            Pjp =  P_JBU(ju_PntrInJp(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, 4);
+            Pjp =  P_JBU(RawPntr)->jbu_jp + JU_DIGITATSTATE(Index, 4);
             goto ContinueWalk;
         }
 
@@ -1088,7 +1088,7 @@ JudyBranchB:
         {
             if (ju_DcdNotMatchKey(Index, Pjp, 3)) break;
 
-            Pjp =  P_JBU(ju_PntrInJp(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, 3);
+            Pjp =  P_JBU(RawPntr)->jbu_jp + JU_DIGITATSTATE(Index, 3);
             goto ContinueWalk;
         }
 
@@ -1096,7 +1096,7 @@ JudyBranchB:
         {
             if (ju_DcdNotMatchKey(Index, Pjp, 2)) break;
 
-            Pjp =  P_JBU(ju_PntrInJp(Pjp))->jbu_jp + JU_DIGITATSTATE(Index, 2);
+            Pjp =  P_JBU(RawPntr)->jbu_jp + JU_DIGITATSTATE(Index, 2);
             goto ContinueWalk;
         }
 // ****************************************************************************
@@ -1116,15 +1116,14 @@ JudyBranchB:
 
         case cJU_JPLEAF1:
         {
-            assert(ju_LeafPop0(Pjp) == (ju_DcdPop0(Pjp) & 0xFF));
-            if (ju_DcdNotMatchKey(Index, Pjp, 1)) break;
+//            assert(ju_LeafPop0(Pjp) == (ju_DcdPop0(Pjp) & 0xFF));
+//////////////            if (ju_DcdNotMatchKey(Index, Pjp, 1)) break;
+            Pjll1_t Pjll1 = P_JLL1(RawPntr);
+            if (ju_DcdNotMatchKeyLeaf(Index, Pjll1->jl1_DcdPop0, 1)) break;
 
-            Pjll        = P_JLL(ju_PntrInJp(Pjp));
-            Pop1        = ju_LeafPop0(Pjp) + 1;
-
-//            Index       &= KEYMASK(1 * 8);
-            Index       = Index & 0xFF;
-            posidx      = PSPLIT(Pop1, Index, 1 * 8); 
+//            Pop1          = ju_LeafPop0(Pjp) + 1;
+            Index     = Index & 0xFF;
+            posidx    = PSPLIT(Pop1, Index, 1 * 8); 
             int start = posidx;
 
 // Note: The Key array must be padded with replicas of last Key Ins, Del and Cascade
@@ -1147,11 +1146,11 @@ if ((Pop1 & 0x7))
     int roundupnextword = ((Pop1 + 7) / 8) * 8;
     for (int ii = Pop1; ii < roundupnextword; ii++)
     {
-        if (((uint8_t *)Pjll)[Pop1 -1] != (((uint8_t *)Pjll)[ii]))
+        if (Pjll1->jl1_Leaf[Pop1 -1] != Pjll1->jl1_Leaf[ii])
         {
 printf("\n---Oops-----------Pop1 = %ld, Key = 0x%2lx, posidx = %d\n", Pop1, Index, posidx);
     for (int ii = 0; ii < ((Pop1 + 7) & -cKPW); ii++)
-        printf("%d=0x%02x ", ii, ((uint8_t *)(Pjll))[ii]);
+        printf("%d=0x%02x ", ii, Pjll1->jl1_Leaf[ii]);
     printf("posidx = %d\n", posidx);
     break;
         }
@@ -1170,10 +1169,10 @@ printf("\n---Oops-----------Pop1 = %ld, Key = 0x%2lx, posidx = %d\n", Pop1, Inde
 //              Magic, the Msb=1 is located in the matching Key position
             {
 #ifdef  MMX1
-                PWord_t Bptr = ((PWord_t)Pjll) + (posidx/cKPW);
+                PWord_t Bptr = ((PWord_t)Pjll1->jl1_Leaf) + (posidx/cKPW);
                 newBucket = Hk64c(Bptr, Index);
 #else   // ! MMX1
-                Bucket = ((PWord_t)Pjll)[(posidx)/ cKPW];     // KeysPerWord = 8
+                Bucket = ((PWord_t)Pjll1->jl1_Leaf)[posidx / cKPW];     // KeysPerWord = 8
                 newBucket = Bucket ^ repKey;
                 newBucket = (newBucket - repLsbKey) & (~newBucket) & repMsbKey;
 #endif  // ! MMX1
@@ -1183,17 +1182,17 @@ printf("\n---Oops-----------Pop1 = %ld, Key = 0x%2lx, posidx = %d\n", Pop1, Inde
                     DIRECTHITS;
                     return(1);              // found
                 }
-                if (Index > ((uint8_t *)Pjll)[start])
+                if (Index > Pjll1->jl1_Leaf[start])
                 {
                     for(;;)
                     {
                         posidx += cKPW;
                         if ((posidx / 8) >= ((Pop1 + cKPW - 1) / 8)) goto NotFoundExit;
 #ifdef  MMX1
-                        PWord_t Bptr = ((PWord_t)Pjll) + posidx/cKPW;
+                        PWord_t Bptr = ((PWord_t)Pjll1->jl1_Leaf) + posidx/cKPW;
                         newBucket = Hk64c(Bptr, Index);
 #else   // ! MMX1
-                        Bucket = ((PWord_t)Pjll)[posidx / cKPW];     // KeysPerWord = 4
+                        Bucket = ((PWord_t)Pjll1->jl1_Leaf)[posidx / cKPW];     // KeysPerWord = 4
                         newBucket = Bucket ^ repKey;
                         newBucket = (newBucket - repLsbKey) & (~newBucket) & repMsbKey;
 #endif  // ! MMX1
@@ -1203,7 +1202,7 @@ printf("\n---Oops-----------Pop1 = %ld, Key = 0x%2lx, posidx = %d\n", Pop1, Inde
                             MISCOMPARESP((posidx - start) / cKPW);
                             return(1);              // found
                         }
-                        if (((uint8_t *)(Pjll))[posidx] > Index) 
+                        if (((uint8_t *)(Pjll1->jl1_Leaf))[posidx] > Index) 
                             goto NotFoundExit;
                     }
                 }
@@ -1214,10 +1213,10 @@ printf("\n---Oops-----------Pop1 = %ld, Key = 0x%2lx, posidx = %d\n", Pop1, Inde
                         posidx -= cKPW;
                         if (posidx < 0) goto NotFoundExit;
 #ifdef  MMX1
-                        PWord_t Bptr = ((PWord_t)Pjll) + posidx/cKPW;
+                        PWord_t Bptr = ((PWord_t)Pjll1->jl1_Leaf) + posidx/cKPW;
                         newBucket = Hk64c(Bptr, Index);
 #else   // ! MMX1
-                        Bucket = ((PWord_t)Pjll)[posidx / cKPW];     // KeysPerWord = 4
+                        Bucket = ((PWord_t)Pjll1->jl1_Leaf)[posidx / cKPW];     // KeysPerWord = 4
                         newBucket = Bucket ^ repKey;
                         newBucket = (newBucket - repLsbKey) & (~newBucket) & repMsbKey;
 #endif  // ! MMX1
@@ -1227,7 +1226,7 @@ printf("\n---Oops-----------Pop1 = %ld, Key = 0x%2lx, posidx = %d\n", Pop1, Inde
                             MISCOMPARESM((start - posidx) / cKPW);
                             return(1);              // found
                         }
-                        if (((uint8_t* )(Pjll))[posidx] < Index) 
+                        if (Pjll1->jl1_Leaf[posidx] < Index) 
                             goto NotFoundExit;
                     }
                 }
@@ -1237,40 +1236,64 @@ printf("\n---Oops-----------Pop1 = %ld, Key = 0x%2lx, posidx = %d\n", Pop1, Inde
 
         case cJU_JPLEAF1:
         {
-            assert(ju_LeafPop0(Pjp) == (ju_DcdPop0(Pjp) & 0xFF));
-            if (ju_DcdNotMatchKey(Index, Pjp, 1)) break;
+//            assert(ju_LeafPop0(Pjp) == (ju_DcdPop0(Pjp) & 0xFF));
+/////            if (ju_DcdNotMatchKey(Index, Pjp, 1)) break;
+            Pjll1_t Pjll1 = P_JLL1(RawPntr);
+            if (ju_DcdNotMatchKeyLeaf(Index, Pjll1->jl1_DcdPop0, 1)) break;
 
-            Pjll        = P_JLL(ju_PntrInJp(Pjp));
-            Pop1        = ju_LeafPop0(Pjp) + 1;
-
+            Pop1          = ju_LeafPop0(Pjp) + 1;
 #ifdef  JUDYL
-            Pjv  = JL_LEAF1VALUEAREA(Pjll, Pop1);
+            Pjv  = JL_LEAF1VALUEAREA(Pjll1, Pop1);
 #endif  // JUDYL
-
-//          entry Pjll = Leaf1, Pjv = PValue, Pop1 = population, Key = Index
-            posidx = j__udySearchLeaf1(Pjll, Pop1, Index, 1 * 8);
-            goto CommonLeafExit;
+            posidx = j__udySearchLeaf1(Pjll1, Pop1, Index, 1 * 8);
+            goto CommonLeafExit;                // posidx & (only JudyL) Pjv
         }
 
 #endif  // ! noPARALLEL1
 #endif  //  JUDY1
 
+#define cMagic  0x0101010101010100;
+#define cSubExp  (256 / 8)
+#define SPLIT(POP, KEY, EXP)  (((Word_t)(KEY) * (POP)) / (EXP))
+
 #ifdef  JUDYL
         case cJU_JPLEAF1:
         {
-            assert(ju_LeafPop0(Pjp) == (ju_DcdPop0(Pjp) & 0xFF));
-            if (ju_DcdNotMatchKey(Index, Pjp, 1)) break;
+            typedef union {
+                Word_t  d_Offsets;
+                uint8_t d_OctAccum[8];
+            } d_t;
+            d_t d;      // declare
+// make these the same memory location
+#define Offsets  d.d_Offsets
+#define OctAccum d.d_OctAccum
 
-            Pjll = P_JLL(ju_PntrInJp(Pjp));
-            Pop1   = ju_LeafPop0(Pjp) + 1;
+            Pjll1_t Pjll1 = P_JLL1(RawPntr);
+//            if (ju_DcdNotMatchKey(Index, Pjp, 1)) break;
+//            if (ju_DcdNotMatchKeyLeaf(Index, Pjll1->jl1_DcdPop0, 1)) break;
+
+            SEARCHPOPULATION(ju_LeafPop0(Pjp) + 1);
+
+//          calculate octant (0..7) that may contains Index
+            int       Oct = (uint8_t)Index / cSubExp;  
+            Offsets = Pjp->jp_Octants * cMagic; // form octant populations
 
 #ifdef  JUDYL
-            Pjv  = JL_LEAF1VALUEAREA(Pjll, Pop1);
+#ifdef  POPINJP
+            Pop1 = ju_LeafPop0(Pjp) + 1;
+#else   // POPINJP from octant
+            Pop1  = OctAccum[8 - 1] + Pjp->jp_OctPop1[8 - 1];
+            assert((ju_LeafPop0(Pjp) + 1) == Pop1);
+#endif  // POPINJP in octant
+            Pjv   =JL_LEAF1VALUEAREA(Pjll1, Pop1);
 #endif  // JUDYL
 
-//          entry Pjll = Leaf1, Pjv = PValue, Pop1 = population, Key = Index
-            posidx = j__udySearchLeaf1(Pjll, Pop1, Index, 1 * 8);
-            goto CommonLeafExit;
+            uint8_t *SubLeaf = Pjll1->jl1_Leaf + OctAccum[Oct];
+            int      pop1   = Pjp->jp_OctPop1[Oct];        // right out of jp_t
+            int      Start = SPLIT(pop1, (uint8_t)Index - (Oct * cSubExp), cSubExp);
+
+            posidx = j__udySearchRawLeaf1(SubLeaf, pop1, Index, Start) + OctAccum[Oct];
+            goto CommonLeafExit;                // posidx & (only JudyL) Pjv
         }
 #endif  // JUDYL
 
@@ -1288,16 +1311,13 @@ printf("\n---Oops-----------Pop1 = %ld, Key = 0x%2lx, posidx = %d\n", Pop1, Inde
             assert(ju_LeafPop0(Pjp) == (ju_DcdPop0(Pjp) & 0xFFFF));
             if (ju_DcdNotMatchKey(Index, Pjp, 2)) break;
 
-            Pjll        = P_JLL(ju_PntrInJp(Pjp));
+            Pjll        = P_JLL(RawPntr);
             Pop1        = ju_LeafPop0(Pjp) + 1;
 
 //            Index       &= KEYMASK(2 * 8);
             Index       = Index & 0xFFFF;
             posidx      = PSPLIT(Pop1, Index, 2 * 8); 
-            int start = posidx;
-
-//            abc();
-                                                       
+            int start   = posidx;
 
 // Note: The Key array must be padded with replicas of last Key Ins, Del and Cascade
 
@@ -1337,7 +1357,6 @@ printf("\n---Oops-----------Pop1 = %ld, Key = 0x%2lx, posidx = %d\n", Pop1, Inde
                 newBucket = (newBucket - repLsbKey) & (~newBucket) & repMsbKey;
 //printf("\n-----------------Pop1 = %ld, Key = 0x%4lx, Newket = 0x%16lx, posidx = %d\n", Pop1, Index, newBucket, posidx);
 //
-// abc1();
                 if (newBucket)         // Key found in Bucket
                 {
                     SEARCHPOPULATION(Pop1);
@@ -1400,7 +1419,7 @@ printf("\n---Oops-----------Pop1 = %ld, Key = 0x%2lx, posidx = %d\n", Pop1, Inde
             if (ju_DcdNotMatchKey(Index, Pjp, 2)) break;
 
             Pop1        = ju_LeafPop0(Pjp) + 1;
-            Pjll        = P_JLL(ju_PntrInJp(Pjp));
+            Pjll        = P_JLL(RawPntr);
 
 //          entry Pjll = Leaf2, Pjv = Value, Pop1 = population
             posidx = j__udySearchLeaf2(Pjll, Pop1, Index, 2 * 8);
@@ -1418,7 +1437,7 @@ printf("\n---Oops-----------Pop1 = %ld, Key = 0x%2lx, posidx = %d\n", Pop1, Inde
             if (ju_DcdNotMatchKey(Index, Pjp, 2)) break;
 
             Pop1 = ju_LeafPop0(Pjp) + 1;
-            Pjll = P_JLL(ju_PntrInJp(Pjp));
+            Pjll = P_JLL(RawPntr);
 
 //          entry Pjll = Leaf2, Pjv = Value, Pop1 = population
             posidx = j__udySearchLeaf2(Pjll, Pop1, Index, 2 * 8);
@@ -1435,7 +1454,7 @@ printf("\n---Oops-----------Pop1 = %ld, Key = 0x%2lx, posidx = %d\n", Pop1, Inde
             if (ju_DcdNotMatchKey(Index, Pjp, 3)) break;
 
             Pop1        = ju_LeafPop0(Pjp) + 1;
-            Pjll        = P_JLL(ju_PntrInJp(Pjp));
+            Pjll        = P_JLL(RawPntr);
 
 #ifdef  diag
 if (Pop1 == 255)
@@ -1457,9 +1476,9 @@ for(int ii = 0; ii < Pop1; ii++)
 
 Leaf3Exit: // entry Pjll = Leaf3, Pjv = Value, Pop1 = population
             posidx = j__udySearchLeaf3(Pjll, Pop1, Index, 3 * 8);
-            goto CommonLeafExit;
+            goto CommonLeafExit;                // posidx & (only JudyL) Pjv
 
-CommonLeafExit:
+CommonLeafExit:         // posidx & (only JudyL) Pjv
             if (posidx < 0) 
                 break;
 #ifdef  JUDY1
@@ -1479,7 +1498,7 @@ CommonLeafExit:
             if (ju_DcdNotMatchKey(Index, Pjp, 4)) break;
 
             Pop1        = ju_LeafPop0(Pjp) + 1;
-            Pjll        = P_JLL(ju_PntrInJp(Pjp));
+            Pjll        = P_JLL(RawPntr);
 #ifdef  JUDYL
             Pjv = JL_LEAF4VALUEAREA(Pjll, Pop1);
 #endif  // JUDYL
@@ -1487,7 +1506,7 @@ CommonLeafExit:
             
 Leaf4Exit:
             posidx = j__udySearchLeaf4(Pjll, Pop1, Index, 4 * 8);
-            goto CommonLeafExit;
+            goto CommonLeafExit;                // posidx & (only JudyL) Pjv
         }
 
         case cJU_JPLEAF5:
@@ -1496,7 +1515,7 @@ Leaf4Exit:
             if (ju_DcdNotMatchKey(Index, Pjp, 5)) break;
 
             Pop1        = ju_LeafPop0(Pjp) + 1;
-            Pjll        = P_JLL(ju_PntrInJp(Pjp));
+            Pjll        = P_JLL(RawPntr);
 #ifdef  JUDYL
             Pjv = JL_LEAF5VALUEAREA(Pjll, Pop1);
 #endif  // JUDYL
@@ -1504,7 +1523,7 @@ Leaf4Exit:
             
 Leaf5Exit:
             posidx = j__udySearchLeaf5(Pjll, Pop1, Index, 5 * 8);
-            goto CommonLeafExit;
+            goto CommonLeafExit;                // posidx & (only JudyL) Pjv
         }
 
         case cJU_JPLEAF6:
@@ -1513,7 +1532,7 @@ Leaf5Exit:
             if (ju_DcdNotMatchKey(Index, Pjp, 6)) break;
 
             Pop1        = ju_LeafPop0(Pjp) + 1;
-            Pjll        = P_JLL(ju_PntrInJp(Pjp));
+            Pjll        = P_JLL(RawPntr);
 #ifdef  JUDYL
             Pjv = JL_LEAF6VALUEAREA(Pjll, Pop1);
 #endif  // JUDYL
@@ -1521,17 +1540,16 @@ Leaf5Exit:
             
 Leaf6Exit:
             posidx = j__udySearchLeaf6(Pjll, Pop1, Index, 6 * 8);
-            goto CommonLeafExit;
+            goto CommonLeafExit;                // posidx & (only JudyL) Pjv
         }
 
         case cJU_JPLEAF7:
         {
-//printf("Get-F7: ju_LeafPop0(Pjp) = 0x%lx, ju_DcdPop0(Pjp) = 0x%016lx, Key = 0x%016lx\n", ju_LeafPop0(Pjp), ju_DcdPop0(Pjp), Index);
             assert(ju_LeafPop0(Pjp) == (ju_DcdPop0(Pjp) & 0xFF));
             if (ju_DcdNotMatchKey(Index, Pjp, 7)) break;
 
             Pop1        = ju_LeafPop0(Pjp) + 1;
-            Pjll        = P_JLL(ju_PntrInJp(Pjp));
+            Pjll        = P_JLL(RawPntr);
 
 #ifdef diag
 printf("\n--------Get----------LEAF7\n");
@@ -1554,7 +1572,7 @@ for(int ii = 0; ii < Pop1; ii++)
             
 Leaf7Exit:
             posidx = j__udySearchLeaf7(Pjll, Pop1, Index, 7 * 8);
-            goto CommonLeafExit;
+            goto CommonLeafExit;                // posidx & (only JudyL) Pjv
         }
 
 // ****************************************************************************
@@ -1573,7 +1591,7 @@ Leaf7Exit:
             DIRECTHITS;       // not necessary, because always 100%
             SEARCHPOPULATION(ju_LeafPop0(Pjp) + 1);
 
-            Pjlb   = P_JLB(ju_PntrInJp(Pjp));
+            Pjlb   = P_JLB(RawPntr);
             Digit  = JU_DIGITATSTATE(Index, 1);
             subexp = Digit / cJU_BITSPERSUBEXPL;
 
@@ -1660,8 +1678,6 @@ Leaf7Exit:
         case cJU_JPIMMED_6_01:          // 6 byte decode
         case cJU_JPIMMED_7_01:          // 7 byte decode
         {
-
-
 //            SEARCHPOPULATION(1);      // Too much overhead
 //            DIRECTHITS;               // Too much overhead
 //
@@ -1704,11 +1720,11 @@ Leaf7Exit:
             Pop1 = ju_Type(Pjp) - cJU_JPIMMED_1_02 + 2;
             Pjll = (Pjll_t)ju_PImmed1(Pjp);     // Get ^ to Keys
 
-            posidx = j__udySearchLeaf1(Pjll, Pop1, Index, 1 * 8);
+            posidx = j__udySearchImmed1(Pjll, Pop1, Index, 1 * 8);
 #ifdef  JUDYL
-            Pjv = P_JV(ju_PntrInJp(Pjp));       // Get ^ to Values
+            Pjv = P_JV(RawPntr);       // Get ^ to Values
 #endif  // JUDYL
-            goto CommonLeafExit;                // posidx & Pjv(only JudyL)
+            goto CommonLeafExit;                // posidx & (only JudyL) Pjv
         }
 
 #ifdef  JUDY1
@@ -1723,11 +1739,11 @@ Leaf7Exit:
         {
             Pop1 = ju_Type(Pjp) - cJU_JPIMMED_2_02 + 2;
 #ifdef  JUDYL
-            Pjv = P_JV(ju_PntrInJp(Pjp));  // ^ immediate values area
+            Pjv = P_JV(RawPntr);  // ^ immediate values area
 #endif  // JUDYL
             Pjll = (Pjll_t)ju_PImmed2(Pjp);     // Get ^ to Keys
             posidx = j__udySearchLeaf2(Pjll, Pop1, Index, 2 * 8);
-            goto CommonLeafExit;
+            goto CommonLeafExit;                // posidx & (only JudyL) Pjv
         }
 
 #ifdef  JUDY1
@@ -1741,8 +1757,7 @@ Leaf7Exit:
             Pop1 = ju_Type(Pjp) - cJU_JPIMMED_3_02 + 2;
             Pjll = (Pjll_t)ju_PImmed3(Pjp);     // Get ^ to Keys
 #ifdef  JUDYL
-//            Pjv = P_JV(Pjp->jp_PValue);
-            Pjv = P_JV(ju_PntrInJp(Pjp));  // ^ immediate values area
+            Pjv = P_JV(RawPntr);  // ^ immediate values area
 #endif  // JUDYL
             goto Leaf3Exit;
         }
@@ -1751,7 +1766,7 @@ Leaf7Exit:
         case cJL_JPIMMED_4_02:
         {
             Pop1 = 2;
-            Pjv = P_JV(ju_PntrInJp(Pjp));  // ^ immediate values area
+            Pjv = P_JV(RawPntr);  // ^ immediate values area
             Pjll = (Pjll_t)ju_PImmed4(Pjp);
             goto Leaf4Exit;
         }

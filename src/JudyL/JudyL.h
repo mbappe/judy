@@ -249,12 +249,12 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
         cJL_JPIMMED_1_08,       // Index Size = 1, Pop1 = 8.
 
         cJL_JPIMMED_2_02,       // Index Size = 2, Pop1 = 2.
-        cJL_JPIMMED_2_03,       // Index Size = 2, Pop1 = 3.
+        cJL_JPIMMED_2_03,       // Index Size = 2, Pop1 = 3. 80
         cJL_JPIMMED_2_04,       // Index Size = 2, Pop1 = 4.
 
         cJL_JPIMMED_3_02,       // Index Size = 3, Pop1 = 2.
 
-        cJL_JPIMMED_4_02,       // Index Size = 4, Pop1 = 2. 86
+        cJL_JPIMMED_4_02,       // Index Size = 4, Pop1 = 2. 83
 
 // This special Type is merely a sentinel for doing relative calculations.
 // This value should not be used in switch statements (to avoid allocating code

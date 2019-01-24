@@ -895,6 +895,7 @@ SMBranchL:
 // leaf expanse lists are small, dont waste time calling j__udySearchLeaf1(),
 // just scan the expanse list.
 
+// TBD: This search of Linear Branch should be done by the Search Routine!!!!
 #ifdef JUDYPREV
 	    if ((Pjbl->jbl_Expanse[0]) > digit) { *PIndex = Index; return(1); }
 
@@ -1190,11 +1191,19 @@ SMBranchU:
 // Note:  Pword is the name known to GET*; think of it as Pjllw.
 
 #define	SMLEAFL(cDigits,Func)                           \
-	Pword = (PWord_t) P_JLLW(ju_PntrInJp(Pjp));      \
+	Pword = (PWord_t) P_JLL(ju_PntrInJp(Pjp));      \
 	pop0  = ju_LeafPop0(Pjp);                       \
 	Func(Pword, pop0)
 
-	case cJU_JPLEAF1:  CHECKDCD(1); SMLEAFL(1, j__udySearchLeafEmpty1);
+//	case cJU_JPLEAF1:  CHECKDCD(1); SMLEAFL(1, j__udySearchLeafEmpty1);
+	case cJU_JPLEAF1:  
+        {
+            CHECKDCD(1);
+	    Pjll1_t Pjll1 = P_JLL1(ju_PntrInJp(Pjp)); 
+	    pop0          = ju_LeafPop0(Pjp); 
+	    JSLE_EVEN(Pjll1->jl1_Leaf, pop0, 1, uint8_t);
+        }
+                           
 	case cJU_JPLEAF2:  CHECKDCD(2); SMLEAFL(2, j__udySearchLeafEmpty2);
 	case cJU_JPLEAF3:  CHECKDCD(3); SMLEAFL(3, j__udySearchLeafEmpty3);
 

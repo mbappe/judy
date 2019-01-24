@@ -1661,67 +1661,68 @@ assert(ju_LeafPop0(Pjp) == (Pop1 - 1));
 // (*) Leaf1 [[ => 1_15..08 ] => 1_07 => ... => 1_04 ] => 1_03 => 1_02 => 1_01
     case cJU_JPLEAF1:
     {
-        Word_t    PleafRaw;
-        uint8_t  *Pleaf;
         assert(!ju_DcdNotMatchKey(Index, Pjp, 1));
         assert(ParentLevel > (1));
-        PleafRaw = ju_PntrInJp(Pjp);
-        Pleaf = (uint8_t *) P_JLL(PleafRaw);
         Pop1 = ju_LeafPop0(Pjp) + 1;
         assert(((ParentLevel - 1) == (1)) || (Pop1 == (cJU_LEAF2_MAXPOP1)));
         if (((ParentLevel - 1) > (1)) /* under narrow pointer */  && (Pop1 == (cJU_LEAF2_MAXPOP1)))
         { /* hysteresis = 1       */
             Word_t    D_cdP0;
 
-            if ((PjllnewRaw = j__udyAllocJLL2(cJU_LEAF2_MAXPOP1, Pjpm)) == 0)
+            Word_t  Pjll2newRaw = j__udyAllocJLL2(cJU_LEAF2_MAXPOP1, Pjpm);
+            if (Pjll2newRaw  == 0)
                 return (-1);
-            Pjllnew = P_JLL(PjllnewRaw);
+            Pjll_t  Pjll2new = P_JLL(Pjll2newRaw);
 //printf("Line = %d\n", __LINE__);
 #ifdef  JUDYL
-            Pjv = JL_LEAF2VALUEAREA((uint16_t *) Pjllnew, cJU_LEAF2_MAXPOP1);
-            (void)j__udyLeaf1orB1ToLeaf2((uint16_t *) Pjllnew, Pjv, Pjp, Index & cJU_DCDMASK(1), Pjpm);
+            Pjv = JL_LEAF2VALUEAREA((uint16_t *) Pjll2new, cJU_LEAF2_MAXPOP1);
+            (void)j__udyLeaf1orB1ToLeaf2((uint16_t *) Pjll2new, Pjv, Pjp, Index & cJU_DCDMASK(1), Pjpm);
 #else  // JUDY1
-            (void)j__udyLeaf1orB1ToLeaf2((uint16_t *) Pjllnew,      Pjp, Index & cJU_DCDMASK(1), Pjpm);
+            (void)j__udyLeaf1orB1ToLeaf2((uint16_t *) Pjll2new,      Pjp, Index & cJU_DCDMASK(1), Pjpm);
 #endif // JUDY1
             D_cdP0 = (~cJU_MASKATSTATE((1) + 1)) & ju_DcdPop0(Pjp);
 
             ju_SetDcdPop0(Pjp, D_cdP0);
             ju_SetJpType(Pjp, cJU_JPLEAF2);
             ju_SetLeafPop0(Pjp, cJU_LEAF2_MAXPOP1 - 1);
-            ju_SetPntrInJp(Pjp, PjllnewRaw);
+            ju_SetPntrInJp(Pjp, Pjll2newRaw);
             goto ContinueDelWalk;       /* delete from new leaf */
         }
 //      else Not under a narrow pointer, can make an IMMED1?
+        Word_t  Pjll1Raw = ju_PntrInJp(Pjp);
+        Pjll1_t Pjll1    = P_JLL1(Pjll1Raw);
 
-        offset = j__udySearchLeaf1(Pleaf, Pop1, Index, 1 * 8);
+        offset = j__udySearchLeaf1(Pjll1, Pop1, Index, 1 * 8);
         assert(offset >= 0);            /* Index must be valid */
-        JUDYLCODE(Pjv = JL_LEAF1VALUEAREA(Pleaf, Pop1););
-        assert(Pop1 > (cJU_IMMED1_MAXPOP1));
-        if ((Pop1 - 1) == (cJU_IMMED1_MAXPOP1)) 
+        JUDYLCODE(Pjv = JL_LEAF1VALUEAREA(Pjll1, Pop1););
+        assert(Pop1 > cJU_IMMED1_MAXPOP1);
+        if ((Pop1 - 1) == cJU_IMMED1_MAXPOP1) 
         { /* hysteresis = 0 */
-            Word_t    PjllRaw = ju_PntrInJp(Pjp);
-            Word_t    PjvnewRaw;
 #ifdef  JUDYL
+            Word_t    PjvnewRaw;
             Pjv_t     Pjvnew;
             if ((PjvnewRaw = j__udyLAllocJV(Pop1 - 1, Pjpm)) == 0)
                 return (-1);
             Pjvnew = P_JV(PjvnewRaw);
             JU_DELETECOPY(Pjvnew, Pjv, Pop1, offset);
 #endif // JUDYL
-            JU_DELETECOPY(ju_PImmed1(Pjp), Pleaf, Pop1, offset);
-            j__udyFreeJLL1(PjllRaw, Pop1, Pjpm);
+            JU_DELETECOPY(ju_PImmed1(Pjp), Pjll1->jl1_Leaf, Pop1, offset);
+            j__udyFreeJLL1(Pjll1Raw, Pop1, Pjpm);
 #ifdef  JUDYL
             ju_SetPntrInJp(Pjp, PjvnewRaw);
 #endif // JUDYL
             /* Pjp->jp_Type = (BaseJPType) - 2 + (MaxPop1); */
-            ju_SetJpType(Pjp, (cJU_JPIMMED_1_02) - 2 + (cJU_IMMED1_MAXPOP1));
+            ju_SetJpType(Pjp, cJU_JPIMMED_1_02 - 2 + cJU_IMMED1_MAXPOP1);
             return (1);
         }
 //      else  No, therefore just shrink the Leaf1
         if (JU_LEAF1DELINPLACE(Pop1))
         { /* hysteresis = 0 */
-            JU_DELETEINPLACE(Pleaf, Pop1, offset);
-            JU_PADLEAF1(Pleaf, Pop1 - 1);
+            JU_DELETEINPLACE(Pjll1->jl1_Leaf, Pop1, offset);
+
+// This is the place to update preamble
+
+            JU_PADLEAF1(Pjll1->jl1_Leaf, Pop1 - 1);
 #ifdef  JUDYL
             JU_DELETEINPLACE(Pjv, Pop1, offset);
 #endif // JUDYL
@@ -1743,18 +1744,21 @@ UpdateLeafPop0AndReturnTrue:    // requires Pjp and Pop1
         }
         else                            // Shrink the Leaf1 size into another Alloc
         {
-            if ((PjllnewRaw = j__udyAllocJLL1(Pop1 - 1, Pjpm)) == 0)
+            Word_t Pjll1newRaw = j__udyAllocJLL1(Pop1 - 1, Pjpm);
+            if (Pjll1newRaw == 0)
                 return (-1);
-            Pjllnew = P_JLL(PjllnewRaw);
+            Pjll1_t Pjll1new = P_JLL1(Pjll1newRaw);
 #ifdef  JUDYL
-            Pjv_t     Pjvnew = JL_LEAF1VALUEAREA(Pjllnew, Pop1 - 1);
+            Pjv_t Pjvnew = JL_LEAF1VALUEAREA(Pjll1new, Pop1 - 1);
             JU_DELETECOPY(Pjvnew, Pjv, Pop1, offset);        // and Value area
 #endif // JUDYL
-            JU_DELETECOPY((uint8_t *) Pjllnew, Pleaf, Pop1, offset);
-            JU_PADLEAF1(Pjllnew, Pop1 - 1);
-            j__udyFreeJLL1(PleafRaw, Pop1, Pjpm);       /*  Pjp->Jp_Addr0 = PjllnewRaw; */
+            JU_DELETECOPY(Pjll1new->jl1_Leaf, Pjll1->jl1_Leaf, Pop1, offset);
 
-            ju_SetPntrInJp(Pjp, PjllnewRaw);
+// This is the place to update preamble
+
+            JU_PADLEAF1(Pjll1new->jl1_Leaf, Pop1 - 1);
+            j__udyFreeJLL1(Pjll1Raw, Pop1, Pjpm);
+            ju_SetPntrInJp(Pjp, Pjll1newRaw);
 #ifdef PCAS
 //            printf("Line = %d\n", __LINE__);
 #endif  // PCAS
@@ -2361,11 +2365,11 @@ UpdateLeafPop0AndReturnTrue:    // requires Pjp and Pop1
                         *Pleaf1new++ = ldigit;          // only 15 of 256
                 }
                 j__udyFreeJLB1(PjlbRaw, Pjpm);          // Free LeafB1
-#ifdef  JUDY1
+//#ifdef  JUDY1
                 ju_SetJpType(Pjp, cJ1_JPIMMED_1_15);
-#else   //  JUDYL
-                ju_SetJpType(Pjp, cJ1_JPIMMED_1_08);
-#endif  //  JUDYL
+//#else   //  JUDYL
+//                ju_SetJpType(Pjp, cJ1_JPIMMED_1_08);
+//#endif  //  JUDYL
                 return (1);                             // done
             }
         }
@@ -2391,6 +2395,9 @@ UpdateLeafPop0AndReturnTrue:    // requires Pjp and Pop1
         goto UpdateLeafPop0AndReturnTrue;  // requires Pjp and Pop1
 
 #endif  // JUDY1 ==================================
+
+
+
 
 #ifdef  JUDYL   //  =================================
         if (Pop1 == cJU_LEAF1_MAXPOP1)      // hysteresis = 1.
@@ -2442,6 +2449,7 @@ printf("Del B1: Line = %d, Pop1 = %d\n", __LINE__, (int)Pop1);
 #endif  // PCAS
             goto UpdateLeafPop0AndReturnTrue;  // requires Pjp and Pop1
         }
+//      else
 // Shrink value area in place or move to a smaller value area:
         if (JL_LEAFVDELINPLACE(pop1))      // hysteresis = 0.
         {
@@ -2638,22 +2646,21 @@ printf("Del B1: Line = %d, Pop1 = %d\n", __LINE__, (int)Pop1);
     case cJ1_JPIMMED_1_15:
 #endif // JUDY1
     {
-        uint8_t  *Pleaf;
         assert((ParentLevel - 1) == (1));
-        Pleaf = ju_PImmed1(Pjp);
+        uint8_t *Pleaf1 = ju_PImmed1(Pjp);
 #ifdef JUDYL
         PjvRaw = ju_PntrInJp(Pjp);
         Pjv = P_JV(PjvRaw);
 #endif // JUDYL
-        Pop1 = (ju_Type(Pjp)) - (cJU_JPIMMED_1_02) + 2;
-        offset = j__udySearchLeaf1(Pleaf, Pop1, Index, 1 * 8);
+        Pop1 = ju_Type(Pjp) - cJU_JPIMMED_1_02 + 2;
+        offset = j__udySearchImmed1(Pleaf1, Pop1, Index, 1 * 8);
         assert(offset >= 0);            /* Index must be valid */
 #ifdef  JUDY1
-        JU_DELETEINPLACE(Pleaf, Pop1, offset);
+        JU_DELETEINPLACE(Pleaf1, Pop1, offset);
 #else  // JUDYL
         if (JL_LEAFVDELINPLACE(Pop1))      /* hysteresis = 0 */
         {
-            JU_DELETEINPLACE(Pleaf, Pop1, offset);
+            JU_DELETEINPLACE(Pleaf1, Pop1, offset);
             JU_DELETEINPLACE(Pjv, Pop1, offset);
         }
         else
@@ -2663,7 +2670,7 @@ printf("Del B1: Line = %d, Pop1 = %d\n", __LINE__, (int)Pop1);
             if ((PjvnewRaw = j__udyLAllocJV(Pop1 - 1, Pjpm)) == 0)
                 return (-1);
             Pjvnew = P_JV(PjvnewRaw);
-            JU_DELETEINPLACE(Pleaf, Pop1, offset);
+            JU_DELETEINPLACE(Pleaf1, Pop1, offset);
             JU_DELETECOPY(Pjvnew, Pjv, Pop1, offset);
             j__udyLFreeJV(PjvRaw, Pop1, Pjpm); 
             ju_SetPntrInJp(Pjp, PjvnewRaw);

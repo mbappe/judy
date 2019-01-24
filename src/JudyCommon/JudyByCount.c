@@ -609,19 +609,25 @@ BranchU:
 	PREPL_SETPOP1;			\
 	SETOFFSET(offset, Count0, pop1lower, Pjp)
 
-/////////#ifdef  JUDYL
 	case cJU_JPLEAF1:
+        {
+	    JU_SETDCD(*PIndex, Pjp, 1);
+            Pjll1_t Pjll1 = P_JLL1(ju_PntrInJp(Pjp));
+	    JU_SETDIGIT1(*PIndex, Pjll1->jl1_Leaf[offset]);
+#ifdef JUDYL
+	    pop1 = ju_LeafPop0(Pjp) + 1;
+#endif  //JUDYL
+	    SETOFFSET(offset, Count0, pop1lower, Pjp);
+	    JU_RET_FOUND_LEAF1(Pjll1, pop1, offset);
+        }
 
-	    PREPL_DCD(1);
-	    JU_SETDIGIT1(*PIndex, ((uint8_t *) Pjll)[offset]);
-	    JU_RET_FOUND_LEAF1(Pjll, pop1, offset);
-/////////#endif
 	case cJU_JPLEAF2:
-
+        {
 	    PREPL_DCD(2);
 	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(2)))
 		    | ((uint16_t *) Pjll)[offset];
 	    JU_RET_FOUND_LEAF2(Pjll, pop1, offset);
+        }
 
 	case cJU_JPLEAF3:
 	{
@@ -633,11 +639,13 @@ BranchU:
 	}
 
 	case cJU_JPLEAF4:
+        {
 
 	    PREPL_DCD(4);
 	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(4)))
 		    | ((uint32_t *) Pjll)[offset];
 	    JU_RET_FOUND_LEAF4(Pjll, pop1, offset);
+        }
 
 	case cJU_JPLEAF5:
 	{

@@ -42,9 +42,10 @@ extern int j__udyCreateBranchL(Pjp_t, Pjp_t, uint8_t *, Word_t, Pjpm_t);
 //
 // Return -1 if out of memory, otherwise return 1.
 
-FUNCTION int j__udyInsertBranch(
+FUNCTION int j__udyInsertBranchL(
 	Pjp_t	Pjp,		// JP containing narrow pointer.
 	Word_t	Index,		// outlier to Pjp.
+        Word_t  Dcd,
 	Word_t	BranchLevel,	// of what JP points to, mapped from JP type.
 	Pjpm_t	Pjpm)		// for global accounting.
 {
@@ -65,7 +66,8 @@ FUNCTION int j__udyInsertBranch(
 //	Obtain Dcd bits that differ between Index and JP, shifted so the
 //	digit for BranchLevel is the LSB:
 
-	XorExp = (Index ^ JU_JPDCDPOP0(Pjp)) >> (BranchLevel * cJU_BITSPERBYTE);
+//	XorExp = (Index ^ ju_DcdPop0(Pjp)) >> (BranchLevel * cJU_BITSPERBYTE);
+	XorExp = (Index ^ Dcd) >> (BranchLevel * cJU_BITSPERBYTE);
 //	XorExp = ((Index ^ JU_JPDCDPOP0(Pjp)) & (cJU_ALLONES >> cJU_BITSPERBYTE)) >> (BranchLevel * cJU_BITSPERBYTE);
 	assert(XorExp);		// Index must be an outlier.
 
@@ -79,14 +81,14 @@ FUNCTION int j__udyInsertBranch(
 //	assert((BranchLevel > 1) && (BranchLevel < cJU_ROOTSTATE));
 
 #ifdef PCAS
-        printf("---j__udyInsertBranch - Index = 0x%lx, Level=%lu\n", Index, BranchLevel);
+        printf("---j__udyInsertBranchL - Index = 0x%lx, Dcd = 0x%016lx, Level=%lu\n", Index, Dcd, BranchLevel);
 #endif  // PCAS
 
 //	Get the MSB (highest digit) that differs between the old expanse and
 //	the new Index to insert:
 
-	DecodeByteO = JU_DIGITATSTATE(JU_JPDCDPOP0(Pjp), BranchLevel);
-	DecodeByteN = JU_DIGITATSTATE(Index,	         BranchLevel);
+	DecodeByteO = JU_DIGITATSTATE(Dcd,   BranchLevel);
+	DecodeByteN = JU_DIGITATSTATE(Index, BranchLevel);
 
 	assert(DecodeByteO != DecodeByteN);
 
@@ -113,7 +115,7 @@ FUNCTION int j__udyInsertBranch(
 //	Convert to a cJU_JPIMMED_*_01 at the correct level:
 //	Build JP and set type below to: cJU_JPIMMED_X_01
 //        JU_JPSETADT(PjpNull, 0, Index, cJU_JPIMMED_1_01 - 2 + BranchLevel);
-        ju_SetIMM01(PjpNull, 0, Index, cJU_JPIMMED_1_01 - 2 + BranchLevel);
+        ju_SetIMM01(PjpNull, 0, Index, cJU_JPIMMED_1_01 - 1 + BranchLevel - 1);
 
 //	Return pointer to Value area in cJU_JPIMMED_X_01
 #ifdef  JUDYL
@@ -139,7 +141,7 @@ FUNCTION int j__udyInsertBranch(
 // printf("\n =======================BranchLevel = %d, jp_Type = %d\n", (int)BranchLevel, (int)Pjp->jp_Type);
 
 	DCDMask		^= cJU_DCDMASK(BranchLevel);
-	DCDMask		 = ~DCDMask & JU_JPDCDPOP0(Pjp);
+	DCDMask		 = ~DCDMask & ju_DcdPop0(Pjp);
 //        JP = *Pjp;
 //        JU_JPSETADT(Pjp, JP.Jp_Addr0, DCDMask, JP.jp_Type);
 //        JU_JPSETADT(Pjp, ju_PntrInJp(&JP), DCDMask, ju_Type(&JP));
@@ -147,4 +149,4 @@ FUNCTION int j__udyInsertBranch(
 
 	return(1);
 
-} // j__udyInsertBranch()
+} // j__udyInsertBranchL()

@@ -78,14 +78,14 @@ bool_t enabled;      // by default, unless env params set.
 // Shorthands for announcing expanse populations from DcdPopO fields:
 
 #define POP0 printf("Pop1 = 0 ")
-#define POP1 printf("Pop1 = 0x%016lx ", (Word_t) ((JU_JPDCDPOP0(Pjp) &              0xff) + 1))
-#define POP2 printf("Pop1 = 0x%016lx ", (Word_t) ((JU_JPDCDPOP0(Pjp) &            0xffff) + 1))
-#define POP3 printf("Pop1 = 0x%016lx ", (Word_t) ((JU_JPDCDPOP0(Pjp) &          0xffffff) + 1))
-#define POP4 printf("Pop1 = 0x%016lx ", (Word_t) ((JU_JPDCDPOP0(Pjp) &        0xffffffff) + 1))
-#define POP5 printf("Pop1 = 0x%016lx ", (Word_t) ((JU_JPDCDPOP0(Pjp) &      0xffffffffff) + 1))
-#define POP6 printf("Pop1 = 0x%016lx ", (Word_t) ((JU_JPDCDPOP0(Pjp) &    0xffffffffffff) + 1))
-#define POP7 printf("Pop1 = 0x%016lx ", (Word_t) ((JU_JPDCDPOP0(Pjp) &  0xffffffffffffff) + 1))
-#define POP8 printf("Pop1 = 0x%016lx ", (Word_t) ((JU_JPDCDPOP0(Pjp) &0xffffffffffffffff) + 1))
+#define POP1 printf("JpPop0 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &              0xff) + 1))
+#define POP2 printf("JpPop0 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &            0xffff) + 1))
+#define POP3 printf("JpPop0 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &          0xffffff) + 1))
+#define POP4 printf("JpPop0 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &        0xffffffff) + 1))
+#define POP5 printf("JpPop0 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &      0xffffffffff) + 1))
+#define POP6 printf("JpPop0 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &    0xffffffffffff) + 1))
+#define POP7 printf("JpPop0 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &  0xffffffffffffff) + 1))
+#define POP8 printf("JpPop0 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &0xffffffffffffffff) + 1))
 
 // Shorthands for announcing populations of Immeds:
 //
@@ -355,7 +355,7 @@ static  bool_t checked = FALSE; // set upon first entry and check for params.
         case cJL_JPIMMED_1_06:  JPTYPE("cJL_JPIMMED_1_06"); POP_6;      break;
         case cJL_JPIMMED_1_07:  JPTYPE("cJL_JPIMMED_1_07"); POP_7;      break;
         case cJL_JPIMMED_1_08:  JPTYPE("cJL_JPIMMED_1_08"); POP_8;      break;
-        case cJL_JPIMMED_2_02:  JPTYPE("cJL_JPIMMED_2_02"); POP_2;      break;
+        case cJL_JPIMMED_2_02:  JPTYPE("cJL_JPIMMED_2_02"); POP_2; printf("tp = %d", Pjp->jp_Type);      break;
         case cJL_JPIMMED_2_03:  JPTYPE("cJL_JPIMMED_2_03"); POP_3;      break;
         case cJL_JPIMMED_3_02:  JPTYPE("cJL_JPIMMED_3_02"); POP_2;      break;
         case cJL_JPIMMED_4_02:  JPTYPE("cJL_JPIMMED_4_02"); POP_2;      break;

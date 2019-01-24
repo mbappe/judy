@@ -138,12 +138,13 @@ typedef struct J_UDY_POINTER_OTHERS     // JPO.
         union
         {
             Word_t  j_po_Addr0;         // only the hi 48 bits are available
-            uint8_t j_po_jp_Type[2];    // jp_Type & jp_IPop in lo 16 bits
+            uint8_t j_po_jp_Type[2];    // jp_Type & jp_LeafPop0 in lo 16 bits
         };
         union
         {
             Word_t  j_po_Addr1;         // 2nd Word_t
-//            uint8_t j_po_LeafPop0;      // TEMP!!! least byte in DCD
+            Word_t  j_po_Octants;
+            uint8_t j_po_OctPop1[8];
         };
 } jpo_t;
 
@@ -209,11 +210,12 @@ typedef union J_UDY_POINTER         // JP.
 #define jp_PValue  j_pi.j_pi_PValue          // Pointer to Values for IMMED_[1..7]_[02..15]
 #endif  // JUDYL
 
-#define jp_Type    j_po.j_po_jp_Type[0] // jp_Type & jp_IPop
-#define jp_IPop    j_po.j_po_jp_Type[1] // jp_Type & jp_IPop
-#define jp_Addr0   j_po.j_po_Addr0      // only the hi 48 bits are available
-#define jp_Addr1   j_po.j_po_Addr1      //
-#define jp_LeafPop0    j_po.j_po_jp_Type[1] // jp_Type & jp_IPop
+#define jp_Type     j_po.j_po_jp_Type[0] // jp_Type
+#define jp_LeafPop0 j_po.j_po_jp_Type[1] // jp_LeafPop0
+#define jp_Addr0    j_po.j_po_Addr0      // only the hi 48 bits are available
+#define jp_Addr1    j_po.j_po_Addr1      // 2nd Word in jp
+#define jp_OctPop1  j_po.j_po_OctPop1    // uint8_t[] 8 octants in array
+#define jp_Octants  j_po.j_po_Octants    // Word_t -- 8 octants in Word_t
 
 // Mask off the high byte from INDEX to it can be compared to DcdPopO:
 #define JU_TrimToIMM01(INDEX) ((cJU_ALLONES >> cJU_BITSPERBYTE) & (INDEX))
@@ -253,20 +255,23 @@ static Word_t  ju_DcdPop0(Pjp_t Pjp)
 
 static Word_t  ju_LeafPop0(Pjp_t Pjp)
         { return(Pjp->jp_LeafPop0); }   // TEMP - should be below
-//        { return(Pjp->jp_IPop); } 
 
 static Word_t  ju_BranchPop0(Pjp_t Pjp, int level)
         { return(Pjp->jp_Addr1 & cJU_POP0MASK(level)); }
 
 static Word_t  ju_DcdNotMatchKey(Word_t Key, Pjp_t Pjp, int level)
-          { 
+        { 
 #ifdef  PCASNOT
               Word_t res = (Key ^ ju_DcdPop0(Pjp)) & cJU_DCDMASK(level); 
 if (res) printf("\n+FAILED DCD Check++++ ju_DcdNotMatchKey: DcdP0 = 0x%016lx Key = 0x%016lx mask = 0x%016lx level = %d\n", Pjp->jp_Addr1, Key, cJU_DCDMASK(level), level);
 else     printf("\n+PASSED DCD Check++++ ju_DcdNotMatchKey: DcdP0 = 0x%016lx Key = 0x%016lx mask = 0x%016lx level = %d\n", Pjp->jp_Addr1, Key, cJU_DCDMASK(level), level);
 #endif  // PCASNOT
               return((Key ^ ju_DcdPop0(Pjp)) & cJU_DCDMASK(level)); 
-          }
+        }
+
+// More generic version for different DCD(Pop0) positions
+static Word_t  ju_DcdNotMatchKeyLeaf(Word_t KEY, Word_t DCD, int LEVEL)
+        { return((KEY ^ DCD) & cJU_DCDMASK(LEVEL)); }
 
 static Word_t ju_IMM01Key(Pjp_t Pjp)    // only low 56 bits of Key
         { return(Pjp->jp_Addr0 >> 8); } // shift out jp_Type
@@ -302,6 +307,10 @@ static void ju_SetJpType(Pjp_t Pjp, uint8_t Type)
 
 static void ju_SetDcdPop0(Pjp_t Pjp, Word_t DcdPop0)
         { Pjp->jp_Addr1 = DcdPop0; }
+
+// Temp
+static void ju_SetDcdPop0Leaf(Word_t PJLL, Word_t DcdPop0)
+        { ((PWord_t)(PJLL))[0] = DcdPop0; }        // 1st Word in Leaf
 
 #ifdef  JUDYL
 //
@@ -407,8 +416,8 @@ static uint32_t *ju_PImmed4(Pjp_t Pjp)  // 4 byte Keys
 
 typedef struct J__UDY_BRANCH_LINEAR
         {
-            Word_t jbl_RootStruct;                  // ^ to root Structure
-            Word_t jbl_DCDPop0;                     // DCDPop0
+            Word_t  jbl_RootStruct;                 // ^ to root Structure
+            Word_t  jbl_DCDPop0;                    // DCDPop0
             uint8_t jbl_NumJPs;                     // num of JPs (Pjp_t), 1..N.
             uint8_t jbl_Expanse[cJU_BRANCHLMAXJPS]; // 1..7 MSbs of pop exps.
             jp_t    jbl_jp     [cJU_BRANCHLMAXJPS]; // JPs for populated exps.

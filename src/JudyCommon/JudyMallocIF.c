@@ -356,6 +356,7 @@ FUNCTION Word_t j__udyAllocJLL1(int Pop1, Pjpm_t Pjpm)
         TRACE_ALLOC6("\n%p %8zd = j__udyAllocJLL1(%d), Words = %d, TotPop1 = %zd\n", 
                 (void *)PjllRaw, j__udyMemSequence++, Pop1, (int)Words, Pjpm->jpm_Pop0 + 2);
         MALLOCBITS_SET(PjllRaw);
+        *(PWord_t)PjllRaw = 0;  // zero PreFix
         return(PjllRaw);
 
 } // j__udyAllocJLL1()

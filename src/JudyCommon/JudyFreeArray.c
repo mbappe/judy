@@ -313,7 +313,7 @@ FUNCTION void j__udyFreeSM(
             Line = __LINE__;
 #endif  // DEBUG
 	    Pop1 = ju_LeafPop0(Pjp) + 1;
-            assert((ju_DcdPop0(Pjp) & 0xff) == (Pop1 - 1));
+/////////            assert((ju_DcdPop0(Pjp) & 0xff) == (Pop1 - 1));
 //	    j__udyFreeJLL1(Pjp->Jp_Addr0, Pop1, Pjpm);
 	    j__udyFreeJLL1(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
