@@ -250,9 +250,9 @@ main(int argc, char *argv[])
     // pretty easy in some variants of Mikey's code to introduce a bug that
     // clobbers one or the other so his debug code depends on these words
     // being zero so it can verify that neither is getting clobbered.
-    struct { void *pv0, *pv1, *pv2; } sj1 = { 0, 0, 0 };
+    struct { void *pv0, *pv1, *pv2; } sj1 = { (void*)-1, NULL, (void*)-1 };
 #define J1 (sj1.pv1)
-    struct { void *pv0, *pv1, *pv2; } sjL = { 0, 0, 0 };
+    struct { void *pv0, *pv1, *pv2; } sjL = { (void*)-1, NULL, (void*)-1 };
 #define JL (sjL.pv1)
     printf("&sjL.pv1 %p %p\n", (void*)&sjL.pv1, sjL.pv1);
 #else // DEBUG
@@ -303,6 +303,13 @@ main(int argc, char *argv[])
 
         case 'B':
             BValue = strtoul(optarg, NULL, 0);
+
+            // Allow -B0 to mean -B64 on 64-bit and -B32 on 32-bit.
+            // Allow -B-1 to mean -B63 on 64-bit and -B31 on 32-bit.
+            // To simplify writing shell scripts for testing that
+            // are compatible with 32-bit and 64-bit.
+            BValue = (BValue - 1) % (sizeof(Word_t) * 8) + 1;
+
             if  (
                     (BValue > (sizeof(Word_t) * 8))
                            ||
@@ -817,11 +824,9 @@ TestJudyCount(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
                    ", should be: elm + 1 = %" PRIuPTR"\n",
                    Count1, CountL, elm + 1);
             if (Count1 != elm + 1) {
-                printf("Judy1Dump");
                 Judy1Dump((Word_t)J1, sizeof(Word_t) * 8, 0);
             }
             if (CountL != elm + 1) {
-                printf("JudyLDump");
                 JudyLDump((Word_t)JL, sizeof(Word_t) * 8, 0);
             }
             FAILURE("Count at", elm);
@@ -985,8 +990,11 @@ TestJudyNextEmpty(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
             FAILURE("Judy1NextEmpty Rcode != 1 =", Rcode1);
         }
 
-        if (J1index != JLindex)
+        if (J1index != JLindex) {
+            printf("RcodeL = %d, Rcode1 = %d, Index1 = 0x%" PRIxPTR", IndexL = 0x%" PRIxPTR"\n",
+                    RcodeL, Rcode1, J1index, JLindex);
             FAILURE("JLNE != J1NE returned index at", elm);
+        }
 
         if (pFlag)
         {

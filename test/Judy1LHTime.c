@@ -636,7 +636,11 @@ Word_t    PtsPdec = 50;                 // 4.71% spacing - default
 
 // For LFSR (Linear-Feedback-Shift-Register) pseudo random Number Generator
 //
-#define DEFAULT_BVALUE  32
+// DEFAULT_BVALUE of size of word makes it easier to design a regression test
+// that doesn't know or care if it is running 64-bit or 32-bit.
+// For example, we can use negative numbers as option arguments on the
+// command line for -s to get numbers near the maximum of the expanse.
+#define DEFAULT_BVALUE  (sizeof(Word_t) * 8)
 Word_t    BValue = DEFAULT_BVALUE;
 double    Bpercent = 100.0; // Default MaxNumb assumes 100.0.
 // MaxNumb is initialized from DEFAULT_BVALUE and assumes Bpercent = 100.0.
@@ -665,12 +669,9 @@ PWord_t   FileKeys = NULL;              // array of FValue keys
 Word_t    DFlag = 0;                    // bit reverse (mirror) the data stream
 
 // Default starting seed value; -s
+// This is changed to 1 if SValue is non-zero.
 //
-Word_t    StartSequent = 1;
-
-// Global to store the current Value return from PSeed.
-//
-//Word_t    Key = 0xc1fc;
+Word_t StartSequent = (Word_t)-1 / 7; // 0x2492492492492492 or 0x24924924
 
 Word_t PartitionDeltaFlag = 1; // use -Z to disable small key array
 
@@ -980,9 +981,9 @@ PrintHeaderX(const char *strFirstCol, int nRow)
         printf(nRow ? "      " : " -MsCm");
         printf(nRow ? "      " : " %%DiHt");
         printf(nRow ? "      " : " AvPop");
-        printf(nRow ? "      " : " DiHts");
-        printf(nRow ? "      " : " GetsP");
-        printf(nRow ? "      " : " GetsM");
+        printf(nRow ? "      " : " %%DiHt");
+        printf(nRow ? "      " : " %%GetP");
+        printf(nRow ? "      " : " %%GetM");
         printf(nRow ? "   Cnt" : "  Gets");
 #endif // SEARCHMETRICS
     }
@@ -1240,9 +1241,9 @@ main(int argc, char *argv[])
     // pretty easy in some variants of Mikey's code to introduce a bug that
     // clobbers one or the other so his code depends on these words being
     // zero so it can verify that neither is getting clobbered.
-    struct { void *pv0, *pv1, *pv2; } sj1 = { 0, 0, 0 };
+    struct { void *pv0, *pv1, *pv2; } sj1 = { (void*)-1, NULL, (void*)-1 };
 #define J1 (sj1.pv1)
-    struct { void *pv0, *pv1, *pv2; } sjL = { 0, 0, 0 };
+    struct { void *pv0, *pv1, *pv2; } sjL = { (void*)-1, NULL, (void*)-1 };
 #define JL (sjL.pv1)
 #else // DEBUG
     void     *J1 = NULL;                // Judy1
@@ -1383,6 +1384,7 @@ main(int argc, char *argv[])
 // PARSE INPUT PARAMETERS
 // ============================================================
 
+    int sFlag = 0; // boolean; has -s been seen
     errno = 0;
     while (1)
     {
@@ -1446,6 +1448,11 @@ main(int argc, char *argv[])
                 FAILURE("compile with -UNO_SVALUE to use -S", SValue);
             }
 #endif // NO_SVALUE
+            // Change default StartSequent to one for non-zero SValue.
+            // This makes it possible to to random gets for -DS1.
+            if ((SValue != 0) && !sFlag) {
+                StartSequent = 1;
+            }
             break;
         }
         case 'T':                      // Maximum retrieve tests for timing
@@ -1457,6 +1464,7 @@ main(int argc, char *argv[])
             break;
 
         case 's':
+            sFlag = 1;
             StartSequent = oa2w(optarg, NULL, 0, c);
             break;
 
@@ -1472,6 +1480,12 @@ main(int argc, char *argv[])
             str = NULL; // for subsequent call to strtok_r
 
             BValue = oa2w(tok, NULL, 0, c);
+
+            // Allow -B0 to mean -B64 on 64-bit and -B32 on 32-bit.
+            // Allow -B-1 to mean -B63 on 64-bit and -B31 on 32-bit.
+            // To simplify writing shell scripts for testing that
+            // are compatible with 32-bit and 64-bit.
+            BValue = (BValue - 1) % (sizeof(Word_t) * 8) + 1;
 
             tok = strtok_r(str, ":", &saveptr);
             if (tok != NULL) {
@@ -1969,6 +1983,16 @@ main(int argc, char *argv[])
         }
     }
 
+  #if defined(__LP64__) || defined(_WIN64)
+    // MEB: not sure why but -DS1 group calc code can't handle nElms > (0x11 << 56).
+    if (bDS1 && (nElms > ((Word_t)0x11 << 56)))
+    {
+        nElms = (Word_t)0x11 << 56;
+        printf("# Trim Max number of Elements -n%" PRIuPTR" due to -DS1 groups limitation", nElms);
+        fprintf(stderr, "# Trim Max number of Elements -n%" PRIuPTR" due to -DS1 groups limitation", nElms);
+    }
+  #endif // defined(__LP64__) || defined(_WIN64)
+
 //  build the Random Number Generator starting seeds
     PSeed_t PInitSeed = RandomInit(BValue, GValue);
 
@@ -1990,6 +2014,8 @@ main(int argc, char *argv[])
         }
         //printf("# wFeedBTap 0x%zx\n", wFeedBTap);
     }
+
+    printf("# StartSequent 0x%zx\n", StartSequent);
 
 //  Print out the number set used for testing
     if (pFlag)
@@ -2290,6 +2316,7 @@ main(int argc, char *argv[])
             if ((wNumb > nElms) || (wNumb < wPrev)) {
                 wNumb = nElms;
                 Pms[grp].ms_delta = nElms - wPrev;
+                // MEB: not sure why but assert blows for nElms > (0x11 << 56).
                 assert(grp == Groups - 1);
             } else {
                 Pms[grp].ms_delta = wNumb - wPrev;
@@ -2604,9 +2631,9 @@ main(int argc, char *argv[])
         printf("# COLHEAD %2d -MsCm - Average number reverse Compares failed Per Leaf Search\n", Col++);
         printf("# COLHEAD %2d %%DiHt - %% of Direct Hits per Leaf Search\n", Col++);
         printf("# COLHEAD %2d AvPop - Average Population of Leaves Searched (be careful)\n", Col++);
-        printf("# COLHEAD %2d DiHts - Num get calls the result in a direct hit\n", Col++);
-        printf("# COLHEAD %2d GetsP - Num get calls that miss and search forward\n", Col++);
-        printf("# COLHEAD %2d GetsM - Num get calls that miss and search backward\n", Col++);
+        printf("# COLHEAD %2d %%DiHt - %% get calls the result in a direct hit\n", Col++);
+        printf("# COLHEAD %2d %%GetP - %% get calls that miss and search forward\n", Col++);
+        printf("# COLHEAD %2d %%GetM - %% get calls that miss and search backward\n", Col++);
         printf("# COLHEAD %2d Gets  - Num get calls\n", Col++);
 #endif // SEARCHMETRICS
     }
@@ -3260,7 +3287,7 @@ nextPart:
                 // last part might be a different size than the rest
                 if (Delta <= wDoTit0Max) { // Delta < wDoTit0Max
                     Tit = 0;                    // exclude Judy
-                    DummySeed = InsertSeed;
+                    DummySeed = BitmapSeed;
                     WaitForContextSwitch(Delta);
                     TestJudyLIns(&JL, &DummySeed, Delta);
                     DeltaGenL = DeltanSecL / Delta;
@@ -3275,7 +3302,7 @@ nextPart:
 
             Tit = 1;                    // include Judy
             WaitForContextSwitch(Delta);
-            TestJudyLIns(&JL, &InsertSeed, Delta);
+            TestJudyLIns(&JL, &BitmapSeed, Delta);
             DeltanSecLSum += DeltanSecL;
             DeltaMalFreLSum += DeltaMalFreL;
 
@@ -3746,11 +3773,11 @@ nextPart:
 //          print average number of failed compares done in leaf search
             PrintValx100((double)MisComparesP / MAX(GetCallsP + DirectHits, 1), 5, 1);
             PrintValx100((double)MisComparesM / MAX(GetCallsM + DirectHits, 1), 5, 1);
-            PrintValx100((double)DirectHits / MAX(DirectHits + GetCallsP + GetCallsM, 1), 5, 1);
+            PrintValx100((double)DirectHits / GetCalls, 5, 1);
             PrintVal((double)SearchPopulation / MAX(GetCalls, 1), 5, 1);
-            PrintVal(DirectHits, 5, 0);
-            PrintVal(GetCallsP, 5, 0);
-            PrintVal(GetCallsM, 5, 0);
+            PrintValx100((double)DirectHits / GetCalls, 5, 1);
+            PrintValx100((double)GetCallsP / GetCalls, 5, 1);
+            PrintValx100((double)GetCallsM / GetCalls, 5, 1);
             PrintVal(GetCalls, 5, 0);
 #endif // SEARCHMETRICS
         }
@@ -4786,8 +4813,11 @@ TestJudyLGet(void *JL, PNewSeed_t PSeed, Word_t Elements)
         STARTTm;
         for (elm = 0; elm < Elements; elm++)
         {
-            if (Tit)
-                TstKey = *(PWord_t)JudyLGet(JL, TstKey, PJE0);
+            if (Tit) {
+                Word_t* pwValue = (Word_t*)JudyLGet(JL, TstKey, PJE0);
+                assert(pwValue != NULL);
+                TstKey = *pwValue;
+            }
         }
         ENDTm(DeltanSecL);
 //      Save for later (these parameters are just for Get/Test)
@@ -5157,8 +5187,9 @@ TestJudyNext(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                         printf("J1LastKey 0x%zx\n", J1LastKey);
 #endif // #ifndef TEST_NEXT_USING_JUDY_NEXT
                         printf("J1KeyBefore 0x%zx\n", J1KeyBefore);
+                        printf("Rc %d\n", Rc);
+                        printf("J1Key 0x%zx\n", J1Key);
                         printf("Elements %zu elm %zu\n", Elements, elm);
-                        printf("J1Key 0x%zx", J1Key);
                         FAILURE("J1N failed J1Key", J1Key);
                     }
 #ifdef TEST_NEXT_USING_JUDY_NEXT
@@ -5509,6 +5540,8 @@ TestJudyPrev(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
 int
 TestJudyNextEmpty(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
 {
+    (void)J1; (void)JL; (void)PSeed; (void)Elements;
+#ifndef NO_TEST_NEXT_EMPTY
     Word_t    elm;
 
     double    DminTime;
@@ -5602,6 +5635,7 @@ TestJudyNextEmpty(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
         }
         DeltanSecL = DminTime / (double)Elements;
     }
+#endif // #ifndef NO_TEST_NEXT_EMPTY
     return (0);
 }
 
@@ -5613,6 +5647,8 @@ TestJudyNextEmpty(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
 int
 TestJudyPrevEmpty(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
 {
+    (void)J1; (void)JL; (void)PSeed; (void)Elements;
+#ifndef NO_TEST_NEXT_EMPTY
     Word_t    elm;
 
     double    DminTime;
@@ -5703,6 +5739,7 @@ TestJudyPrevEmpty(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
         DeltanSecL = DminTime / (double)Elements;
     }
 
+#endif // #ifndef NO_TEST_NEXT_EMPTY
     return (0);
 }
 
