@@ -182,7 +182,11 @@ Swizzle(Word_t word)
     return(word);
 }
 
+#ifdef NO_TEST_DELETE // for turn-on testing
+Word_t dFlag = 0;
+#else // NO_TEST_DELETE
 Word_t dFlag = 1;
+#endif // NO_TEST_DELETE
 Word_t pFlag = 0;
 #ifdef NO_TEST_COUNT // for turn-on testing
 Word_t CFlag = 1;
