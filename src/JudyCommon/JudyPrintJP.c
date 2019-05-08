@@ -55,14 +55,11 @@
 // this file, but the linker should merge all cases into single locations, but
 // ONLY if these are uninitialized, so ASSUME they are 0 to start.
 
-Word_t j__udyIndex;             // current Index itself, optional from caller.
-Word_t j__udyPopulation;        // Indexes in array, optional from caller.
-
 // Other globals:
 
 Word_t startindex;          // see usage below.
 Word_t startpop;
-bool_t enabled;      // by default, unless env params set.
+bool_t j__udyEnabled;      // by default, unless env params set.
 
 // Shorthand for announcing JP addresses, Desc (in context), and JP types:
 //
@@ -73,19 +70,19 @@ bool_t enabled;      // by default, unless env params set.
 // facilities; in particular, %x not %lx, to truncate the "noisy" high part on
 // 64-bit systems.
 
-#define JPTYPE(Type)  printf("0x%lx %s %-17s", (Word_t) Pjp, Desc, Type)
+#define JPTYPE(Type)  printf("0x%lx %s %s ", (Word_t) Pjp, Desc, Type)
 
 // Shorthands for announcing expanse populations from DcdPopO fields:
 
 #define POP0 printf("Pop1 = 0 ")
-#define POP1 printf("JpPop0 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &              0xff) + 1))
-#define POP2 printf("JpPop0 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &            0xffff) + 1))
-#define POP3 printf("JpPop0 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &          0xffffff) + 1))
-#define POP4 printf("JpPop0 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &        0xffffffff) + 1))
-#define POP5 printf("JpPop0 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &      0xffffffffff) + 1))
-#define POP6 printf("JpPop0 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &    0xffffffffffff) + 1))
-#define POP7 printf("JpPop0 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &  0xffffffffffffff) + 1))
-#define POP8 printf("JpPop0 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &0xffffffffffffffff) + 1))
+#define LEAFPOP1 printf("LeafPop = %ld ",(Word_t) ju_LeafPop1(Pjp))
+#define POP2 printf("BranchPop = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &            0xffff) + 1))
+#define POP3 printf("BranchPop = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &          0xffffff) + 1))
+#define POP4 printf("BranchPop = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &        0xffffffff) + 1))
+#define POP5 printf("BranchPop = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &      0xffffffffff) + 1))
+#define POP6 printf("BranchPop = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &    0xffffffffffff) + 1))
+#define POP7 printf("BranchPop = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &  0xffffffffffffff) + 1))
+#define POP8 printf("BranchPop = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &0xffffffffffffffff) + 1))
 
 // Shorthands for announcing populations of Immeds:
 //
@@ -110,23 +107,35 @@ bool_t enabled;      // by default, unless env params set.
 
 // Shorthands for other announcements:
 
-#define NUMJPSL printf("NumJPs = %d ", P_JBL(ju_PntrInJp(Pjp))->jbl_NumJPs)
 #define OOPS    printf("-- OOPS, invalid Type\n"); exit(1)
 
 // This is harder to compute:
 
 #define NUMJPSB                                                         \
         {                                                               \
-            Pjbb_t Pjbb = P_JBB(ju_PntrInJp(Pjp));                          \
+            Pjbb_t Pjbb = P_JBB(ju_PntrInJp(Pjp));                      \
             Word_t subexp;                                              \
-            int    numJPs = 0;                                          \
+            int    Bitset = 0;                                          \
                                                                         \
             for (subexp = 0; subexp < cJU_NUMSUBEXPB; ++subexp)         \
-                numJPs += j__udyCountBitsB(JU_JBB_BITMAP(Pjbb, subexp));\
+                Bitset += j__udyCountBitsB(JU_JBB_BITMAP(Pjbb, subexp));\
                                                                         \
-            printf("NumJPs = %d ", numJPs);                             \
+            printf("Bitset = %d ", Bitset);                             \
+            printf("NumJPs = %d ", (int)Pjbb->jbb_NumJPs);              \
+        }
+        
+
+#define NUMJPSU                                                         \
+        {                                                               \
+            Pjbu_t Pjbu = P_JBU(ju_PntrInJp(Pjp));                      \
+            printf("NumJPs = %d ", (int)Pjbu->jbu_NumJPs);              \
         }
 
+#define NUMJPSL                                                         \
+        {                                                               \
+            Pjbl_t Pjbl = P_JBL(ju_PntrInJp(Pjp));                      \
+            printf("NumJPs = %d ", (int)Pjbl->jbl_NumJPs);              \
+        }
 
 // ****************************************************************************
 // J U D Y   P R I N T   J P
@@ -140,63 +149,33 @@ bool_t enabled;      // by default, unless env params set.
 FUNCTION static void JudyPrintJP(
         Pjp_t  Pjp,             // JP to describe.
         char * Desc,            // brief description of caller, such as "i".
-        int    Line)            // callers source line number.
+        int    Line,            // callers source line number.
+        Word_t Index,
+        Pjpm_t Pjpm)
 {
-static  bool_t checked = FALSE; // set upon first entry and check for params.
         char * value;           // for getenv().
-
-//        printf("\n=====JudyPrintJP, enabled = %d, checked = %d, startpop = %lu, startindex = %lu\n", enabled, checked, startpop, startindex);
-//        printf("=====j__udyPopulation = %lu, j__udyIndex = 0x%lx\n", j__udyPopulation, j__udyIndex);
-// CHECK FOR EXTERNAL ENABLING:
-//
-// If a parameter is set, report the value, even if it is null or otherwise
-// evaluates to zero, in which case enable tracing immediately; otherwise wait
-// for the value to be hit.
 
 #define GETENV(Name,Value,Base)                                 \
         if ((value = getenv (Name)) != (char *) NULL)           \
         {                                                       \
             (Value) = strtoul (value, (char **) NULL, Base);    \
-            enabled |= ((Value) == 0);  /* see above */         \
-                                                                \
-            (void) printf ("JudyPrintJP(\"%s\"): $%s = %lu\n",  \
-                           Desc, Name, Value);                  \
         }
 
-        if (! checked)  // only check once.
+        if (! (startpop || startindex))
         {
-            checked = TRUE;
-
             GETENV ("STARTPOP",   startpop,   0);
             GETENV ("STARTINDEX", startindex, 0);
-
-            (void) printf ("JudyPrintJP(\"%s\"): Tracing present %s\n", Desc,
-                           enabled ? "and immediately enabled" :
-                           (startindex || startpop) ?
-                           "but disabled until start condition met" :
-                           "but not enabled by env parameter");
         }
-
-        if (enabled == 0)  // check repeatedly until latched enabled:
+        else
         {
-            if (startindex && (startindex == j__udyIndex))
-            {
-                 (void) printf ("=== TRACING ENABLED (\"%s\"), "
-                                "startindex = 0x%lx\n", Desc, startindex);
-                 enabled = TRUE;
-            }
-            else if (startpop && (startpop <= j__udyPopulation))
-            {
-                 (void) printf ("=== TRACING ENABLED (\"%s\"), "
-                                "startpop = %lu\n", Desc, startpop);
-                 enabled = TRUE;
-            }
-            else
-            {
-                return;         // print nothing this time.
-            }
+             j__udyEnabled = TRUE;
         }
 
+        if (!j__udyEnabled)
+                return;         // print nothing this time.
+
+        if (Pjpm->jpm_Pop0 < startpop)
+            return;
 
 // SWITCH ON JP TYPE:
 
@@ -224,7 +203,7 @@ static  bool_t checked = FALSE; // set upon first entry and check for params.
         case cJ1_JPBRANCH_L5:   JPTYPE("cJ1_JPBRANCH_L5"); POP5;NUMJPSL;break;
         case cJ1_JPBRANCH_L6:   JPTYPE("cJ1_JPBRANCH_L6"); POP6;NUMJPSL;break;
         case cJ1_JPBRANCH_L7:   JPTYPE("cJ1_JPBRANCH_L7"); POP7;NUMJPSL;break;
-        case cJ1_JPBRANCH_L:    JPTYPE("cJ1_JPBRANCH_L");  POP8;NUMJPSL;break;
+        case cJ1_JPBRANCH_L8:   JPTYPE("cJ1_JPBRANCH_L8"); POP8;NUMJPSL;break;
 
         case cJ1_JPBRANCH_B2:   JPTYPE("cJ1_JPBRANCH_B2"); POP2;NUMJPSB;break;
         case cJ1_JPBRANCH_B3:   JPTYPE("cJ1_JPBRANCH_B3"); POP3;NUMJPSB;break;
@@ -232,27 +211,27 @@ static  bool_t checked = FALSE; // set upon first entry and check for params.
         case cJ1_JPBRANCH_B5:   JPTYPE("cJ1_JPBRANCH_B5"); POP5;NUMJPSB;break;
         case cJ1_JPBRANCH_B6:   JPTYPE("cJ1_JPBRANCH_B6"); POP6;NUMJPSB;break;
         case cJ1_JPBRANCH_B7:   JPTYPE("cJ1_JPBRANCH_B7"); POP7;NUMJPSB;break;
-        case cJ1_JPBRANCH_B:    JPTYPE("cJ1_JPBRANCH_B");  POP8;NUMJPSB;break;
+        case cJ1_JPBRANCH_B8:   JPTYPE("cJ1_JPBRANCH_B8"); POP8;NUMJPSB;break;
 
-        case cJ1_JPBRANCH_U2:   JPTYPE("cJ1_JPBRANCH_U2"); POP2;        break;
-        case cJ1_JPBRANCH_U3:   JPTYPE("cJ1_JPBRANCH_U3"); POP3;        break;
-        case cJ1_JPBRANCH_U4:   JPTYPE("cJ1_JPBRANCH_U4"); POP4;        break;
-        case cJ1_JPBRANCH_U5:   JPTYPE("cJ1_JPBRANCH_U5"); POP5;        break;
-        case cJ1_JPBRANCH_U6:   JPTYPE("cJ1_JPBRANCH_U6"); POP6;        break;
-        case cJ1_JPBRANCH_U7:   JPTYPE("cJ1_JPBRANCH_U7"); POP7;        break;
-        case cJ1_JPBRANCH_U:    JPTYPE("cJ1_JPBRANCH_U");  POP8;        break;
+        case cJ1_JPBRANCH_U2:   JPTYPE("cJ1_JPBRANCH_U2"); POP2;NUMJPSU;break;
+        case cJ1_JPBRANCH_U3:   JPTYPE("cJ1_JPBRANCH_U3"); POP3;NUMJPSU;break;
+        case cJ1_JPBRANCH_U4:   JPTYPE("cJ1_JPBRANCH_U4"); POP4;NUMJPSU;break;
+        case cJ1_JPBRANCH_U5:   JPTYPE("cJ1_JPBRANCH_U5"); POP5;NUMJPSU;break;
+        case cJ1_JPBRANCH_U6:   JPTYPE("cJ1_JPBRANCH_U6"); POP6;NUMJPSU;break;
+        case cJ1_JPBRANCH_U7:   JPTYPE("cJ1_JPBRANCH_U7"); POP7;NUMJPSU;break;
+        case cJ1_JPBRANCH_U8:   JPTYPE("cJ1_JPBRANCH_U8"); POP8;NUMJPSU;break;
 
-        case cJ1_JPLEAF1:       JPTYPE("cJ1_JPLEAF1"); POP1;            break;
-        case cJ1_JPLEAF2:       JPTYPE("cJ1_JPLEAF2"); POP1;            break;
-        case cJ1_JPLEAF3:       JPTYPE("cJ1_JPLEAF3"); POP1;            break;
-        case cJ1_JPLEAF4:       JPTYPE("cJ1_JPLEAF4"); POP1;            break;
-        case cJ1_JPLEAF5:       JPTYPE("cJ1_JPLEAF5"); POP1;            break;
-        case cJ1_JPLEAF6:       JPTYPE("cJ1_JPLEAF6"); POP1;            break;
-        case cJ1_JPLEAF7:       JPTYPE("cJ1_JPLEAF7"); POP1;            break;
-        case cJ1_JPLEAFW:       JPTYPE("cJ1_JPLEAF7"); POP1;            break;
+        case cJ1_JPLEAF1:       JPTYPE("cJ1_JPLEAF1"); LEAFPOP1;            break;
+        case cJ1_JPLEAF2:       JPTYPE("cJ1_JPLEAF2"); LEAFPOP1;            break;
+        case cJ1_JPLEAF3:       JPTYPE("cJ1_JPLEAF3"); LEAFPOP1;            break;
+        case cJ1_JPLEAF4:       JPTYPE("cJ1_JPLEAF4"); LEAFPOP1;            break;
+        case cJ1_JPLEAF5:       JPTYPE("cJ1_JPLEAF5"); LEAFPOP1;            break;
+        case cJ1_JPLEAF6:       JPTYPE("cJ1_JPLEAF6"); LEAFPOP1;            break;
+        case cJ1_JPLEAF7:       JPTYPE("cJ1_JPLEAF7"); LEAFPOP1;            break;
+        case cJ1_JPLEAF8:       JPTYPE("cJ1_JPLEAF8"); LEAFPOP1;            break;
 
-        case cJ1_JPLEAF_B1:     JPTYPE("cJ1_JPLEAF_B1");    POP1;       break;
-        case cJ1_JPFULLPOPU1:   JPTYPE("cJ1_JPFULLPOPU1");  POP1;       break;
+        case cJ1_JPLEAF_B1:     JPTYPE("cJ1_JPLEAF_B1");    LEAFPOP1;       break;
+        case cJ1_JPFULLPOPU1:   JPTYPE("cJ1_JPFULLPOPU1");  LEAFPOP1;       break;
 
         case cJ1_JPIMMED_1_01:  JPTYPE("cJ1_JPIMMED_1_01"); POP_1;      break;
         case cJ1_JPIMMED_2_01:  JPTYPE("cJ1_JPIMMED_2_01"); POP_1;      break;
@@ -295,7 +274,7 @@ static  bool_t checked = FALSE; // set upon first entry and check for params.
         case cJ1_JPIMMED_7_02:  JPTYPE("cJ1_JPIMMED_7_02"); POP_2;      break;
         case cJ1_JPIMMED_CAP:   JPTYPE("cJ1_JPIMMED_CAP");              OOPS;
 
-#else // JUDYL ===============================================================
+#else // JUDYL ///////////////////////////////////////////////////////////////
 
         case cJL_JPNULL1:       JPTYPE("cJL_JPNULL1"); POP0;            break;
         case cJL_JPNULL2:       JPTYPE("cJL_JPNULL2"); POP0;            break;
@@ -311,7 +290,7 @@ static  bool_t checked = FALSE; // set upon first entry and check for params.
         case cJL_JPBRANCH_L5:   JPTYPE("cJL_JPBRANCH_L5"); POP5;NUMJPSL;break;
         case cJL_JPBRANCH_L6:   JPTYPE("cJL_JPBRANCH_L6"); POP6;NUMJPSL;break;
         case cJL_JPBRANCH_L7:   JPTYPE("cJL_JPBRANCH_L7"); POP7;NUMJPSL;break;
-        case cJL_JPBRANCH_L:    JPTYPE("cJL_JPBRANCH_L");  POP8;NUMJPSL;break;
+        case cJL_JPBRANCH_L8:   JPTYPE("cJL_JPBRANCH_L8"); POP8;NUMJPSL;break;
 
         case cJL_JPBRANCH_B2:   JPTYPE("cJL_JPBRANCH_B2"); POP2;NUMJPSB;break;
         case cJL_JPBRANCH_B3:   JPTYPE("cJL_JPBRANCH_B3"); POP3;NUMJPSB;break;
@@ -319,26 +298,31 @@ static  bool_t checked = FALSE; // set upon first entry and check for params.
         case cJL_JPBRANCH_B5:   JPTYPE("cJL_JPBRANCH_B5"); POP5;NUMJPSB;break;
         case cJL_JPBRANCH_B6:   JPTYPE("cJL_JPBRANCH_B6"); POP6;NUMJPSB;break;
         case cJL_JPBRANCH_B7:   JPTYPE("cJL_JPBRANCH_B7"); POP7;NUMJPSB;break;
-        case cJL_JPBRANCH_B:    JPTYPE("cJL_JPBRANCH_B");  POP8;NUMJPSB;break;
+        case cJL_JPBRANCH_B8:   JPTYPE("cJL_JPBRANCH_B8"); POP8;NUMJPSB;break;
 
-        case cJL_JPBRANCH_U2:   JPTYPE("cJL_JPBRANCH_U2"); POP2;        break;
-        case cJL_JPBRANCH_U3:   JPTYPE("cJL_JPBRANCH_U3"); POP3;        break;
-        case cJL_JPBRANCH_U4:   JPTYPE("cJL_JPBRANCH_U4"); POP4;        break;
-        case cJL_JPBRANCH_U5:   JPTYPE("cJL_JPBRANCH_U5"); POP5;        break;
-        case cJL_JPBRANCH_U6:   JPTYPE("cJL_JPBRANCH_U6"); POP6;        break;
-        case cJL_JPBRANCH_U7:   JPTYPE("cJL_JPBRANCH_U7"); POP7;        break;
-        case cJL_JPBRANCH_U:    JPTYPE("cJL_JPBRANCH_U");  POP8;        break;
+        case cJL_JPBRANCH_U2:   JPTYPE("cJL_JPBRANCH_U2"); POP2;NUMJPSU;break;
+        case cJL_JPBRANCH_U3:   JPTYPE("cJL_JPBRANCH_U3"); POP3;NUMJPSU;break;
+        case cJL_JPBRANCH_U4:   JPTYPE("cJL_JPBRANCH_U4"); POP4;NUMJPSU;break;
+        case cJL_JPBRANCH_U5:   JPTYPE("cJL_JPBRANCH_U5"); POP5;NUMJPSU;break;
+        case cJL_JPBRANCH_U6:   JPTYPE("cJL_JPBRANCH_U6"); POP6;NUMJPSU;break;
+        case cJL_JPBRANCH_U7:   JPTYPE("cJL_JPBRANCH_U7"); POP7;NUMJPSU;break;
+        case cJL_JPBRANCH_U8:   JPTYPE("cJL_JPBRANCH_U8"); POP8;NUMJPSU;break;
 
-        case cJL_JPLEAF1:       JPTYPE("cJL_JPLEAF1"); POP1;            break;
-        case cJL_JPLEAF2:       JPTYPE("cJL_JPLEAF2"); POP1;            break;
-        case cJL_JPLEAF3:       JPTYPE("cJL_JPLEAF3"); POP1;            break;
-        case cJL_JPLEAF4:       JPTYPE("cJL_JPLEAF4"); POP1;            break;
-        case cJL_JPLEAF5:       JPTYPE("cJL_JPLEAF5"); POP1;            break;
-        case cJL_JPLEAF6:       JPTYPE("cJL_JPLEAF6"); POP1;            break;
-        case cJL_JPLEAF7:       JPTYPE("cJL_JPLEAF7"); POP1;            break;
-        case cJL_JPLEAFW:       JPTYPE("cJL_JPLEAFW"); POP1;            break;
+#ifdef  LEAF1_UCOMP
+        case cJL_JPLEAF1_UCOMP: JPTYPE("cJL_JPLEAF1_UCOMP"); LEAFPOP1;  break;
+#endif  // LEAF1_UCOMP
 
-        case cJL_JPLEAF_B1:     JPTYPE("cJL_JPLEAF_B1"); POP1;  break;
+        case cJL_JPLEAF1:       JPTYPE("cJL_JPLEAF1"); LEAFPOP1;        break;
+        case cJL_JPLEAF2:       JPTYPE("cJL_JPLEAF2"); LEAFPOP1;        break;
+        case cJL_JPLEAF3:       JPTYPE("cJL_JPLEAF3"); LEAFPOP1;        break;
+        case cJL_JPLEAF4:       JPTYPE("cJL_JPLEAF4"); LEAFPOP1;        break;
+        case cJL_JPLEAF5:       JPTYPE("cJL_JPLEAF5"); LEAFPOP1;        break;
+        case cJL_JPLEAF6:       JPTYPE("cJL_JPLEAF6"); LEAFPOP1;        break;
+        case cJL_JPLEAF7:       JPTYPE("cJL_JPLEAF7"); LEAFPOP1;        break;
+        case cJL_JPLEAF8:       JPTYPE("cJL_JPLEAF8"); LEAFPOP1;        break;
+
+        case cJL_JPLEAF_B1_UCOMP:     JPTYPE("cJL_JPLEAF_B1_UCOMP"); LEAFPOP1;  break;
+        case cJL_JPLEAF_B1:     JPTYPE("cJL_JPLEAF_B1"); LEAFPOP1;  break;
 
         case cJL_JPIMMED_1_01:  JPTYPE("cJL_JPIMMED_1_01"); POP_1;      break;
         case cJL_JPIMMED_2_01:  JPTYPE("cJL_JPIMMED_2_01"); POP_1;      break;
@@ -355,8 +339,9 @@ static  bool_t checked = FALSE; // set upon first entry and check for params.
         case cJL_JPIMMED_1_06:  JPTYPE("cJL_JPIMMED_1_06"); POP_6;      break;
         case cJL_JPIMMED_1_07:  JPTYPE("cJL_JPIMMED_1_07"); POP_7;      break;
         case cJL_JPIMMED_1_08:  JPTYPE("cJL_JPIMMED_1_08"); POP_8;      break;
-        case cJL_JPIMMED_2_02:  JPTYPE("cJL_JPIMMED_2_02"); POP_2; printf("tp = %d", Pjp->jp_Type);      break;
+        case cJL_JPIMMED_2_02:  JPTYPE("cJL_JPIMMED_2_02"); POP_2;      break;
         case cJL_JPIMMED_2_03:  JPTYPE("cJL_JPIMMED_2_03"); POP_3;      break;
+        case cJL_JPIMMED_2_04:  JPTYPE("cJL_JPIMMED_2_04"); POP_4;      break;
         case cJL_JPIMMED_3_02:  JPTYPE("cJL_JPIMMED_3_02"); POP_2;      break;
         case cJL_JPIMMED_4_02:  JPTYPE("cJL_JPIMMED_4_02"); POP_2;      break;
         case cJL_JPIMMED_CAP:   JPTYPE("cJL_JPIMMED_CAP");      OOPS;
@@ -366,8 +351,8 @@ static  bool_t checked = FALSE; // set upon first entry and check for params.
         default:  printf("Unknown Type = %d", ju_Type(Pjp));          OOPS;
         }
 
-        if (j__udyIndex)        printf(" Key = 0x%lx", j__udyIndex);
-        if (j__udyPopulation)   printf(" Pop = %lu",     j__udyPopulation);
+        printf(" Key = 0x%016lx", Index);
+        printf(" Pop = %lu", Pjpm->jpm_Pop0);
 
         printf("\n");
 //        printf(" line = %d\n", Line);

@@ -113,13 +113,12 @@ FUNCTION PPvoid_t JudyLByCount
 	Word_t	  pop1lower;	// pop1 of expanses (JPs) below that for Count.
 	Word_t	  digit;	// current word in branch.
 	Word_t	  jpcount;	// JPs in a BranchB subexpanse.
+        Word_t    RawPntr;      // current Raw pointer in jp_t
 	long	  jpnum;	// JP number in a branch (base 0).
 	long	  subexp;	// for stepping through layer 1 (subexpanses).
 	int	  offset;	// index ordinal within a leaf, base 0.
 
 	Pjp_t	  Pjp;		// current JP in branch.
-	Pjll_t	  Pjll;		// current Judy linear leaf.
-
 
 // CHECK FOR EMPTY ARRAY OR NULL PINDEX:
 
@@ -141,16 +140,16 @@ FUNCTION PPvoid_t JudyLByCount
 	assert((Count || Count0 == ~0));  // ensure CPU is sane about 0 - 1.
 	pop1lower = 0;
 
-	if (JU_LEAFW_POP0(PArray) < cJU_LEAFW_MAXPOP1) // must be a LEAFW
+	if (JU_LEAF8_POP0(PArray) < cJU_LEAF8_MAXPOP1) // must be a LEAF8
 	{
-	    Pjllw_t Pjllw = P_JLLW(PArray);		// first word of leaf.
+	    Pjll8_t Pjll8 = P_JLL8(PArray);		// first word of leaf.
 
-	    if (Count0 > Pjllw->jlw_Population0) JU_RET_NOTFOUND;	// too high.
+	    if (Count0 > Pjll8->jl8_Population0) JU_RET_NOTFOUND;	// too high.
 
-//	    *PIndex = Pjllw[Count];			// Index, base 1.
-	    *PIndex = Pjllw->jlw_Leaf[Count0];		// Index, base 1.
+//	    *PIndex = Pjll8[Count];			// Index, base 1.
+	    *PIndex = Pjll8->jl8_Leaf[Count0];		// Index, base 1.
 
-	    JU_RET_FOUND_LEAFW(Pjllw, Pjllw->jlw_Population0 + 1, Count0);
+	    JU_RET_FOUND_LEAF8(Pjll8, Pjll8->jl8_Population0 + 1, Count0);
 	}
 	else
 	{
@@ -214,7 +213,7 @@ FUNCTION PPvoid_t JudyLByCount
 #define	SETOFFSET(Offset,Count0,Pop1lower,Pjp)	\
 	(Offset) = (Count0) - (Pop1lower);	\
 	assert((Offset) >= 0);			\
-	assert((Offset) <= ju_LeafPop0(Pjp))
+	assert((Offset) <= (ju_LeafPop1(Pjp) - 1))
 
 // Variations for immediate indexes, with and without pop1-specific assertions:
 
@@ -235,6 +234,7 @@ FUNCTION PPvoid_t JudyLByCount
 
 SMByCount:			// return here for next branch/leaf.
 
+        RawPntr = ju_PntrInJp(Pjp);
 	switch (ju_Type(Pjp))
 	{
 
@@ -258,21 +258,19 @@ SMByCount:			// return here for next branch/leaf.
 	case cJU_JPBRANCH_L4:  PREPB_DCD(Pjp, 4, BranchL);
 	case cJU_JPBRANCH_L5:  PREPB_DCD(Pjp, 5, BranchL);
 	case cJU_JPBRANCH_L6:  PREPB_DCD(Pjp, 6, BranchL);
-//	case cJU_JPBRANCH_L7:  PREPB(	 Pjp, 7, BranchL);
 	case cJU_JPBRANCH_L7:  PREPB_DCD(Pjp, 7, BranchL);
-	case cJU_JPBRANCH_L:   PREPB_ROOT(	 BranchL);
+        case cJU_JPBRANCH_L8:  PREPB_ROOT(	 BranchL);
 	{
 	    Pjbl_t Pjbl;
 
 // Common code (state-independent) for all cases of linear branches:
 
 BranchL:
-	    Pjbl = P_JBL(ju_PntrInJp(Pjp));
+	    Pjbl = P_JBL(RawPntr);
 
 	    for (jpnum = 0; jpnum < (Pjbl->jbl_NumJPs); ++jpnum)
 	    {
-	        if ((pop1 = j__udyJPPop1((Pjbl->jbl_jp) + jpnum))
-		 == cJU_ALLONES)
+	        if ((pop1 = j__udyJPPop1((Pjbl->jbl_jp) + jpnum)) == cJU_ALLONES)
 	        {
 		    JU_SET_ERRNO(PJError, JU_ERRNO_CORRUPT);
                     assert(0);
@@ -315,14 +313,14 @@ BranchL:
 	case cJU_JPBRANCH_B6:  PREPB_DCD(Pjp, 6, BranchB);
 //	case cJU_JPBRANCH_B7:  PREPB(	 Pjp, 7, BranchB);
 	case cJU_JPBRANCH_B7:  PREPB_DCD(Pjp, 7, BranchB);
-	case cJU_JPBRANCH_B:   PREPB_ROOT(	 BranchB);
+	case cJU_JPBRANCH_B8:   PREPB_ROOT(	 BranchB);
 	{
 	    Pjbb_t Pjbb;
 
 // Common code (state-independent) for all cases of bitmap branches:
 
 BranchB:
-	    Pjbb = P_JBB(ju_PntrInJp(Pjp));
+	    Pjbb = P_JBB(RawPntr);
 
 // Shorthand for one subexpanse in a bitmap and for one JP in a bitmap branch:
 //
@@ -468,14 +466,14 @@ BranchB:
 	case cJU_JPBRANCH_U6:  PREPB_DCD(Pjp, 6, BranchU);
 //	case cJU_JPBRANCH_U7:  PREPB(	 Pjp, 7, BranchU);
 	case cJU_JPBRANCH_U7:  PREPB_DCD(Pjp, 7, BranchU);
-	case cJU_JPBRANCH_U:   PREPB_ROOT(	 BranchU);
+	case cJU_JPBRANCH_U8:   PREPB_ROOT(	 BranchU);
 	{
 	    Pjbu_t Pjbu;
 
 // Common code (state-independent) for all cases of uncompressed branches:
 
 BranchU:
-	    Pjbu = P_JBU(ju_PntrInJp(Pjp));
+	    Pjbu = P_JBU(RawPntr);
 
 // Common code for descending through a JP:
 //
@@ -594,85 +592,98 @@ BranchU:
 // (linear leaf) as a side-effect, but dont depend on that (for JUDYL, which
 // is the only cases that need it anyway).
 
-#define	PREPL_DCD(cState)				\
-	JU_SETDCD(*PIndex, Pjp, cState);	        \
-	PREPL
-
-#ifdef JUDY1
-#define	PREPL_SETPOP1			// not needed in any cases.
-#else
-#define	PREPL_SETPOP1  pop1 = ju_LeafPop0(Pjp) + 1
-#endif
-
-#define	PREPL				\
-	Pjll = P_JLL(ju_PntrInJp(Pjp));	\
-	PREPL_SETPOP1;			\
-	SETOFFSET(offset, Count0, pop1lower, Pjp)
-
 	case cJU_JPLEAF1:
         {
 	    JU_SETDCD(*PIndex, Pjp, 1);
-            Pjll1_t Pjll1 = P_JLL1(ju_PntrInJp(Pjp));
+            Pjll1_t Pjll1 = P_JLL1(RawPntr);
 	    JU_SETDIGIT1(*PIndex, Pjll1->jl1_Leaf[offset]);
 #ifdef JUDYL
-	    pop1 = ju_LeafPop0(Pjp) + 1;
+	    pop1 = ju_LeafPop1(Pjp);
 #endif  //JUDYL
-	    SETOFFSET(offset, Count0, pop1lower, Pjp);
+	    offset = Count0 - pop1lower;
 	    JU_RET_FOUND_LEAF1(Pjll1, pop1, offset);
         }
 
 	case cJU_JPLEAF2:
         {
-	    PREPL_DCD(2);
+	    JU_SETDCD(*PIndex, Pjp, 2);
+	    Pjll2_t Pjll2 = P_JLL2(RawPntr);
+#ifdef JUDYL
+	    pop1 = ju_LeafPop1(Pjp);
+#endif  //JUDYL
+	    offset  = Count0 - pop1lower;
 	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(2)))
-		    | ((uint16_t *) Pjll)[offset];
-	    JU_RET_FOUND_LEAF2(Pjll, pop1, offset);
+		    | Pjll2->jl2_Leaf[offset];
+	    JU_RET_FOUND_LEAF2(Pjll2, pop1, offset);
         }
 
 	case cJU_JPLEAF3:
 	{
 	    Word_t lsb;
-	    PREPL_DCD(3);
-	    JU_COPY3_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (3 * offset));
+	    JU_SETDCD(*PIndex, Pjp, 3);
+	    Pjll3_t Pjll3 = P_JLL3(RawPntr);
+#ifdef JUDYL
+	    pop1 = ju_LeafPop1(Pjp);
+#endif  //JUDYL
+	    offset  = Count0 - pop1lower;
+	    JU_COPY3_PINDEX_TO_LONG(lsb, Pjll3->jl3_Leaf + (3 * offset));
 	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(3))) | lsb;
-	    JU_RET_FOUND_LEAF3(Pjll, pop1, offset);
+	    JU_RET_FOUND_LEAF3(Pjll3, pop1, offset);
 	}
 
 	case cJU_JPLEAF4:
         {
-
-	    PREPL_DCD(4);
+	    JU_SETDCD(*PIndex, Pjp, 4);
+	    Pjll4_t Pjll4 = P_JLL4(RawPntr);
+#ifdef JUDYL
+	    pop1 = ju_LeafPop1(Pjp);
+#endif  //JUDYL
+	    offset  = Count0 - pop1lower;
 	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(4)))
-		    | ((uint32_t *) Pjll)[offset];
-	    JU_RET_FOUND_LEAF4(Pjll, pop1, offset);
+		    | Pjll4->jl4_Leaf[offset];
+	    JU_RET_FOUND_LEAF4(Pjll4, pop1, offset);
         }
 
 	case cJU_JPLEAF5:
 	{
 	    Word_t lsb;
-	    PREPL_DCD(5);
-	    JU_COPY5_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (5 * offset));
+	    JU_SETDCD(*PIndex, Pjp, 5);
+	    Pjll5_t Pjll5 = P_JLL5(RawPntr);
+#ifdef JUDYL
+	    pop1 = ju_LeafPop1(Pjp);
+#endif  //JUDYL
+	    offset  = Count0 - pop1lower;
+	    JU_COPY5_PINDEX_TO_LONG(lsb, Pjll5->jl5_Leaf + (5 * offset));
 	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(5))) | lsb;
-	    JU_RET_FOUND_LEAF5(Pjll, pop1, offset);
+	    JU_RET_FOUND_LEAF5(Pjll5, pop1, offset);
 	}
 
 	case cJU_JPLEAF6:
 	{
 	    Word_t lsb;
-	    PREPL_DCD(6);
-	    JU_COPY6_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (6 * offset));
+	    JU_SETDCD(*PIndex, Pjp, 6);
+	    Pjll6_t Pjll6 = P_JLL6(RawPntr);
+#ifdef JUDYL
+	    pop1 = ju_LeafPop1(Pjp);
+#endif  //JUDYL
+	    offset  = Count0 - pop1lower;
+	    JU_COPY6_PINDEX_TO_LONG(lsb, Pjll6->jl6_Leaf + (6 * offset));
 	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(6))) | lsb;
-	    JU_RET_FOUND_LEAF6(Pjll, pop1, offset);
+	    JU_RET_FOUND_LEAF6(Pjll6, pop1, offset);
 	}
 
 	case cJU_JPLEAF7:
 	{
 	    Word_t lsb;
-//	    PREPL;
-	    PREPL_DCD(7);
-	    JU_COPY7_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (7 * offset));
+	    JU_SETDCD(*PIndex, Pjp, 7);
+	    Pjll7_t Pjll7 = P_JLL7(RawPntr);
+#ifdef JUDYL
+	    pop1 = ju_LeafPop1(Pjp);
+#endif  //JUDYL
+	    offset  = Count0 - pop1lower;
+	    JU_COPY7_PINDEX_TO_LONG(lsb, Pjll7->jl7_Leaf + (7 * offset));
 	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(7))) | lsb;
-	    JU_RET_FOUND_LEAF7(Pjll, pop1, offset);
+	    JU_RET_FOUND_LEAF7(Pjll7, pop1, offset);
 	}
 
 
@@ -691,8 +702,8 @@ BranchU:
 	    Pjlb_t Pjlb;
 
 	    JU_SETDCD(*PIndex, Pjp, 1);
-	    Pjlb = P_JLB(ju_PntrInJp(Pjp));
-	    pop1 = ju_LeafPop0(Pjp) + 1;
+	    Pjlb = P_JLB1(RawPntr);
+	    pop1 = ju_LeafPop1(Pjp);
 
 // COUNT UPWARD, adding the pop1 of each subexpanse:
 //

@@ -59,6 +59,10 @@ FUNCTION int j__udyInsertBranchL(
 	uint8_t	Exp2[2];
 	uint8_t	DecodeByteN, DecodeByteO;
 
+#ifdef PCAS
+        printf("---Entry j__udyInsertBranchL - Index = 0x%lx, Dcd = 0x%016lx, BranchLevel=%lu\n", Index, Dcd, BranchLevel);
+#endif  // PCAS
+
 //	Get the current mask for the DCD digits:
 
 	DCDMask = cJU_DCDMASK(BranchLevel);

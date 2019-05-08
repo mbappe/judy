@@ -72,15 +72,15 @@ FUNCTION Word_t JudyLFreeArray
 
 // 	Empty array:
 
-	if (P_JLLW(*PPArray) == (Pjllw_t) NULL) return(0);
+	if (P_JLL8(*PPArray) == (Pjll8_t) NULL) return(0);
 
 // PROCESS TOP LEVEL "JRP" BRANCHES AND LEAF:
 
-	if (JU_LEAFW_POP0(*PPArray) < cJU_LEAFW_MAXPOP1) // must be a LEAFW
+	if (JU_LEAF8_POP0(*PPArray) < cJU_LEAF8_MAXPOP1) // must be a LEAF8
 	{
-	    Pjllw_t Pjllw = P_JLLW(*PPArray);	// first word of leaf.
+	    Pjll8_t Pjll8 = P_JLL8(*PPArray);	// first word of leaf.
 
-	    j__udyFreeJLLW(Pjllw, Pjllw->jlw_Population0 + 1, &jpm);
+	    j__udyFreeJLL8(Pjll8, Pjll8->jl8_Population0 + 1, &jpm);
 	    *PPArray = (Pvoid_t) NULL;		// make an empty array.
 	    return (-(jpm.jpm_TotalMemWords * cJU_BYTESPERWORD));  // see above.
 	}
@@ -90,7 +90,7 @@ FUNCTION Word_t JudyLFreeArray
 
 // Common code for returning the amount of memory freed.
 //
-// Note:  In a an ordinary LEAFW, pop0 = *PPArray[0].
+// Note:  In a an ordinary LEAF8, pop0 = *PPArray[0].
 //
 // Accumulate (negative) words freed, while freeing objects.
 // Return the positive bytes freed.
@@ -108,7 +108,6 @@ FUNCTION Word_t JudyLFreeArray
 
 	    if (TotalMem + jpm.jpm_TotalMemWords)
 	    {
-printf("FreeArray TotalMem = %ld, jpm.jpm_TotalMemWords = %ld\n",  TotalMem, -jpm.jpm_TotalMemWords);
 	        *PPArray = (Pvoid_t) NULL;		// make an empty array.
 		JU_SET_ERRNO(PJError, JU_ERRNO_CORRUPT);
 		return(JERR);
@@ -205,7 +204,7 @@ FUNCTION void j__udyFreeSM(
 //
 // Note:  There are no null JPs in a JBL.
 
-	case cJU_JPBRANCH_L:
+        case cJU_JPBRANCH_L8:
 	case cJU_JPBRANCH_L2:
 	case cJU_JPBRANCH_L3:
 	case cJU_JPBRANCH_L4:
@@ -216,15 +215,13 @@ FUNCTION void j__udyFreeSM(
 #ifdef  DEBUG
             Line = __LINE__;
 #endif  // DEBUG
-//	    Pjbl_t Pjbl = P_JBL(Pjp->Jp_Addr0);
 	    Pjbl_t Pjbl = P_JBL(ju_PntrInJp(Pjp));
 	    Word_t offset;
 
 	    for (offset = 0; offset < Pjbl->jbl_NumJPs; offset++)
 	        j__udyFreeSM(Pjbl->jbl_jp + offset, Pjpm);
 
-//	    j__udyFreeJBL(Pjp->Jp_Addr0, Pjpm);
-	    j__udyFreeJBL(ju_PntrInJp(Pjp), Pjpm);
+	    j__udyFreeJBL(ju_PntrInJp(Pjp), (int)Pjbl->jbl_NumJPs, Pjpm);
 	    break;
 	}
 
@@ -233,7 +230,7 @@ FUNCTION void j__udyFreeSM(
 //
 // Note:  There are no null JPs in a JBB.
 
-	case cJU_JPBRANCH_B:
+	case cJU_JPBRANCH_B8:
 	case cJU_JPBRANCH_B2:
 	case cJU_JPBRANCH_B3:
 	case cJU_JPBRANCH_B4:
@@ -248,9 +245,7 @@ FUNCTION void j__udyFreeSM(
 	    Word_t offset;
 	    Word_t jpcount;
 
-//	    Pjbb_t Pjbb = P_JBB(Pjp->Jp_Addr0);
 	    Pjbb_t Pjbb = P_JBB(ju_PntrInJp(Pjp));
-
 
 	    for (subexp = 0; subexp < cJU_NUMSUBEXPB; ++subexp)
 	    {
@@ -265,7 +260,6 @@ FUNCTION void j__udyFreeSM(
 		    j__udyFreeJBBJP(JU_JBB_PJP(Pjbb, subexp), jpcount, Pjpm);
 	        }
 	    }
-//	    j__udyFreeJBB(Pjp->Jp_Addr0, Pjpm);
 	    j__udyFreeJBB(ju_PntrInJp(Pjp), Pjpm);
 
 	    break;
@@ -277,7 +271,7 @@ FUNCTION void j__udyFreeSM(
 //
 // Note:  Null JPs are handled during recursion at a lower state.
 
-	case cJU_JPBRANCH_U:
+	case cJU_JPBRANCH_U8:
 	case cJU_JPBRANCH_U2:
 	case cJU_JPBRANCH_U3:
 	case cJU_JPBRANCH_U4:
@@ -289,13 +283,11 @@ FUNCTION void j__udyFreeSM(
             Line = __LINE__;
 #endif  // DEBUG
 	    Word_t offset;
-//	    Pjbu_t Pjbu = P_JBU(Pjp->Jp_Addr0);
 	    Pjbu_t Pjbu = P_JBU(ju_PntrInJp(Pjp));
 
 	    for (offset = 0; offset < cJU_BRANCHUNUMJPS; ++offset)
 	        j__udyFreeSM(Pjbu->jbu_jp + offset, Pjpm);
 
-//	    j__udyFreeJBU(Pjp->Jp_Addr0, Pjpm);
 	    j__udyFreeJBU(ju_PntrInJp(Pjp), Pjpm);
 	    break;
 	}
@@ -308,13 +300,17 @@ FUNCTION void j__udyFreeSM(
 //
 // Note:  cJU_JPLEAF1 is a special case, see discussion in ../Judy1/Judy1.h
 
+#ifdef  JUDYL
+#ifdef  LEAF1_UCOMP
+	case cJL_JPLEAF1_UCOMP:
+#endif  // LEAF1_UCOMP
+#endif  // JUDYL
 	case cJU_JPLEAF1:
 #ifdef  DEBUG
             Line = __LINE__;
 #endif  // DEBUG
-	    Pop1 = ju_LeafPop0(Pjp) + 1;
-/////////            assert((ju_DcdPop0(Pjp) & 0xff) == (Pop1 - 1));
-//	    j__udyFreeJLL1(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    Pop1 = ju_LeafPop1(Pjp);
+            if (Pop1 == 0) Pop1 = 256;
 	    j__udyFreeJLL1(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
 
@@ -322,9 +318,7 @@ FUNCTION void j__udyFreeSM(
 #ifdef  DEBUG
             Line = __LINE__;
 #endif  // DEBUG
-	    Pop1 = ju_LeafPop0(Pjp) + 1;
-            assert((ju_DcdPop0(Pjp) & 0xff) == (Pop1 - 1));
-//	    j__udyFreeJLL2(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    Pop1 = ju_LeafPop1(Pjp);
 	    j__udyFreeJLL2(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
 
@@ -332,9 +326,7 @@ FUNCTION void j__udyFreeSM(
 #ifdef  DEBUG
             Line = __LINE__;
 #endif  // DEBUG
-	    Pop1 = ju_LeafPop0(Pjp) + 1;
-            assert((ju_DcdPop0(Pjp) & 0xff) == (Pop1 - 1));
-//	    j__udyFreeJLL3(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    Pop1 = ju_LeafPop1(Pjp);
 	    j__udyFreeJLL3(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
 
@@ -342,9 +334,7 @@ FUNCTION void j__udyFreeSM(
 #ifdef  DEBUG
             Line = __LINE__;
 #endif  // DEBUG
-	    Pop1 = ju_LeafPop0(Pjp) + 1;
-            assert((ju_DcdPop0(Pjp) & 0xff) == (Pop1 - 1));
-//	    j__udyFreeJLL4(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    Pop1 = ju_LeafPop1(Pjp);
 	    j__udyFreeJLL4(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
 
@@ -352,9 +342,7 @@ FUNCTION void j__udyFreeSM(
 #ifdef  DEBUG
             Line = __LINE__;
 #endif  // DEBUG
-	    Pop1 = ju_LeafPop0(Pjp) + 1;
-            assert((ju_DcdPop0(Pjp) & 0xff) == (Pop1 - 1));
-//	    j__udyFreeJLL5(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    Pop1 = ju_LeafPop1(Pjp);
 	    j__udyFreeJLL5(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
 
@@ -362,9 +350,7 @@ FUNCTION void j__udyFreeSM(
 #ifdef  DEBUG
             Line = __LINE__;
 #endif  // DEBUG
-	    Pop1 = ju_LeafPop0(Pjp) + 1;
-            assert((ju_DcdPop0(Pjp) & 0xff) == (Pop1 - 1));
-//	    j__udyFreeJLL6(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    Pop1 = ju_LeafPop1(Pjp);
 	    j__udyFreeJLL6(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
 
@@ -372,39 +358,33 @@ FUNCTION void j__udyFreeSM(
 #ifdef  DEBUG
             Line = __LINE__;
 #endif  // DEBUG
-	    Pop1 = ju_LeafPop0(Pjp) + 1;
-            assert((ju_DcdPop0(Pjp) & 0xff) == (Pop1 - 1));
-//	    j__udyFreeJLL7(Pjp->Jp_Addr0, Pop1, Pjpm);
+	    Pop1 = ju_LeafPop1(Pjp);
 	    j__udyFreeJLL7(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
 
 
 // BITMAP LEAF -- free sub-expanse arrays of JPs, then free the JBB.
 
+#ifdef  JUDYL
+        case cJL_JPLEAF_B1_UCOMP:
+        {
+#ifdef  DEBUG
+            Line = __LINE__;
+#endif  // DEBUG
+
+	    j__udyFreeJLB1(ju_PntrInJp(Pjp), 256, Pjpm);
+            break;
+	} // case cJL_JPLEAF_B1_UCOMP
+#endif  // JUDYL
+
 	case cJU_JPLEAF_B1:
 	{
 #ifdef  DEBUG
             Line = __LINE__;
 #endif  // DEBUG
-#ifdef JUDYL
-	    Word_t subexp;
-	    Word_t jpcount;
-//	    Pjlb_t Pjlb = P_JLB(Pjp->Jp_Addr0);
-	    Pjlb_t Pjlb = P_JLB(ju_PntrInJp(Pjp));
 
-// Free the value areas in the bitmap leaf:
-
-	    for (subexp = 0; subexp < cJU_NUMSUBEXPL; ++subexp)
-	    {
-	        jpcount = j__udyCountBitsL(JU_JLB_BITMAP(Pjlb, subexp));
-
-	        if (jpcount)
-		    j__udyLFreeJV(JL_JLB_PVALUE(Pjlb, subexp), jpcount, Pjpm);
-	    }
-#endif // JUDYL
-
-//	    j__udyFreeJLB1(Pjp->Jp_Addr0, Pjpm);
-	    j__udyFreeJLB1(ju_PntrInJp(Pjp), Pjpm);
+	    Pop1 = ju_LeafPop1(Pjp);
+	    j__udyFreeJLB1(ju_PntrInJp(Pjp), (int)Pop1, Pjpm);
 	    break;
 
 	} // case cJU_JPLEAF_B1

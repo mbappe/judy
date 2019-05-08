@@ -58,9 +58,9 @@ FUNCTION int j__udyCreateBranchL(
 
 #ifdef  PCAS
         printf("\n=========== j__udyCreateBranchL (num jp_t = %d)\n", (int)ExpCnt);
-#endif  //  PCAS
+#endif  // PCAS
 
-	PjblRaw	= j__udyAllocJBL(Pjpm);
+	PjblRaw	= j__udyAllocJBL((int)ExpCnt, Pjpm);
 	if (PjblRaw == 0) return(-1);
         Pjbl    = P_JBL(PjblRaw);
 
@@ -103,10 +103,9 @@ FUNCTION int j__udyCreateBranchL(
 //
 // We have no idea what kind of BranchB it is, so caller must set the jp_Type.
 //
-// Return -1 if error (details in Pjpm), otherwise return 1.
+// Return 0 if error (details in Pjpm), otherwise return Pjbb_t RawPntr
 
-FUNCTION int j__udyConvertBranchLtoB(
-	Pjp_t	Pjp,		// Build JPs from this place
+FUNCTION Word_t j__udyBranchBfromParts(
 	Pjp_t	PJPs,		// Array of JPs to put into Bitmap branch
 	uint8_t Exp[],		// Array of expanses to put into bitmap
 	Word_t  ExpCnt,		// Number of above JPs and Expanses
@@ -116,6 +115,10 @@ FUNCTION int j__udyConvertBranchLtoB(
 	Pjbb_t	Pjbb;
 	Word_t  ii, jj;		// Temps
 	uint8_t CurrSubExp;	// Current sub expanse for BM
+
+#ifdef  PCAS
+        printf("\n=========== j__udyBranchBfromParts (num jp_t = %d)\n", (int)ExpCnt);
+#endif  // PCAS
 
 // This assertion says the number of populated subexpanses is not too large.
 // This function is only called when a BranchL overflows to a BranchB or when a
@@ -130,8 +133,12 @@ FUNCTION int j__udyConvertBranchLtoB(
 
 //	Get memory for a Bitmap branch
 	PjbbRaw	= j__udyAllocJBB(Pjpm);
-	if (PjbbRaw == 0) return(-1);
+	if (PjbbRaw == 0) 
+            return(0);
+
 	Pjbb = P_JBB(PjbbRaw);
+
+        Pjbb->jbb_NumJPs = ExpCnt;
 
 //	Get 1st "sub" expanse (0..7) of bitmap branch
 	CurrSubExp = Exp[0] / cJU_BITSPERSUBEXPB;
@@ -164,13 +171,10 @@ FUNCTION int j__udyConvertBranchLtoB(
 			Pjp_t  Pjp;
 
 			PjpRaw = j__udyAllocJBBJP(NumJP, Pjpm);
-                        Pjp    = P_JP(PjpRaw);
 
 			if (PjpRaw == 0)	// out of memory.
 			{
-
-// Free any previous allocations:
-
+//                          Free any previous allocations:
 			    while(CurrSubExp--)
 			    {
 				NumJP = j__udyCountBitsB(JU_JBB_BITMAP(Pjbb,
@@ -182,32 +186,27 @@ FUNCTION int j__udyConvertBranchLtoB(
 				}
 			    }
 			    j__udyFreeJBB(PjbbRaw, Pjpm);
-			    return(-1);
+			    return(0);          // out of memory
 			}
+                        Pjp    = P_JP(PjpRaw);
 
-// Place the array of JPs in bitmap branch:
-
+//                      Place the array of JPs in bitmap branch:
 			JU_JBB_PJP(Pjbb, CurrSubExp) = PjpRaw;
 
-// Copy the JPs to new leaf:
-
+//                      Copy the JPs to new allocation:
 			JU_COPYMEM(Pjp, PJPs + jj, NumJP);
 
-// On to the next bitmap branch "sub" expanse:
-
+//                      On to the next bitmap branch "sub" expanse:
 			jj	   = ii;
 			CurrSubExp = SubExp;
 		}
 	} // for each 1-byte expanse
 
-// Pass back some of the JP to the new Bitmap branch:
-
 //	Pjp->Jp_Addr0 = PjbbRaw;
-        ju_SetPntrInJp(Pjp, PjbbRaw);
+// now done by caller        ju_SetPntrInJp(Pjp, PjbbRaw);
+	return(PjbbRaw);
 
-	return(1);
-
-} // j__udyConvertBranchLtoB()
+} // j__udyBranchBfromParts()
 
 
 // ****************************************************************************
@@ -230,7 +229,7 @@ FUNCTION int j__udyCreateBranchU(
 	Word_t	  ii, jj;
 	BITMAPB_t BitMap;
 	Pjp_t	  PDstJP;
-        uint8_t jpLevel;
+        uint8_t   jpLevel;
 
 #ifdef JU_STAGED_EXP
 	jbu_t	  BranchU;	// Staged uncompressed branch
@@ -252,10 +251,11 @@ FUNCTION int j__udyCreateBranchU(
 // Get the pointer to the BranchB:
 
 	PjbbRaw	= ju_PntrInJp(Pjp);
+        assert(PjbbRaw);
 	Pjbb	= P_JBB(PjbbRaw);
 
 #ifdef  PCAS
-        printf("\n==========1 j__udyCreateBranch_U%d, numb jp_ts = %d\n", jpLevel + 2, (int)Pjbb->jbb_numPtrs);
+        printf("\n=========== j__udyCreateBranch_U%d, (num jp_t = %d)\n", jpLevel + 2, (int)Pjbb->jbb_NumJPs);
 #endif  // PCAS
 
 //	Set the pointer to the Uncompressed branch
@@ -266,7 +266,7 @@ FUNCTION int j__udyCreateBranchU(
 #endif
 
 //      Copy over number pointers in the struct
-        Pjbu->jbu_numPtrs = Pjbb->jbb_numPtrs;
+        Pjbu->jbu_NumJPs = Pjbb->jbb_NumJPs;
         
 	for (ii = 0; ii < cJU_NUMSUBEXPB; ii++)
 	{

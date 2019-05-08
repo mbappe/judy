@@ -50,10 +50,10 @@ FUNCTION Word_t JudyLMemActive
 {
 	if (PArray == (Pcvoid_t)NULL) return(0);
 
-	if (JU_LEAFW_POP0(PArray) < cJU_LEAFW_MAXPOP1) // must be a LEAFW
+	if (JU_LEAF8_POP0(PArray) < cJU_LEAF8_MAXPOP1) // must be a LEAF8
         {
-	    Pjllw_t Pjllw = P_JLLW(PArray);	// first word of leaf.
-            Word_t Words = Pjllw->jlw_Population0 + 1;		// population.
+	    Pjll8_t Pjll8 = P_JLL8(PArray);	// first word of leaf.
+            Word_t Words = Pjll8->jl8_Population0 + 1;		// population.
 #ifdef JUDY1
             return((Words + 1) * sizeof(Word_t));
 #else
@@ -88,7 +88,7 @@ FUNCTION static Word_t j__udyGetMemActive(
 	case cJU_JPBRANCH_L5:
 	case cJU_JPBRANCH_L6:
 	case cJU_JPBRANCH_L7:
-	case cJU_JPBRANCH_L:
+	case cJU_JPBRANCH_L8:
 	{
 	    Pjbl_t Pjbl = P_JBL(ju_PntrInJp(Pjp));
 
@@ -104,7 +104,7 @@ FUNCTION static Word_t j__udyGetMemActive(
 	case cJU_JPBRANCH_B5:
 	case cJU_JPBRANCH_B6:
 	case cJU_JPBRANCH_B7:
-	case cJU_JPBRANCH_B:
+	case cJU_JPBRANCH_B8:
 	{
 	    Word_t subexp;
 	    Word_t jpcount;
@@ -131,7 +131,7 @@ FUNCTION static Word_t j__udyGetMemActive(
 	case cJU_JPBRANCH_U5:
 	case cJU_JPBRANCH_U6:
 	case cJU_JPBRANCH_U7:
-	case cJU_JPBRANCH_U:
+	case cJU_JPBRANCH_U8:
         {
 	    Pjbu_t Pjbu = P_JBU(ju_PntrInJp(Pjp));
 
@@ -155,28 +155,28 @@ FUNCTION static Word_t j__udyGetMemActive(
 // -- Cases below here terminate and do not recurse. --
 
 ////////#ifdef  JUDYL
-        case cJU_JPLEAF1: IdxSz = 1; goto LeafWords;
+        case cJU_JPLEAF1: IdxSz = 1; goto Leaf8ords;
 //////#endif  //  JUDYL
-	case cJU_JPLEAF2: IdxSz = 2; goto LeafWords;
-	case cJU_JPLEAF3: IdxSz = 3; goto LeafWords;
-	case cJU_JPLEAF4: IdxSz = 4; goto LeafWords;
-	case cJU_JPLEAF5: IdxSz = 5; goto LeafWords;
-	case cJU_JPLEAF6: IdxSz = 6; goto LeafWords;
-	case cJU_JPLEAF7: IdxSz = 7; goto LeafWords;
-LeafWords:
+	case cJU_JPLEAF2: IdxSz = 2; goto Leaf8ords;
+	case cJU_JPLEAF3: IdxSz = 3; goto Leaf8ords;
+	case cJU_JPLEAF4: IdxSz = 4; goto Leaf8ords;
+	case cJU_JPLEAF5: IdxSz = 5; goto Leaf8ords;
+	case cJU_JPLEAF6: IdxSz = 6; goto Leaf8ords;
+	case cJU_JPLEAF7: IdxSz = 7; goto Leaf8ords;
+Leaf8ords:
 
 #ifdef JUDY1
-            return(IdxSz * (ju_LeafPop0(Pjp) + 1));
+            return(IdxSz * ju_LeafPop1(Pjp));
 #else
             return((IdxSz + sizeof(Word_t))
-		 * (ju_LeafPop0(Pjp) + 1));
+		 * ju_LeafPop1(Pjp));
 #endif
 	case cJU_JPLEAF_B1:
 	{
 #ifdef JUDY1
             return(sizeof(jlb_t));
 #else
-            Bytes = (ju_LeafPop0(Pjp) + 1) * sizeof(Word_t);
+            Bytes = ju_LeafPop1(Pjp) * sizeof(Word_t);
 
 	    return(Bytes + sizeof(jlb_t));
 #endif

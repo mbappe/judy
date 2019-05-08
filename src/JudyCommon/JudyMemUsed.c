@@ -45,10 +45,10 @@ FUNCTION Word_t JudyLMemUsed
 
         if (PArray == (Pcvoid_t) NULL) return(0);
 
-	if (JU_LEAFW_POP0(PArray) < cJU_LEAFW_MAXPOP1) // must be a LEAFW
+	if (JU_LEAF8_POP0(PArray) < cJU_LEAF8_MAXPOP1) // must be a LEAF8
 	{
-	    Pjllw_t Pjllw = P_JLLW(PArray);		// first word of leaf.
-	    Words = JU_LEAFWPOPTOWORDS(Pjllw->jlw_Population0 + 1);	// based on pop1.
+	    Pjll8_t Pjll8 = P_JLL8(PArray);		// first word of leaf.
+	    Words = JU_LEAF8POPTOWORDS(Pjll8->jl8_Population0 + 1);	// based on pop1.
 	}
 	else
 	{

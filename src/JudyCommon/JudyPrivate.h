@@ -354,6 +354,9 @@ extern Word_t  j__DirectHits;
 
 // Note, these are forward references, but thats OK:
 
+#define BITMAPB_t uint64_t
+#define BITMAPL_t uint64_t
+
 #define cJU_FULLBITMAPB ((BITMAPB_t) cJU_ALLONES)
 #define cJU_FULLBITMAPL ((BITMAPL_t) cJU_ALLONES)
 
@@ -456,122 +459,130 @@ j__log2(Word_t num)
 //
 // Note:  Leaf pointers are cast to different-sized objects depending on the
 // leafs level, but are at least addresses (not just numbers), so use void *
-// (Pvoid_t), not PWord_t or Word_t for them, except use Pjllw_t for whole-word
+// (Pvoid_t), not PWord_t or Word_t for them, except use Pjll8_t for whole-word
 // (top-level, root-level) leaves.  Value areas, however, are always whole
 // words.
 //
 // Furthermore, use Pjll_t only for generic leaf pointers (for various size
-// LeafLs).  Use Pjllw_t for LeafWs.  Use Pleaf (with type uint8_t *, uint16_t
+// LeafLs).  Use Pjll8_t for Leaf8s.  Use Pleaf (with type uint8_t *, uint16_t
 // *, etc) when the leaf index size is known.
 
 #ifdef JUDY1
 // Leaf structures
 typedef struct J_UDY1_LEAF1_STRUCT
 {
-    Word_t      jl1_DcdPop0;
+//    Word_t      jl1_subLeafPops; // temp
+    Word_t      jl1_LastKey;
     uint8_t     jl1_Leaf[0];
 } jll1_t, *Pjll1_t;
 
 typedef struct J_UDY1_LEAF2_STRUCT
 {
-//    uint8_t      jl2_Prefix[8];
-    uint16_t     jl2_Leaf[0];
+    Word_t      jl2_LastKey;
+    uint16_t    jl2_Leaf[0];
 } jll2_t, *Pjll2_t;
 
 typedef struct J_UDY1_LEAF3_STRUCT
 {
-//    Word_t      jl3_DcdPop0;
+    Word_t      jl3_LastKey;
     uint8_t     jl3_Leaf[0];
 } jll3_t, *Pjll3_t;
 
 typedef struct J_UDY1_LEAF4_STRUCT
 {
-//    Word_t      jl4_DcdPop0;
-    uint32_t     jl4_Leaf[0];
+    Word_t      jl4_LastKey;
+    uint32_t    jl4_Leaf[0];
 } jll4_t, *Pjll4_t;
 
 typedef struct J_UDY1_LEAF5_STRUCT
 {
-//    Word_t      jl5_DcdPop0;
+    Word_t      jl5_LastKey;
     uint8_t     jl5_Leaf[0];
 } jll5_t, *Pjll5_t;
 
 typedef struct J_UDY1_LEAF6_STRUCT
 {
-//    Word_t      jl6_pop0;
+    Word_t      jl6_LastKey;
     uint8_t     jl6_Leaf[0];
 } jll6_t, *Pjll6_t;
 
 typedef struct J_UDY1_LEAF7_STRUCT
 {
-//    Word_t      jl7_pop0;
+    Word_t      jl7_LastKey;
     uint8_t     jl7_Leaf[0];
 } jll7_t, *Pjll7_t;
 
-typedef struct J_UDY1_LEAFW_STRUCT
+typedef struct J_UDY1_LEAF8_STRUCT
 {
-    Word_t      jlw_Population0;
-    Word_t      jlw_Leaf[0];
-} jllw_t, *Pjllw_t;
+    Word_t      jl8_Population0;
+    Word_t      jl8_Leaf[0];
+} jllw_t, *Pjll8_t;
 
-//typedef PWord_t Pjllw_t;  // pointer to root-level leaf (whole-word indexes).
+//typedef PWord_t Pjll8_t;  // pointer to root-level leaf (whole-word indexes).
 
 #endif  // JUDY1
 
 
 #ifdef JUDYL
 // Leaf structures
+typedef struct J_UDY1_LEAF1_STRUCT_UCOMP
+{
+    Word_t      jl1_LastKey;
+    BITMAPL_t   jl1_Bitmaps[4 /* cJU_NUMSUBEXP */];
+    Word_t      jl1_Values[256];
+} jllu1_t, *Pjllu1_t;
+
 typedef struct J_UDYL_LEAF1_STRUCT
 {
-    Word_t      jl1_DcdPop0;
+    Word_t      jl1_LastKey;
+//    Word_t      jl1_subLeafPops;        // temp
     uint8_t     jl1_Leaf[0];
 } jll1_t, *Pjll1_t;
 
 typedef struct J_UDYL_LEAF2_STRUCT
 {
-//    Word_t      jl2_DcdPop0;
-    uint16_t     jl2_Leaf[0];
+    Word_t      jl2_LastKey;
+    uint16_t    jl2_Leaf[0];
 } jll2_t, *Pjll2_t;
 
 typedef struct J_UDYL_LEAF3_STRUCT
 {
-//    Word_t      jl3_DcdPop0;
+    Word_t      jl3_LastKey;
     uint8_t     jl3_Leaf[0];
 } jll3_t, *Pjll3_t;
 
 typedef struct J_UDYL_LEAF4_STRUCT
 {
-//    Word_t      jl4_DcdPop0;
-    uint32_t     jl4_Leaf[0];
+    Word_t      jl4_LastKey;
+    uint32_t    jl4_Leaf[0];
 } jll4_t, *Pjll4_t;
 
 typedef struct J_UDYL_LEAF5_STRUCT
 {
-//    Word_t      jl5_DcdPop0;
+    Word_t      jl5_LastKey;
     uint8_t     jl5_Leaf[0];
 } jll5_t, *Pjll5_t;
 
 typedef struct J_UDYL_LEAF6_STRUCT
 {
+    Word_t      jl6_LastKey;
     uint8_t     jl6_Leaf[0];
 } jll6_t, *Pjll6_t;
 
 typedef struct J_UDYL_LEAF7_STRUCT
 {
+    Word_t      jl7_LastKey;
     uint8_t     jl7_Leaf[0];
 } jll7_t, *Pjll7_t;
 
-typedef struct J_UDYL_LEAFW_STRUCT
+typedef struct J_UDYL_LEAF8_STRUCT
 {
-    Word_t      jlw_Population0;
-    Word_t      jlw_Leaf[0];
-} jllw_t, *Pjllw_t;
-
-//typedef PWord_t Pjllw_t;  // pointer to root-level leaf (whole-word indexes).
-
+    Word_t      jl8_Population0;
+    Word_t      jl8_Leaf[0];
+} jll8_t, *Pjll8_t;
 #endif  // JUDYL
 
-typedef Pvoid_t Pjll_t;  // pointer to lower-level linear leaf.
+// typedef Pvoid_t Pjll_t;  // pointer to lower-level linear leaf.
 
 #ifdef JUDYL
 typedef PWord_t Pjv_t;   // pointer to JudyL value area.
@@ -600,42 +611,20 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 // do type-checking.
 
 
-#ifdef  Later
 #define P_JPM(  ADDR) ((Pjpm_t) (ADDR))  // root JPM.
 #define P_JBL(  ADDR) ((Pjbl_t) (ADDR))  // BranchL.
 #define P_JBB(  ADDR) ((Pjbb_t) (ADDR))  // BranchB.
 #define P_JBU(  ADDR) ((Pjbu_t) (ADDR))  // BranchU.
-#define P_JLL(  ADDR) ((Pjll_t) (ADDR))  // LeafL.
-//#define P_JLL1( ADDR) ((Pjll1_t)(ADDR))  // LeafL.
-#define P_JLL2( ADDR) ((Pjll2_t)(ADDR))  // LeafL.
-#define P_JLL3( ADDR) ((Pjll3_t)(ADDR))  // LeafL.
-#define P_JLL4( ADDR) ((Pjll4_t)(ADDR))  // LeafL.
-#define P_JLL5( ADDR) ((Pjll5_t)(ADDR))  // LeafL.
-#define P_JLL6( ADDR) ((Pjll6_t)(ADDR))  // LeafL.
-#define P_JLL7( ADDR) ((Pjll7_t)(ADDR))  // LeafL.
-#define P_JLLW( ADDR) ((Pjllw_t)(ADDR))  // root leaf.
-#define P_JLB(  ADDR) ((Pjlb_t) (ADDR))  // LeafB1.
-#define P_JP(   ADDR) ((Pjp_t)  (ADDR))  // JP.
-
-#else   // ! Later
-
-#define P_JLLW( ADDR) ((Pjllw_t) (ADDR)) // root leaf.
-#define P_JPM(  ADDR) ((Pjpm_t) (ADDR))  // root JPM.
-#define P_JBL(  ADDR) ((Pjbl_t) (ADDR))  // BranchL.
-#define P_JBB(  ADDR) ((Pjbb_t) (ADDR))  // BranchB.
-#define P_JBU(  ADDR) ((Pjbu_t) (ADDR))  // BranchU.
-#define P_JLL(  ADDR) ((Pjll_t) (ADDR))  // LeafL.
-//#define P_JLL1( ADDR) ((uint8_t  *)(ADDR))  // LeafL.
 #define P_JLL1( ADDR) ((Pjll1_t)(ADDR))  // Leaf1.
-#define P_JLL2( ADDR) ((uint16_t *)(ADDR))  // Leaf2.
-#define P_JLL3( ADDR) ((uint8_t  *)(ADDR))  // Leaf3.
-#define P_JLL4( ADDR) ((uint32_t *)(ADDR))  // Leaf4.
-#define P_JLL5( ADDR) ((uint8_t  *)(ADDR))  // Leaf5.
-#define P_JLL6( ADDR) ((uint8_t  *)(ADDR))  // Leaf6.
-#define P_JLL7( ADDR) ((uint8_t  *)(ADDR))  // Leaf7.
-#define P_JLB(  ADDR) ((Pjlb_t) (ADDR))  // LeafB1.
+#define P_JLL2( ADDR) ((Pjll2_t)(ADDR))  // Leaf2.
+#define P_JLL3( ADDR) ((Pjll3_t)(ADDR))  // Leaf3.
+#define P_JLL4( ADDR) ((Pjll4_t)(ADDR))  // Leaf4.
+#define P_JLL5( ADDR) ((Pjll5_t)(ADDR))  // Leaf5.
+#define P_JLL6( ADDR) ((Pjll6_t)(ADDR))  // Leaf6.
+#define P_JLL7( ADDR) ((Pjll7_t)(ADDR))  // Leaf7.
+#define P_JLL8( ADDR) ((Pjll8_t)(ADDR))  // root leaf.
+#define P_JLB1( ADDR) ((Pjlb_t) (ADDR))  // LeafB1.
 #define P_JP(   ADDR) ((Pjp_t)  (ADDR))  // JP.
-#endif  // ! Later
 
 #ifdef JUDYL
 
@@ -686,9 +675,6 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 // A default aspect ratio is hardwired here if not overridden at compile time,
 // such as by "EXTCCOPTS=-DBITMAP_BRANCH16x16 make".
 
-
-#define BITMAPB_t uint64_t
-#define BITMAPL_t uint64_t
 
 // EXPORTED DATA AND FUNCTIONS:
 
@@ -851,7 +837,7 @@ extern PPvoid_t j__udyLGet(Pcvoid_t PArray, Word_t Index, P_JE);
 
 // Use bits of the Key (INDEX) to determine where to start search.
 // Good for populations up to 2..255
-// NOTE: Should not be used for LeafW because LeafW is the only
+// NOTE: Should not be used for Leaf8 because Leaf8 is the only
 // Leaf that can have a population == 1
 
 // This macro can be used to "guess" the offset into a Leaf to 
@@ -873,8 +859,7 @@ extern PPvoid_t j__udyLGet(Pcvoid_t PArray, Word_t Index, P_JE);
 // This routine will do a linear Search forward or reverse 
 // beginning with element START.  It is specifically designed
 // to "touch" as few bytes of RAM as possible, therefore limiting
-// cache-line hits to few as possible.  Measurements show the
-// typical accesses to RAM are about 3 adjacent elements.
+// cache-line hits to few as possible.
 
 #define SEARCHBIDIRNATIVE(LEAFSIZE_t, PLEAF, POP1, KEY, START)  \
 {                                                               \
@@ -883,7 +868,7 @@ extern PPvoid_t j__udyLGet(Pcvoid_t PArray, Word_t Index, P_JE);
     LEAFSIZE_t  *__PLeaf;       /* ^ toLeaf to search */        \
     int         __pos;          /* starting pos of search */    \
                                                                 \
-    assert((Word_t)(START) < (Word_t)(POP1));                   \
+    if (START) assert((Word_t)(START) < (Word_t)(POP1));        \
     __pos    = (int)(START);                                    \
     __Key    = (LEAFSIZE_t)(KEY);                               \
     __PLeaf  = (LEAFSIZE_t *)(PLEAF);                           \
@@ -1038,6 +1023,7 @@ j__udyCount64Bits(uint64_t word64)
 static inline int
 j__udyCount64Bits(uint64_t word64)
 {
+printf("\nOOps not using popcnt()\n");
 //  Calculate each nibble to have counts of 0..4 bits in each nibble.
     word64 -= (word64 >> 1) & (uint64_t)0x5555555555555555;
     word64 = ((word64 >> 2) & (uint64_t)0x3333333333333333) + 
@@ -1084,29 +1070,12 @@ j__udyCount64Bits(uint64_t word64)
 //   is incorrect for the macro, because these are merely expressions, not
 //   statements.
 
-/////#define  JU_LEAFW_POP0(JRP)                  (*P_JLLW(JRP))
-#define  JU_LEAFW_POP0(JRP)                  (P_JLLW(JRP)->jlw_Population0)
+/////#define  JU_LEAF8_POP0(JRP)                  (*P_JLL8(JRP))
+#define  JU_LEAF8_POP0(JRP)                  (P_JLL8(JRP)->jl8_Population0)
 #define cJU_JPFULLPOPU1_POP0                 (cJU_SUBEXPPERSTATE - 1)
 
-// GET JP Type:
-// Since bit fields greater than 32 bits are not supported in some compilers
-// the jp_DcdPopO field is expanded to include the jp_Type in the high 8 bits
-// of the Word_t.
-// First the read macro:
-
-//#define JU_JPTYPE(PJP)          ((PJP)->jp_Type)
-//#define JU_JPTYPE(PJP)          ju_Type(PJP)
-
-//#define JU_JPLEAF_POP0(PJP)     ((PJP)->jp_Addr1 & 0xFF)
-////#define JU_JPLEAF_POP0(PJP)     ju_LeafPop0(PJP)
-
-//#define JU_JPDCDPOP0(PJP)   JU_TrimToIMM01((PJP)->jp_Addr1)
-//#define JU_JPDCDPOP0(PJP)       ju_DcdPop0(PJP)
-
 #ifdef  JU_LITTLE_ENDIAN        // ====================================
-//#define JU_JPDCDPOP0(PJP)   JU_TrimToIMM01((PJP)->jp_Addr1)
 #else  // BIG_ENDIAN =================================================
-//#define JU_JPDCDPOP0(PJP)  (((PJP)->jp_Addr1) >> 8)
 #endif  // BIG_ENDIAN =================================================
 
 // NUMBER OF BITS IN A BRANCH OR LEAF BITMAP AND SUBEXPANSE:
@@ -1318,13 +1287,13 @@ j__udyCount64Bits(uint64_t word64)
 // Copy a Word_t to a 7-byte Index pointed at by a uint8_t *:
 
 #define JU_COPY7_LONG_TO_PINDEX(PINDEX,SOURCELONG)      \
-    (PINDEX)[0] = (uint8_t)((SOURCELONG) >> 48);        \
-    (PINDEX)[1] = (uint8_t)((SOURCELONG) >> 40);        \
-    (PINDEX)[2] = (uint8_t)((SOURCELONG) >> 32);        \
-    (PINDEX)[3] = (uint8_t)((SOURCELONG) >> 24);        \
-    (PINDEX)[4] = (uint8_t)((SOURCELONG) >> 16);        \
-    (PINDEX)[5] = (uint8_t)((SOURCELONG) >>  8);        \
-    (PINDEX)[6] = (uint8_t)((SOURCELONG))
+    (PINDEX)[0] = (uint8_t)((Word_t)(SOURCELONG) >> 48);        \
+    (PINDEX)[1] = (uint8_t)((Word_t)(SOURCELONG) >> 40);        \
+    (PINDEX)[2] = (uint8_t)((Word_t)(SOURCELONG) >> 32);        \
+    (PINDEX)[3] = (uint8_t)((Word_t)(SOURCELONG) >> 24);        \
+    (PINDEX)[4] = (uint8_t)((Word_t)(SOURCELONG) >> 16);        \
+    (PINDEX)[5] = (uint8_t)((Word_t)(SOURCELONG) >>  8);        \
+    (PINDEX)[6] = (uint8_t)((Word_t)(SOURCELONG))
 
 
 // ****************************************************************************
@@ -1530,6 +1499,7 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
 //
 // TBD:  This contains two variable shifts, is that bad?
 
+// Now only used for JudyByCount.c, JudyPrevNext.c and JudyPrevNextEmpty.c
 #define JU_SETDIGIT(INDEX,DIGIT,STATE)                  \
         (INDEX) = ((INDEX) & (~cJU_MASKATSTATE(STATE))) \
                            | (((Word_t) (DIGIT))        \
@@ -1537,6 +1507,7 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
 
 // Fast version for single LSB:
 
+// Now only used for JudyByCount.c and JudyPrevNext.c
 #define JU_SETDIGIT1(INDEX,DIGIT) (INDEX) = ((INDEX) & ~0xff) | (DIGIT)
 
 
@@ -1551,19 +1522,8 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
 // Modify Index digit(s) to match the bytes in jp_DcdPopO in case one or more
 // branches are skipped and the digits are significant.  Its probably faster
 // to just do this unconditionally than to check if its necessary.
-//
-// To avoid endian issues, use masking and ORing, which operates in a
-// big-endian register, rather than treating the Index as an array of bytes,
-// though that would be simpler, but would operate in endian-specific memory.
-//
-// WARNING:  Must not call JU_LEASTBYTESMASK (via cJU_DCDMASK) with Bytes =
-// cJU_ROOTSTATE or a bad mask is generated, but there are no Dcd bytes to copy
-// in this case anyway.  In fact there are no Dcd bytes unless State <
-// cJU_ROOTSTATE - 1, so dont call this macro except in those cases.
-//
-// TBD:  It would be nice to validate jp_DcdPopO against known digits to ensure
-// no corruption, but this is non-trivial.
 
+// Now only used for JudyByCount.c and JudyPrevNext.c
 #define JU_SETDCD(INDEX,PJP,cSTATE)                             \
     (INDEX) = ((INDEX) & ~cJU_DCDMASK(cSTATE))                  \
                 | (ju_DcdPop0(PJP) & cJU_DCDMASK(cSTATE))
@@ -1606,39 +1566,39 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
 
 #define JU_INSERTINPLACE3(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
-    Word_t n = ((POP1)-(OFFSET)) * 3;                           \
+    Word_t __n = ((POP1)-(OFFSET)) * 3;                           \
     void   *src  = (PBYTE) + ((OFFSET) * 3);                    \
     void   *dest = (PBYTE) + ((OFFSET) * 3) + 3;                \
-    memmove(dest, src, n);                                      \
+    memmove(dest, src, __n);                                      \
     JU_COPY3_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 3]), INDEX);   \
 }
 
 
 #define JU_INSERTINPLACE5(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
-    Word_t n = ((POP1)-(OFFSET)) * 5;                           \
+    Word_t __n = ((POP1)-(OFFSET)) * 5;                           \
     void   *src  = (PBYTE) + ((OFFSET) * 5);                    \
     void   *dest = (PBYTE) + ((OFFSET) * 5) + 5;                \
-    memmove(dest, src, n);                                      \
+    memmove(dest, src, __n);                                      \
     JU_COPY5_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 5]), INDEX);   \
 }
 
 #define JU_INSERTINPLACE6(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
-    Word_t n = ((POP1)-(OFFSET)) * 6;                           \
+    Word_t __n = ((POP1)-(OFFSET)) * 6;                           \
     void   *src  = (PBYTE) + ((OFFSET) * 6);                    \
     void   *dest = (PBYTE) + ((OFFSET) * 6) + 6;                \
-    memmove(dest, src, n);                                      \
+    memmove(dest, src, __n);                                      \
     JU_COPY6_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 6]), INDEX);   \
 }
 
 #define JU_INSERTINPLACE7(PBYTE,POP1,OFFSET,INDEX)              \
 {                                                               \
-    Word_t n = ((POP1)-(OFFSET)) * 7;                           \
+    Word_t __n = ((POP1)-(OFFSET)) * 7;                         \
     void   *src  = (PBYTE) + ((OFFSET) * 7);                    \
     void   *dest = (PBYTE) + ((OFFSET) * 7) + 7;                \
-    memmove(dest, src, n);                                      \
-    JU_COPY7_LONG_TO_PINDEX(&((PBYTE)[(OFFSET) * 7]), INDEX);   \
+    memmove(dest, src, __n);                                    \
+    JU_COPY7_LONG_TO_PINDEX((PBYTE) + ((OFFSET) * 7), INDEX);   \
 }
 
 
@@ -1652,9 +1612,9 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
         {                                                       \
             void *src  = (PARRAY) + (OFFSET) + 1;               \
             void *dest = (PARRAY) + (OFFSET);                   \
-            Word_t n = ((POP1)-(OFFSET)) * sizeof(*(PARRAY));   \
+            Word_t __n = ((POP1)-(OFFSET)) * sizeof(*(PARRAY));   \
                                                                 \
-            memmove(dest, src, n - 1);                          \
+            memmove(dest, src, __n - 1);                          \
      /*       (PARRAY)[(POP1) - 1] = 0;     zero pad */         \
         }
 
@@ -1664,8 +1624,8 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
         {                                                       \
             void *src  = (PARRAY) + (OFFSET) + 1;               \
             void *dest = (PARRAY) + (OFFSET);                   \
-            Word_t n = ((POP1)-(OFFSET)) * sizeof(*(PARRAY));   \
-            memmove(dest, src, n - 1);                          \
+            Word_t __n = ((POP1)-(OFFSET)) * sizeof(*(PARRAY));   \
+            memmove(dest, src, __n - 1);                          \
      /*       (PARRAY)[(POP1) - 1] = 0;     zero pad */         \
         }
 
@@ -1675,8 +1635,8 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
         {                                                       \
             void *src  = (PBYTE) + (OFFSET * cIS) + cIS;        \
             void *dest = (PBYTE) + (OFFSET * cIS);              \
-            Word_t n = ((POP1)-(OFFSET)) * cIS;                 \
-            memmove(dest, src, n - cIS);                        \
+            Word_t __n = ((POP1)-(OFFSET)) * cIS;                 \
+            memmove(dest, src, __n - cIS);                        \
         }
 
 
@@ -1690,8 +1650,8 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
     assert((long) (POP1) > 0);                                  \
     assert((Word_t) (OFFSET) <= (Word_t) (POP1));               \
     {                                                           \
-        char *src  = (char *)(PSOURCE);                         \
-        char *dest = (char *)(PDEST);                           \
+        uint8_t *src  = (uint8_t *)(PSOURCE);                         \
+        uint8_t *dest = (uint8_t *)(PDEST);                           \
         int   cIS = sizeof(*(PDEST));                           \
         Word_t __n = (OFFSET) * cIS;                            \
         memcpy((void *)dest, (void *)src, __n);                 \
@@ -1707,8 +1667,8 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
     assert((long) (POP1) > 0);                                  \
     assert((Word_t) (OFFSET) <= (Word_t) (POP1));               \
     {                                                           \
-        char *src  = (char *)(PSOURCE);                         \
-        char *dest = (char *)(PDEST);                           \
+        uint8_t *src  = (uint8_t *)(PSOURCE);                         \
+        uint8_t *dest = (uint8_t *)(PDEST);                           \
         int   cIS = 3;                                          \
         Word_t __n = (OFFSET) * cIS;                            \
         memcpy((void *)dest, (void *)src, __n);                 \
@@ -1726,8 +1686,8 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
     assert((long) (POP1) > 0);                                  \
     assert((Word_t) (OFFSET) <= (Word_t) (POP1));               \
     {                                                           \
-        char *src  = (char *)(PSOURCE);                         \
-        char *dest = (char *)(PDEST);                           \
+        uint8_t *src  = (uint8_t *)(PSOURCE);                         \
+        uint8_t *dest = (uint8_t *)(PDEST);                           \
         int   cIS = 5;                                          \
         Word_t __n = (OFFSET) * cIS;                            \
         memcpy((void *)dest, (void *)src, __n);                 \
@@ -1745,8 +1705,8 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
     assert((long) (POP1) > 0);                                  \
     assert((Word_t) (OFFSET) <= (Word_t) (POP1));               \
     {                                                           \
-        char *src  = (char *)(PSOURCE);                         \
-        char *dest = (char *)(PDEST);                           \
+        uint8_t *src  = (uint8_t *)(PSOURCE);                         \
+        uint8_t *dest = (uint8_t *)(PDEST);                           \
         int   cIS = 6;                                          \
         Word_t __n = (OFFSET) * cIS;                            \
         memcpy((void *)dest, (void *)src, __n);                 \
@@ -1764,27 +1724,50 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
     assert((long) (POP1) > 0);                                  \
     assert((Word_t) (OFFSET) <= (Word_t) (POP1));               \
     {                                                           \
-        char *src  = (char *)(PSOURCE);                         \
-        char *dest = (char *)(PDEST);                           \
+        uint8_t *src  = (uint8_t *)(PSOURCE);                   \
+        uint8_t *dest = (uint8_t *)(PDEST);                     \
         int   cIS = 7;                                          \
         Word_t __n = (OFFSET) * cIS;                            \
         memcpy((void *)dest, (void *)src, __n);                 \
         dest += __n;                                            \
         src  += __n;                                            \
                                                                 \
-        JU_COPY7_LONG_TO_PINDEX(&((PDEST)[(OFFSET) * cIS]), INDEX); \
+        assert(dest == (uint8_t *)(PDEST) + ((OFFSET) * cIS));  \
+    /*  JU_COPY7_LONG_TO_PINDEX(&((PDEST)(OFFSET) * cIS]), INDEX); */ \
+        JU_COPY7_LONG_TO_PINDEX(dest, (INDEX));                 \
                                                                 \
         __n = ((POP1)-(OFFSET)) * cIS;                          \
         dest += cIS;                                            \
         memcpy((void *)dest, (void *)src, __n);                 \
     }
 
+#ifdef orig
+void static JU_INSERTCOPY7(uint8_t *dest, uint8_t *src,  Word_t POP1, int OFFSET, Word_t Key)
+{
+    assert((long) (POP1) > 0);
+    assert((Word_t) (OFFSET) <= (Word_t) (POP1));
+    {                                           
+        int   cIS = 7;                         
+        Word_t __n = (OFFSET) * cIS;          
+        memcpy((void *)dest, (void *)src, __n);
+        dest += __n;                          
+        src  += __n;                         
+                                                     
+        JU_COPY7_LONG_TO_PINDEX(dest, Key);     
+                                                   
+        __n = ((POP1)-(OFFSET)) * cIS;            
+        dest += cIS;                             
+        memcpy((void *)dest, (void *)src, __n);
+    }
+}
+#endif  // orig
+
 #define JU_DELETECOPY_ODD(PDEST,PSOURCE,POP1,OFFSET,cIS)        \
         assert((long) (POP1) > 0);                              \
         assert((Word_t) (OFFSET) < (Word_t) (POP1));            \
         {                                                       \
-            char *src  = (char *)(PSOURCE);                     \
-            char *dest = (char *)(PDEST);                       \
+            uint8_t *src  = (uint8_t *)(PSOURCE);               \
+            uint8_t *dest = (uint8_t *)(PDEST);                 \
             Word_t __n = (OFFSET) * cIS;                        \
             memcpy((void *)dest, (void *)src, __n);             \
             dest += __n;                                        \
@@ -1821,19 +1804,18 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
 // For Judy1, these all "fall through" to simply JU_RET_FOUND, since there is no
 // value area pointer to return:
 
-#define JU_RET_FOUND_LEAFW(PJLLW,POP1,OFFSET)   JU_RET_FOUND
+#define JU_RET_FOUND_LEAF8(PJLL8,POP1,OFFSET)   JU_RET_FOUND
 
 #define JU_RET_FOUND_JPM(Pjpm)                  JU_RET_FOUND
 #define JU_RET_FOUND_PVALUE(Pjv,OFFSET)         JU_RET_FOUND
 
-#define JU_RET_FOUND_LEAF1(Pjll,POP1,OFFSET)    JU_RET_FOUND
-
-#define JU_RET_FOUND_LEAF2(Pjll,POP1,OFFSET)    JU_RET_FOUND
-#define JU_RET_FOUND_LEAF3(Pjll,POP1,OFFSET)    JU_RET_FOUND
-#define JU_RET_FOUND_LEAF4(Pjll,POP1,OFFSET)    JU_RET_FOUND
-#define JU_RET_FOUND_LEAF5(Pjll,POP1,OFFSET)    JU_RET_FOUND
-#define JU_RET_FOUND_LEAF6(Pjll,POP1,OFFSET)    JU_RET_FOUND
-#define JU_RET_FOUND_LEAF7(Pjll,POP1,OFFSET)    JU_RET_FOUND
+#define JU_RET_FOUND_LEAF1(Pjll1,POP1,OFFSET)   JU_RET_FOUND
+#define JU_RET_FOUND_LEAF2(Pjll2,POP1,OFFSET)   JU_RET_FOUND
+#define JU_RET_FOUND_LEAF3(Pjll3,POP1,OFFSET)   JU_RET_FOUND
+#define JU_RET_FOUND_LEAF4(Pjll4,POP1,OFFSET)   JU_RET_FOUND
+#define JU_RET_FOUND_LEAF5(Pjll5,POP1,OFFSET)   JU_RET_FOUND
+#define JU_RET_FOUND_LEAF6(Pjll6,POP1,OFFSET)   JU_RET_FOUND
+#define JU_RET_FOUND_LEAF7(Pjll7,POP1,OFFSET)   JU_RET_FOUND
 #define JU_RET_FOUND_IMM_01(Pjp)                JU_RET_FOUND
 #define JU_RET_FOUND_IMM(Pjp,OFFSET)            JU_RET_FOUND
 
@@ -1864,23 +1846,23 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
 // THESE are left over for Count & NextPrev !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #define JU_RET_FOUND_PVALUE(Pjv,OFFSET) return((PPvoid_t) ((Pjv) + OFFSET))
 
-#define JU_RET_FOUND_LEAFW(PJLLW,POP1,OFFSET) \
-                return((PPvoid_t) (JL_LEAFWVALUEAREA(PJLLW, POP1) + (OFFSET)))
+#define JU_RET_FOUND_LEAF8(PJLL8,POP1,OFFSET) \
+                return((PPvoid_t) (JL_LEAF8VALUEAREA(PJLL8, POP1) + (OFFSET)))
 
-#define JU_RET_FOUND_LEAF1(Pjll,POP1,OFFSET) \
-                return((PPvoid_t) (JL_LEAF1VALUEAREA(Pjll, POP1) + (OFFSET)))
-#define JU_RET_FOUND_LEAF2(Pjll,POP1,OFFSET) \
-                return((PPvoid_t) (JL_LEAF2VALUEAREA(Pjll, POP1) + (OFFSET)))
-#define JU_RET_FOUND_LEAF3(Pjll,POP1,OFFSET) \
-                return((PPvoid_t) (JL_LEAF3VALUEAREA(Pjll, POP1) + (OFFSET)))
-#define JU_RET_FOUND_LEAF4(Pjll,POP1,OFFSET) \
-                return((PPvoid_t) (JL_LEAF4VALUEAREA(Pjll, POP1) + (OFFSET)))
-#define JU_RET_FOUND_LEAF5(Pjll,POP1,OFFSET) \
-                return((PPvoid_t) (JL_LEAF5VALUEAREA(Pjll, POP1) + (OFFSET)))
-#define JU_RET_FOUND_LEAF6(Pjll,POP1,OFFSET) \
-                return((PPvoid_t) (JL_LEAF6VALUEAREA(Pjll, POP1) + (OFFSET)))
-#define JU_RET_FOUND_LEAF7(Pjll,POP1,OFFSET) \
-                return((PPvoid_t) (JL_LEAF7VALUEAREA(Pjll, POP1) + (OFFSET)))
+#define JU_RET_FOUND_LEAF1(Pjll1,POP1,OFFSET) \
+                return((PPvoid_t) (JL_LEAF1VALUEAREA(Pjll1, POP1) + (OFFSET)))
+#define JU_RET_FOUND_LEAF2(Pjll2,POP1,OFFSET) \
+                return((PPvoid_t) (JL_LEAF2VALUEAREA(Pjll2, POP1) + (OFFSET)))
+#define JU_RET_FOUND_LEAF3(Pjll3,POP1,OFFSET) \
+                return((PPvoid_t) (JL_LEAF3VALUEAREA(Pjll3, POP1) + (OFFSET)))
+#define JU_RET_FOUND_LEAF4(Pjll4,POP1,OFFSET) \
+                return((PPvoid_t) (JL_LEAF4VALUEAREA(Pjll4, POP1) + (OFFSET)))
+#define JU_RET_FOUND_LEAF5(Pjll5,POP1,OFFSET) \
+                return((PPvoid_t) (JL_LEAF5VALUEAREA(Pjll5, POP1) + (OFFSET)))
+#define JU_RET_FOUND_LEAF6(Pjll5,POP1,OFFSET) \
+                return((PPvoid_t) (JL_LEAF6VALUEAREA(Pjll6, POP1) + (OFFSET)))
+#define JU_RET_FOUND_LEAF7(Pjll7,POP1,OFFSET) \
+                return((PPvoid_t) (JL_LEAF7VALUEAREA(Pjll7, POP1) + (OFFSET)))
 
 // Note:  Here jp_Addr0 is a value area itself and not an address, so P_JV() is
 // not needed:
@@ -1898,7 +1880,7 @@ j__udyBucketHasKey(Word_t Bucket, Word_t Key, int bPK)
 #ifndef BMVALUE
 
 #define JU_RET_FOUND_LEAF_B1(PJLB,SUBEXP,OFFSET) \
-            return((PPvoid_t) (P_JV(JL_JLB_PVALUE(PJLB, SUBEXP)) + (OFFSET)))
+            return((PPvoid_t) (JL_JLB_PVALUE(PJLB) + (OFFSET)))
 
 #else   // BMVALUE
 
@@ -1995,14 +1977,6 @@ static inline int j__udySearchBranchL(uint8_t *Lst, int pop1, uint8_t Exp)
     SEARCHLINARNATIVE(uint8_t, Lst, pop1, Exp, 0); 
 }
 
-static inline int j__udySearchImmed1(uint8_t *Pleaf1, int LeafPop1, Word_t Index, int Expanse)
-{
-    SEARCHPOPULATION(LeafPop1);
-    Index = JU_LEASTBYTES(Index, 1);
-    int Start = PSPLIT(LeafPop1, Index, Expanse); 
-    SEARCHLEAFNATIVE(uint8_t,  Pleaf1, LeafPop1, Index, Start); 
-}
-
 static inline int j__udySearchRawLeaf1(uint8_t *PLeaf1, int LeafPop1, Word_t Index, int Start)
 {
     SEARCHLEAFNATIVE(uint8_t, PLeaf1, LeafPop1, (uint8_t)Index, Start); 
@@ -2013,61 +1987,121 @@ static inline int j__udySearchLeaf1(Pjll1_t Pjll1, int LeafPop1, Word_t Index, i
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 1);
     int Start = PSPLIT(LeafPop1, Index, Expanse); 
+//    printf("Pjll1->jl1_Leaf = 0x%016lx, LeafPop1 = %d, Index = 0x%016lx, Start = %d\n", (Word_t)Pjll1->jl1_Leaf, (int)LeafPop1, Index, (int)Start);
     SEARCHLEAFNATIVE(uint8_t, Pjll1->jl1_Leaf, LeafPop1, Index, Start); 
 }
 
-static inline int j__udySearchLeaf2(Pjll_t Pjll, int LeafPop1, Word_t Index, int Expanse)
+static inline int j__udySearchImmed1(uint8_t *Pleaf1, int LeafPop1, Word_t Index, int Expanse)
+{
+    SEARCHPOPULATION(LeafPop1);
+    Index = JU_LEASTBYTES(Index, 1);
+    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    SEARCHLEAFNATIVE(uint8_t,  Pleaf1, LeafPop1, Index, Start); 
+}
+
+static inline int j__udySearchLeaf2(Pjll2_t Pjll2, int LeafPop1, Word_t Index, int Expanse)
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 2);
     int Start = PSPLIT(LeafPop1, Index, Expanse); 
-    SEARCHLEAFNATIVE(uint16_t,  Pjll, LeafPop1, Index, Start); 
+    SEARCHLEAFNATIVE(uint16_t,  Pjll2->jl2_Leaf, LeafPop1, Index, Start); 
 }
 
-static inline int j__udySearchLeaf3(Pjll_t Pjll, int LeafPop1, Word_t Index, int Expanse)
+static inline int j__udySearchImmed2(uint16_t *Pleaf2, int LeafPop1, Word_t Index, int Expanse)
+{
+    SEARCHPOPULATION(LeafPop1);
+    Index = JU_LEASTBYTES(Index, 2);
+    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    SEARCHLEAFNATIVE(uint16_t,  Pleaf2, LeafPop1, Index, Start); 
+}
+
+static inline int j__udySearchLeaf3(Pjll3_t Pjll3, int LeafPop1, Word_t Index, int Expanse)
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 3);
     int Start = PSPLIT(LeafPop1, Index, Expanse); 
-    SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 3, JU_COPY3_PINDEX_TO_LONG, Start); 
+    SEARCHLEAFNONNAT(Pjll3->jl3_Leaf, LeafPop1, Index, 3, JU_COPY3_PINDEX_TO_LONG, Start); 
 }
 
-static inline int j__udySearchLeaf4(Pjll_t Pjll, int LeafPop1, Word_t Index, int Expanse)
+static inline int j__udySearchImmed3(uint8_t *Pleaf3, int LeafPop1, Word_t Index, int Expanse)
+{
+    SEARCHPOPULATION(LeafPop1);
+    Index = JU_LEASTBYTES(Index, 3);
+    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    SEARCHLEAFNONNAT(Pleaf3, LeafPop1, Index, 3, JU_COPY3_PINDEX_TO_LONG, Start); 
+}
+
+static inline int j__udySearchLeaf4(Pjll4_t Pjll4, int LeafPop1, Word_t Index, int Expanse)
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 4);
     int Start = PSPLIT(LeafPop1, Index, Expanse); 
-    SEARCHLEAFNATIVE(uint32_t,  Pjll, LeafPop1, Index, Start); 
+    SEARCHLEAFNATIVE(uint32_t, Pjll4->jl4_Leaf, LeafPop1, Index, Start); 
 }
 
-static inline int j__udySearchLeaf5(Pjll_t Pjll, int LeafPop1, Word_t Index, int Expanse)
+static inline int j__udySearchImmed4(uint32_t *Pleaf4, int LeafPop1, Word_t Index, int Expanse)
+{
+    SEARCHPOPULATION(LeafPop1);
+    Index = JU_LEASTBYTES(Index, 4);
+    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    SEARCHLEAFNATIVE(uint32_t,  Pleaf4, LeafPop1, Index, Start); 
+}
+
+static inline int j__udySearchLeaf5(Pjll5_t Pjll5, int LeafPop1, Word_t Index, int Expanse)
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 5);
     int Start = PSPLIT(LeafPop1, Index, Expanse); 
-    SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 5, JU_COPY5_PINDEX_TO_LONG, Start); 
+    SEARCHLEAFNONNAT(Pjll5->jl5_Leaf, LeafPop1, Index, 5, JU_COPY5_PINDEX_TO_LONG, Start); 
 }
 
-static inline int j__udySearchLeaf6(Pjll_t Pjll, int LeafPop1, Word_t Index, int Expanse)
+static inline int j__udySearchImmed5(uint8_t *Pleaf5, int LeafPop1, Word_t Index, int Expanse)
+{
+    SEARCHPOPULATION(LeafPop1);
+    Index = JU_LEASTBYTES(Index, 5);
+    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    SEARCHLEAFNONNAT(Pleaf5, LeafPop1, Index, 5, JU_COPY5_PINDEX_TO_LONG, Start); 
+}
+
+static inline int j__udySearchLeaf6(Pjll6_t Pjll6, int LeafPop1, Word_t Index, int Expanse)
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 6);
     int Start = PSPLIT(LeafPop1, Index, Expanse); 
-    SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 6, JU_COPY6_PINDEX_TO_LONG, Start); 
+//    SEARCHLEAFNONNAT(Pjll6->jl6_Leaf, LeafPop1, Index, 6, JU_COPY6_PINDEX_TO_LONG, Start); 
+    SEARCHLINARNONNAT(Pjll6->jl6_Leaf, LeafPop1, Index, 6, JU_COPY6_PINDEX_TO_LONG, 0); 
 }
 
-static inline int j__udySearchLeaf7(Pjll_t Pjll, int LeafPop1, Word_t Index, int Expanse)
+static inline int j__udySearchImmed6(uint8_t *Pleaf6, int LeafPop1, Word_t Index, int Expanse)
+{
+    SEARCHPOPULATION(LeafPop1);
+    Index = JU_LEASTBYTES(Index, 6);
+//    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    SEARCHLINARNONNAT(Pleaf6, LeafPop1, Index, 6, JU_COPY6_PINDEX_TO_LONG, 0); 
+}
+
+static inline int j__udySearchLeaf7(Pjll7_t Pjll7, int LeafPop1, Word_t Index, int Expanse)
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 7);
     int Start = PSPLIT(LeafPop1, Index, Expanse); 
-    SEARCHLEAFNONNAT(Pjll, LeafPop1, Index, 7, JU_COPY7_PINDEX_TO_LONG, Start); 
+//    SEARCHLEAFNONNAT(Pjll7->jl7_Leaf, LeafPop1, Index, 7, JU_COPY7_PINDEX_TO_LONG, Start); 
+    SEARCHLINARNONNAT(Pjll7->jl7_Leaf, LeafPop1, Index, 7, JU_COPY7_PINDEX_TO_LONG, 0); 
 }
 
-static inline int j__udySearchLeafW(PWord_t PLeafW, int LeafPop1, Word_t Index)
+static inline int j__udySearchImmed7(uint8_t *Pleaf7, int LeafPop1, Word_t Index, int Expanse)
 {
     SEARCHPOPULATION(LeafPop1);
-//    SEARCHLINARNATIVE(Word_t,  PLeafW, LeafPop1, Index, 0); 
-    SEARCHBINARYNATIVE(Word_t, PLeafW, LeafPop1, Index, 0); 
+    Index = JU_LEASTBYTES(Index, 7);
+//    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+//    SEARCHLEAFNONNAT(Pleaf7, LeafPop1, Index, 7, JU_COPY7_PINDEX_TO_LONG, Start); 
+    SEARCHLINARNONNAT(Pleaf7, LeafPop1, Index, 7, JU_COPY7_PINDEX_TO_LONG, 0); 
+}
+
+static inline int j__udySearchLeaf8(Pjll8_t Pjll8, int LeafPop1, Word_t Index)
+{
+    SEARCHPOPULATION(LeafPop1);
+//    SEARCHLINARNATIVE(Word_t,  PLeaf8, LeafPop1, Index, 0); 
+    SEARCHBINARYNATIVE(Word_t, Pjll8->jl8_Leaf, LeafPop1, Index, 0); 
 }
 #endif // ! _JUDYPRIVATE_INCLUDED

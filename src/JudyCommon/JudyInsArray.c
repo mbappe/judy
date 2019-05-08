@@ -82,7 +82,7 @@ static uint8_t branchL_JPtype[] = {
     cJU_JPBRANCH_L5,
     cJU_JPBRANCH_L6,
     cJU_JPBRANCH_L7,
-    cJU_JPBRANCH_L,
+    cJU_JPBRANCH_L8,
 };
 
 static uint8_t branchB_JPtype[] = {
@@ -94,7 +94,7 @@ static uint8_t branchB_JPtype[] = {
     cJU_JPBRANCH_B5,
     cJU_JPBRANCH_B6,
     cJU_JPBRANCH_B7,
-    cJU_JPBRANCH_B,
+    cJU_JPBRANCH_B8,
 };
 
 static uint8_t branchU_JPtype[] = {
@@ -106,7 +106,7 @@ static uint8_t branchU_JPtype[] = {
     cJU_JPBRANCH_U5,
     cJU_JPBRANCH_U6,
     cJU_JPBRANCH_U7,
-    cJU_JPBRANCH_U,
+    cJU_JPBRANCH_U8,
 };
 
 // Subexpanse masks are similer to JU_DCDMASK() but without the need to clear
@@ -174,9 +174,10 @@ const   Word_t *  const PValue, // list of corresponding values.
         PJError_t PJError       // optional, for returning error info.
         )
 {
-        Pjllw_t    Pjllw;         // new root-level leaf.
-//        Pjllw_t    Pjllwindex;    // first index in root-level leaf.
-        PWord_t   PLeafW;    // first index in root-level leaf.
+#ifdef forLATER
+        Pjll8_t    Pjll8;         // new root-level leaf.
+//        Pjll8_t    Pjll8index;    // first index in root-level leaf.
+        PWord_t   PLeaf8;    // first index in root-level leaf.
         int       offset;       // in PIndex.
 
 
@@ -204,7 +205,7 @@ const   Word_t *  const PValue, // list of corresponding values.
 
 // Common code for unusual error handling when no JPM available:
 
-        if (Count > cJU_LEAFW_MAXPOP1)  // too big for root-level leaf.
+        if (Count > cJU_LEAF8_MAXPOP1)  // too big for root-level leaf.
         {
             Pjpm_t Pjpm;                        // new, to allocate.
 
@@ -270,24 +271,25 @@ const   Word_t *  const PValue, // list of corresponding values.
         if (Count == 0) return(1);              // *PPArray remains null.
 
         {
-            Pjllw      = j__udyAllocJLLW(Count + 1);
-//            JU_CHECKALLOC(Pjllw_t, Pjllw, JERRI);
-            if (Pjllw < (Pjllw_t) cBPW)
+            Pjll8      = j__udyAllocJLL8(Count + 1);
+//            JU_CHECKALLOC(Pjll8_t, Pjll8, JERRI);
+            if (Pjll8 < (Pjll8_t) cBPW)
             {
-                JU_SET_ERRNO(PJError, JU_ALLOC_ERRNO(Pjllw));
+                JU_SET_ERRNO(PJError, JU_ALLOC_ERRNO(Pjll8));
                 return(JERRI);
             }
 
-            *PPArray  = (Pvoid_t) Pjllw;
-            Pjllw->jlw_Population0   = Count - 1;              // set pop0.
-            PLeafW = Pjllw->jlw_Leaf;
+            *PPArray  = (Pvoid_t) Pjll8;
+            Pjll8->jl8_Population0   = Count - 1;              // set pop0.
+            PLeaf8 = Pjll8->jl8_Leaf;
         }
 
 // Copy whole-word indexes (and values) to the root-level leaf:
 
-          JU_COPYMEM(PLeafW,                      PIndex, Count);
-JUDYLCODE(JU_COPYMEM(JL_LEAFWVALUEAREA(Pjllw, Count), PValue, Count));
+          JU_COPYMEM(PLeaf8,                      PIndex, Count);
+JUDYLCODE(JU_COPYMEM(JL_LEAF8VALUEAREA(Pjll8, Count), PValue, Count));
 
+#endif  // 0
         return(1);
 
 } // Judy1SetArray() / JudyLInsArray()
@@ -359,6 +361,7 @@ FUNCTION static bool_t j__udyInsArray(
         Pjv_t  Pjv;
 #endif  // JUDYL
 
+#ifdef forLATER
 
 // MACROS FOR COMMON CODE:
 //
@@ -533,7 +536,7 @@ FUNCTION static bool_t j__udyInsArray(
 
         assert( Level >= 1);
         assert( Level <= cJU_ROOTSTATE);
-        assert((Level <  cJU_ROOTSTATE) || (pop1 > cJU_LEAFW_MAXPOP1));
+        assert((Level <  cJU_ROOTSTATE) || (pop1 > cJU_LEAF8_MAXPOP1));
 
 
 // CHECK FOR TOP LEVEL:
@@ -730,7 +733,7 @@ FUNCTION static bool_t j__udyInsArray(
 
             if ((PjlbRaw = j__udyAllocJLB1(Pjpm)) == 0)
                 NOMEM;
-            Pjlb = P_JLB(PjlbRaw);
+            Pjlb = P_JLB1(PjlbRaw);
 
             for (offset = 0; offset < (int)pop1; ++offset)
                 JU_BITMAPSETL(Pjlb, PIndex[offset]);
@@ -765,7 +768,7 @@ FUNCTION static bool_t j__udyInsArray(
 
                 Pjv = P_JV(PjvRaw);
                 JU_COPYMEM(Pjv, PValue, pop1sub);
-                JL_JLB_PVALUE(Pjlb, offset) = PjvRaw;   // first-tier pointer.
+                JL_JLB_PVALUE(Pjlb) = PjvRaw;   // first-tier pointer.
                 PValue += pop1sub;
 
             } // for each subexpanse
@@ -1048,7 +1051,7 @@ ClearBranch:
             Pjbl_t Pjbl;
 
             if ((*PPop1 > JU_BRANCHL_MAX_POP)   // pop too high.
-             || ((PjblRaw = j__udyAllocJBL(Pjpm)) == 0))
+             || ((PjblRaw = j__udyAllocJBL((int)numJPs, Pjpm)) == 0))
             {                                   // cant alloc BranchL.
                 goto SetParent;                 // just keep BranchU.
             }
@@ -1190,6 +1193,7 @@ SetParent:
             ju_SetJpType(PjpParent, JPtype);
         }
 
+#endif  // 0
         return(retval);
 
 } // j__udyInsArray()

@@ -97,7 +97,7 @@
 // of Index is derived (saved) based on which JP is used in a JRP branch.
 // The remaining digits are obtained from the jp_DcdPopO field in the JP (if
 // any) above the immediate or leaf containing the found (prev) Index, plus the
-// remaining digit(s) in the immediate or leaf itself.  In the case of a LEAFW,
+// remaining digit(s) in the immediate or leaf itself.  In the case of a LEAF8,
 // the Index to return is found directly in the leaf.
 //
 // Note:  Theoretically, as described above, upon reaching a dead end, SM1Get
@@ -214,8 +214,14 @@ FUNCTION PPvoid_t JudyLNext
 // gcc -Wall happy because there is an "impossible" path from Immed handling to
 // SM1LeafLImm code that looks like Pjll might be used before set:
 
-	Pjll_t	  Pjll  = (Pjll_t) NULL;
 	Pjll1_t   Pjll1 = (Pjll1_t)NULL;
+	Pjll2_t   Pjll2 = (Pjll2_t)NULL;
+	Pjll3_t   Pjll3 = (Pjll3_t)NULL;
+	Pjll4_t   Pjll4 = (Pjll4_t)NULL;
+	Pjll5_t   Pjll5 = (Pjll5_t)NULL;
+	Pjll6_t   Pjll6 = (Pjll6_t)NULL;
+	Pjll7_t   Pjll7 = (Pjll7_t)NULL;
+	Pjll8_t   Pjll8 = (Pjll8_t)NULL;
 	Word_t	  state;	// current state in SM.
 	Word_t	  digit;	// next digit to decode from Index.
 
@@ -223,7 +229,6 @@ FUNCTION PPvoid_t JudyLNext
 	int	  offset;	// linear branch/leaf, from j__udySearchLeaf*().
 	int	  subexp;	// subexpanse in a bitmap branch.
 	Word_t	  bitposmask;	// bit in bitmap for Index.
-
 
 // History for SM2Backtrack:
 //
@@ -245,7 +250,7 @@ FUNCTION PPvoid_t JudyLNext
 // earlier, SM1Get shortcuts sideways searches in leaves (and even in branches
 // in some cases), so SM2Backtrack only handles branches.
 
-#define	HISTNUMMAX cJU_ROOTSTATE	// maximum branches traversable.
+#define	HISTNUMMAX     8	// maximum branches traversable.
 	Pjp_t	APjphist[HISTNUMMAX];	// list of branch JPs traversed.
 	int	Aoffhist[HISTNUMMAX];	// list of next JP offsets; see above.
 	int	histnum = 0;		// number of JPs now in list.
@@ -370,7 +375,7 @@ FUNCTION PPvoid_t JudyLNext
 #define	CHECKDCD(cState)						\
 	if (ju_DcdNotMatchKey(Index, Pjp, cState))	                \
 	{								\
-	    if ((Index	      & cJU_DCDMASK(cState))		\
+	    if ((Index	      & cJU_DCDMASK(cState))		        \
 	      CDcmp__(ju_DcdPop0(Pjp) & cJU_DCDMASK(cState)))		\
 	    {								\
 		goto SM2Backtrack;					\
@@ -379,8 +384,20 @@ Printf("\n FAILED CDcmp -- going to SM3Findlimit\n");                   \
 	    goto SM3Findlimit;						\
 	}
 
+#define	CHECKWITHDCD(DCD,KEY,cState)				        \
+{                                                                       \
+    Word_t Dcd = (DCD) & cJU_DCDMASK(cState);                           \
+    Word_t Key = (KEY) & cJU_DCDMASK(cState);                           \
+    if (Key != Dcd)                                                     \
+    {                                                                   \
+        if (Dcd CDcmp__ Key)                                            \
+	    goto SM2Backtrack;					        \
+	goto SM3Findlimit;						\
+    }                                                                   \
+}
 
-// PREPARE TO HANDLE A LEAFW OR JRP BRANCH IN SM1:
+
+// PREPARE TO HANDLE A LEAF8 OR JRP BRANCH IN SM1:
 //
 // Extract a state-dependent digit from Index in a "constant" way, then jump to
 // common code for multiple cases.
@@ -391,7 +408,7 @@ Printf("\n FAILED CDcmp -- going to SM3Findlimit\n");                   \
 	goto Next
 
 
-// PREPARE TO HANDLE A LEAFW OR JRP BRANCH IN SM3:
+// PREPARE TO HANDLE A LEAF8 OR JRP BRANCH IN SM3:
 //
 // Optionally save Dcd bytes into Index, then save state and jump to common
 // code for multiple cases.
@@ -445,7 +462,7 @@ Printf("\n FAILED CDcmp -- going to SM3Findlimit\n");                   \
 // HANDLE JRP:
 //
 // Before even entering SM1Get, check the JRP type.  For JRP branches, traverse
-// the JPM; handle LEAFW leaves directly; but look for the most common cases
+// the JPM; handle LEAF8 leaves directly; but look for the most common cases
 // first.
 
 // ROOT-STATE LEAF that starts with a Pop0 word; just look within the leaf:
@@ -453,17 +470,17 @@ Printf("\n FAILED CDcmp -- going to SM3Findlimit\n");                   \
 // If Index is in the leaf, return it; otherwise return the Index, if any,
 // below where it would belong.
 
-	if (JU_LEAFW_POP0(PArray) < cJU_LEAFW_MAXPOP1)  // is it a LEAFW
+	if (JU_LEAF8_POP0(PArray) < cJU_LEAF8_MAXPOP1)  // is it a LEAF8
 	{
-	    Pjllw_t Pjllw = P_JLLW(PArray);	        // leafW.
-	    pop1 = Pjllw->jlw_Population0 + 1;
-	    offset = j__udySearchLeafW(Pjllw->jlw_Leaf, pop1, Index);
+	    Pjll8_t Pjll8 = P_JLL8(PArray);	        // leafW.
+	    pop1 = Pjll8->jl8_Population0 + 1;
+	    offset = j__udySearchLeaf8(Pjll8, pop1, Index);
 
 	    if (offset >= 0)                            // at beginning
             {
 //              Index is present.
                 *PIndex = Index;
-		JU_RET_FOUND_LEAFW(Pjllw, pop1, offset);// Index is set.
+		JU_RET_FOUND_LEAF8(Pjll8, pop1, offset);// Index is set.
 	    }
             offset = ~offset;                           // location of hole
 
@@ -475,9 +492,9 @@ Printf("\n FAILED CDcmp -- going to SM3Findlimit\n");                   \
             else
             {
                 offset--;                               // Prev exists
-	        Index = Pjllw->jlw_Leaf[offset];      // next-left Index
+	        Index = Pjll8->jl8_Leaf[offset];      // next-left Index
                 *PIndex = Index;
-	        JU_RET_FOUND_LEAFW(Pjllw, pop1, offset);
+	        JU_RET_FOUND_LEAF8(Pjll8, pop1, offset);
             }
 #else   // JUDYNEXT
 	    if (offset >= pop1)	                        // at end
@@ -486,9 +503,9 @@ Printf("\n FAILED CDcmp -- going to SM3Findlimit\n");                   \
             }
             else 
             {                                           // Next exists
-	        Index = Pjllw->jlw_Leaf[offset];      // next-right Index
+	        Index = Pjll8->jl8_Leaf[offset];      // next-right Index
                 *PIndex = Index;
-	        JU_RET_FOUND_LEAFW(Pjllw, pop1, offset);
+	        JU_RET_FOUND_LEAF8(Pjll8, pop1, offset);
             }
 #endif  // JUDYNEXT
 	    /*NOTREACHED*/
@@ -540,7 +557,7 @@ Printf("\ngoto SM1Get, jp_Type= %d\n", ju_Type(Pjp));
 	case cJU_JPBRANCH_L5: CHECKDCD(5); SM1PREPB(5, SM1BranchL);
 	case cJU_JPBRANCH_L6: CHECKDCD(6); SM1PREPB(6, SM1BranchL);
 	case cJU_JPBRANCH_L7: CHECKDCD(7); SM1PREPB(7, SM1BranchL);
-	case cJU_JPBRANCH_L:		   SM1PREPB(cJU_ROOTSTATE, SM1BranchL);
+	case cJU_JPBRANCH_L8:		   SM1PREPB(8, SM1BranchL);
 
 // Common code (state-independent) for all cases of linear branches:
 
@@ -552,7 +569,7 @@ Printf("\ngoto SM1BranchL\n");
 // JPs offset, and iterate to the next JP:
 
 
-	    offset = j__udySearchBranchL((Pjll_t) (Pjbl->jbl_Expanse), Pjbl->jbl_NumJPs, digit);
+	    offset = j__udySearchBranchL(Pjbl->jbl_Expanse, Pjbl->jbl_NumJPs, digit);
 
 Printf("\n---offset from j__udySearchBranchL = %d\n", offset);
 
@@ -600,7 +617,7 @@ Printf("BRANCH_L offset =%d\n", offset);
 	case cJU_JPBRANCH_B5: CHECKDCD(5); SM1PREPB(5, SM1BranchB);
 	case cJU_JPBRANCH_B6: CHECKDCD(6); SM1PREPB(6, SM1BranchB);
 	case cJU_JPBRANCH_B7: CHECKDCD(7); SM1PREPB(7, SM1BranchB);
-	case cJU_JPBRANCH_B:		   SM1PREPB(cJU_ROOTSTATE, SM1BranchB);
+	case cJU_JPBRANCH_B8:		   SM1PREPB(8, SM1BranchB);
 
 // Common code (state-independent) for all cases of bitmap branches:
 
@@ -715,7 +732,7 @@ Printf("\ngoto SM1BranchBFindlimit\n");
 	case cJU_JPBRANCH_U5: CHECKDCD(5); SM1PREPB(5, SM1BranchU);
 	case cJU_JPBRANCH_U6: CHECKDCD(6); SM1PREPB(6, SM1BranchU);
 	case cJU_JPBRANCH_U7: CHECKDCD(7); SM1PREPB(7, SM1BranchU);
-	case cJU_JPBRANCH_U:		   SM1PREPB(cJU_ROOTSTATE, SM1BranchU);
+	case cJU_JPBRANCH_U8:		   SM1PREPB(8, SM1BranchU);
 
 // Common code (state-independent) for all cases of uncompressed branches:
 
@@ -781,32 +798,89 @@ Printf("\ngoto SM1BranchU\n");
 // Check Decode bytes, if any, in the current JP, then search the leaf for
 // Index.
 
+#ifdef obs
 #define	SM1LEAFL(Func,Exp)					\
 	Pjll   = P_JLL(ju_PntrInJp(Pjp));		        \
-        assert(ju_LeafPop0(Pjp) == (ju_DcdPop0(Pjp) & 0xFF));   \
-	pop1   = ju_LeafPop0(Pjp) + 1;	                        \
+	pop1   = ju_LeafPop1(Pjp);	                        \
 	offset = Func(Pjll, pop1, Index, Exp);		        \
 Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offset, ~offset, pop1, Index);    \
 	goto SM1LeafLImm
+#endif  // obs
 
-//	case cJU_JPLEAF1:  CHECKDCD(1); SM1LEAFL(j__udySearchLeaf1, 1 * 8); XXXXXXXX
+#ifdef  JUDYL
+#ifdef  LEAF1_UCOMP
+            case cJL_JPLEAF1_UCOMP:
+            {
+                printf("\nOOPS - not implemented yet!, Line = %d\n", (int)__LINE__);
+                exit(1);
+            }
+#endif  // LEAF1_UCOMP
+#endif  // JUDYL
+
 	case cJU_JPLEAF1:  
         {
-            CHECKDCD(1);
 	    Pjll1  = P_JLL1(ju_PntrInJp(Pjp));
-	    pop1   = ju_LeafPop0(Pjp) + 1;
+            CHECKWITHDCD(Pjll1->jl1_LastKey, Index, 1);
+	    pop1   = ju_LeafPop1(Pjp);
 	    offset = j__udySearchLeaf1(Pjll1, pop1, Index, 1 * 8);
-            Pjll = (void *)Pjll1->jl1_Leaf;
 Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offset, ~offset, pop1, Index);
 	    goto SM1LeafLImm;
         }
 
-	case cJU_JPLEAF2:  CHECKDCD(2); SM1LEAFL(j__udySearchLeaf2, 2 * 8);
-	case cJU_JPLEAF3:  CHECKDCD(3); SM1LEAFL(j__udySearchLeaf3, 3 * 8);
-	case cJU_JPLEAF4:  CHECKDCD(4); SM1LEAFL(j__udySearchLeaf4, 4 * 8);
-	case cJU_JPLEAF5:  CHECKDCD(5); SM1LEAFL(j__udySearchLeaf5, 5 * 8);
-	case cJU_JPLEAF6:  CHECKDCD(6); SM1LEAFL(j__udySearchLeaf6, 6 * 8);
-	case cJU_JPLEAF7:  CHECKDCD(7); SM1LEAFL(j__udySearchLeaf7, 7 * 8);
+	case cJU_JPLEAF2:  
+        {
+	    Pjll2  = P_JLL2(ju_PntrInJp(Pjp));
+            CHECKWITHDCD(Pjll2->jl2_LastKey, Index, 2);
+	    pop1   = ju_LeafPop1(Pjp);
+	    offset = j__udySearchLeaf2(Pjll2, pop1, Index, 2 * 8);
+Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offset, ~offset, pop1, Index);
+	    goto SM1LeafLImm;
+        }
+	case cJU_JPLEAF3:  
+        {
+	    Pjll3  = P_JLL3(ju_PntrInJp(Pjp));
+            CHECKWITHDCD(Pjll3->jl3_LastKey, Index, 3);
+	    pop1   = ju_LeafPop1(Pjp);
+	    offset = j__udySearchLeaf3(Pjll3, pop1, Index, 3 * 8);
+Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offset, ~offset, pop1, Index);
+	    goto SM1LeafLImm;
+        }
+	case cJU_JPLEAF4:  
+        {
+	    Pjll4  = P_JLL4(ju_PntrInJp(Pjp));
+            CHECKWITHDCD(Pjll4->jl4_LastKey, Index, 4);
+	    pop1   = ju_LeafPop1(Pjp);
+	    offset = j__udySearchLeaf4(Pjll4, pop1, Index, 4 * 8);
+Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offset, ~offset, pop1, Index);
+	    goto SM1LeafLImm;
+        }
+	case cJU_JPLEAF5:  
+        {
+	    Pjll5  = P_JLL5(ju_PntrInJp(Pjp));
+            CHECKWITHDCD(Pjll5->jl5_LastKey, Index, 5);
+	    pop1   = ju_LeafPop1(Pjp);
+	    offset = j__udySearchLeaf5(Pjll5, pop1, Index, 5 * 8);
+Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offset, ~offset, pop1, Index);
+	    goto SM1LeafLImm;
+        }
+	case cJU_JPLEAF6:  
+        {
+	    Pjll6  = P_JLL6(ju_PntrInJp(Pjp));
+            CHECKWITHDCD(Pjll6->jl6_LastKey, Index, 6);
+	    pop1   = ju_LeafPop1(Pjp);
+	    offset = j__udySearchLeaf6(Pjll6, pop1, Index, 6 * 8);
+Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offset, ~offset, pop1, Index);
+	    goto SM1LeafLImm;
+        }
+	case cJU_JPLEAF7:  
+        {
+	    Pjll7  = P_JLL7(ju_PntrInJp(Pjp));
+            CHECKWITHDCD(Pjll7->jl7_LastKey, Index, 7);
+	    pop1   = ju_LeafPop1(Pjp);
+	    offset = j__udySearchLeaf7(Pjll7, pop1, Index, 7 * 8);
+Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offset, ~offset, pop1, Index);
+	    goto SM1LeafLImm;
+        }
 
 // Common code (state-independent) for all cases of linear leaves and
 // immediates:
@@ -821,13 +895,12 @@ Printf("\ngoto SM1LeafLImm\n");
 		switch (ju_Type(Pjp))
 		{
 		case cJU_JPLEAF1: JU_RET_FOUND_LEAF1(Pjll1, pop1, offset);
-
-		case cJU_JPLEAF2: JU_RET_FOUND_LEAF2(Pjll, pop1, offset);
-		case cJU_JPLEAF3: JU_RET_FOUND_LEAF3(Pjll, pop1, offset);
-		case cJU_JPLEAF4: JU_RET_FOUND_LEAF4(Pjll, pop1, offset);
-		case cJU_JPLEAF5: JU_RET_FOUND_LEAF5(Pjll, pop1, offset);
-		case cJU_JPLEAF6: JU_RET_FOUND_LEAF6(Pjll, pop1, offset);
-		case cJU_JPLEAF7: JU_RET_FOUND_LEAF7(Pjll, pop1, offset);
+		case cJU_JPLEAF2: JU_RET_FOUND_LEAF2(Pjll2, pop1, offset);
+		case cJU_JPLEAF3: JU_RET_FOUND_LEAF3(Pjll3, pop1, offset);
+		case cJU_JPLEAF4: JU_RET_FOUND_LEAF4(Pjll4, pop1, offset);
+		case cJU_JPLEAF5: JU_RET_FOUND_LEAF5(Pjll5, pop1, offset);
+		case cJU_JPLEAF6: JU_RET_FOUND_LEAF6(Pjll6, pop1, offset);
+		case cJU_JPLEAF7: JU_RET_FOUND_LEAF7(Pjll7, pop1, offset);
 
 		case cJU_JPIMMED_1_01:
 		case cJU_JPIMMED_2_01:
@@ -906,63 +979,72 @@ Printf("\ngoto SM1LeafLImm\n");
 
 	    switch (ju_Type(Pjp))
 	    {
+#ifdef  JUDYL
+#ifdef  LEAF1_UCOMP
+            case cJL_JPLEAF1_UCOMP:
+            {
+                printf("\nOOPS - not implemented yet!\n");
+                exit(1);
+            }
+#endif  // LEAF1_UCOMP
+#endif  // JUDYL
+
 	    case cJU_JPLEAF1:
             {
-		JU_SETDIGIT1(Index, Pjll1->jl1_Leaf[offset]);
+//		JU_SETDIGIT1(Index, Pjll1->jl1_Leaf[offset]);
+		Index = (Index & (~JU_LEASTBYTESMASK(1))) | Pjll1->jl1_Leaf[offset];
                 *PIndex = Index;
 		JU_RET_FOUND_LEAF1(Pjll1, pop1, offset);
             }
 
 	    case cJU_JPLEAF2:
             {
-		Index = (Index & (~JU_LEASTBYTESMASK(2)))
-			| ((uint16_t *) Pjll)[offset];
+		Index = (Index & (~JU_LEASTBYTESMASK(2))) | Pjll2->jl2_Leaf[offset];
                 *PIndex = Index;
-		JU_RET_FOUND_LEAF2(Pjll, pop1, offset);
+		JU_RET_FOUND_LEAF2(Pjll2, pop1, offset);
             }
 
 	    case cJU_JPLEAF3:
 	    {
 		Word_t lsb;
-		JU_COPY3_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (3 * offset));
+                JU_COPY3_PINDEX_TO_LONG(lsb, Pjll3->jl3_Leaf + (3 * offset));
 		Index = (Index & (~JU_LEASTBYTESMASK(3))) | lsb;
                 *PIndex = Index;
-		JU_RET_FOUND_LEAF3(Pjll, pop1, offset);
+		JU_RET_FOUND_LEAF3(Pjll3, pop1, offset);
 	    }
 
 	    case cJU_JPLEAF4:
             {
-		Index = (Index & (~JU_LEASTBYTESMASK(4)))
-			| ((uint32_t *) Pjll)[offset];
+		Index = (Index & (~JU_LEASTBYTESMASK(4))) | Pjll4->jl4_Leaf[offset];
                 *PIndex = Index;
-		JU_RET_FOUND_LEAF4(Pjll, pop1, offset);
+		JU_RET_FOUND_LEAF4(Pjll4, pop1, offset);
             }
 
 	    case cJU_JPLEAF5:
 	    {
 		Word_t lsb;
-		JU_COPY5_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (5 * offset));
+                JU_COPY5_PINDEX_TO_LONG(lsb, Pjll5->jl5_Leaf + (5 * offset));
 		Index = (Index & (~JU_LEASTBYTESMASK(5))) | lsb;
                 *PIndex = Index;
-		JU_RET_FOUND_LEAF5(Pjll, pop1, offset);
+		JU_RET_FOUND_LEAF5(Pjll5, pop1, offset);
 	    }
 
 	    case cJU_JPLEAF6:
 	    {
 		Word_t lsb;
-		JU_COPY6_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (6 * offset));
+                JU_COPY6_PINDEX_TO_LONG(lsb, Pjll6->jl6_Leaf + (6 * offset));
 		Index = (Index & (~JU_LEASTBYTESMASK(6))) | lsb;
                 *PIndex = Index;
-		JU_RET_FOUND_LEAF6(Pjll, pop1, offset);
+		JU_RET_FOUND_LEAF6(Pjll6, pop1, offset);
 	    }
 
 	    case cJU_JPLEAF7:
 	    {
 		Word_t lsb;
-		JU_COPY7_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (7 * offset));
+                JU_COPY7_PINDEX_TO_LONG(lsb, Pjll7->jl7_Leaf + (7 * offset));
 		Index = (Index & (~JU_LEASTBYTESMASK(7))) | lsb;
                 *PIndex = Index;
-		JU_RET_FOUND_LEAF7(Pjll, pop1, offset);
+		JU_RET_FOUND_LEAF7(Pjll7, pop1, offset);
 	    }
 
 #define	SET_01(cState)  JU_SETDIGITS(Index, ju_IMM01Key(Pjp), cState)
@@ -1008,7 +1090,8 @@ Printf("\ngoto SM1Imm_01\n");
 	    case cJ1_JPIMMED_1_15:
 #endif
             {
-		JU_SETDIGIT1(Index, (PJI_1)[offset]);
+//		JU_SETDIGIT1(Index, (PJI_1)[offset]);
+                Index = (Index & ~0xff) | PJI_1[offset];
                 *PIndex = Index;
 		JU_RET_FOUND_IMM(Pjp, offset);
             }
@@ -1023,8 +1106,7 @@ Printf("\ngoto SM1Imm_01\n");
 	    case cJ1_JPIMMED_2_07:
 #endif
             {
-		Index = (Index & (~JU_LEASTBYTESMASK(2)))
-			| (PJI_2)[offset];
+		Index = (Index & (~JU_LEASTBYTESMASK(2))) | PJI_2[offset];
 
                 *PIndex = Index;
 		JU_RET_FOUND_IMM(Pjp, offset);
@@ -1039,7 +1121,7 @@ Printf("\ngoto SM1Imm_01\n");
 #endif
 	    {
 		Word_t lsb;
-		JU_COPY3_PINDEX_TO_LONG(lsb, (PJI_3) + (3 * offset));
+		JU_COPY3_PINDEX_TO_LONG(lsb, PJI_3 + (3 * offset));
 		Index = (Index & (~JU_LEASTBYTESMASK(3))) | lsb;
                 *PIndex = Index;
 		JU_RET_FOUND_IMM(Pjp, offset);
@@ -1047,8 +1129,7 @@ Printf("\ngoto SM1Imm_01\n");
 
 	    case cJU_JPIMMED_4_02:
             {
-		Index = (Index & (~JU_LEASTBYTESMASK(4)))
-			| (PJI_4)[offset];
+		Index = (Index & (~JU_LEASTBYTESMASK(4))) | PJI_4[offset];
                 *PIndex = Index;
 		JU_RET_FOUND_IMM(Pjp, offset);
             }
@@ -1056,8 +1137,7 @@ Printf("\ngoto SM1Imm_01\n");
 #ifdef  JUDY1
 	    case cJ1_JPIMMED_4_03:
             {
-		Index = (Index & (~JU_LEASTBYTESMASK(4)))
-			| (PJI_4)[offset];
+		Index = (Index & (~JU_LEASTBYTESMASK(4))) | PJI_4[offset];
                 *PIndex = Index;
 		JU_RET_FOUND_IMM(Pjp, offset);
             }
@@ -1066,7 +1146,7 @@ Printf("\ngoto SM1Imm_01\n");
 	    case cJ1_JPIMMED_5_03:
 	    {
 		Word_t lsb;
-		JU_COPY5_PINDEX_TO_LONG(lsb, (PJI_5) + (5 * offset));
+		JU_COPY5_PINDEX_TO_LONG(lsb, PJI_5 + (5 * offset));
 		Index = (Index & (~JU_LEASTBYTESMASK(5))) | lsb;
                 *PIndex = Index;
 		JU_RET_FOUND_IMM(Pjp, offset);
@@ -1075,7 +1155,7 @@ Printf("\ngoto SM1Imm_01\n");
 	    case cJ1_JPIMMED_6_02:
 	    {
 		Word_t lsb;
-		JU_COPY6_PINDEX_TO_LONG(lsb, (PJI_6) + (6 * offset));
+		JU_COPY6_PINDEX_TO_LONG(lsb, PJI_6 + (6 * offset));
 		Index = (Index & (~JU_LEASTBYTESMASK(6))) | lsb;
                 *PIndex = Index;
 		JU_RET_FOUND_IMM(Pjp, offset);
@@ -1084,7 +1164,7 @@ Printf("\ngoto SM1Imm_01\n");
 	    case cJ1_JPIMMED_7_02:
 	    {
 		Word_t lsb;
-		JU_COPY7_PINDEX_TO_LONG(lsb, (PJI_7) + (7 * offset));
+		JU_COPY7_PINDEX_TO_LONG(lsb, PJI_7 + (7 * offset));
 		Index = (Index & (~JU_LEASTBYTESMASK(7))) | lsb;
                 *PIndex = Index;
 		JU_RET_FOUND_IMM(Pjp, offset);
@@ -1108,10 +1188,9 @@ Printf("\ngoto SM1Imm_01\n");
 
 	case cJU_JPLEAF_B1:
 	{
-	    Pjlb_t Pjlb;
-	    CHECKDCD(1);
+	    Pjlb_t Pjlb	= P_JLB1(ju_PntrInJp(Pjp));
+            CHECKWITHDCD(Pjlb->jlb_LastKey, Index, 1);
 
-	    Pjlb	= P_JLB(ju_PntrInJp(Pjp));
 	    digit       = JU_DIGITATSTATE(Index, 1);
 	    subexp      = JU_SUBEXPL(digit);
 	    bitposmask  = JU_BITPOSMASKL(digit);
@@ -1172,7 +1251,10 @@ Printf("\ngoto SM1Imm_01\n");
 SM1LeafB1Findlimit:
 Printf("\ngoto SM1LeafB1Findlimit\n");
 		JU_BITMAPDIGITL(digit, subexp, JU_JLB_BITMAP(Pjlb, subexp), offset);
-		JU_SETDIGIT1(Index, digit);
+
+//		JU_SETDIGIT1(Index, digit);
+                Index = (Index & ~0xff) | digit;
+
                 *PIndex = Index;
 		JU_RET_FOUND_LEAF_B1(Pjlb, subexp, offset);
 //	== return((PPvoid_t) (P_JV(JL_JLB_PVALUE(Pjlb, subexp)) + (offset)));
@@ -1195,8 +1277,9 @@ Printf("\ngoto SM1LeafB1Findlimit\n");
 
 	case cJ1_JPFULLPOPU1:
         {
-
-	    CHECKDCD(1);
+            assert(0);
+//	    CHECKLEAFDCD(1);
+//            CHECKLEAFDCD(Pjll1->jl1_LastKey, Index, 1);
             *PIndex = Index;
 	    JU_RET_FOUND_FULLPOPU1;
         }
@@ -1226,16 +1309,16 @@ Printf("\ngoto SM1LeafB1Findlimit\n");
         switch (cIMMs)                                              \
         {                                                           \
         case 1:                                                     \
-	    offset = Func((Pjll_t) (PJI_1), cPop1, Index, Exp);   \
+	    offset = j__udySearchImmed1(ju_PImmed1(Pjp), cPop1, Index, Exp);   \
             break;                                                  \
         case 2:                                                     \
-	    offset = Func((Pjll_t) (PJI_2), cPop1, Index, Exp);   \
+	    offset = j__udySearchImmed2(ju_PImmed2(Pjp), cPop1, Index, Exp);   \
             break;                                                  \
         case 3:                                                     \
-	    offset = Func((Pjll_t) (PJI_3), cPop1, Index, Exp);   \
+	    offset = j__udySearchImmed3(ju_PImmed3(Pjp), cPop1, Index, Exp);   \
             break;                                                  \
         case 4:                                                     \
-	    offset = Func((Pjll_t) (PJI_4), cPop1, Index, Exp);   \
+	    offset = j__udySearchImmed4(ju_PImmed4(Pjp), cPop1, Index, Exp);   \
             break;                                                  \
         default:                                                    \
             assert(0);                                              \
@@ -1244,30 +1327,30 @@ Printf("\ngoto SM1LeafB1Findlimit\n");
 #endif  // JUDYL
 
 #ifdef  JUDY1
-#define	SM1IMM(Func,cPop1, cIMMs, Exp)                              \
+#define	SM1IMM(Func,cPop1,cIMMs,Exp)                              \
 	SM1IMM_SETPOP1(cPop1);                                      \
         switch (cIMMs)                                              \
         {                                                           \
         case 1:                                                     \
-	    offset = Func((Pjll_t) (PJI_1), cPop1, Index, Exp);   \
+	    offset = j__udySearchImmed1(ju_PImmed1(Pjp), cPop1, Index, Exp);   \
             break;                                                  \
         case 2:                                                     \
-	    offset = Func((Pjll_t) (PJI_2), cPop1, Index, Exp);   \
+	    offset = j__udySearchImmed2(ju_PImmed2(Pjp), cPop1, Index, Exp);   \
             break;                                                  \
         case 3:                                                     \
-	    offset = Func((Pjll_t) (PJI_3), cPop1, Index, Exp);   \
+	    offset = j__udySearchImmed3(ju_PImmed3(Pjp), cPop1, Index, Exp);   \
             break;                                                  \
         case 4:                                                     \
-	    offset = Func((Pjll_t) (PJI_4), cPop1, Index, Exp);   \
+	    offset = j__udySearchImmed4(ju_PImmed4(Pjp), cPop1, Index, Exp);   \
             break;                                                  \
         case 5:                                                     \
-	    offset = Func((Pjll_t) (PJI_5), cPop1, Index, Exp);   \
+	    offset = j__udySearchImmed5(ju_PImmed5(Pjp), cPop1, Index, Exp);   \
             break;                                                  \
         case 6:                                                     \
-	    offset = Func((Pjll_t) (PJI_6), cPop1, Index, Exp);   \
+	    offset = j__udySearchImmed6(ju_PImmed6(Pjp), cPop1, Index, Exp);   \
             break;                                                  \
         case 7:                                                     \
-	    offset = Func((Pjll_t) (PJI_7), cPop1, Index, Exp);   \
+	    offset = j__udySearchImmed7(ju_PImmed7(Pjp), cPop1, Index, Exp);   \
             break;                                                  \
         default:                                                    \
             assert(0);                                              \
@@ -1330,35 +1413,36 @@ Printf("\ngoto SM1LeafB1Findlimit\n");
 	case cJ1_JPIMMED_1_15:  SM1IMM(j__udySearchImmed1, 15, 1, 1 * 8);
 #endif
 
-	case cJU_JPIMMED_2_02:  SM1IMM(j__udySearchLeaf2,  2, 2, 2 * 8);
-	case cJU_JPIMMED_2_03:  SM1IMM(j__udySearchLeaf2,  3, 2, 2 * 8);
-	case cJU_JPIMMED_2_04:  SM1IMM(j__udySearchLeaf2,  4, 2, 2 * 8);
+	case cJU_JPIMMED_2_02:  SM1IMM(j__udySearchImmed2,  2, 2, 2 * 8);
+	case cJU_JPIMMED_2_03:  SM1IMM(j__udySearchImmed2,  3, 2, 2 * 8);
+	case cJU_JPIMMED_2_04:  SM1IMM(j__udySearchImmed2,  4, 2, 2 * 8);
 
 #ifdef  JUDY1
-	case cJ1_JPIMMED_2_05:  SM1IMM(j__udySearchLeaf2,  5, 2, 2 * 8);
-	case cJ1_JPIMMED_2_06:  SM1IMM(j__udySearchLeaf2,  6, 2, 2 * 8);
-	case cJ1_JPIMMED_2_07:  SM1IMM(j__udySearchLeaf2,  7, 2, 2 * 8);
+	case cJ1_JPIMMED_2_05:  SM1IMM(j__udySearchImmed2,  5, 2, 2 * 8);
+	case cJ1_JPIMMED_2_06:  SM1IMM(j__udySearchImmed2,  6, 2, 2 * 8);
+	case cJ1_JPIMMED_2_07:  SM1IMM(j__udySearchImmed2,  7, 2, 2 * 8);
 #endif
 
-	case cJU_JPIMMED_3_02:  SM1IMM(j__udySearchLeaf3,  2, 3, 3 * 8);
+	case cJU_JPIMMED_3_02:  
+                                SM1IMM(j__udySearchImmed3,  2, 3, 3 * 8);
 
 #ifdef  JUDY1
-	case cJ1_JPIMMED_3_03:  SM1IMM(j__udySearchLeaf3,  3, 3, 3 * 8);
-	case cJ1_JPIMMED_3_04:  SM1IMM(j__udySearchLeaf3,  4, 3, 3 * 8);
-	case cJ1_JPIMMED_3_05:  SM1IMM(j__udySearchLeaf3,  5, 3, 3 * 8);
+	case cJ1_JPIMMED_3_03:  SM1IMM(j__udySearchImmed3,  3, 3, 3 * 8);
+	case cJ1_JPIMMED_3_04:  SM1IMM(j__udySearchImmed3,  4, 3, 3 * 8);
+	case cJ1_JPIMMED_3_05:  SM1IMM(j__udySearchImmed3,  5, 3, 3 * 8);
 #endif  // JUDY1
 
-	case cJU_JPIMMED_4_02:  SM1IMM(j__udySearchLeaf4,  2, 4, 4 * 8);
+	case cJU_JPIMMED_4_02:  SM1IMM(j__udySearchImmed4,  2, 4, 4 * 8);
 
 #ifdef  JUDY1
-	case cJ1_JPIMMED_4_03:  SM1IMM(j__udySearchLeaf4,  3, 4, 4 * 8);
+	case cJ1_JPIMMED_4_03:  SM1IMM(j__udySearchImmed4,  3, 4, 4 * 8);
 
-	case cJ1_JPIMMED_5_02:  SM1IMM(j__udySearchLeaf5,  2, 5, 5 * 8);
-	case cJ1_JPIMMED_5_03:  SM1IMM(j__udySearchLeaf5,  3, 5, 5 * 8);
+	case cJ1_JPIMMED_5_02:  SM1IMM(j__udySearchImmed5,  2, 5, 5 * 8);
+	case cJ1_JPIMMED_5_03:  SM1IMM(j__udySearchImmed5,  3, 5, 5 * 8);
 
-	case cJ1_JPIMMED_6_02:  SM1IMM(j__udySearchLeaf6,  2, 6, 6 * 8);
+	case cJ1_JPIMMED_6_02:  SM1IMM(j__udySearchImmed6,  2, 6, 6 * 8);
 
-	case cJ1_JPIMMED_7_02:  SM1IMM(j__udySearchLeaf7,  2, 7, 7 * 8);
+	case cJ1_JPIMMED_7_02:  SM1IMM(j__udySearchImmed7,  2, 7, 7 * 8);
 #endif  // JUDY1
 
 
@@ -1367,6 +1451,7 @@ Printf("\ngoto SM1LeafB1Findlimit\n");
 
 	default: 
         {
+printf("\ndefault: Pjp->jp_Type = %d\n", ju_Type(Pjp));
             JU_SET_ERRNO(PJError, JU_ERRNO_CORRUPT);
             assert(0);
 	    JUDY1CODE(return(JERRI ););
@@ -1415,7 +1500,7 @@ Printf("\ngoto SM2Backtrack\n");
 	case cJU_JPBRANCH_L5: state = 5;	     goto SM2BranchL;
 	case cJU_JPBRANCH_L6: state = 6;	     goto SM2BranchL;
 	case cJU_JPBRANCH_L7: state = 7;	     goto SM2BranchL;
-	case cJU_JPBRANCH_L:  state = cJU_ROOTSTATE; goto SM2BranchL;
+	case cJU_JPBRANCH_L8: state = 8;             goto SM2BranchL;
 
 SM2BranchL:
 Printf("\ngoto SM2Branch_L%ld, offset = %d\n", state, offset);
@@ -1448,7 +1533,7 @@ Printf("\nBRANCH_L%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d\n",
 	case cJU_JPBRANCH_B5: state = 5;	     goto SM2BranchB;
 	case cJU_JPBRANCH_B6: state = 6;	     goto SM2BranchB;
 	case cJU_JPBRANCH_B7: state = 7;	     goto SM2BranchB;
-	case cJU_JPBRANCH_B:  state = cJU_ROOTSTATE; goto SM2BranchB;
+	case cJU_JPBRANCH_B8:  state = 8; goto SM2BranchB;
 
 SM2BranchB:
 Printf("\ngoto SM2BranchB\n");
@@ -1526,7 +1611,7 @@ Printf("\nBRANCH_B%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d\n",
 	case cJU_JPBRANCH_U5: state = 5;	     goto SM2BranchU;
 	case cJU_JPBRANCH_U6: state = 6;	     goto SM2BranchU;
 	case cJU_JPBRANCH_U7: state = 7;	     goto SM2BranchU;
-	case cJU_JPBRANCH_U:  state = cJU_ROOTSTATE; goto SM2BranchU;
+	case cJU_JPBRANCH_U8: state = 8;             goto SM2BranchU;
 
 SM2BranchU:
 Printf("\ngoto SM2BranchU\n");
@@ -1610,7 +1695,7 @@ Printf("\ngoto SM3Findlimit, jp_type = %d, Addr0 = 0x%016lx, Addr1 = 0x%016lx, I
 	case cJU_JPBRANCH_L5:  SM3PREPB_DCD(5, SM3BranchL);
 	case cJU_JPBRANCH_L6:  SM3PREPB_DCD(6, SM3BranchL);
 	case cJU_JPBRANCH_L7:  SM3PREPB_DCD(7, SM3BranchL);
-	case cJU_JPBRANCH_L:   SM3PREPB(cJU_ROOTSTATE, SM3BranchL);
+	case cJU_JPBRANCH_L8:  SM3PREPB(    8, SM3BranchL);
 
 SM3BranchL:
 Printf("\ngoto SM3BranchL, jp_Type = %d, state - %lu\n", ju_Type(Pjp), state);
@@ -1630,9 +1715,9 @@ Printf("\ngoto SM3BranchL, jp_Type = %d, state - %lu\n", ju_Type(Pjp), state);
 		JUDYLCODE(return(PPJERR););
 	    }
 
-Printf("\nBRANCH_L%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, __LINE__);
+Printf("\nBRANCH_L%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, (int)__LINE__);
 	    JU_SETDIGIT(Index, Pjbl->jbl_Expanse[offset], state);
-Printf("\nBRANCH_L%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, __LINE__);
+Printf("\nBRANCH_L%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, (int)__LINE__);
 
 	    Pjp = Pjbl->jbl_jp + offset;
 	    goto SM3Findlimit;
@@ -1650,7 +1735,7 @@ Printf("\nBRANCH_L%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 	case cJU_JPBRANCH_B5:  SM3PREPB_DCD(5, SM3BranchB);
 	case cJU_JPBRANCH_B6:  SM3PREPB_DCD(6, SM3BranchB);
 	case cJU_JPBRANCH_B7:  SM3PREPB_DCD(7, SM3BranchB);
-	case cJU_JPBRANCH_B:   SM3PREPB(cJU_ROOTSTATE, SM3BranchB);
+	case cJU_JPBRANCH_B8:  SM3PREPB(    8, SM3BranchB);
 
 SM3BranchB:
 Printf("\ngoto SM3BranchB\n");
@@ -1691,9 +1776,9 @@ Printf("\ngoto SM3BranchB\n");
 
 	    JU_BITMAPDIGITB(digit, subexp, JU_JBB_BITMAP(Pjbb, subexp), offset);
 
-Printf("\nBRANCH_B%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, __LINE__);
+Printf("\nBRANCH_B%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, (int)__LINE__);
 	    JU_SETDIGIT(Index, digit, state);
-Printf("\nBRANCH_B%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, __LINE__);
+Printf("\nBRANCH_B%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, (int)__LINE__);
 
 	    if ((Pjp = P_JP(JU_JBB_PJP(Pjbb, subexp))) == (Pjp_t) NULL)
 	    {
@@ -1720,7 +1805,7 @@ Printf("\nBRANCH_B%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 	case cJU_JPBRANCH_U5:  SM3PREPB_DCD(5, SM3BranchU);
 	case cJU_JPBRANCH_U6:  SM3PREPB_DCD(6, SM3BranchU);
 	case cJU_JPBRANCH_U7:  SM3PREPB_DCD(7, SM3BranchU);
-	case cJU_JPBRANCH_U:   SM3PREPB(    cJU_ROOTSTATE, SM3BranchU);
+	case cJU_JPBRANCH_U8:  SM3PREPB    (8, SM3BranchU);
 
 SM3BranchU:
 Printf("\ngoto SM3BranchU\n");
@@ -1735,9 +1820,9 @@ Printf("\ngoto SM3BranchU\n");
 		if (JPNULL(ju_Type(Pjp))) 
                     continue;
 
-Printf("\nBRANCH_U%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, __LINE__);
+Printf("\nBRANCH_U%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, (int)__LINE__);
 		JU_SETDIGIT(Index, digit, state);
-Printf("\nBRANCH_U%ld  Index = 0x%016lx from After  JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, __LINE__);
+Printf("\nBRANCH_U%ld  Index = 0x%016lx from After  JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, (int)__LINE__);
 
 		goto SM3Findlimit;
 	    }
@@ -1748,9 +1833,9 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from After  JU_SETDIGIT, offset = %d, LI
 		if (JPNULL(ju_Type(Pjp))) 
                     continue;
 
-Printf("\nBRANCH_U%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, __LINE__);
+Printf("\nBRANCH_U%ld  Index = 0x%016lx from before JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, (int)__LINE__);
 		JU_SETDIGIT(Index, digit, state);
-Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, __LINE__);
+Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LINE=%d\n", state, Index, offset, (int)__LINE__);
 		goto SM3Findlimit;
 	    }
 #endif
@@ -1777,89 +1862,124 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 #ifdef JUDY1
 #define	SM3LEAFL_SETPOP1		// not needed in any cases.
 #else
-#define	SM3LEAFL_SETPOP1  pop1 = ju_LeafPop0(Pjp) + 1
+#define	SM3LEAFL_SETPOP1  pop1 = ju_LeafPop1(Pjp)
 #endif
 
 #ifdef JUDYPREV
 #define	SM3LEAFLNODCD			\
 	Pjll = P_JLL(ju_PntrInJp(Pjp));	\
 	SM3LEAFL_SETPOP1;		\
-	offset = ju_LeafPop0(Pjp); assert(offset >= 0)
+	offset = (ju_LeafPop1(Pjp) - 1); assert(offset >= 0)
 #else
 #define	SM3LEAFLNODCD			\
 	Pjll = P_JLL(ju_PntrInJp(Pjp));	\
 	SM3LEAFL_SETPOP1;		\
-	offset = 0; assert(ju_LeafPop0(Pjp) >= 0);
+	offset = 0; assert(ju_LeafPop1(Pjp) > 0);
 #endif
+
 
 	case cJU_JPLEAF1:
         {
-	    JU_SETDCD(Index, Pjp, 1);
-	    SM3LEAFLNODCD;
-            Pjll1_t Pjll1 = P_JLL1(ju_PntrInJp(Pjp));
-            JU_SETDIGIT1(Index, Pjll1->jl1_Leaf[offset]);
-            *PIndex = Index;
-	    JU_RET_FOUND_LEAF1(Pjll1, pop1, offset);
+            int pop0 = ju_LeafPop1(Pjp) - 1;
+            Pjll1 = P_JLL1(ju_PntrInJp(Pjp));
+#ifdef JUDYPREV
+	    *PIndex = (Pjll1->jl1_LastKey & cJU_DCDMASK(1)) | Pjll1->jl1_Leaf[pop0];
+	    JU_RET_FOUND_LEAF1(Pjll1, pop0 + 1, pop0);
+#else   // JUDYNEXT
+	    *PIndex = (Pjll1->jl1_LastKey & cJU_DCDMASK(1)) | Pjll1->jl1_Leaf[0];
+	    JU_RET_FOUND_LEAF1(Pjll1, pop0 + 1, 0);
+#endif  // JUDYNEXT
         }
 
 	case cJU_JPLEAF2:
         {
-	    SM3LEAFLDCD(2);
-	    Index = (Index & (~JU_LEASTBYTESMASK(2)))
-		    | ((uint16_t *) Pjll)[offset];
-            *PIndex = Index;
-	    JU_RET_FOUND_LEAF2(Pjll, pop1, offset);
+            int pop0 = ju_LeafPop1(Pjp) - 1;
+            Pjll2 = P_JLL2(ju_PntrInJp(Pjp));
+#ifdef JUDYPREV
+	    *PIndex = (Pjll2->jl2_LastKey & cJU_DCDMASK(2)) | Pjll2->jl2_Leaf[pop0];
+	    JU_RET_FOUND_LEAF2(Pjll2, pop0 + 1, pop0);
+#else   // JUDYNEXT
+	    *PIndex = (Pjll2->jl2_LastKey & cJU_DCDMASK(2)) | Pjll2->jl2_Leaf[0];
+	    JU_RET_FOUND_LEAF2(Pjll2, pop0 + 1, 0);
+#endif  // JUDYNEXT
         }
 
 	case cJU_JPLEAF3:
 	{
 	    Word_t lsb;
-	    SM3LEAFLDCD(3);
-	    JU_COPY3_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (3 * offset));
-	    Index = (Index & (~JU_LEASTBYTESMASK(3))) | lsb;
-            *PIndex = Index;
-	    JU_RET_FOUND_LEAF3(Pjll, pop1, offset);
+            int pop0 = ju_LeafPop1(Pjp) - 1;
+            Pjll3 = P_JLL3(ju_PntrInJp(Pjp));
+#ifdef JUDYPREV
+	    JU_COPY3_PINDEX_TO_LONG(lsb, Pjll3->jl3_Leaf + (3 * pop0));
+	    *PIndex = (Pjll3->jl3_LastKey & cJU_DCDMASK(3)) | lsb;
+	    JU_RET_FOUND_LEAF3(Pjll3, pop0 + 1, pop0);
+#else   // JUDYNEXT
+	    JU_COPY3_PINDEX_TO_LONG(lsb, Pjll3->jl3_Leaf + 0);
+	    *PIndex = (Pjll3->jl3_LastKey & cJU_DCDMASK(3)) | lsb;
+	    JU_RET_FOUND_LEAF3(Pjll3, pop0 + 1, 0);
+#endif  // JUDYNEXT
 	}
 
 	case cJU_JPLEAF4:
         {
-
-	    SM3LEAFLDCD(4);
-	    Index = (Index & (~JU_LEASTBYTESMASK(4)))
-		    | ((uint32_t *) Pjll)[offset];
-            *PIndex = Index;
-	    JU_RET_FOUND_LEAF4(Pjll, pop1, offset);
+            int pop0 = ju_LeafPop1(Pjp) - 1;
+            Pjll4 = P_JLL4(ju_PntrInJp(Pjp));
+#ifdef JUDYPREV
+	    *PIndex = (Pjll4->jl4_LastKey & cJU_DCDMASK(4)) | Pjll4->jl4_Leaf[pop0];
+	    JU_RET_FOUND_LEAF4(Pjll4, pop0 + 1, pop0);
+#else   // JUDYNEXT
+	    *PIndex = (Pjll4->jl4_LastKey & cJU_DCDMASK(4)) | Pjll4->jl4_Leaf[0];
+	    JU_RET_FOUND_LEAF4(Pjll4, pop0 + 1, 0);
+#endif  // JUDYNEXT
         }
 
 	case cJU_JPLEAF5:
 	{
 	    Word_t lsb;
-	    SM3LEAFLDCD(5);
-	    JU_COPY5_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (5 * offset));
-	    Index = (Index & (~JU_LEASTBYTESMASK(5))) | lsb;
-            *PIndex = Index;
-	    JU_RET_FOUND_LEAF5(Pjll, pop1, offset);
+            int pop0 = ju_LeafPop1(Pjp) - 1;
+            Pjll5 = P_JLL5(ju_PntrInJp(Pjp));
+#ifdef JUDYPREV
+	    JU_COPY5_PINDEX_TO_LONG(lsb, Pjll5->jl5_Leaf + (5 * pop0));
+	    *PIndex = (Pjll5->jl5_LastKey & cJU_DCDMASK(5)) | lsb;
+	    JU_RET_FOUND_LEAF5(Pjll5, pop0 + 1, pop0);
+#else   // JUDYNEXT
+	    JU_COPY5_PINDEX_TO_LONG(lsb, Pjll5->jl5_Leaf + 0);
+	    *PIndex = (Pjll5->jl5_LastKey & cJU_DCDMASK(5)) | lsb;
+	    JU_RET_FOUND_LEAF5(Pjll5, pop0 + 1, 0);
+#endif  // JUDYNEXT
 	}
 
 	case cJU_JPLEAF6:
 	{
 	    Word_t lsb;
-	    SM3LEAFLDCD(6);
-	    JU_COPY6_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (6 * offset));
-	    Index = (Index & (~JU_LEASTBYTESMASK(6))) | lsb;
-            *PIndex = Index;
-	    JU_RET_FOUND_LEAF6(Pjll, pop1, offset);
+            int pop0 = ju_LeafPop1(Pjp) - 1;
+            Pjll6 = P_JLL6(ju_PntrInJp(Pjp));
+#ifdef JUDYPREV
+	    JU_COPY6_PINDEX_TO_LONG(lsb, Pjll6->jl6_Leaf + (6 * pop0));
+	    *PIndex = (Pjll6->jl6_LastKey & cJU_DCDMASK(6)) | lsb;
+	    JU_RET_FOUND_LEAF6(Pjll6, pop0 + 1, pop0);
+#else   // JUDYNEXT
+	    JU_COPY6_PINDEX_TO_LONG(lsb, Pjll6->jl6_Leaf + 0);
+	    *PIndex = (Pjll6->jl6_LastKey & cJU_DCDMASK(6)) | lsb;
+	    JU_RET_FOUND_LEAF6(Pjll6, pop0 + 1, 0);
+#endif  // JUDYNEXT
 	}
 
 	case cJU_JPLEAF7:
 	{
 	    Word_t lsb;
-//	    SM3LEAFLNODCD;
-	    SM3LEAFLDCD(7);
-	    JU_COPY7_PINDEX_TO_LONG(lsb, ((uint8_t *) Pjll) + (7 * offset));
-	    Index = (Index & (~JU_LEASTBYTESMASK(7))) | lsb;
-            *PIndex = Index;
-	    JU_RET_FOUND_LEAF7(Pjll, pop1, offset);
+//	    SM3LEAFLDCD(7);
+            int pop0 = ju_LeafPop1(Pjp) - 1;
+            Pjll7 = P_JLL7(ju_PntrInJp(Pjp));
+#ifdef JUDYPREV
+	    JU_COPY7_PINDEX_TO_LONG(lsb, Pjll7->jl7_Leaf + (7 * pop0));
+	    *PIndex = (Pjll7->jl7_LastKey & cJU_DCDMASK(7)) | lsb;
+	    JU_RET_FOUND_LEAF7(Pjll7, pop0 + 1, pop0);
+#else   // JUDYNEXT
+	    JU_COPY7_PINDEX_TO_LONG(lsb, Pjll7->jl7_Leaf + 0);
+	    *PIndex = (Pjll7->jl7_LastKey & cJU_DCDMASK(7)) | lsb;
+	    JU_RET_FOUND_LEAF7(Pjll7, pop0 + 1, 0);
+#endif  // JUDYNEXT
 	}
 
 // ----------------------------------------------------------------------------
@@ -1875,7 +1995,8 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 
 	    JU_SETDCD(Index, Pjp, 1);
 
-	    Pjlb   = P_JLB(ju_PntrInJp(Pjp));
+	    Pjlb   = P_JLB1(ju_PntrInJp(Pjp));
+            Index = Pjlb->jlb_LastKey;
 #ifdef JUDYPREV
 	    subexp = cJU_NUMSUBEXPL;
 
@@ -1912,8 +2033,7 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 #endif  // JUDYNEXT
 
 	    JU_BITMAPDIGITL(digit, subexp, JU_JLB_BITMAP(Pjlb, subexp), offset);
-	    JU_SETDIGIT1(Index, digit);
-            *PIndex = Index;
+            *PIndex = (Index & ~0xff) | digit;
 	    JU_RET_FOUND_LEAF_B1(Pjlb, subexp, offset);
 //	== return((PPvoid_t) (P_JV(JL_JLB_PVALUE(Pjlb, subexp)) + (offset)));
 
@@ -1930,9 +2050,11 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 
 	    JU_SETDCD(   Index, Pjp, 1);
 #ifdef JUDYPREV
-	    JU_SETDIGIT1(Index, cJU_BITSPERBITMAP - 1);
+//	    JU_SETDIGIT1(Index, cJU_BITSPERBITMAP - 1);
+            Index = (Index & ~0xff) | (cJU_BITSPERBITMAP - 1);
 #else
-	    JU_SETDIGIT1(Index, 0);
+//	    JU_SETDIGIT1(Index, 0);
+            Index = Index & ~0xff | 0;
 #endif
             *PIndex = Index;
 	    JU_RET_FOUND_FULLPOPU1;
@@ -1992,7 +2114,9 @@ Printf("\ngoto SM3ReturnImmed01\n");
 SM3Imm1:    
 Printf("\ngoto SM3Imm1\n");
 
-        JU_SETDIGIT1(Index, (PJI_1)[offset]);
+//        JU_SETDIGIT1(Index, (PJI_1)[offset]);
+        Index = Index & ~0xff | PJI_1[offset];
+
         *PIndex = Index;
 	JU_RET_FOUND_IMM(Pjp, offset);
 
@@ -2009,7 +2133,7 @@ Printf("\ngoto SM3Imm1\n");
 SM3Imm2:
 Printf("\ngoto SM3Imm2\n");
 
-        Index = (Index & (~JU_LEASTBYTESMASK(2))) | (PJI_2)[offset];
+        Index = (Index & (~JU_LEASTBYTESMASK(2))) | PJI_2[offset];
         *PIndex = Index;
 	JU_RET_FOUND_IMM(Pjp, offset);
 
@@ -2025,7 +2149,7 @@ SM3Imm3:
 Printf("\ngoto SM3Imm3\n");
 	{
 	    Word_t lsb;
-	    JU_COPY3_PINDEX_TO_LONG(lsb, (PJI_3) + (3 * offset));
+	    JU_COPY3_PINDEX_TO_LONG(lsb, PJI_3 + (3 * offset));
 	    Index = (Index & (~JU_LEASTBYTESMASK(3))) | lsb;
             *PIndex = Index;
 	    JU_RET_FOUND_IMM(Pjp, offset);
@@ -2040,7 +2164,7 @@ Printf("\ngoto SM3Imm3\n");
 SM3Imm4:
 Printf("\ngoto SM3Imm5\n");
 
-        Index = (Index & (~JU_LEASTBYTESMASK(4))) | (PJI_4)[offset];
+        Index = (Index & (~JU_LEASTBYTESMASK(4))) | PJI_4[offset];
         *PIndex = Index;
 	JU_RET_FOUND_IMM(Pjp, offset);
 
@@ -2052,7 +2176,7 @@ SM3Imm5:
 Printf("\ngoto SM3Imm5\n");
 	{
 	    Word_t lsb;
-	    JU_COPY5_PINDEX_TO_LONG(lsb, (PJI_5) + (5 * offset));
+	    JU_COPY5_PINDEX_TO_LONG(lsb, PJI_5 + (5 * offset));
 	    Index = (Index & (~JU_LEASTBYTESMASK(5))) | lsb;
             *PIndex = Index;
 	    JU_RET_FOUND_IMM(Pjp, offset);
@@ -2064,7 +2188,7 @@ SM3Imm6:
 Printf("\ngoto SM3Imm6\n");
 	{
 	    Word_t lsb;
-	    JU_COPY6_PINDEX_TO_LONG(lsb, (PJI_6) + (6 * offset));
+	    JU_COPY6_PINDEX_TO_LONG(lsb, PJI_6 + (6 * offset));
 	    Index = (Index & (~JU_LEASTBYTESMASK(6))) | lsb;
             *PIndex = Index;
 	    JU_RET_FOUND_IMM(Pjp, offset);
@@ -2076,7 +2200,7 @@ SM3Imm7:
 Printf("\ngoto SM3Imm7\n");
 	{
 	    Word_t lsb;
-	    JU_COPY7_PINDEX_TO_LONG(lsb, (PJI_7) + (7 * offset));
+	    JU_COPY7_PINDEX_TO_LONG(lsb, PJI_7 + (7 * offset));
 	    Index = (Index & (~JU_LEASTBYTESMASK(7))) | lsb;
             *PIndex = Index;
 	    JU_RET_FOUND_IMM(Pjp, offset);

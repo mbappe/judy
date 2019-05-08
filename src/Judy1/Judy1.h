@@ -43,9 +43,9 @@
 //
 // - BranchL, LeafL refer to linear branches and leaves (small populations),
 //   except LeafL does not actually appear as such; rather, Leaf1..3 [Leaf1..7]
-//   is used to represent leaf Index sizes, and LeafW refers to a Leaf with
+//   is used to represent leaf Index sizes, and Leaf8 refers to a Leaf with
 //   full (long) word Indexes, which is also a type of linear leaf.  Note that
-//   root-level LeafW (Leaf4 [Leaf8]) leaves are also called LEAFW.
+//   root-level Leaf8 (Leaf4 [Leaf8]) leaves are also called LEAF8.
 //
 // - BranchB, LeafB1 refer to bitmap branches and leaves (intermediate
 //   populations).
@@ -105,8 +105,20 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 //
 // Note:  There are no state-1 branches; only leaves reside at state 1.
 
-// Linear branches:
+// Uncompressed branches:
 //
+// Note:  These Types must be in sequential order for doing relative
+// calculations between them.
+
+        cJ1_JPBRANCH_U2,        // 2 bytes Pop0, 6 bytes Dcd (Prefix).
+        cJ1_JPBRANCH_U3,        // 3 bytes Pop0, 5 bytes Dcd (Prefix).
+        cJ1_JPBRANCH_U4,        // 4 bytes Pop0, 4 bytes Dcd (Prefix).
+        cJ1_JPBRANCH_U5,        // 5 bytes Pop0, 3 bytes Dcd (Prefix).
+        cJ1_JPBRANCH_U6,        // 6 bytes Pop0, 2 byte  Dcd (Prefix).
+        cJ1_JPBRANCH_U7,        // 7 bytes Pop0, 1 bytes Dcd (Prefix).
+        cJ1_JPBRANCH_U8,        // 8 bytes Pop0, 0 bytes Dcd (Prefix).
+
+// Linear branches:
 // Note:  These Types must be in sequential order for doing relative
 // calculations between them.
 
@@ -116,7 +128,7 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
         cJ1_JPBRANCH_L5,        // 5 bytes Pop0, 3 bytes Dcd (Prefix).
         cJ1_JPBRANCH_L6,        // 6 bytes Pop0, 2 byte  Dcd (Prefix).
         cJ1_JPBRANCH_L7,        // 7 bytes Pop0, 1 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_L,         // note:  DcdPopO field not used.
+        cJ1_JPBRANCH_L8,        // 8 bytes Pop0, 0 bytes Dcd (Prefix).
 
 // Bitmap branches:
 //
@@ -129,56 +141,7 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
         cJ1_JPBRANCH_B5,        // 5 bytes Pop0, 3 bytes Dcd (Prefix).
         cJ1_JPBRANCH_B6,        // 6 bytes Pop0, 2 byte  Dcd (Prefix).
         cJ1_JPBRANCH_B7,        // 7 bytes Pop0, 1 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_B,         // note:  DcdPopO field not used.
-
-// Uncompressed branches:
-//
-// Note:  These Types must be in sequential order for doing relative
-// calculations between them.
-
-        cJ1_JPBRANCH_U2,        // 2 bytes Pop0, 6 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_U3,        // 3 bytes Pop0, 5 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_U4,        // 4 bytes Pop0, 4 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_U5,        // 5 bytes Pop0, 3 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_U6,        // 6 bytes Pop0, 2 byte  Dcd (Prefix).
-        cJ1_JPBRANCH_U7,        // 7 bytes Pop0, 1 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_U,         // note:  DcdPopO field not used.
-
-#ifdef later
-        cJ1_JPBRANCH_L2_p,      // 2 bytes Pop0, 6 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_L3_p,      // 3 bytes Pop0, 5 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_L4_p,      // 4 bytes Pop0, 4 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_L5_p,      // 5 bytes Pop0, 3 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_L6_p,      // 6 bytes Pop0, 2 byte  Dcd (Prefix).
-        cJ1_JPBRANCH_L7_p,      // 7 bytes Pop0, 1 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_L_p,       // note:  DcdPopO field not used.
-
-// Bitmap branches:
-//
-// Note:  These Types must be in sequential order for doing relative
-// calculations between them.
-
-        cJ1_JPBRANCH_B2_p,      // 2 bytes Pop0, 6 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_B3_p,      // 3 bytes Pop0, 5 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_B4_p,      // 4 bytes Pop0, 4 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_B5_p,      // 5 bytes Pop0, 3 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_B6_p,      // 6 bytes Pop0, 2 byte  Dcd (Prefix).
-        cJ1_JPBRANCH_B7_p,      // 7 bytes Pop0, 1 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_B_p,       // note:  DcdPopO field not used.
-
-// Uncompressed branches:
-//
-// Note:  These Types must be in sequential order for doing relative
-// calculations between them.
-
-        cJ1_JPBRANCH_U2_p,      // 2 bytes Pop0, 6 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_U3_p,      // 3 bytes Pop0, 5 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_U4_p,      // 4 bytes Pop0, 4 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_U5_p,      // 5 bytes Pop0, 3 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_U6_p,      // 6 bytes Pop0, 2 byte  Dcd (Prefix).
-        cJ1_JPBRANCH_U7_p,      // 7 bytes Pop0, 1 bytes Dcd (Prefix).
-        cJ1_JPBRANCH_U_p,       // note:  DcdPopO field not used.
-#endif  // later
+        cJ1_JPBRANCH_B8,        // 8 bytes Pop0, 0 bytes Dcd (Prefix).
 
 // JP LEAF TYPES:
 
@@ -187,25 +150,15 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // Note:  These Types must be in sequential order for doing relative
 // calculations between them.
 //
-        cJ1_JPLEAF1,            // 1 byte  Pop0, 7  bytes Dcd (Prefix).
-        cJ1_JPLEAF2,            // 2 bytes Pop0, 6  bytes Dcd (Prefix).
-        cJ1_JPLEAF3,            // 3 bytes Pop0, 5  bytes Dcd (Prefix).
-        cJ1_JPLEAF4,            // 4 bytes Pop0, 4  bytes Dcd (Prefix).
-        cJ1_JPLEAF5,            // 5 bytes Pop0, 3  bytes Dcd (Prefix).
-        cJ1_JPLEAF6,            // 6 bytes Pop0, 2  byte  Dcd (Prefix).
-        cJ1_JPLEAF7,            // 7 bytes Pop0, 1  bytes Dcd (Prefix).
-        cJ1_JPLEAFW,            // 8 bytes Pop0, 0  bytes Dcd (Prefix).
-
-#ifdef later
-        cJ1_JPLEAF1_p,          // 1 byte  Pop0, 7  bytes Dcd (Prefix).
-        cJ1_JPLEAF2_p,          // 2 bytes Pop0, 6  bytes Dcd (Prefix).
-        cJ1_JPLEAF3_p,          // 3 bytes Pop0, 5  bytes Dcd (Prefix).
-        cJ1_JPLEAF4_p,          // 4 bytes Pop0, 4  bytes Dcd (Prefix).
-        cJ1_JPLEAF5_p,          // 5 bytes Pop0, 3  bytes Dcd (Prefix).
-        cJ1_JPLEAF6_p,          // 6 bytes Pop0, 2  byte  Dcd (Prefix).
-        cJ1_JPLEAF7_p,          // 7 bytes Pop0, 1  bytes Dcd (Prefix).
-        cJ1_JPLEAFW_p,          // 8 bytes Pop0, 0  bytes Dcd (Prefix).
-#endif  // later
+#define cJ1_JPMAXBRANCH (cJ1_JPLEAF1 - 1) // Max Branch jp_type
+        cJ1_JPLEAF1,            // 1 byte Pop0
+        cJ1_JPLEAF2,            // 1 byte Pop0
+        cJ1_JPLEAF3,            // 1 byte Pop0
+        cJ1_JPLEAF4,            // 1 byte Pop0
+        cJ1_JPLEAF5,            // 1 byte Pop0
+        cJ1_JPLEAF6,            // 1 byte Pop0
+        cJ1_JPLEAF7,            // 1 byte Pop0
+        cJ1_JPLEAF8,            // 1 byte Pop0
 
 // Bitmap leaf; Index Size == 1:
 //
@@ -214,9 +167,6 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // efficient..
 
         cJ1_JPLEAF_B1,          // 1[1] byte Pop0, 2[6] bytes Dcd.
-#ifdef later
-        cJ1_JPLEAF_B1_p,        // 1[1] byte Pop0, 2[6] bytes Dcd.
-#endif  // later
 
 // Full population; Index Size == 1 virtual leaf:
 //
@@ -224,10 +174,6 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // could be used, but they would be rare and the savings are dubious.
 
         cJ1_JPFULLPOPU1,        // 1[1] byte Pop0, 2[6] bytes Dcd.
-#ifdef later
-        cJ1_JPFULLPOPU1_p,      // 1[1] byte Pop0, 2[6] bytes Dcd.
-#endif  // later
-
 
 // All have population in DcdPop0 -- for now!!!!!!!!!!!!!!!!
 #define cJ1_JLEAFMAX (cJ1_JPIMMED_1_01 - 1)     // max Leaf jp_type
@@ -244,7 +190,7 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // other JP Types where there is a Pop0 value in the JP), the maximum Pop1 for
 // each Index Size is computable.
 
-        cJ1_JPIMMED_1_01,       // Index Size = 1, Pop1 = 1. 39
+        cJ1_JPIMMED_1_01,       // Index Size = 1, Pop1 = 1.
         cJ1_JPIMMED_2_01,       // Index Size = 2, Pop1 = 1.
         cJ1_JPIMMED_3_01,       // Index Size = 3, Pop1 = 1.
         cJ1_JPIMMED_4_01,       // Index Size = 4, Pop1 = 1.
@@ -252,7 +198,7 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
         cJ1_JPIMMED_6_01,       // Index Size = 6, Pop1 = 1.
         cJ1_JPIMMED_7_01,       // Index Size = 7, Pop1 = 1.
 
-        cJ1_JPIMMED_1_02,       // Index Size = 1, Pop1 = 2. 46
+        cJ1_JPIMMED_1_02,       // Index Size = 1, Pop1 = 2.
         cJ1_JPIMMED_1_03,       // Index Size = 1, Pop1 = 3.
         cJ1_JPIMMED_1_04,       // Index Size = 1, Pop1 = 4.
         cJ1_JPIMMED_1_05,       // Index Size = 1, Pop1 = 5.
@@ -261,11 +207,11 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
         cJ1_JPIMMED_1_08,       // Index Size = 1, Pop1 = 8.
         cJ1_JPIMMED_1_09,       // Index Size = 1, Pop1 = 9.
         cJ1_JPIMMED_1_10,       // Index Size = 1, Pop1 = 10.
-        cJ1_JPIMMED_1_11,       // Index Size = 1, Pop1 = 11. 55
+        cJ1_JPIMMED_1_11,       // Index Size = 1, Pop1 = 11.
         cJ1_JPIMMED_1_12,       // Index Size = 1, Pop1 = 12.
         cJ1_JPIMMED_1_13,       // Index Size = 1, Pop1 = 13.
         cJ1_JPIMMED_1_14,       // Index Size = 1, Pop1 = 14.
-        cJ1_JPIMMED_1_15,       // Index Size = 1, Pop1 = 15. 59
+        cJ1_JPIMMED_1_15,       // Index Size = 1, Pop1 = 15.
 
         cJ1_JPIMMED_2_02,       // Index Size = 2, Pop1 = 2.
         cJ1_JPIMMED_2_03,       // Index Size = 2, Pop1 = 3.
@@ -274,7 +220,7 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
         cJ1_JPIMMED_2_06,       // Index Size = 2, Pop1 = 6.
         cJ1_JPIMMED_2_07,       // Index Size = 2, Pop1 = 7.
 
-        cJ1_JPIMMED_3_02,       // Index Size = 3, Pop1 = 2.
+        cJ1_JPIMMED_3_02,       // Index Size = 3, Pop1 = 2. 66
         cJ1_JPIMMED_3_03,       // Index Size = 3, Pop1 = 3.
         cJ1_JPIMMED_3_04,       // Index Size = 3, Pop1 = 4.
         cJ1_JPIMMED_3_05,       // Index Size = 3, Pop1 = 5.
@@ -320,7 +266,8 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 
 
 //#define J_1_MAXB   (sizeof(Word_t) * 33)
-#define J_1_MAXB   (sizeof(Word_t) * 65)
+//#define J_1_MAXB   (sizeof(Word_t) * 65)
+#define J_1_MAXB   (sizeof(Word_t) * 51)
 
 //#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 15, 19, 23, 27, 33, 39, 47, 55, 67, 81, 97, 117, 141, 169, TERMINATOR }
 /////#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 17, 21, 27, 33, 41, 51, 65, 83, 103, 129, 159, TERMINATOR }
@@ -352,6 +299,7 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // transition at that point.
 
 
+#define cJ1_LEAFB1_MAXPOP1      (256)
 
 // ANY NUMBER < 16 MEANS NO LEAF1 !!!!
 #ifndef cJ1_LEAF1_MAXPOP1
@@ -359,6 +307,7 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 //#define cJ1_LEAF1_MAXPOP1    (32)
 #define cJ1_LEAF1_MAXPOP1    (8)
 #endif  // cJ1_LEAF1_MAXPOP1
+
 
 // Fix this cJ1_LEAF2_MAXWORDS stuff!!!!!!!!!!!!!!!!!!!
 
@@ -382,7 +331,7 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 #define cJ1_LEAF5_MAXPOP1    (J_1_MAXB / 5)
 #define cJ1_LEAF6_MAXPOP1    (J_1_MAXB / 6)
 #define cJ1_LEAF7_MAXPOP1    (J_1_MAXB / 7)
-#define cJ1_LEAFW_MAXPOP1    ((J_1_MAXB - cJU_BYTESPERWORD) / cJU_BYTESPERWORD)
+#define cJ1_LEAF8_MAXPOP1    ((J_1_MAXB - cJU_BYTESPERWORD) / cJU_BYTESPERWORD)
 
 // MAXIMUM POPULATIONS OF IMMEDIATE JPs:
 //
@@ -399,7 +348,7 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 #define cJ1_IMMED6_MAXPOP1  ((sizeof(jp_t) - 1) / 6)    // 2.
 #define cJ1_IMMED7_MAXPOP1  ((sizeof(jp_t) - 1) / 7)    // 2.
 
-#else   // oldwaywithJPequal16bytes
+#else   // ! oldwaywithJPequal16bytes
 #define cJ1_IMMED1_MAXPOP1  15 // 15    - minLeaf = 16 Keys
 #define cJ1_IMMED2_MAXPOP1   7 // 7     - minLeaf =  8 Keys
 #define cJ1_IMMED3_MAXPOP1   5 // 5     - minLeaf =  6 Keys
@@ -407,7 +356,7 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 #define cJ1_IMMED5_MAXPOP1   3 // 3     - minLeaf =  4 Keys
 #define cJ1_IMMED6_MAXPOP1   2 // 2     - minLeaf =  3 Keys
 #define cJ1_IMMED7_MAXPOP1   2 // 2     - minLeaf =  3 Keys
-#endif // oldwaywithJPequal16bytes
+#endif // ! oldwaywithJPequal16bytes
 
 
 // ****************************************************************************
@@ -418,10 +367,13 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 
 typedef struct J__UDY1_BITMAP_LEAF
 {
+        Word_t j1lb_LastKey;
         BITMAPL_t j1lb_Bitmap[cJU_NUMSUBEXPL];
+//        Word_t j1lb_LastKey; does not seem to matter where
 
 } j1lb_t, * Pj1lb_t;
 
+#define cJ1_WORDSPERLEAFB1 (sizeof(j1lb_t) / sizeof(Word_t))
 
 // ****************************************************************************
 // MEMORY ALLOCATION SUPPORT
@@ -445,7 +397,7 @@ typedef struct J_UDY1_POPULATION_AND_MEMORY
 {
 /* 1 */    Word_t      jpm_Pop0;            // total population-1 in array.
 /* 8/9 */  Word_t      jpm_TotalMemWords;   // words allocated in array.
-/* 2 */    jp_t        jpm_JP[4];           // JP to first branch; see above.
+/* 2 */    jp_t        jpm_JP[1];           // JP to first branch; see above.
            Word_t      jpm_Spare;           // to line up with JudyL
 /////////////       /* 4 */ Word_t     jpm_LastUPop0;       // last jpm_Pop0 when convert to BranchU
 // Note:  Field names match PJError_t for convenience in macros:
@@ -469,7 +421,7 @@ extern const uint16_t j__1_Leaf4PopToWords[cJ1_LEAF4_MAXPOP1 + 2];
 extern const uint16_t j__1_Leaf5PopToWords[cJ1_LEAF5_MAXPOP1 + 2];
 extern const uint16_t j__1_Leaf6PopToWords[cJ1_LEAF6_MAXPOP1 + 2];
 extern const uint16_t j__1_Leaf7PopToWords[cJ1_LEAF7_MAXPOP1 + 2];
-extern const uint16_t j__1_LeafWPopToWords[cJ1_LEAFW_MAXPOP1 + 2];
+extern const uint16_t j__1_Leaf8PopToWords[cJ1_LEAF8_MAXPOP1 + 2];
 
 // Check if increase of population will fit in same leaf:
 
@@ -487,8 +439,8 @@ extern const uint16_t j__1_LeafWPopToWords[cJ1_LEAFW_MAXPOP1 + 2];
         J__U_GROWCK(Pop1, cJ1_LEAF6_MAXPOP1, j__1_Leaf6PopToWords)
 #define J1_LEAF7GROWINPLACE(Pop1) \
         J__U_GROWCK(Pop1, cJ1_LEAF7_MAXPOP1, j__1_Leaf7PopToWords)
-#define J1_LEAFWGROWINPLACE(Pop1) \
-        J__U_GROWCK(Pop1, cJ1_LEAFW_MAXPOP1, j__1_LeafWPopToWords)
+#define J1_LEAF8GROWINPLACE(Pop1) \
+        J__U_GROWCK(Pop1, cJ1_LEAF8_MAXPOP1, j__1_Leaf8PopToWords)
 
 #define J1_LEAF1POPTOWORDS(Pop1)  (j__1_Leaf1PopToWords[Pop1])
 #define J1_LEAF2POPTOWORDS(Pop1)  (j__1_Leaf2PopToWords[Pop1])
@@ -497,15 +449,15 @@ extern const uint16_t j__1_LeafWPopToWords[cJ1_LEAFW_MAXPOP1 + 2];
 #define J1_LEAF5POPTOWORDS(Pop1)  (j__1_Leaf5PopToWords[Pop1])
 #define J1_LEAF6POPTOWORDS(Pop1)  (j__1_Leaf6PopToWords[Pop1])
 #define J1_LEAF7POPTOWORDS(Pop1)  (j__1_Leaf7PopToWords[Pop1])
-#define J1_LEAFWPOPTOWORDS(Pop1)  (j__1_LeafWPopToWords[Pop1])
+#define J1_LEAF8POPTOWORDS(Pop1)  (j__1_Leaf8PopToWords[Pop1])
 
 
 // FUNCTIONS TO ALLOCATE OBJECTS:
 
 Pj1pm_t j__udy1AllocJ1PM(void);                         // constant size.
-Pjllw_t j__udy1AllocJLLW( int );                        // no Pj1pm needed.
+Pjll8_t j__udy1AllocJLL8( int );                        // no Pj1pm needed.
 
-Word_t  j__udy1AllocJBL(          Pj1pm_t);             // constant size.
+Word_t  j__udy1AllocJBL(  int,    Pj1pm_t);
 Word_t  j__udy1AllocJBB(          Pj1pm_t);             // constant size.
 Word_t  j__udy1AllocJBBJP(int,    Pj1pm_t);
 Word_t  j__udy1AllocJBU(          Pj1pm_t);             // constant size.
@@ -519,13 +471,13 @@ Word_t  j__udy1AllocJLL5( int,    Pj1pm_t);
 Word_t  j__udy1AllocJLL6( int,    Pj1pm_t);
 Word_t  j__udy1AllocJLL7( int,    Pj1pm_t);
 
-Word_t  j__udy1AllocJLB1(         Pj1pm_t);             // constant size.
+Word_t  j__udy1AllocJLB1( int,    Pj1pm_t);             // constant size.
 
 // FUNCTIONS TO FREE OBJECTS:
 
 void    j__udy1FreeJ1PM( Pj1pm_t,        Pj1pm_t);      // constant size.
 
-void    j__udy1FreeJBL(  Word_t,         Pj1pm_t);      // constant size.
+void    j__udy1FreeJBL(  Word_t, int,    Pj1pm_t);
 void    j__udy1FreeJBB(  Word_t,         Pj1pm_t);      // constant size.
 void    j__udy1FreeJBBJP(Word_t, int,    Pj1pm_t);
 void    j__udy1FreeJBU(  Word_t,         Pj1pm_t);      // constant size.
@@ -539,8 +491,8 @@ void    j__udy1FreeJLL5( Word_t, int,    Pj1pm_t);
 void    j__udy1FreeJLL6( Word_t, int,    Pj1pm_t);
 void    j__udy1FreeJLL7( Word_t, int,    Pj1pm_t);
 
-void    j__udy1FreeJLLW(  Pjllw_t, int,  Pj1pm_t);
-void    j__udy1FreeJLB1( Word_t,         Pj1pm_t);      // constant size.
+void    j__udy1FreeJLL8(  Pjll8_t, int,  Pj1pm_t);
+void    j__udy1FreeJLB1( Word_t, int,    Pj1pm_t);      // constant size.
 void    j__udy1FreeSM(   Pjp_t,          Pj1pm_t);      // everything below Pjp.
 
 #endif // ! _JUDY1_INCLUDED

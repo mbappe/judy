@@ -138,13 +138,13 @@ typedef struct J_UDY_POINTER_OTHERS     // JPO.
         union
         {
             Word_t  j_po_Addr0;         // only the hi 48 bits are available
-            uint8_t j_po_jp_Type[2];    // jp_Type & jp_LeafPop0 in lo 16 bits
+            uint8_t j_po_jp_Type[2];    // jp_Type & jp_LeafPop1 in lo 16 bits
         };
         union
         {
             Word_t  j_po_Addr1;         // 2nd Word_t
-            Word_t  j_po_Octants;
-            uint8_t j_po_OctPop1[8];
+            Word_t  j_po_subLeafPops;
+            uint8_t j_po_subPop1[8];
         };
 } jpo_t;
 
@@ -211,11 +211,11 @@ typedef union J_UDY_POINTER         // JP.
 #endif  // JUDYL
 
 #define jp_Type     j_po.j_po_jp_Type[0] // jp_Type
-#define jp_LeafPop0 j_po.j_po_jp_Type[1] // jp_LeafPop0
+#define jp_LeafPop1 j_po.j_po_jp_Type[1] // jp_LeafPop1
 #define jp_Addr0    j_po.j_po_Addr0      // only the hi 48 bits are available
 #define jp_Addr1    j_po.j_po_Addr1      // 2nd Word in jp
-#define jp_OctPop1  j_po.j_po_OctPop1    // uint8_t[] 8 octants in array
-#define jp_Octants  j_po.j_po_Octants    // Word_t -- 8 octants in Word_t
+#define jp_subPop1  j_po.j_po_subPop1    // uint8_t[] 8 octants in array
+#define jp_subLeafPops  j_po.j_po_subLeafPops    // Word_t -- 8 octants in Word_t
 
 // Mask off the high byte from INDEX to it can be compared to DcdPopO:
 #define JU_TrimToIMM01(INDEX) ((cJU_ALLONES >> cJU_BITSPERBYTE) & (INDEX))
@@ -233,12 +233,10 @@ typedef union J_UDY_POINTER         // JP.
 // Note:  These are constant macros (cJU) because cPopBytes should be a
 // constant.  Also note cPopBytes == state in the SM.
 
-//#define cJU_DCDMASK(cPopBytes) ((cJU_ALLONES >> cJU_BITSPERBYTE) & (~cJU_POP0MASK(cPopBytes)))
-#define cJU_DCDMASK(cPopBytes) (~cJU_POP0MASK(cPopBytes))
+#define cJU_DCDMASK(cPopBytes) (~JU_LEASTBYTESMASK(cPopBytes))
 
 // DETERMINE IF AN INDEX IS (NOT) IN A JP EXPANSE:
-#define JU_DCDNOTMATCHINDEX(INDEX,PJP,POP0BYTES)                \
-    (((INDEX) ^ ju_DcdPop0(PJP)) & cJU_DCDMASK(POP0BYTES))
+//#define JU_DCDNOTMATCHINDEX(INDEX,PJP,POP0BYTES) (((INDEX) ^ ju_DcdPop0(PJP)) & cJU_DCDMASK(POP0BYTES))
 
 //
 //      Get routines
@@ -250,23 +248,33 @@ static uint8_t ju_Type(Pjp_t Pjp)
 static Word_t  ju_PntrInJp(Pjp_t Pjp)
         { return(Pjp->jp_Addr0 >> 16); } 
 
+// temp for now -- low 16 bits available
+static Word_t  ju_PntrInJp1(Pjp_t Pjp)
+        { return(Pjp->jp_Addr1 >> 16); } 
+
 static Word_t  ju_DcdPop0(Pjp_t Pjp)
         { return(Pjp->jp_Addr1); } 
 
-static Word_t  ju_LeafPop0(Pjp_t Pjp)
-        { return(Pjp->jp_LeafPop0); }   // TEMP - should be below
+static Word_t  ju_LeafPop1(Pjp_t Pjp)
+        { return(Pjp->jp_LeafPop1); }   // TEMP - should be below
 
 static Word_t  ju_BranchPop0(Pjp_t Pjp, int level)
-        { return(Pjp->jp_Addr1 & cJU_POP0MASK(level)); }
+        { return(Pjp->jp_Addr1 & JU_LEASTBYTESMASK(level)); }
+
+//      return non-zero if DCD does not match
+static Word_t  ju_DcdNotMatch(Word_t Key, Word_t DcdPop0, int level)
+        { 
+#ifdef  PCASNOT
+              Word_t res = (Key ^ DcdPop0) & cJU_DCDMASK(level); 
+if (res) printf("\n+FAILED DCD Check++++ ju_DcdNotMatch: DcdP0 = 0x%016lx Key = 0x%016lx mask = 0x%016lx level = %d\n", DcdPop0, Key, cJU_DCDMASK(level), level);
+else     printf("\n+PASSED DCD Check++++ ju_DcdNotMatch: DcdP0 = 0x%016lx Key = 0x%016lx mask = 0x%016lx level = %d\n", DcdPop0, Key, cJU_DCDMASK(level), level);
+#endif  // PCASNOT
+              return((Key ^ DcdPop0) & cJU_DCDMASK(level)); 
+        }
 
 static Word_t  ju_DcdNotMatchKey(Word_t Key, Pjp_t Pjp, int level)
         { 
-#ifdef  PCASNOT
-              Word_t res = (Key ^ ju_DcdPop0(Pjp)) & cJU_DCDMASK(level); 
-if (res) printf("\n+FAILED DCD Check++++ ju_DcdNotMatchKey: DcdP0 = 0x%016lx Key = 0x%016lx mask = 0x%016lx level = %d\n", Pjp->jp_Addr1, Key, cJU_DCDMASK(level), level);
-else     printf("\n+PASSED DCD Check++++ ju_DcdNotMatchKey: DcdP0 = 0x%016lx Key = 0x%016lx mask = 0x%016lx level = %d\n", Pjp->jp_Addr1, Key, cJU_DCDMASK(level), level);
-#endif  // PCASNOT
-              return((Key ^ ju_DcdPop0(Pjp)) & cJU_DCDMASK(level)); 
+            return (ju_DcdNotMatch(Key, ju_DcdPop0(Pjp), level));
         }
 
 // More generic version for different DCD(Pop0) positions
@@ -292,14 +300,20 @@ static void ju_SetIMM01(Pjp_t Pjp, Word_t Value, Word_t Key, uint8_t Type)
             Pjp->jp_Addr1 = Value;
         } 
 
-static void ju_SetLeafPop0(Pjp_t Pjp, Word_t LeafPop0)
-        { Pjp->jp_LeafPop0 = (uint8_t)LeafPop0; }       // TEMP!!!!!
-//        { Pjp->jp_IPop = (uint8_t)LeafPop0; }
+static void ju_SetLeafPop1(Pjp_t Pjp, Word_t LeafPop1)
+        { Pjp->jp_LeafPop1 = (uint8_t)LeafPop1; }       // TEMP!!!!!
 
 static void ju_SetPntrInJp(Pjp_t Pjp, Word_t PntrInJp)
         { 
             Word_t Types = Pjp->jp_Addr0 & 0xFFFF;
             Pjp->jp_Addr0 = (PntrInJp << 16) | Types; 
+        }
+
+// temp for now -- low 16 bits available
+static void ju_SetPntrInJp1(Pjp_t Pjp, Word_t PntrInJp)
+        { 
+            Word_t Types = Pjp->jp_Addr1 & 0xFFFF;
+            Pjp->jp_Addr1 = (PntrInJp << 16) | Types; 
         }
 
 static void ju_SetJpType(Pjp_t Pjp, uint8_t Type)
@@ -316,7 +330,7 @@ static void ju_SetDcdPop0Leaf(Word_t PJLL, Word_t DcdPop0)
 //
 //      JUDYL Get routines
 //
-// Return pointer to Value in Immed_[1..7]_01
+// Return pointer to Value in Immed_[1..8]_01
 static Pjv_t ju_PImmVal_01(Pjp_t Pjp)
         { return((Pjv_t)(&Pjp->jp_Addr1)); }
 
@@ -367,7 +381,7 @@ static uint32_t *ju_PImmed4(Pjp_t Pjp)  // 4 byte Keys
 // place.
 
 #define JU_JPBRANCH_POP0(PJP,cPopBytes) \
-        (ju_DcdPop0(PJP) & cJU_POP0MASK(cPopBytes))
+        (ju_DcdPop0(PJP) & JU_LEASTBYTESMASK(cPopBytes))
 
 // METHOD FOR DETERMINING IF OBJECTS HAVE ROOM TO GROW:
 //
@@ -423,6 +437,45 @@ typedef struct J__UDY_BRANCH_LINEAR
             jp_t    jbl_jp     [cJU_BRANCHLMAXJPS]; // JPs for populated exps.
         } jbl_t, * Pjbl_t;
 
+// ****************************************************************************
+// JUDY LEAF MISC rouines
+// ****************************************************************************
+
+// make a mask from sub-expanse number (0..15) for suming prep
+#define ADDTOSUBLEAF16(SUBEXP16) ((Word_t)0x1 << ((SUBEXP16) * 4))
+
+#define MASK16SUB(EXP16)        ((Word_t)1 << ((EXP16 * 4)) - 1)
+#define MASK16KEY(SUBEXPNUM16)    ((Word_t)0xF << ((SUBEXPNUM  * 4)) - 1)
+
+// make a mask from sub-expanse number (0..32) for suming prep
+//#define ADDTOSUBLEAF8(SUBEXP8)  ((Word_t)0x1 << ((SUBEXP8) * 8))
+
+#define MASK8SUB(EXP8)          ((Word_t)1 << ((EXP8  * 8)) - 1)
+#define MASK8KEY(EXP8,SUBEXPNUM8)    ((Word_t)0x3F << ((EXP8  * 4)) - 1)
+
+// Get the sum Total Population of a 8 sub-expanse Word_t
+//  Note: the max sum is 255 or an overflow will occur
+static int j__udySubLeaf8Pops(Word_t SubPops8)
+{
+    return((SubPops8 * (Word_t)0x0101010101010101) >> 56);
+}
+
+// Convert a 16 sub-expanse POPS Word_t to 8 sub-expanse POPS Word_t
+// Note: the max sum is 240 = 15 * 16
+static Word_t j__udyConv16To8(Word_t SubPops16)
+{
+    Word_t oddpops = SubPops16 & (Word_t)0x0f0f0f0f0f0f0f0f;
+
+//  Parallel sum the even pops with the odd pops
+    return((((SubPops16 ^ oddpops) >> 4) + oddpops));
+}
+
+// Get the sum total Population of a 16 sub-expanse Word_t
+static Word_t j__udySubLeaf16Pops(Word_t SubPops16)
+{
+//  Convert to 8 and Sum all 8 bytes using a mpy
+    return(j__udySubLeaf8Pops(j__udyConv16To8(SubPops16)));
+}
 
 // ****************************************************************************
 // JUDY BRANCH BITMAP (JBB) SUPPORT
@@ -485,18 +538,14 @@ typedef struct J__UDY_BRANCH_BITMAP_SUBEXPANSE
 
         } jbbs_t;
 
+// static size
 typedef struct J__UDY_BRANCH_BITMAP
         {
             Word_t jbb_RootStruct;                  // ^ to root Structure
             Word_t jbb_DCDPop0;                     // DCDPop0
             jbbs_t jbb_jbbs   [cJU_NUMSUBEXPB];
-
-#ifdef  BBSEARCH
-            Word_t jbb_Pop1;
-#endif  // BBSEARCH
-
 //            Word_t jbbs_Pjp[];
-            Word_t jbb_numPtrs;         // number of pointers in jp_t s
+            Word_t jbb_NumJPs;         // number of pointers in jp_t s
 
         } jbb_t, * Pjbb_t;
 
@@ -516,10 +565,10 @@ typedef struct J__UDY_BRANCH_BITMAP
 
 typedef struct J__UDY_BRANCH_UNCOMPRESSED
 {
-        Word_t jbu_RootStruct;                  // ^ to root Structure
+//        Word_t jbu_RootStruct;                  // ^ to root Structure
         Word_t jbu_DCDPop0;                     // DCDPop0
+        Word_t jbu_NumJPs;                     // number of Pointers in jp_t s
         jp_t   jbu_jp     [cJU_BRANCHUNUMJPS];  // JPs for populated exp.
-        Word_t jbu_numPtrs;                     // number of Pointers in jp_t s
 //        jp_t   jbu_jp[0];                     // JPs for populated exp.
 } jbu_t, * Pjbu_t;
 
