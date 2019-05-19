@@ -75,14 +75,14 @@ bool_t j__udyEnabled;      // by default, unless env params set.
 // Shorthands for announcing expanse populations from DcdPopO fields:
 
 #define POP0 printf("Pop1 = 0 ")
-#define LEAFPOP1 printf("LeafPop = %ld ",(Word_t) ju_LeafPop1(Pjp))
-#define POP2 printf("BranchPop = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &            0xffff) + 1))
-#define POP3 printf("BranchPop = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &          0xffffff) + 1))
-#define POP4 printf("BranchPop = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &        0xffffffff) + 1))
-#define POP5 printf("BranchPop = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &      0xffffffffff) + 1))
-#define POP6 printf("BranchPop = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &    0xffffffffffff) + 1))
-#define POP7 printf("BranchPop = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &  0xffffffffffffff) + 1))
-#define POP8 printf("BranchPop = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &0xffffffffffffffff) + 1))
+#define LEAFPOP1 printf("LeafPop1 = %ld ",(Word_t) ju_LeafPop1(Pjp))
+#define POP2 printf("BranchPop1 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &            0xffff) + 1))
+#define POP3 printf("BranchPop1 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &          0xffffff) + 1))
+#define POP4 printf("BranchPop1 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &        0xffffffff) + 1))
+#define POP5 printf("BranchPop1 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &      0xffffffffff) + 1))
+#define POP6 printf("BranchPop1 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &    0xffffffffffff) + 1))
+#define POP7 printf("BranchPop1 = 0x%016lx ", (Word_t) ((ju_DcdPop0(Pjp) &  0xffffffffffffff) + 1))
+#define POP8 printf("BranchPop1 = 0x%016lx ", (Word_t) (ju_DcdPop0(Pjp) + 1))
 
 // Shorthands for announcing populations of Immeds:
 //
@@ -221,7 +221,6 @@ FUNCTION static void JudyPrintJP(
         case cJ1_JPBRANCH_U7:   JPTYPE("cJ1_JPBRANCH_U7"); POP7;NUMJPSU;break;
         case cJ1_JPBRANCH_U8:   JPTYPE("cJ1_JPBRANCH_U8"); POP8;NUMJPSU;break;
 
-        case cJ1_JPLEAF1:       JPTYPE("cJ1_JPLEAF1"); LEAFPOP1;            break;
         case cJ1_JPLEAF2:       JPTYPE("cJ1_JPLEAF2"); LEAFPOP1;            break;
         case cJ1_JPLEAF3:       JPTYPE("cJ1_JPLEAF3"); LEAFPOP1;            break;
         case cJ1_JPLEAF4:       JPTYPE("cJ1_JPLEAF4"); LEAFPOP1;            break;
@@ -308,10 +307,6 @@ FUNCTION static void JudyPrintJP(
         case cJL_JPBRANCH_U7:   JPTYPE("cJL_JPBRANCH_U7"); POP7;NUMJPSU;break;
         case cJL_JPBRANCH_U8:   JPTYPE("cJL_JPBRANCH_U8"); POP8;NUMJPSU;break;
 
-#ifdef  LEAF1_UCOMP
-        case cJL_JPLEAF1_UCOMP: JPTYPE("cJL_JPLEAF1_UCOMP"); LEAFPOP1;  break;
-#endif  // LEAF1_UCOMP
-
         case cJL_JPLEAF1:       JPTYPE("cJL_JPLEAF1"); LEAFPOP1;        break;
         case cJL_JPLEAF2:       JPTYPE("cJL_JPLEAF2"); LEAFPOP1;        break;
         case cJL_JPLEAF3:       JPTYPE("cJL_JPLEAF3"); LEAFPOP1;        break;
@@ -321,7 +316,6 @@ FUNCTION static void JudyPrintJP(
         case cJL_JPLEAF7:       JPTYPE("cJL_JPLEAF7"); LEAFPOP1;        break;
         case cJL_JPLEAF8:       JPTYPE("cJL_JPLEAF8"); LEAFPOP1;        break;
 
-        case cJL_JPLEAF_B1_UCOMP:     JPTYPE("cJL_JPLEAF_B1_UCOMP"); LEAFPOP1;  break;
         case cJL_JPLEAF_B1:     JPTYPE("cJL_JPLEAF_B1"); LEAFPOP1;  break;
 
         case cJL_JPIMMED_1_01:  JPTYPE("cJL_JPIMMED_1_01"); POP_1;      break;

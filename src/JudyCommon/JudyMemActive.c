@@ -154,9 +154,9 @@ FUNCTION static Word_t j__udyGetMemActive(
 
 // -- Cases below here terminate and do not recurse. --
 
-////////#ifdef  JUDYL
+#ifdef  JUDYL
         case cJU_JPLEAF1: IdxSz = 1; goto Leaf8ords;
-//////#endif  //  JUDYL
+#endif  //  JUDYL
 	case cJU_JPLEAF2: IdxSz = 2; goto Leaf8ords;
 	case cJU_JPLEAF3: IdxSz = 3; goto Leaf8ords;
 	case cJU_JPLEAF4: IdxSz = 4; goto Leaf8ords;

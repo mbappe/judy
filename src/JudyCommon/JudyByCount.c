@@ -592,17 +592,17 @@ BranchU:
 // (linear leaf) as a side-effect, but dont depend on that (for JUDYL, which
 // is the only cases that need it anyway).
 
+#ifdef JUDYL
 	case cJU_JPLEAF1:
         {
 	    JU_SETDCD(*PIndex, Pjp, 1);
             Pjll1_t Pjll1 = P_JLL1(RawPntr);
 	    JU_SETDIGIT1(*PIndex, Pjll1->jl1_Leaf[offset]);
-#ifdef JUDYL
 	    pop1 = ju_LeafPop1(Pjp);
-#endif  //JUDYL
 	    offset = Count0 - pop1lower;
 	    JU_RET_FOUND_LEAF1(Pjll1, pop1, offset);
         }
+#endif  //JUDYL
 
 	case cJU_JPLEAF2:
         {

@@ -151,9 +151,6 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // Note:  These Types must be in sequential order for doing relative
 // calculations between them.
 //
-#ifdef LEAF1_UCOMP
-        cJL_JPLEAF1_UCOMP,      // uncompressed 29
-#endif  // LEAF1_UCOMP
         cJL_JPLEAF1,            // 1 byte  Pop0, 7 bytes Dcd.
         cJL_JPLEAF2,            // 2 bytes Pop0, 6 bytes Dcd.
         cJL_JPLEAF3,            // 3 bytes Pop0, 5 bytes Dcd.
@@ -169,10 +166,8 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // bitmap would grow from 256 to 256^2, 256^3, ... bits, which would not be
 // efficient..
 
-        cJL_JPLEAF_B1_UCOMP,    // Uncompressed Value area
         cJL_JPLEAF_B1,          // 1] byte Pop0, 7 bytes Dcd.
-
-#define cJL_JLEAFMAX (cJL_JPIMMED_1_01 - 1) // max Leaf jp_type
+#define cJL_JLEAFMAX (cJL_JPLEAF_B1) // max Leaf jp_type
 
 // Full population; Index Size == 1 virtual leaf:
 //
@@ -263,30 +258,21 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 //#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 15, 17, 27, 43, 69, 111, 179, 289, 467, TERMINATOR }
 //#define J_L_MAXB                (sizeof(Word_t) * 289) 
 #define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 15, 17, 25, 39, 63, 101, 163, 261, 417, TERMINATOR }
-#define J_L_MAXB                (sizeof(Word_t) * 261) 
+#define J_L_MAXB                (sizeof(Word_t) * 261) // picked from   ^
 
-#define cJL_LEAF1_MAXWORDS       (419)
+//#define cJL_LEAF1_MAXWORDS       (419)
+//#define cJL_LEAF2_MAXWORDS       (320)
 
 #define cJL_LEAFB1_MAXPOP1       (256)
 
 #ifndef cJL_LEAF1_MAXPOP1
-//#define cJL_LEAF1_MAXPOP1       (256)
-#define cJL_LEAF1_MAXPOP1         (154)         // carefull until UCOMP done
-#endif // cJL_LEAF1_MAXPOP
-
-//#define cJL_LEAF2_MAXWORDS      (J_L_MAXB / cJU_BYTESPERWORD)
-//#define cJL_LEAF2_MAXWORDS      ((uint16_t)(320))
-#define cJL_LEAF2_MAXWORDS      (320)
+#define cJL_LEAF1_MAXPOP1       ((J_L_MAXB - cJU_BYTESPERWORD) / (1 + cJU_BYTESPERWORD))
+#endif // cJL_LEAF1_MAXPOP1
 
 #ifndef cJL_LEAF2_MAXPOP1
-//#define cJL_LEAF2_MAXPOP1       ((cJL_LEAF2_MAXWORDS * 8) / (2 + cJU_BYTESPERWORD))
-//#define cJL_LEAF2_MAXPOP1       (255)
-//#define cJL_LEAF2_MAXPOP1       (J_L_MAXB / (2 + cJU_BYTESPERWORD))
-//#define cJL_LEAF2_MAXPOP1       ((uint16_t)((320 * 8) / (2 + cJU_BYTESPERWORD)))
-//#define cJL_LEAF2_MAXPOP1       (J_L_MAXB / (2 + cJU_BYTESPERWORD))
+#define cJL_LEAF2_MAXPOP1       ((J_L_MAXB - cJU_BYTESPERWORD) / (2 + cJU_BYTESPERWORD))
 #endif
 
-#define cJL_LEAF2_MAXPOP1       ((J_L_MAXB - cJU_BYTESPERWORD) / (2 + cJU_BYTESPERWORD))
 #define cJL_LEAF3_MAXPOP1       ((J_L_MAXB - cJU_BYTESPERWORD) / (3 + cJU_BYTESPERWORD))
 #define cJL_LEAF4_MAXPOP1       ((J_L_MAXB - cJU_BYTESPERWORD) / (4 + cJU_BYTESPERWORD))
 #define cJL_LEAF5_MAXPOP1       ((J_L_MAXB - cJU_BYTESPERWORD) / (5 + cJU_BYTESPERWORD))
@@ -320,38 +306,15 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // series of pointers?  (See 4.27.)  Turns out this wastes a cache fill on
 // systems with smaller cache lines than the assumed value cJU_WORDSPERCL.
 
-#ifdef OBSOLETE
-#define JL_JLB_BITMAP(Pjlb, Subexp)  ((Pjlb)->jLlb_jLlbs[Subexp].jLlbs_Bitmap)
-#define JL_JLB_PVALUE(Pjlb, Subexp)  ((Pjlb)->jLlb_jLlbs[Subexp].jLlbs_PV_Raw)
-//#define JL_JLB_PVALUE(Pjlb, Subexp)  ((Pjlb)->jLlb_PV_Raw)
-
-typedef struct J__UDYL_LEAF_BITMAP_SUBEXPANSE
-{
-        BITMAPL_t jLlbs_Bitmap;
-        Word_t    jLlbs_PV_Raw;
-} jLlbs_t;
-
-typedef struct J__UDYL_LEAF_BITMAP
-{
-        jLlbs_t jLlb_jLlbs[cJU_NUMSUBEXPL];
-        Word_t  jLlb_LastKey;
-//        uint8_t jLlb_Offset[256];
-//        Word_t  jLlb_PV_Raw[];
-} jLlb_t, * PjLlb_t;
-
-#else   // OBSOLETE
-
 #define JL_JLB_BITMAP(Pjlb, Subexp)  ((Pjlb)->jLlb_Bitmap[Subexp])
 #define JL_JLB_PVALUE(Pjlb)  ((Pjlb)->jLlb_PV)
 //
 typedef struct J__UDYL_LEAF_BITMAP
 {
         BITMAPL_t jLlb_Bitmap[cJU_NUMSUBEXPL];
-        Word_t    jLlb_LastKey;
-        Word_t    jLlb_PV[];
+//        Word_t    jLlb_LastKey;     now in the jp_t DcdPop0
+        jv_t      jLlb_PV[256];
 } jLlb_t, * PjLlb_t;
-
-#endif  // ! OBSOLETE
 
 // Words per bitmap leaf:
 
@@ -548,12 +511,11 @@ extern const uint16_t j__L_Leaf8Offset    [cJL_LEAF8_MAXPOP1 + 1];
 
 PjLpm_t j__udyLAllocJLPM(void);                         // constant size.
 
-Word_t  j__udyLAllocJBL(  int,    PjLpm_t);
+Word_t  j__udyLAllocJBL(          PjLpm_t);             // constant size.
 Word_t  j__udyLAllocJBB(          PjLpm_t);             // constant size.
 Word_t  j__udyLAllocJBBJP(int,    PjLpm_t);
 Word_t  j__udyLAllocJBU(          PjLpm_t);             // constant size.
 
-Word_t  j__udyLAllocJLLU1(        PjLpm_t);             // constant size
 Word_t  j__udyLAllocJLL1( int,    PjLpm_t);
 Word_t  j__udyLAllocJLL2( int,    PjLpm_t);
 Word_t  j__udyLAllocJLL3( int,    PjLpm_t);
@@ -564,7 +526,7 @@ Word_t  j__udyLAllocJLL6( int,    PjLpm_t);
 Word_t  j__udyLAllocJLL7( int,    PjLpm_t);
 
 Pjll8_t j__udyLAllocJLL8( int            );             // no PjLpm_t needed.
-Word_t  j__udyLAllocJLB1( int,    PjLpm_t);
+Word_t  j__udyLAllocJLB1(         PjLpm_t);             // constant size
 Word_t  j__udyLAllocJV(   int,    PjLpm_t);
 
 
@@ -572,7 +534,7 @@ Word_t  j__udyLAllocJV(   int,    PjLpm_t);
 
 void    j__udyLFreeJLPM( PjLpm_t,        PjLpm_t);      // constant size.
 
-void    j__udyLFreeJBL(  Word_t, int,    PjLpm_t);
+void    j__udyLFreeJBL(  Word_t,         PjLpm_t);      // constant size.
 void    j__udyLFreeJBB(  Word_t,         PjLpm_t);      // constant size.
 void    j__udyLFreeJBBJP(Word_t, int,    PjLpm_t);
 void    j__udyLFreeJBU(  Word_t,         PjLpm_t);      // constant size.
@@ -587,7 +549,7 @@ void    j__udyLFreeJLL6( Word_t, int,    PjLpm_t);
 void    j__udyLFreeJLL7( Word_t, int,    PjLpm_t);
 
 void    j__udyLFreeJLL8( Pjll8_t,int,    PjLpm_t);
-void    j__udyLFreeJLB1( Word_t, int,    PjLpm_t);
+void    j__udyLFreeJLB1( Word_t,         PjLpm_t);      // constant size.
 void    j__udyLFreeJV(   Word_t, int,    PjLpm_t);
 void    j__udyLFreeSM(   Pjp_t,          PjLpm_t);      // everything below Pjp.
 

@@ -239,7 +239,7 @@ FUNCTION int j__udyBranchBToBranchL(
 
 // Allocate and populate the BranchL:
 
-	if ((PjblRaw = j__udyAllocJBL((int)NumJPs, Pjpm)) == 0) return(-1);
+	if ((PjblRaw = j__udyAllocJBL(Pjpm)) == 0) return(-1);
 	Pjbl = P_JBL(PjblRaw);
 
 	JU_COPYMEM(Pjbl->jbl_Expanse, Expanse, NumJPs);
@@ -301,6 +301,7 @@ FUNCTION int j__udyBranchUToBranchB(
 }
 #endif // notdef
 
+#ifdef JUDYL
 // ****************************************************************************
 // __ J U D Y   L E A F   B 1   T O   L E A F   1
 //
@@ -328,54 +329,43 @@ printf("Dec: j__udyLeafB1ToLeaf1, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPo
 	if (Pjll1Raw == 0)
 	    return(-1);
 
-	Pjll1_t	 Pjll1 = P_JLL1(Pjll1Raw);
+	Pjll1_t	 Pjll1  = P_JLL1(Pjll1Raw);
         uint8_t *Pleaf1 = Pjll1->jl1_Leaf;
-
-#ifdef JUDYL
-	Pjv_t  PjvNew = JL_LEAF1VALUEAREA(Pjll1, cJL_LEAF1_MAXPOP1);
-#endif // JUDYL
 
 	Word_t PjlbRaw	= ju_PntrInJp(Pjp);
 	Pjlb_t Pjlb     = P_JLB1(PjlbRaw);
 
+#ifdef JUDYL
+	Pjv_t  PjvNew = JL_LEAF1VALUEAREA(Pjll1, cJL_LEAF1_MAXPOP1);
+        Pjv_t  PjvOld = JL_JLB_PVALUE(Pjlb);
+#endif // JUDYL
+
 //      Copy 1-byte indexes from old LeafB1 to new Leaf1:
+        int poff = 0;
 	for (int digit = 0; digit < cJU_BRANCHUNUMJPS; ++digit)
         {
 	    if (JU_BITMAPTESTL(Pjlb, digit))
-		*Pleaf1++ = (uint8_t)digit;
-        }
+            {
+		Pleaf1[poff] = (uint8_t)digit;
 #ifdef JUDYL
-//      Copy all old-LeafB1 Value areas from value subarrays to new Leaf1:
-	Word_t pop1;
-	for (Word_t SubExp = 0; SubExp < cJU_NUMSUBEXPL; ++SubExp)
-	{
-//	    Word_t PjvRaw = JL_JLB_PVALUE(Pjlb, SubExp);
-//	    Pjv_t Pjv     = P_JV(PjvRaw);
-	    Pjv_t Pjv     = JL_JLB_PVALUE(Pjlb);
-
-	    if (Pjv == (Pjv_t) NULL) continue;	// skip empty subarray.
-
-	    pop1 = j__udyCountBitsL(JU_JLB_BITMAP(Pjlb, SubExp));  // subarray.
-	    assert(pop1);
-
-	    JU_COPYMEM(PjvNew, Pjv, pop1);		// copy value areas.
-//////////////////	    j__udyLFreeJV(PjvRaw, pop1, Pjpm);
-	    PjvNew += pop1;				// advance through new.
-	}
-//      number of Keys == number of Values
-//printf("----JudyL Pjv pop1 = %d, cJU_LEAF1_MAXPOP1 = %d\n", (int)pop1, (int)cJU_LEAF1_MAXPOP1);
-//        assert(pop1 == cJU_LEAF1_MAXPOP1); only max of 64
+                PjvNew[poff] = PjvOld[digit];      // Compress Value area
 #endif // JUDYL
+                poff++;
+            }
+        }
+        assert(poff == cJU_LEAF1_MAXPOP1);      // sanity check
+        Pjll1->jl1_LastKey = ju_DcdPop0(Pjp);   // Dcd to new Leaf1
 
 // Finish up:  Free the old LeafB1 and plug the new Leaf1 into the JP:
 // Note:  jp_DcdPopO and jp_LeafPop1 does NOT change here.
-//////////////////	j__udyFreeJLB1(PjlbRaw, Pjpm);
+	j__udyFreeJLB1(PjlbRaw, Pjpm);
         ju_SetPntrInJp(Pjp, Pjll1Raw);                  // new ^
-        ju_SetJpType(Pjp, cJU_JPLEAF1);                 // new jp_Type
+        ju_SetJpType(Pjp, cJL_JPLEAF1);                 // new jp_Type
 
 	return(1);
 
 } // j__udyLeafB1ToLeaf1()
+#endif  // JUDYL
 
 // ****************************************************************************
 // __ J U D Y   L E A F   1   T O   L E A F   2
@@ -390,15 +380,14 @@ printf("Dec: j__udyLeafB1ToLeaf1, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPo
 FUNCTION Word_t  j__udyLeaf1orB1ToLeaf2(
 	uint16_t * PLeaf2,	// destination uint16_t * Index portion of leaf.
 #ifdef JUDYL
-	Pjv_t	   Pjv2,	// destination value part of leaf.
-#endif
+	Pjv_t	   Pjv2,	// destination Value part of Leaf2.
+#endif  // JUDYL
 	Pjp_t	   Pjp,		// 1-byte-index object from which to copy.
 	Word_t     MSByte,	// most-significant byte, prefix to each Index.
 	Pjpm_t	   Pjpm)	// for global accounting.
 {
 	Word_t	   Pop1;	// number of Keys in leaf[1B] or IMMED_1_xx.
 #ifdef JUDYL
-        Word_t     Pjv1Raw;	// source object value area.
         Pjv_t	   Pjv1;
 #endif  // JUDYL
 
@@ -407,52 +396,35 @@ FUNCTION Word_t  j__udyLeaf1orB1ToLeaf2(
 // JPLEAF_B1:
 	case cJU_JPLEAF_B1:
 	{
-//            printf("B1: ju_DcdPop0 0xFF) + 1) = %lu, cJU_LEAF2_MAXPOP1 = %d\n", (ju_DcdPop0(Pjp) & 0xFF) + 1, (int)cJU_LEAF2_MAXPOP1);
-
             Word_t PjlbRaw = ju_PntrInJp(Pjp);
             Pjlb_t Pjlb    = P_JLB1(PjlbRaw);
 
 // Copy 1-byte indexes from old LeafB1 to new Leaf2, including splicing in
-// the missing MSByte needed in the Leaf2:
-
-//	    for (Word_t digit = 0, Pop1 = 0; digit < cJU_BRANCHUNUMJPS; digit++)
+// the missing MSByte needed in the Leaf2: Along with uncompressed Values
+#ifdef JUDYL
+            Pjv1 = JL_JLB_PVALUE(Pjlb);           // Value pointer in LeafB1
+#endif  // JUDYL
 	    Pop1 = 0; 
-	    for (Word_t digit = 0; digit < 256; digit++)
+//                                                256
+	    for (Word_t digit = 0; digit < cJU_BRANCHUNUMJPS; digit++)
             {
-		if (JU_BITMAPTESTL(Pjlb, digit)) 
+		if (JU_BITMAPTESTL(Pjlb, digit))                // slow?
                 {
-////                    printf("================Digit = 0x%lx, Pop1 = %d\n", digit, (int)Pop1);
-                    *PLeaf2++ = MSByte | digit;
+                    PLeaf2[Pop1] = MSByte | digit;
+#ifdef JUDYL
+                    Pjv2[Pop1] = Pjv1[digit];   // Compress Value area to Leaf2
+#endif  // JUDYL
                     Pop1++;
                 }
             }
-//            printf("Pop1 = %ld\n", Pop1);
-//            printf("ju_LeafPop1 = %d, B1: ret: Pop1 = %d, ju_DcdPop1 = %d\n", (int)ju_LeafPop1(Pjp), (int)Pop1, (int)(ju_DcdPop0(Pjp) & 0xFF) + 1);
-            assert(Pop1 == (ju_DcdPop0(Pjp) & 0xFF) + 1);
+            assert(Pop1 == ju_LeafPop1(Pjp));   // sanity check
 
-#ifdef JUDYL
-// Copy all old-LeafB1 value areas from value subarrays to new Leaf2:
-
-	    for (int subexp = 0; subexp < cJU_NUMSUBEXPL; subexp++)
-	    {
-	        Word_t pop1;
-//////		Pjv1Raw = JL_JLB_PVALUE(Pjlb, subexp);
-/////		if (Pjv1Raw == 0) continue;	        // skip empty.
-/////		Pjv1 = P_JV(Pjv1Raw);
-
-		pop1 = j__udyCountBitsL(JU_JLB_BITMAP(Pjlb, subexp));
-		assert(pop1);
-
-		JU_COPYMEM(Pjv2, Pjv1, pop1);	        // copy value areas.
-		Pjv2 += pop1;			        // advance through new.
-		j__udyLFreeJV(Pjv1Raw, pop1, Pjpm);
-	    }
-#endif // JUDYL
-////////////	    j__udyFreeJLB1(PjlbRaw, Pjpm);  // LeafB1 itself.
+	    j__udyFreeJLB1(PjlbRaw, Pjpm);  // LeafB1 itself.
 	    return(Pop1);
 	} // case cJU_JPLEAF_B1
 
-// JPLEAF1:
+#ifdef  JUDYL
+// JPLEAF1:     only JudyL has a Leaf1
 	case cJU_JPLEAF1:
 	{
 //            printf("L1: ju_DcdPop0 0xFF) + 1) = %lu, cJU_LEAF2_MAXPOP1 = %d\n", (ju_DcdPop0(Pjp) & 0xFF) + 1, (int)cJU_LEAF2_MAXPOP1);
@@ -465,15 +437,17 @@ FUNCTION Word_t  j__udyLeaf1orB1ToLeaf2(
 // Copy all Index bytes including splicing in missing MSByte needed in Leaf2
 // (plus, for JudyL, value areas):
 
-	    JUDYLCODE(Pjv1 = JL_LEAF1VALUEAREA(Pjll1, Pop1);)
+// TBD: the copy of values should be done separately
+	    Pjv1 = JL_LEAF1VALUEAREA(Pjll1, Pop1);
 	    for (int offset = 0; offset < Pop1; offset++)
 	    {
 		PLeaf2[offset] = MSByte | Pjll1->jl1_Leaf[offset];
-		JUDYLCODE(Pjv2[offset] = Pjv1[offset];)
+		Pjv2[offset] = Pjv1[offset];
 	    }
 	    j__udyFreeJLL1(Pjll1Raw, Pop1, Pjpm);
 	    return(Pop1);
 	}
+#endif  // JUDYL
 
 // JPIMMED_1_01:
 //      Note: This case is done before the call to this routine to save time
@@ -481,7 +455,9 @@ FUNCTION Word_t  j__udyLeaf1orB1ToLeaf2(
 	{
 //printf("--------Immed Key = 0x%016lx\n", ju_IMM01Key(Pjp));
 	    PLeaf2[0] = ju_IMM01Key(Pjp);	// see above.
-	    JUDYLCODE(Pjv2[0] = ju_ImmVal_01(Pjp);)
+#ifdef  JUDYL
+	    Pjv2[0]   = ju_ImmVal_01(Pjp);
+#endif  // JUDYL
 	    return(1);
 	}
 
@@ -502,20 +478,20 @@ FUNCTION Word_t  j__udyLeaf1orB1ToLeaf2(
 	case cJ1_JPIMMED_1_13:
 	case cJ1_JPIMMED_1_14:
 	case cJ1_JPIMMED_1_15:
-#endif
+#endif  // JUDY1
 	{
 //          population of IMMEDs is from the jp_Type
 	    Pop1 = ju_Type(Pjp) - cJU_JPIMMED_1_02 + 2;
 //            printf("IMMED_1_%02ld: ju_DcdPop0 0xFF) + 1) = %lu, cJU_LEAF2_MAXPOP1 = %d\n", Pop1, (ju_DcdPop0(Pjp) & 0xFF) + 1, (int)cJU_LEAF2_MAXPOP1);
 #ifdef JUDYL
-	    Pjv1Raw = ju_PntrInJp(Pjp);
-            Pjv1    = P_JV(Pjv1Raw);
+	    Word_t Pjv1Raw = ju_PntrInJp(Pjp);
+            Pjv1           = P_JV(Pjv1Raw);
 #endif  // JUDYL
 	    for (int offset = 0; offset < Pop1; offset++)
 	    {
 		PLeaf2[offset] = MSByte | ju_PImmed1(Pjp)[offset];
 #ifdef JUDYL
-		Pjv2  [offset] = Pjv1[offset];
+		Pjv2[offset]   = Pjv1[offset];
 #endif  // JUDYL
 	    }
 #ifdef JUDYL
@@ -524,13 +500,13 @@ FUNCTION Word_t  j__udyLeaf1orB1ToLeaf2(
 	    return(Pop1);
 	}
 #ifdef  JUDY1
-	case cJ1_JPFULLPOPU1:   // cant happen, B1
+	case cJ1_JPFULLPOPU1:   // cant happen, B1, Leaf2 is NEVER big enough
         {
             printf("cJ1_JPFULLPOPU1: ju_DcdPop0 & 0xFF) + 1) = %lu, cJU_LEAF2_MAXPOP1 = %d\n", (ju_DcdPop0(Pjp) & 0xFF) + 1, (int)cJU_LEAF2_MAXPOP1);
             assert(FALSE);
             return(Pop1);
         }
-#endif
+#endif  // JUDY1
 
 // UNEXPECTED CASES, including JPNULL1, should be handled by caller:
 
@@ -570,7 +546,7 @@ FUNCTION Word_t  j__udyLeaf2ToLeaf3(
 #ifdef  JUDYL
 	Word_t  Pjv2Raw;	// source object value area.
         Pjv_t   Pjv2;
-#endif
+#endif  // JUDYL
 
 #ifdef  PCAS
 printf("j__udyLeaf2ToLeaf3, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop1(Pjp), ju_DcdPop0(Pjp));

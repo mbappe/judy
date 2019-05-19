@@ -1221,6 +1221,7 @@ SMBranchU:
 	pop0  = ju_LeafPop1(Pjp) - 1;                       \
 	Func(PADDR, pop0, LEAFT)
 
+#ifdef  JUDYL
 //	case cJU_JPLEAF1:  CHECKDCD(1); SMLEAFL(1, j__udySearchLeafEmpty1);
 	case cJU_JPLEAF1:  
         {
@@ -1229,6 +1230,7 @@ SMBranchU:
 	    pop0          = ju_LeafPop1(Pjp) - 1; 
 	    JSLE_EVEN(Pjll1->jl1_Leaf, pop0, 1, uint8_t);
         }
+#endif  // JUDYL
                            
 	case cJU_JPLEAF2:  
         {
@@ -1289,19 +1291,11 @@ SMBranchU:
 //
 // Check Decode bytes, if any, in the current JP, then search the leaf for the
 // previous/next empty index starting at Index.
-#ifdef  JUDYL
-        case cJL_JPLEAF_B1_UCOMP:
-#endif  // JUDYL
 	case cJU_JPLEAF_B1:
         {
-	    Pjlb	= P_JLB1(ju_PntrInJp(Pjp));
-            CHECKDCD(Index, Pjlb->jlb_LastKey, 1); 
-// Same test ^  if (ju_DcdNotMatch(Index, Pjlb->jlb_LastKey, 1))
-//            {   
-//                *PIndex = Index; 
-//                return(1);      
-//            }
+            CHECKDCD(Index, ju_DcdPop0(Pjp), 1); 
 
+	    Pjlb        = P_JLB1(ju_PntrInJp(Pjp));
 	    digit	= JU_DIGITATSTATE(Index, 1);
 	    subexp	= digit / cJU_BITSPERSUBEXPL;
 	    bitposmaskL	= JU_BITPOSMASKL(digit);

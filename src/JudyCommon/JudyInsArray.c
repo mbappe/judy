@@ -1051,7 +1051,7 @@ ClearBranch:
             Pjbl_t Pjbl;
 
             if ((*PPop1 > JU_BRANCHL_MAX_POP)   // pop too high.
-             || ((PjblRaw = j__udyAllocJBL((int)numJPs, Pjpm)) == 0))
+             || ((PjblRaw = j__udyAllocJBL(Pjpm)) == 0))
             {                                   // cant alloc BranchL.
                 goto SetParent;                 // just keep BranchU.
             }

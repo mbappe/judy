@@ -60,7 +60,7 @@ FUNCTION int j__udyCreateBranchL(
         printf("\n=========== j__udyCreateBranchL (num jp_t = %d)\n", (int)ExpCnt);
 #endif  // PCAS
 
-	PjblRaw	= j__udyAllocJBL((int)ExpCnt, Pjpm);
+	PjblRaw	= j__udyAllocJBL(Pjpm);
 	if (PjblRaw == 0) return(-1);
         Pjbl    = P_JBL(PjblRaw);
 

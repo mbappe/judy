@@ -471,7 +471,6 @@ j__log2(Word_t num)
 // Leaf structures
 typedef struct J_UDY1_LEAF1_STRUCT
 {
-//    Word_t      jl1_subLeafPops; // temp
     Word_t      jl1_LastKey;
     uint8_t     jl1_Leaf[0];
 } jll1_t, *Pjll1_t;
@@ -514,6 +513,7 @@ typedef struct J_UDY1_LEAF7_STRUCT
 
 typedef struct J_UDY1_LEAF8_STRUCT
 {
+//    Word_t      jl8_LastKey;
     Word_t      jl8_Population0;
     Word_t      jl8_Leaf[0];
 } jllw_t, *Pjll8_t;
@@ -525,17 +525,9 @@ typedef struct J_UDY1_LEAF8_STRUCT
 
 #ifdef JUDYL
 // Leaf structures
-typedef struct J_UDY1_LEAF1_STRUCT_UCOMP
-{
-    Word_t      jl1_LastKey;
-    BITMAPL_t   jl1_Bitmaps[4 /* cJU_NUMSUBEXP */];
-    Word_t      jl1_Values[256];
-} jllu1_t, *Pjllu1_t;
-
 typedef struct J_UDYL_LEAF1_STRUCT
 {
     Word_t      jl1_LastKey;
-//    Word_t      jl1_subLeafPops;        // temp
     uint8_t     jl1_Leaf[0];
 } jll1_t, *Pjll1_t;
 
@@ -577,6 +569,7 @@ typedef struct J_UDYL_LEAF7_STRUCT
 
 typedef struct J_UDYL_LEAF8_STRUCT
 {
+//    Word_t      jl8_LastKey;
     Word_t      jl8_Population0;
     Word_t      jl8_Leaf[0];
 } jll8_t, *Pjll8_t;
@@ -585,7 +578,8 @@ typedef struct J_UDYL_LEAF8_STRUCT
 // typedef Pvoid_t Pjll_t;  // pointer to lower-level linear leaf.
 
 #ifdef JUDYL
-typedef PWord_t Pjv_t;   // pointer to JudyL value area.
+typedef Word_t  jv_t;   // value type
+typedef PWord_t Pjv_t;  // pointer to JudyL value area.
 #endif
 
 // POINTER PREPARATION MACROS:
@@ -628,8 +622,7 @@ typedef PWord_t Pjv_t;   // pointer to JudyL value area.
 
 #ifdef JUDYL
 
-// Strip hi 10 bits and low 4 bits
-#define P_JV(   ADDR) ((Pjv_t)  (((Word_t)(ADDR)) & 0x3FFFFFFFFFFFF0))  // &value.
+#define P_JV(ADDR) ((Pjv_t)(ADDR))  // ^ to Values.
 
 
 #endif  // JUDYL
@@ -743,7 +736,7 @@ extern PPvoid_t j__udyLGet(Pcvoid_t PArray, Word_t Index, P_JE);
                                                                 \
     _off = P_leaf - (LEAFTYPE_t *)(ADDR);                       \
     if (I_ndex != *P_leaf) return(~_off);                       \
- /*   MISCOMPARESP(_off);     */                                \
+    MISCOMPARESP(_off);                                         \
     return(_off);                                               \
 }
 
@@ -976,10 +969,10 @@ extern PPvoid_t j__udyLGet(Pcvoid_t PArray, Word_t Index, P_JE);
 }
 
 // The native searches (Leaf Key size = 1,2,4,8)
-#if (! defined(SEARCH_BINARY)) && (! defined(SEARCH_LINEAR)) && (! defined(SEARCH_PSPLIT))
+#if (! defined(SEARCH_BINARY)) && (! defined(SEARCH_LINEAR)) && (! defined(SEARCH_LERP))
 // default a search leaf method
-#define SEARCH_PSPLIT 
-#endif  // (! defined(SEARCH_BINARY)) && (! defined(SEARCH_LINEAR)) && (! defined(SEARCH_PSPLIT))
+#define SEARCH_LERP 
+#endif  // (! defined(SEARCH_BINARY)) && (! defined(SEARCH_LINEAR)) && (! defined(SEARCH_LERP))
 
 
 // search in order 1,2,3,4..
@@ -996,10 +989,10 @@ extern PPvoid_t j__udyLGet(Pcvoid_t PArray, Word_t Index, P_JE);
 #endif // SEARCH_BINARY
 
 
-#ifdef SEARCH_PSPLIT
+#ifdef SEARCH_LERP
 #define SEARCHLEAFNATIVE        SEARCHBIDIRNATIVE
 #define SEARCHLEAFNONNAT        SEARCHBIDIRNONNAT
-#endif  // SEARCH_PSPLIT
+#endif  // SEARCH_LERP
 
 // Fast way to count bits set in 8..32[64]-bit int:
 //
@@ -1023,7 +1016,7 @@ j__udyCount64Bits(uint64_t word64)
 static inline int
 j__udyCount64Bits(uint64_t word64)
 {
-printf("\nOOps not using popcnt()\n");
+printf("\nOOps not using __builtin_popcountl()\n");
 //  Calculate each nibble to have counts of 0..4 bits in each nibble.
     word64 -= (word64 >> 1) & (uint64_t)0x5555555555555555;
     word64 = ((word64 >> 2) & (uint64_t)0x3333333333333333) + 
@@ -1300,6 +1293,23 @@ printf("\nOOps not using popcnt()\n");
 // COMMON CODE FRAGMENTS (MACROS)
 // ****************************************************************************
 //
+// This seems to have signifcant benefits for accessing Value areas (dlb)
+// Pre-fetch is only used for Pjv_t -- not
+// To turn off, specify -DnoPREFETCH
+
+#ifdef  noPREFETCH
+#define PREFETCH(ADDR)
+#else   // PREFETCH
+#include <immintrin.h>          // Intel, Amd ??
+//#define PREFETCH(ADDR) (_mm_prefetch((void *)(ADDR), MM_HINT))
+#define PREFETCH(ADDR) (__builtin_prefetch((void *)(ADDR), 0,1))
+#endif  // PREFETCH
+
+// Pre-fetch is not used for Judy1 -- yet
+//#ifdef  JUDY1
+//#define PREFETCH(ADDR)
+//#endif  // JUDY1
+
 // These code chunks are shared between various source files.
 //
 // Replicate a KEY as many times as possible in a Word_t
@@ -1877,23 +1887,8 @@ void static JU_INSERTCOPY7(uint8_t *dest, uint8_t *src,  Word_t POP1, int OFFSET
 #define JU_RET_FOUND_IMM(PJP,OFFSET) \
             return((PPvoid_t) (P_JV(ju_PntrInJp(PJP)) + (OFFSET)))
 
-#ifndef BMVALUE
-
 #define JU_RET_FOUND_LEAF_B1(PJLB,SUBEXP,OFFSET) \
             return((PPvoid_t) (JL_JLB_PVALUE(PJLB) + (OFFSET)))
-
-#else   // BMVALUE
-
-#define _bm(P,S)  ((Word_t)((P)->jLlb_jLlbs[S].jLlbs_Bitmap))
-#define _bmi(P,S) ((_bm(P,S) & -_bm(P,S)) == (_bm(P,S)))
-
-#define JU_RET_FOUND_LEAF_B1(PJLB,SUBEXP,OFFSET)                \
-    return((PPvoid_t) ((_bmi(PJLB,SUBEXP)) ?                    \
-    ((Pjv_t)(&(PJLB)->jLlb_jLlbs[SUBEXP].jLlbs_PV_Raw))         \
-    : (P_JV((PJLB)->jLlb_jLlbs[SUBEXP].jLlbs_PV_Raw)) + (OFFSET)))
-
-#endif  // BMVALUE
-
 #endif // JUDYL
 
 
@@ -1967,9 +1962,10 @@ void static JU_INSERTCOPY7(uint8_t *dest, uint8_t *src,  Word_t POP1, int OFFSET
 
 // Leaf search routines
 
+// LinEaR Interpolation
 // This calculates a proportional division of Pop1 and significant hi-bits
 // to produce a statical starting offset to begin search.
-#define PSPLIT(POP, KEY, LOG2)  (((Word_t)(KEY) * (POP)) >> (LOG2))
+#define LERP(POP, KEY, LOG2)  (((Word_t)(KEY) * (POP)) >> (LOG2))
 
 // Cheap and dirty search for matching branchL
 static inline int j__udySearchBranchL(uint8_t *Lst, int pop1, uint8_t Exp)
@@ -1979,14 +1975,25 @@ static inline int j__udySearchBranchL(uint8_t *Lst, int pop1, uint8_t Exp)
 
 static inline int j__udySearchRawLeaf1(uint8_t *PLeaf1, int LeafPop1, Word_t Index, int Start)
 {
-    SEARCHLEAFNATIVE(uint8_t, PLeaf1, LeafPop1, (uint8_t)Index, Start); 
+//    SEARCHLEAFNATIVE  (uint8_t, PLeaf1, LeafPop1, (uint8_t)Index, Start); 
+//    SEARCHLINARNATIVE   (uint8_t, PLeaf1, LeafPop1, (uint8_t)Index, Start); 
+//    SEARCHBINARYNATIVE(uint8_t, PLeaf1, LeafPop1, (uint8_t)Index, Start); 
+    SEARCHBIDIRNATIVE (uint8_t, PLeaf1, LeafPop1, (uint8_t)Index, Start); 
+}
+
+static inline int j__udySearchRawLeaf2(uint16_t *PLeaf2, int LeafPop1, Word_t Index, int Start)
+{
+//    SEARCHLEAFNATIVE  (uint16_t, PLeaf2, LeafPop1, (uint16_t)Index, Start); 
+//    SEARCHLINARNATIVE   (uint16_t, PLeaf2, LeafPop1, (uint16_t)Index, Start); 
+//    SEARCHBINARYNATIVE(uint16_t, PLeaf2, LeafPop1, (uint16_t)Index, Start); 
+    SEARCHBIDIRNATIVE (uint16_t, PLeaf2, LeafPop1, (uint16_t)Index, Start); 
 }
 
 static inline int j__udySearchLeaf1(Pjll1_t Pjll1, int LeafPop1, Word_t Index, int Expanse)
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 1);
-    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    int Start = LERP(LeafPop1, Index, Expanse); 
 //    printf("Pjll1->jl1_Leaf = 0x%016lx, LeafPop1 = %d, Index = 0x%016lx, Start = %d\n", (Word_t)Pjll1->jl1_Leaf, (int)LeafPop1, Index, (int)Start);
     SEARCHLEAFNATIVE(uint8_t, Pjll1->jl1_Leaf, LeafPop1, Index, Start); 
 }
@@ -1995,7 +2002,7 @@ static inline int j__udySearchImmed1(uint8_t *Pleaf1, int LeafPop1, Word_t Index
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 1);
-    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    int Start = LERP(LeafPop1, Index, Expanse); 
     SEARCHLEAFNATIVE(uint8_t,  Pleaf1, LeafPop1, Index, Start); 
 }
 
@@ -2003,7 +2010,7 @@ static inline int j__udySearchLeaf2(Pjll2_t Pjll2, int LeafPop1, Word_t Index, i
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 2);
-    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    int Start = LERP(LeafPop1, Index, Expanse); 
     SEARCHLEAFNATIVE(uint16_t,  Pjll2->jl2_Leaf, LeafPop1, Index, Start); 
 }
 
@@ -2011,7 +2018,7 @@ static inline int j__udySearchImmed2(uint16_t *Pleaf2, int LeafPop1, Word_t Inde
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 2);
-    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    int Start = LERP(LeafPop1, Index, Expanse); 
     SEARCHLEAFNATIVE(uint16_t,  Pleaf2, LeafPop1, Index, Start); 
 }
 
@@ -2019,7 +2026,7 @@ static inline int j__udySearchLeaf3(Pjll3_t Pjll3, int LeafPop1, Word_t Index, i
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 3);
-    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    int Start = LERP(LeafPop1, Index, Expanse); 
     SEARCHLEAFNONNAT(Pjll3->jl3_Leaf, LeafPop1, Index, 3, JU_COPY3_PINDEX_TO_LONG, Start); 
 }
 
@@ -2027,7 +2034,7 @@ static inline int j__udySearchImmed3(uint8_t *Pleaf3, int LeafPop1, Word_t Index
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 3);
-    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    int Start = LERP(LeafPop1, Index, Expanse); 
     SEARCHLEAFNONNAT(Pleaf3, LeafPop1, Index, 3, JU_COPY3_PINDEX_TO_LONG, Start); 
 }
 
@@ -2035,7 +2042,7 @@ static inline int j__udySearchLeaf4(Pjll4_t Pjll4, int LeafPop1, Word_t Index, i
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 4);
-    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    int Start = LERP(LeafPop1, Index, Expanse); 
     SEARCHLEAFNATIVE(uint32_t, Pjll4->jl4_Leaf, LeafPop1, Index, Start); 
 }
 
@@ -2043,7 +2050,7 @@ static inline int j__udySearchImmed4(uint32_t *Pleaf4, int LeafPop1, Word_t Inde
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 4);
-    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    int Start = LERP(LeafPop1, Index, Expanse); 
     SEARCHLEAFNATIVE(uint32_t,  Pleaf4, LeafPop1, Index, Start); 
 }
 
@@ -2051,7 +2058,7 @@ static inline int j__udySearchLeaf5(Pjll5_t Pjll5, int LeafPop1, Word_t Index, i
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 5);
-    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    int Start = LERP(LeafPop1, Index, Expanse); 
     SEARCHLEAFNONNAT(Pjll5->jl5_Leaf, LeafPop1, Index, 5, JU_COPY5_PINDEX_TO_LONG, Start); 
 }
 
@@ -2059,7 +2066,7 @@ static inline int j__udySearchImmed5(uint8_t *Pleaf5, int LeafPop1, Word_t Index
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 5);
-    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    int Start = LERP(LeafPop1, Index, Expanse); 
     SEARCHLEAFNONNAT(Pleaf5, LeafPop1, Index, 5, JU_COPY5_PINDEX_TO_LONG, Start); 
 }
 
@@ -2067,7 +2074,7 @@ static inline int j__udySearchLeaf6(Pjll6_t Pjll6, int LeafPop1, Word_t Index, i
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 6);
-    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    int Start = LERP(LeafPop1, Index, Expanse); 
 //    SEARCHLEAFNONNAT(Pjll6->jl6_Leaf, LeafPop1, Index, 6, JU_COPY6_PINDEX_TO_LONG, Start); 
     SEARCHLINARNONNAT(Pjll6->jl6_Leaf, LeafPop1, Index, 6, JU_COPY6_PINDEX_TO_LONG, 0); 
 }
@@ -2076,7 +2083,7 @@ static inline int j__udySearchImmed6(uint8_t *Pleaf6, int LeafPop1, Word_t Index
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 6);
-//    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+//    int Start = LERP(LeafPop1, Index, Expanse); 
     SEARCHLINARNONNAT(Pleaf6, LeafPop1, Index, 6, JU_COPY6_PINDEX_TO_LONG, 0); 
 }
 
@@ -2084,7 +2091,7 @@ static inline int j__udySearchLeaf7(Pjll7_t Pjll7, int LeafPop1, Word_t Index, i
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 7);
-    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+    int Start = LERP(LeafPop1, Index, Expanse); 
 //    SEARCHLEAFNONNAT(Pjll7->jl7_Leaf, LeafPop1, Index, 7, JU_COPY7_PINDEX_TO_LONG, Start); 
     SEARCHLINARNONNAT(Pjll7->jl7_Leaf, LeafPop1, Index, 7, JU_COPY7_PINDEX_TO_LONG, 0); 
 }
@@ -2093,7 +2100,7 @@ static inline int j__udySearchImmed7(uint8_t *Pleaf7, int LeafPop1, Word_t Index
 {
     SEARCHPOPULATION(LeafPop1);
     Index = JU_LEASTBYTES(Index, 7);
-//    int Start = PSPLIT(LeafPop1, Index, Expanse); 
+//    int Start = LERP(LeafPop1, Index, Expanse); 
 //    SEARCHLEAFNONNAT(Pleaf7, LeafPop1, Index, 7, JU_COPY7_PINDEX_TO_LONG, Start); 
     SEARCHLINARNONNAT(Pleaf7, LeafPop1, Index, 7, JU_COPY7_PINDEX_TO_LONG, 0); 
 }

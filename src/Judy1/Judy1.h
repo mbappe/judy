@@ -142,6 +142,7 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
         cJ1_JPBRANCH_B6,        // 6 bytes Pop0, 2 byte  Dcd (Prefix).
         cJ1_JPBRANCH_B7,        // 7 bytes Pop0, 1 bytes Dcd (Prefix).
         cJ1_JPBRANCH_B8,        // 8 bytes Pop0, 0 bytes Dcd (Prefix).
+#define cJ1_JPMAXBRANCH (cJ1_JPBRANCH_B8) // Max Branch jp_type
 
 // JP LEAF TYPES:
 
@@ -150,8 +151,6 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // Note:  These Types must be in sequential order for doing relative
 // calculations between them.
 //
-#define cJ1_JPMAXBRANCH (cJ1_JPLEAF1 - 1) // Max Branch jp_type
-        cJ1_JPLEAF1,            // 1 byte Pop0
         cJ1_JPLEAF2,            // 1 byte Pop0
         cJ1_JPLEAF3,            // 1 byte Pop0
         cJ1_JPLEAF4,            // 1 byte Pop0
@@ -266,8 +265,9 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 
 
 //#define J_1_MAXB   (sizeof(Word_t) * 33)
+//#define J_1_MAXB   (sizeof(Word_t) * 51)
 //#define J_1_MAXB   (sizeof(Word_t) * 65)
-#define J_1_MAXB   (sizeof(Word_t) * 51)
+#define J_1_MAXB   (sizeof(Word_t) * 83)
 
 //#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 15, 19, 23, 27, 33, 39, 47, 55, 67, 81, 97, 117, 141, 169, TERMINATOR }
 /////#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 17, 21, 27, 33, 41, 51, 65, 83, 103, 129, 159, TERMINATOR }
@@ -279,7 +279,7 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 //pre#define J_1_MAXB   (sizeof(Word_t) * 63)
 //pre#define ALLOCSIZES { 3, 5, 9, 15, 25, 41, 67, 109, 177, TERMINATOR }
 
-#define cJ1_LEAF1_MAXWORDS  (33)          // ANY NUMBER < 2 MEANS NO LEAF1 !!!!
+#define cJ1_LEAF1_MAXWORDS  (1)          // ANY NUMBER < 2 MEANS NO LEAF1 !!!!
 
 // Under JRP (root-state leaves):
 //
@@ -318,19 +318,15 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 //#define cJ1_LEAF2_MAXPOP1    (64 * 4 - 1)      // Allocsize of 65
 
 #ifndef cJ1_LEAF2_MAXPOP1
-//#define cJ1_LEAF2_MAXPOP1    ((J_1_MAXB - 5)/ 2)
-//#define cJ1_LEAF2_MAXPOP1    (40)
 #define cJ1_LEAF2_MAXPOP1    (255)
-//#define cJ1_LEAF2_MAXPOP1    (J_1_MAXB / 2)  Too big
 #endif  // cJ1_LEAF2_MAXPOP1
 
-#define cJ1_LEAF3_MAXPOP1    (J_1_MAXB / 3)
-//#define cJ1_LEAF3_MAXPOP1    (255)
-#define cJ1_LEAF4_MAXPOP1    (J_1_MAXB / 4)
-//#define cJ1_LEAF4_MAXPOP1    (255)
-#define cJ1_LEAF5_MAXPOP1    (J_1_MAXB / 5)
-#define cJ1_LEAF6_MAXPOP1    (J_1_MAXB / 6)
-#define cJ1_LEAF7_MAXPOP1    (J_1_MAXB / 7)
+//#define cJ1_LEAF2_MAXPOP1    ((J_1_MAXB - 8)/ 2)
+#define cJ1_LEAF3_MAXPOP1    ((J_1_MAXB - 8)/ 3)
+#define cJ1_LEAF4_MAXPOP1    ((J_1_MAXB - 8)/ 4)
+#define cJ1_LEAF5_MAXPOP1    ((J_1_MAXB - 8)/ 5)
+#define cJ1_LEAF6_MAXPOP1    ((J_1_MAXB - 8)/ 6)
+#define cJ1_LEAF7_MAXPOP1    ((J_1_MAXB - 8)/ 7)
 #define cJ1_LEAF8_MAXPOP1    ((J_1_MAXB - cJU_BYTESPERWORD) / cJU_BYTESPERWORD)
 
 // MAXIMUM POPULATIONS OF IMMEDIATE JPs:
@@ -349,6 +345,7 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 #define cJ1_IMMED7_MAXPOP1  ((sizeof(jp_t) - 1) / 7)    // 2.
 
 #else   // ! oldwaywithJPequal16bytes
+
 #define cJ1_IMMED1_MAXPOP1  15 // 15    - minLeaf = 16 Keys
 #define cJ1_IMMED2_MAXPOP1   7 // 7     - minLeaf =  8 Keys
 #define cJ1_IMMED3_MAXPOP1   5 // 5     - minLeaf =  6 Keys
@@ -367,9 +364,10 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 
 typedef struct J__UDY1_BITMAP_LEAF
 {
-        Word_t j1lb_LastKey;
+//        Word_t j1lb_LastKey;
         BITMAPL_t j1lb_Bitmap[cJU_NUMSUBEXPL];
-//        Word_t j1lb_LastKey; does not seem to matter where
+//        Word_t j1lb_LastKey;    // does not seem to matter where
+//        Word_t j1lb_LastKey;     now in the jp_t DcdPop0
 
 } j1lb_t, * Pj1lb_t;
 
@@ -457,7 +455,7 @@ extern const uint16_t j__1_Leaf8PopToWords[cJ1_LEAF8_MAXPOP1 + 2];
 Pj1pm_t j__udy1AllocJ1PM(void);                         // constant size.
 Pjll8_t j__udy1AllocJLL8( int );                        // no Pj1pm needed.
 
-Word_t  j__udy1AllocJBL(  int,    Pj1pm_t);
+Word_t  j__udy1AllocJBL(          Pj1pm_t);
 Word_t  j__udy1AllocJBB(          Pj1pm_t);             // constant size.
 Word_t  j__udy1AllocJBBJP(int,    Pj1pm_t);
 Word_t  j__udy1AllocJBU(          Pj1pm_t);             // constant size.
@@ -471,13 +469,13 @@ Word_t  j__udy1AllocJLL5( int,    Pj1pm_t);
 Word_t  j__udy1AllocJLL6( int,    Pj1pm_t);
 Word_t  j__udy1AllocJLL7( int,    Pj1pm_t);
 
-Word_t  j__udy1AllocJLB1( int,    Pj1pm_t);             // constant size.
+Word_t  j__udy1AllocJLB1(         Pj1pm_t);             // constant size.
 
 // FUNCTIONS TO FREE OBJECTS:
 
 void    j__udy1FreeJ1PM( Pj1pm_t,        Pj1pm_t);      // constant size.
 
-void    j__udy1FreeJBL(  Word_t, int,    Pj1pm_t);
+void    j__udy1FreeJBL(  Word_t,         Pj1pm_t);      // constant size.
 void    j__udy1FreeJBB(  Word_t,         Pj1pm_t);      // constant size.
 void    j__udy1FreeJBBJP(Word_t, int,    Pj1pm_t);
 void    j__udy1FreeJBU(  Word_t,         Pj1pm_t);      // constant size.
@@ -492,7 +490,7 @@ void    j__udy1FreeJLL6( Word_t, int,    Pj1pm_t);
 void    j__udy1FreeJLL7( Word_t, int,    Pj1pm_t);
 
 void    j__udy1FreeJLL8(  Pjll8_t, int,  Pj1pm_t);
-void    j__udy1FreeJLB1( Word_t, int,    Pj1pm_t);      // constant size.
+void    j__udy1FreeJLB1( Word_t,         Pj1pm_t);      // constant size.
 void    j__udy1FreeSM(   Pjp_t,          Pj1pm_t);      // everything below Pjp.
 
 #endif // ! _JUDY1_INCLUDED

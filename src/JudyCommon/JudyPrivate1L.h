@@ -100,7 +100,6 @@
 #define	cJU_JPBRANCH_U7_p	cJ1_JPBRANCH_U7_p
 #define	cJU_JPBRANCH_U8		cJ1_JPBRANCH_U8
 #define	cJU_JPBRANCH_U8_p	cJ1_JPBRANCH_U8_p
-#define	cJU_JPLEAF1		cJ1_JPLEAF1
 #define	cJU_JPLEAF2		cJ1_JPLEAF2
 #define	cJU_JPLEAF3		cJ1_JPLEAF3
 #define	cJU_JPLEAF4		cJ1_JPLEAF4
@@ -307,7 +306,6 @@
 
 #define	jlb_t			j1lb_t
 #define	Pjlb_t			Pj1lb_t
-#define jlb_LastKey             j1lb_LastKey
 
 #define cJU_WORDSPERLEAFB1      cJ1_WORDSPERLEAFB1      
 #define	JU_JLB_BITMAP		J1_JLB_BITMAP
@@ -412,7 +410,6 @@
 
 #define	jlb_t			jLlb_t
 #define	Pjlb_t			PjLlb_t
-#define jlb_LastKey             jLlb_LastKey
 
 #define cJU_WORDSPERLEAFB1      cJL_WORDSPERLEAFB1      
 #define	JU_JLB_BITMAP		JL_JLB_BITMAP

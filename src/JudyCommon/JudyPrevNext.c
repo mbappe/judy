@@ -384,7 +384,7 @@ Printf("\n FAILED CDcmp -- going to SM3Findlimit\n");                   \
 	    goto SM3Findlimit;						\
 	}
 
-#define	CHECKWITHDCD(DCD,KEY,cState)				        \
+#define	CHECKLEAFDCD(DCD,KEY,cState)				        \
 {                                                                       \
     Word_t Dcd = (DCD) & cJU_DCDMASK(cState);                           \
     Word_t Key = (KEY) & cJU_DCDMASK(cState);                           \
@@ -413,6 +413,7 @@ Printf("\n FAILED CDcmp -- going to SM3Findlimit\n");                   \
 // Optionally save Dcd bytes into Index, then save state and jump to common
 // code for multiple cases.
 
+// CAN BE USED ONLY IN BRANCHES!!!!
 #define	SM3PREPB_DCD(cState,Next)			\
 	JU_SETDCD(Index, Pjp, cState);	        \
 	SM3PREPB(cState,Next)
@@ -808,29 +809,21 @@ Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offs
 #endif  // obs
 
 #ifdef  JUDYL
-#ifdef  LEAF1_UCOMP
-            case cJL_JPLEAF1_UCOMP:
-            {
-                printf("\nOOPS - not implemented yet!, Line = %d\n", (int)__LINE__);
-                exit(1);
-            }
-#endif  // LEAF1_UCOMP
-#endif  // JUDYL
-
 	case cJU_JPLEAF1:  
         {
 	    Pjll1  = P_JLL1(ju_PntrInJp(Pjp));
-            CHECKWITHDCD(Pjll1->jl1_LastKey, Index, 1);
+            CHECKLEAFDCD(Pjll1->jl1_LastKey, Index, 1);
 	    pop1   = ju_LeafPop1(Pjp);
 	    offset = j__udySearchLeaf1(Pjll1, pop1, Index, 1 * 8);
 Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offset, ~offset, pop1, Index);
 	    goto SM1LeafLImm;
         }
+#endif  // JUDYL
 
 	case cJU_JPLEAF2:  
         {
 	    Pjll2  = P_JLL2(ju_PntrInJp(Pjp));
-            CHECKWITHDCD(Pjll2->jl2_LastKey, Index, 2);
+            CHECKLEAFDCD(Pjll2->jl2_LastKey, Index, 2);
 	    pop1   = ju_LeafPop1(Pjp);
 	    offset = j__udySearchLeaf2(Pjll2, pop1, Index, 2 * 8);
 Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offset, ~offset, pop1, Index);
@@ -839,7 +832,7 @@ Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offs
 	case cJU_JPLEAF3:  
         {
 	    Pjll3  = P_JLL3(ju_PntrInJp(Pjp));
-            CHECKWITHDCD(Pjll3->jl3_LastKey, Index, 3);
+            CHECKLEAFDCD(Pjll3->jl3_LastKey, Index, 3);
 	    pop1   = ju_LeafPop1(Pjp);
 	    offset = j__udySearchLeaf3(Pjll3, pop1, Index, 3 * 8);
 Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offset, ~offset, pop1, Index);
@@ -848,7 +841,7 @@ Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offs
 	case cJU_JPLEAF4:  
         {
 	    Pjll4  = P_JLL4(ju_PntrInJp(Pjp));
-            CHECKWITHDCD(Pjll4->jl4_LastKey, Index, 4);
+            CHECKLEAFDCD(Pjll4->jl4_LastKey, Index, 4);
 	    pop1   = ju_LeafPop1(Pjp);
 	    offset = j__udySearchLeaf4(Pjll4, pop1, Index, 4 * 8);
 Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offset, ~offset, pop1, Index);
@@ -857,7 +850,7 @@ Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offs
 	case cJU_JPLEAF5:  
         {
 	    Pjll5  = P_JLL5(ju_PntrInJp(Pjp));
-            CHECKWITHDCD(Pjll5->jl5_LastKey, Index, 5);
+            CHECKLEAFDCD(Pjll5->jl5_LastKey, Index, 5);
 	    pop1   = ju_LeafPop1(Pjp);
 	    offset = j__udySearchLeaf5(Pjll5, pop1, Index, 5 * 8);
 Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offset, ~offset, pop1, Index);
@@ -866,7 +859,7 @@ Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offs
 	case cJU_JPLEAF6:  
         {
 	    Pjll6  = P_JLL6(ju_PntrInJp(Pjp));
-            CHECKWITHDCD(Pjll6->jl6_LastKey, Index, 6);
+            CHECKLEAFDCD(Pjll6->jl6_LastKey, Index, 6);
 	    pop1   = ju_LeafPop1(Pjp);
 	    offset = j__udySearchLeaf6(Pjll6, pop1, Index, 6 * 8);
 Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offset, ~offset, pop1, Index);
@@ -875,7 +868,7 @@ Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offs
 	case cJU_JPLEAF7:  
         {
 	    Pjll7  = P_JLL7(ju_PntrInJp(Pjp));
-            CHECKWITHDCD(Pjll7->jl7_LastKey, Index, 7);
+            CHECKLEAFDCD(Pjll7->jl7_LastKey, Index, 7);
 	    pop1   = ju_LeafPop1(Pjp);
 	    offset = j__udySearchLeaf7(Pjll7, pop1, Index, 7 * 8);
 Printf("\n---Leaf search----offset = %d[%d], pop1 = %lu, Key = 0x%016lx\n", offset, ~offset, pop1, Index);
@@ -979,23 +972,16 @@ Printf("\ngoto SM1LeafLImm\n");
 
 	    switch (ju_Type(Pjp))
 	    {
+  
 #ifdef  JUDYL
-#ifdef  LEAF1_UCOMP
-            case cJL_JPLEAF1_UCOMP:
-            {
-                printf("\nOOPS - not implemented yet!\n");
-                exit(1);
-            }
-#endif  // LEAF1_UCOMP
-#endif  // JUDYL
-
 	    case cJU_JPLEAF1:
             {
-//		JU_SETDIGIT1(Index, Pjll1->jl1_Leaf[offset]);
+//		JU_SETDIGIT1(Index, Pjll1->jl1_Leaf[offset]); Change least 8 Key bits in Index
 		Index = (Index & (~JU_LEASTBYTESMASK(1))) | Pjll1->jl1_Leaf[offset];
                 *PIndex = Index;
 		JU_RET_FOUND_LEAF1(Pjll1, pop1, offset);
             }
+#endif  // JUDYL
 
 	    case cJU_JPLEAF2:
             {
@@ -1188,8 +1174,8 @@ Printf("\ngoto SM1Imm_01\n");
 
 	case cJU_JPLEAF_B1:
 	{
+            CHECKDCD(1);             // Dcd now in jp_t B1 * FULL
 	    Pjlb_t Pjlb	= P_JLB1(ju_PntrInJp(Pjp));
-            CHECKWITHDCD(Pjlb->jlb_LastKey, Index, 1);
 
 	    digit       = JU_DIGITATSTATE(Index, 1);
 	    subexp      = JU_SUBEXPL(digit);
@@ -1202,10 +1188,11 @@ Printf("\ngoto SM1Imm_01\n");
 	    if (JU_JLB_BITMAP(Pjlb, subexp) & bitposmask)	// faster.
 	    {
 #ifdef JUDYL				// needs offset at this point:
-		offset = SEARCHBITMAPL(JU_JLB_BITMAP(Pjlb, subexp), digit, bitposmask);
+//                 offset = SEARCHBITMAPL(JU_JLB_BITMAP(Pjlb, subexp), digit, bitposmask);
 #endif
                 *PIndex = Index;
-		JU_RET_FOUND_LEAF_B1(Pjlb, subexp, offset);
+
+		JU_RET_FOUND_LEAF_B1(Pjlb, subexp, digit);
 //	== return((PPvoid_t) (P_JV(JL_JLB_PVALUE(Pjlb, subexp)) + (offset)));
 	    }
 
@@ -1254,9 +1241,9 @@ Printf("\ngoto SM1LeafB1Findlimit\n");
 
 //		JU_SETDIGIT1(Index, digit);
                 Index = (Index & ~0xff) | digit;
-
                 *PIndex = Index;
-		JU_RET_FOUND_LEAF_B1(Pjlb, subexp, offset);
+
+		JU_RET_FOUND_LEAF_B1(Pjlb, subexp, digit);
 //	== return((PPvoid_t) (P_JV(JL_JLB_PVALUE(Pjlb, subexp)) + (offset)));
 	    }
 
@@ -1277,9 +1264,7 @@ Printf("\ngoto SM1LeafB1Findlimit\n");
 
 	case cJ1_JPFULLPOPU1:
         {
-            assert(0);
-//	    CHECKLEAFDCD(1);
-//            CHECKLEAFDCD(Pjll1->jl1_LastKey, Index, 1);
+            CHECKDCD(1);             // Dcd now in jp_t
             *PIndex = Index;
 	    JU_RET_FOUND_FULLPOPU1;
         }
@@ -1855,6 +1840,7 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 // details vary depending on leaf Index Size.  First copy Dcd bytes, if there
 // are any (only if state < cJU_ROOTSTATE - 1), to Index.
 
+// CAN BE USED ONLY IN BRANCHES!!!!
 #define	SM3LEAFLDCD(cState)			\
 	JU_SETDCD(Index, Pjp, cState);	        \
 	SM3LEAFLNODCD
@@ -1869,7 +1855,7 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 #define	SM3LEAFLNODCD			\
 	Pjll = P_JLL(ju_PntrInJp(Pjp));	\
 	SM3LEAFL_SETPOP1;		\
-	offset = (ju_LeafPop1(Pjp) - 1); assert(offset >= 0)
+	offset = (uint8_t)(ju_LeafPop1(Pjp) - 1); assert(offset >= 0)
 #else
 #define	SM3LEAFLNODCD			\
 	Pjll = P_JLL(ju_PntrInJp(Pjp));	\
@@ -1878,6 +1864,7 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 #endif
 
 
+#ifdef  JUDYL
 	case cJU_JPLEAF1:
         {
             int pop0 = ju_LeafPop1(Pjp) - 1;
@@ -1890,6 +1877,7 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 	    JU_RET_FOUND_LEAF1(Pjll1, pop0 + 1, 0);
 #endif  // JUDYNEXT
         }
+#endif  // JUDYL
 
 	case cJU_JPLEAF2:
         {
@@ -1993,10 +1981,9 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 	{
 	    Pjlb_t Pjlb;
 
-	    JU_SETDCD(Index, Pjp, 1);
+            JU_SETDCD(Index, Pjp, 1);
 
 	    Pjlb   = P_JLB1(ju_PntrInJp(Pjp));
-            Index = Pjlb->jlb_LastKey;
 #ifdef JUDYPREV
 	    subexp = cJU_NUMSUBEXPL;
 
@@ -2004,8 +1991,8 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 	    {
 		if (subexp <= 0)		// wholly empty bitmap.
 		{
-		    JU_SET_ERRNO(PJError, JU_ERRNO_CORRUPT);
                     assert(0);
+		    JU_SET_ERRNO(PJError, JU_ERRNO_CORRUPT);
 		    JUDY1CODE(return(JERRI ););
 		    JUDYLCODE(return(PPJERR););
 		}
@@ -2019,12 +2006,13 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 	    assert((offset >= 0) && (offset < cJU_BITSPERSUBEXPL));
 #else   // JUDYNEXT
 	    subexp = -1;
+
 	    while (! JU_JLB_BITMAP(Pjlb, ++subexp))  // find non-empty subexp.
 	    {
 		if (subexp >= cJU_NUMSUBEXPL - 1)    // didnt find one.
 		{
+                    assert(FALSE);
 		    JU_SET_ERRNO(PJError, JU_ERRNO_CORRUPT);
-                    assert(0);
 		    JUDY1CODE(return(JERRI ););
 		    JUDYLCODE(return(PPJERR););
 		}
@@ -2034,7 +2022,8 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 
 	    JU_BITMAPDIGITL(digit, subexp, JU_JLB_BITMAP(Pjlb, subexp), offset);
             *PIndex = (Index & ~0xff) | digit;
-	    JU_RET_FOUND_LEAF_B1(Pjlb, subexp, offset);
+
+	    JU_RET_FOUND_LEAF_B1(Pjlb, subexp, digit);
 //	== return((PPvoid_t) (P_JV(JL_JLB_PVALUE(Pjlb, subexp)) + (offset)));
 
 	} // case cJU_JPLEAF_B1
@@ -2047,8 +2036,9 @@ Printf("\nBRANCH_U%ld  Index = 0x%016lx from after  JU_SETDIGIT, offset = %d, LI
 // then set the highest/lowest possible digit as the LSB in Index.
 
 	case cJ1_JPFULLPOPU1:
-
-	    JU_SETDCD(   Index, Pjp, 1);
+ 
+//          Build Index from DCD and Key bits in Index
+            JU_SETDCD(Index, Pjp, 1);             // Dcd now in jp_t B1 * FULL
 #ifdef JUDYPREV
 //	    JU_SETDIGIT1(Index, cJU_BITSPERBITMAP - 1);
             Index = (Index & ~0xff) | (cJU_BITSPERBITMAP - 1);

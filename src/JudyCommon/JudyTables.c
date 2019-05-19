@@ -235,8 +235,7 @@ FUNCTION int main()
 
     GenTable("j__1_BranchBJP","cJU_BITSPERSUBEXPB",sizeof(jp_t), cJU_BITSPERSUBEXPB, 0, 0);
 
-//    GenTable("j__1_Leaf1", "cJ1_LEAF1_MAXPOP1", 1, cJ1_LEAF1_MAXPOP1, 0, 32);
-    GenTable("j__1_Leaf1", "cJ1_LEAF1_MAXPOP1", 1, cJ1_LEAF1_MAXPOP1, 0, 1);
+//    GenTable("j__1_Leaf1", "cJ1_LEAF1_MAXPOP1", 1, cJ1_LEAF1_MAXPOP1, 0, 1);
     GenTable("j__1_Leaf2", "cJ1_LEAF2_MAXPOP1", 2, cJ1_LEAF2_MAXPOP1, 0, 1);
     GenTable("j__1_Leaf3", "cJ1_LEAF3_MAXPOP1", 3, cJ1_LEAF3_MAXPOP1, 0, 1);
     GenTable("j__1_Leaf4", "cJ1_LEAF4_MAXPOP1", 4, cJ1_LEAF4_MAXPOP1, 0, 1);
@@ -272,7 +271,7 @@ FUNCTION int main()
     GenTable("j__L_BranchBJP","cJU_BITSPERSUBEXPB",sizeof(jp_t), cJU_BITSPERSUBEXPB, 0, 0);
 
 //exp    GenTable("j__L_Leaf1", "cJL_LEAF1_MAXPOP1",  0, cJL_LEAF1_MAXPOP1,  8, 33);
-    GenTable("j__L_LeafB1", "cJL_LEAFB1_MAXPOP1",0, cJL_LEAFB1_MAXPOP1,  BPW, cJL_WORDSPERLEAFB1);
+//    GenTable("j__L_LeafB1", "cJL_LEAFB1_MAXPOP1",0, cJL_LEAFB1_MAXPOP1,  BPW, cJL_WORDSPERLEAFB1);
 //    GenTable("j__L_LeafB1", "cJL_LEAFB1_MAXPOP1",0,              256,   BPW, cJL_WORDSPERLEAFB1);
     GenTable("j__L_Leaf1", "cJL_LEAF1_MAXPOP1",  1, cJL_LEAF1_MAXPOP1,  BPW, 1);
     GenTable("j__L_Leaf2", "cJL_LEAF2_MAXPOP1",  2, cJL_LEAF2_MAXPOP1,  BPW, 1);

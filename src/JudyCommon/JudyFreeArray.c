@@ -221,7 +221,7 @@ FUNCTION void j__udyFreeSM(
 	    for (offset = 0; offset < Pjbl->jbl_NumJPs; offset++)
 	        j__udyFreeSM(Pjbl->jbl_jp + offset, Pjpm);
 
-	    j__udyFreeJBL(ju_PntrInJp(Pjp), (int)Pjbl->jbl_NumJPs, Pjpm);
+	    j__udyFreeJBL(ju_PntrInJp(Pjp), Pjpm);
 	    break;
 	}
 
@@ -301,11 +301,7 @@ FUNCTION void j__udyFreeSM(
 // Note:  cJU_JPLEAF1 is a special case, see discussion in ../Judy1/Judy1.h
 
 #ifdef  JUDYL
-#ifdef  LEAF1_UCOMP
-	case cJL_JPLEAF1_UCOMP:
-#endif  // LEAF1_UCOMP
-#endif  // JUDYL
-	case cJU_JPLEAF1:
+	case cJU_JPLEAF1:       // only JudyL
 #ifdef  DEBUG
             Line = __LINE__;
 #endif  // DEBUG
@@ -313,6 +309,7 @@ FUNCTION void j__udyFreeSM(
             if (Pop1 == 0) Pop1 = 256;
 	    j__udyFreeJLL1(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
+#endif  // JUDYL
 
 	case cJU_JPLEAF2:
 #ifdef  DEBUG
@@ -365,6 +362,7 @@ FUNCTION void j__udyFreeSM(
 
 // BITMAP LEAF -- free sub-expanse arrays of JPs, then free the JBB.
 
+#ifdef  OBSOLETE
 #ifdef  JUDYL
         case cJL_JPLEAF_B1_UCOMP:
         {
@@ -372,10 +370,11 @@ FUNCTION void j__udyFreeSM(
             Line = __LINE__;
 #endif  // DEBUG
 
-	    j__udyFreeJLB1(ju_PntrInJp(Pjp), 256, Pjpm);
+	    j__udyFreeJLB1(ju_PntrInJp(Pjp), Pjpm);
             break;
 	} // case cJL_JPLEAF_B1_UCOMP
 #endif  // JUDYL
+#endif  // OBSOLETE
 
 	case cJU_JPLEAF_B1:
 	{
@@ -384,7 +383,7 @@ FUNCTION void j__udyFreeSM(
 #endif  // DEBUG
 
 	    Pop1 = ju_LeafPop1(Pjp);
-	    j__udyFreeJLB1(ju_PntrInJp(Pjp), (int)Pop1, Pjpm);
+	    j__udyFreeJLB1(ju_PntrInJp(Pjp), Pjpm);
 	    break;
 
 	} // case cJU_JPLEAF_B1
