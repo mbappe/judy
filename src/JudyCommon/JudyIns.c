@@ -67,9 +67,6 @@ extern int j__udyLCascade8(Pjp_t, Word_t, Pjpm_t);
 extern int j__udyLInsertBranchL(Pjp_t Pjp, Word_t Index, Word_t Dcd, Word_t Btype, Pjpm_t);
 #endif /* JUDYL */
 
-//
-//                  64 Bit JudyIns.c
-//
 // ****************************************************************************
 // __ J U D Y   I N S   W A L K
 //
@@ -685,7 +682,7 @@ JudyBranchB:
         assert(exppop1 == (cJU_LEAF1_MAXPOP1));
 
 #ifdef  PCAS
-        printf("\n====JudyIns======= Leaf1 to LeafB1, Pop1 = %d\n", (int)cJU_LEAF1_MAXPOP1 + 1);
+        printf("\n====JudyIns======= Leaf1 to LeafB1, Pop1 = %d\n", (int)exppop1 + 1);
 #endif  // PCAS
 
 	Word_t PjlbRaw = j__udyAllocJLB1(Pjpm);
@@ -699,16 +696,18 @@ JudyBranchB:
         ju_SetDcdPop0(Pjp, Pjll1->jl1_LastKey); // + cJU_LEAF1_MAXPOP1 - 1;
 
 //	Build all 4 bitmaps from 1 byte index Leaf1 -- slow?
-	for (int off = 0; off < cJU_LEAF1_MAXPOP1; off++)
+//	for (int off = 0; off < cJU_LEAF1_MAXPOP1; off++)
+	for (int off = 0; off < exppop1; off++)
             JU_BITMAPSETL(Pjlb, Pjll1->jl1_Leaf[off]);
 
         Pjv_t Pjvnew = JL_JLB_PVALUE(Pjlb);
 
 //      Copy Values to B1 in uncompressed style
-	for (int loff = 0; loff < cJU_LEAF1_MAXPOP1; loff++)
+//	for (int loff = 0; loff < cJU_LEAF1_MAXPOP1; loff++)
+	for (int loff = 0; loff < exppop1; loff++)
             Pjvnew[Pjll1->jl1_Leaf[loff]] = Pjv[loff];
 
-        j__udyFreeJLL1(Pjll1Raw, cJU_LEAF1_MAXPOP1, Pjpm);
+        j__udyFreeJLL1(Pjll1Raw, exppop1, Pjpm);
 //        Word_t DcdP0 = (Index & cJU_DCDMASK(1)) + cJU_LEAF1_MAXPOP1 - 1;
 //        ju_SetDcdPop0(Pjp, DcdP0);  Done above
         ju_SetJpType  (Pjp, cJL_JPLEAF_B1);
@@ -779,6 +778,10 @@ JudyBranchB:
             ju_SetLeafPop1(Pjp, exppop1 + 1);   // increase Population0 by one
             return (1);
         }
+// At this point the Leaf2 may go directly to one (1) LeafB1 in the case of -S1
+// So check and convert to B1 -- on 2nd thought, there may be some outliers, so
+// this must be handled in Cascade2
+
 //      else at max size, convert to Leaf1 probably for now
         assert(exppop1 == cJU_LEAF2_MAXPOP1);
         if (j__udyCascade2(Pjp, Index, Pjpm) == -1)
@@ -1748,6 +1751,7 @@ JudyBranchB:
         if (offset >= 0)
             return (0);         // Duplicate
 
+
 #ifdef  JUDY1
 //      Produce a LeafB1
 	Word_t PjlbRaw = j__udyAllocJLB1(Pjpm);
@@ -2184,12 +2188,6 @@ FUNCTION PPvoid_t JudyLIns(PPvoid_t PPArray,    // in which to insert.
         return (PPJERR);
 #endif /* JUDYL */
     }
-
-
-
-
-
-
     Pjll8_t Pjll8 = P_JLL8(*PPArray);   // first word of leaf (always TotalPop0)
 
 // ****************************************************************************
@@ -2240,13 +2238,13 @@ FUNCTION PPvoid_t JudyLIns(PPvoid_t PPArray,    // in which to insert.
 //  any Leaf, then in the LeafPop field (in the Pointer to Leaf) or
 //  in the LastKey field (not necessarly in a Leaf8).
 
-    Pjp_t Pjp = (Pjp_t)PPArray;
-    RawJpPntr = ju_PntrInJp(Pjp);
-    switch(ju_Type(Pjp))
-    {
-    case cJU_JPJJPM:            // Root structure ^
-    case cJU_JPLEAF8:           // or just Leaf8 ^ (no Root struct yet)
-        etc...
+//    Pjp_t Pjp = (Pjp_t)PPArray;
+//    RawJpPntr = ju_PntrInJp(Pjp);
+//    switch(ju_Type(Pjp))
+//    {
+//    case cJU_JPJJPM:            // Root structure ^
+//    case cJU_JPLEAF8:           // or just Leaf8 ^ (no Root struct yet)
+//        etc...
 #endif  // MAYBE
 
 
@@ -2375,14 +2373,18 @@ FUNCTION PPvoid_t JudyLIns(PPvoid_t PPArray,    // in which to insert.
 // counted in the jpm_t because there is no jpm_t.
         j__udyFreeJLL8(Pjll8, cJU_LEAF8_MAXPOP1, NULL);
 
+        assert(Pjpm->jpm_Pop0 == (cJU_LEAF8_MAXPOP1 - 1));
+
+//   printf("Pjpm->jpm_Pop0 + 1 = %lu\n", Pjpm->jpm_Pop0 + 1);
+
         *PPArray = (Pvoid_t)Pjpm;       // put Cascade8 results in Root pointer
     }   // fall thru
-//    assert(Pjpm->jpm_Pop0 == (cJU_LEAF8_MAXPOP1 - 1));
 
 // ****************************************************************************
 // Now do the Insert in the Tree Walk code
     {
         Pjpm = P_JPM(*PPArray); // Caution: this is necessary
+
 
         int retcode = j__udyInsWalk(Pjpm->jpm_JP, Index, Pjpm);
         if (retcode == -1)

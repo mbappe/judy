@@ -254,11 +254,15 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 //#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 17, 21, 27, 33, 41, 51, 65, 83, 103, 129, 159, 199, 289, 321, 519, TERMINATOR }
 //#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 17, 21, 27, 33, 41, 51, 65, 83, 103, 129, 159, 199, 291, 321, 519, TERMINATOR }
 //#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 27, 33, 41, 51, 65, 79, 95, 131, 195, 291, 321, 519, TERMINATOR }
-// fib sequence past 15
 //#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 15, 17, 27, 43, 69, 111, 179, 289, 467, TERMINATOR }
 //#define J_L_MAXB                (sizeof(Word_t) * 289) 
-#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 15, 17, 25, 39, 63, 101, 163, 261, 417, TERMINATOR }
-#define J_L_MAXB                (sizeof(Word_t) * 261) // picked from   ^
+//#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 15, 17, 25, 39, 63, 101, 163, 261, 417, TERMINATOR }
+//#define ALLOCSIZES { 3, 5, 7, 9, 11, 13, 15, 17, 19, 27, 41, 37, 53, 73, 95, 145, 205, 289, 321, 519, TERMINATOR }
+//#define J_L_MAXB                (sizeof(Word_t) * 289)                // picked from   ^^^
+//
+// Square root 2 multiplyer at 9, L2=230, L1=128
+#define ALLOCSIZES { 3, 5, 7, 9, 13, 19, 27, 37, 51, 73, 101, 145, 203, 289, 321, 576, TERMINATOR }
+#define J_L_MAXB                (sizeof(Word_t) * 289)     // picked from   ^^^
 
 //#define cJL_LEAF1_MAXWORDS       (419)
 //#define cJL_LEAF2_MAXWORDS       (320)
@@ -266,10 +270,12 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 #define cJL_LEAFB1_MAXPOP1       (256)
 
 #ifndef cJL_LEAF1_MAXPOP1
-#define cJL_LEAF1_MAXPOP1       ((J_L_MAXB - cJU_BYTESPERWORD) / (1 + cJU_BYTESPERWORD))
+//#define cJL_LEAF1_MAXPOP1       ((J_L_MAXB - cJU_BYTESPERWORD) / (1 + cJU_BYTESPERWORD)) too big
+#define cJL_LEAF1_MAXPOP1       (128)
 #endif // cJL_LEAF1_MAXPOP1
 
 #ifndef cJL_LEAF2_MAXPOP1
+// absolute maximum is 255
 #define cJL_LEAF2_MAXPOP1       ((J_L_MAXB - cJU_BYTESPERWORD) / (2 + cJU_BYTESPERWORD))
 #endif
 

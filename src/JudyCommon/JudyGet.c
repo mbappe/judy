@@ -50,10 +50,10 @@ Hk64c(uint64_t *px, Word_t wKey)
 
 //void(ju_BranchPop0());            // Not used in Get
 
-//#ifdef  noDCD
-//#undef ju_DcdNotMatchKey
-//#define ju_DcdNotMatchKey(INDEX,PJP,POP0BYTES) (0)
-//#endif  // DCD
+#ifdef  noDCD
+#undef ju_DcdNotMatchKey
+#define ju_DcdNotMatchKey(INDEX,PJP,POP0BYTES) (0)
+#endif  // DCD
 
 
 // Special version when Pop is going to be 256 - no branches
@@ -302,6 +302,7 @@ JudyBranchL:
             Digit = JU_DIGITATSTATE(Index, cJU_ROOTSTATE);
 
 // Common code for all BranchBs; come here with Digit set:
+//
 JudyBranchB:
             Pjbb   = P_JBB(RawPntr);
             sub4exp = Digit / cJU_BITSPERSUBEXPB;
@@ -321,7 +322,6 @@ JudyBranchB:
 
         } // case cJU_JPBRANCH_B*
 #endif  // noB
-
 
 // ****************************************************************************
 // JPBRANCH_U*:
@@ -932,7 +932,7 @@ JudyBranchB:
 // JPBRANCH_U*:
 
 #ifdef  BRANCHUCOMMONCASE
-// Check preformance difference
+// Check preformance difference -- Judy1 -B32 2.2 to 4.8nS slower
         case cJU_JPBRANCH_U8:
             Pjp =  P_JBU(RawPntr)->jbu_jp + JU_DIGITATSTATE(Index, cJU_ROOTSTATE);
             goto ContinueWalk;
@@ -1033,6 +1033,7 @@ JudyBranchB:
 #ifdef  noLEAF1STACKED
 // Linear Interpolation
 // Linear interpolation is done in j__udySearchLeaf2()
+#ifdef  WITHOUTPREFETCH
         case cJL_JPLEAF1:
         {
             Pop1          = ju_LeafPop1(Pjp);
@@ -1042,9 +1043,33 @@ JudyBranchB:
 
             Pjll1_t Pjll1 = P_JLL1(RawPntr);
             Pjv  = JL_LEAF1VALUEAREA(Pjll1, Pop1);
+
             posidx = j__udySearchLeaf1(Pjll1, Pop1, Index, 1 * 8);
             goto CommonLeafExit;                // posidx & (only JudyL) Pjv
         }
+#else   // ! WITHOUTPREFETCH
+        case cJL_JPLEAF1:
+        {
+            Pjll1_t Pjll1 = P_JLL1(RawPntr);
+            uint8_t index8 = Index;
+            Pop1           = ju_LeafPop1(Pjp);
+            Pjv  = JL_LEAF1VALUEAREA(Pjll1, Pop1);
+
+            SEARCHPOPULATION(Pop1);     // enabled -DSEARCHMETRICS at compile time
+
+            posidx = LERP(Pop1, index8, 1 * 8);
+//            posidx = (Pop1 * index8) / (Pjll1->jl1_Leaf[Pop1 - 1] + 1);
+
+            PREFETCH(Pjv + posidx);         // start read of Value (hopefully)
+            if (Pjll1->jl1_Leaf[posidx] == index8)
+            {
+                DIRECTHITS;                     // Count direct hits
+                goto CommonLeafExit;            // posidx & (only JudyL) Pjv
+            }
+            posidx = j__udySearchRawLeaf1(Pjll1->jl1_Leaf, Pop1, index8, posidx);
+            goto CommonLeafExit;                // posidx & (only JudyL) Pjv
+        }
+#endif  // ! WITHOUTPREFETCH
 #endif  // noLEAF1STACKED
 
 
@@ -1079,18 +1104,20 @@ JudyBranchB:
 //          Get the population of the sub-expanse containing the subkey5
             uint8_t subpop8       = (subLeafPops >> subexp) /* & 0xFF */; // 0..32 - (mask 0..63)
 
+#ifdef  SUB0CHECK
 //          Note: this is slightly faster when not found, but slightly slower when found
             if (subpop8 == 0)            // if subexp empty, then not found
                 break;
+#endif  // SUB0CHECK
             
 //          do a linear interpolation of the location (0..31) of key in the sub-expanse
 //            int start         = (subpop8 * subkey5) / 32;        // 32 == sub-expanse size
             int start = LERP(subpop8, subkey5, 1 * (8 - 3));
 //          cover 3 cache lines
 #ifdef  JUDYL
-//            PREFETCH(Pjv + start - 64);         // start read of Value (hopefully)
+//  no Effect          PREFETCH(Pjv + start - (64/8));     // start read of Value (hopefully)
+//  no Effect          PREFETCH(Pjv + start + (64/8));     // start read of Value (hopefully)
             PREFETCH(Pjv + start);              // start read of Value (hopefully)
-//            PREFETCH(Pjv + start + 64);         // start read of Value (hopefully)
 #endif  // JUDYL
 
 #ifndef  noLEAF1STACKEDPARA
@@ -1129,7 +1156,7 @@ JudyBranchB:
             Pop1          = ju_LeafPop1(Pjp);
             Pjll2_t Pjll2 = P_JLL2(RawPntr);
 
-//          Prepare for Stacked Leaf2 -- mpy does shifts and adds
+//          Prepare for Stacked Leaf2 -- mpy does shifts and adds -- very fast
             assert(((Pjp->jp_subLeafPops * CHARSUMS) >> (64 - 8)) == Pop1); // cute huh!!
 
 #ifdef  JUDYL
@@ -1138,7 +1165,7 @@ JudyBranchB:
             posidx = j__udySearchLeaf2(Pjll2, Pop1, Index, 2 * 8);
             goto CommonLeafExit;                // posidx & (only JudyL) Pjv
         }
-#endif  //  noLEAF2STACKED
+#endif  // noLEAF2STACKED
 
 
 #ifndef noLEAF2STACKED
@@ -1176,9 +1203,11 @@ JudyBranchB:
 //          Get population of the sub-expanse containing the key
             uint8_t subpop16 = (subLeafPops >> subexp);         // & 0xFF 0..32 - (mask 0..63)
 
-//          Note: this is slightly faster when not found, but slightly slower when found
-//            if (subpop16 == 0)            // if subexp empty (no Pop), then not found
-//                break;
+#ifdef  SUB0CHECK
+//          Note: this is about 1nS slower faster when found, but slightly faster when not found
+            if (subpop16 == 0)                          // if subexp empty (no Pop), then not found
+                break;
+#endif  // SUB0CHECK
 
             subLeafPops  &= ((Word_t)1 << subexp) - 1;          // mask to just previous Pops
             int  leafOff  = (subLeafPops * CHARSUMS) >> 56;     // offset by sum of prior sub-expanses
@@ -1187,6 +1216,9 @@ JudyBranchB:
 #endif  // JUDYL
 //          offset start of search to sub expanse containing Key
             uint16_t *subLeaf16 = Pjll2->jl2_Leaf + leafOff;    // ^ to the subLeaf
+#ifdef  JUDY1
+            PREFETCH(subLeaf16);                                // start read of Key area(hopefully)
+#endif  // JUDY1
 
 //          linear interpolation of the location (0..31) of key in the sub-expanse
             posidx  = LERP(subpop16, subkey13, (16 - 3));       // 1st try of offset in sub-expanse
@@ -1379,7 +1411,7 @@ CommonLeafExit:         // with posidx & JudyL Pjv only
             Pjv = JL_JLB_PVALUE(Pjlb);
 #endif  // JUDYL
             uint8_t digit = Index;
-//            PREFETCH(Pjv + digit, 1); No noticable effect (JudyL)
+//  noEffect  PREFETCH(Pjv + digit);
 
             DIRECTHITS;       // not necessary, because always 100%
             SEARCHPOPULATION(ju_LEAF_POP1(Pjp)); // special one to handle 256
@@ -1591,7 +1623,7 @@ ReturnCorrupt:                  // return not found -- no error return now
 NotFoundExit:
 
 #ifdef TRACEJPG
-    if (startpop && (j__udyPopulation >= startpop))
+//    if (startpop && (j__udyPopulation >= startpop))
     {
 #ifdef JUDY1
         printf("---Judy1Test   Key = 0x%016lx NOT FOUND\n", Index);

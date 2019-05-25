@@ -330,28 +330,21 @@ FUNCTION static Word_t j__udyJLL2toJLB1(
             return(0);
 	Pjlb = P_JLB1(PjlbRaw);
 
-// Copy Leaf2 indexes to LeafB1:
-
-	for (offset = 0; offset < (int)LeafPop1; ++offset)
-	    JU_BITMAPSETL(Pjlb, Pjll2[offset]);
-
 #ifdef JUDYL
+//      Note: Now JudyL bitmap leafs Value area are always UNCOMPRESSED
+//      and therefore the Value area is indexed by least 8 bits of Key
         Pjv_t Pjvnew = JL_JLB_PVALUE(Pjlb);
-//	Build 4 subexpanse Value leaves from bitmap
-//        Pjp->jp_subLeafPops = 0;
-	for (int sube = 0; sube < cJU_NUMSUBEXPL; sube++)
-	{
-//	    Get number of Indexes in each subexpanse
-	    Word_t subpop1 = j__udyCountBitsL(JU_JLB_BITMAP(Pjlb, sube));
-//             Pjp->jp_subLeafPops += subpop1 << (sube * 8);   // add
-	    if (subpop1)
-            {
-		JU_COPYMEM(Pjvnew, Pjv, subpop1);
-		Pjv += subpop1;
-		Pjvnew += subpop1;
-	    }
-	}
 #endif  // JUDYL
+
+// Copy Leaf2 Keys (and Values) to LeafB1:
+	for (offset = 0; offset < (int)LeafPop1; ++offset)
+        {
+            uint8_t key = Pjll2[offset];
+	    JU_BITMAPSETL(Pjlb, key);
+#ifdef JUDYL
+            Pjvnew[key] = Pjv[offset];
+#endif  // JUDYL
+	}
 
 	return(PjlbRaw);	// pointer to LeafB1.
 
@@ -405,7 +398,8 @@ FUNCTION int j__udyCascade2(
 
 #ifdef  JUDYL
 //	Get the address of the Leaf and Value area
-        Pjv_t Pjv = JL_LEAF2VALUEAREA(Pjll2, cJU_LEAF2_MAXPOP1 - 1);
+// Bug?       Pjv_t Pjv = JL_LEAF2VALUEAREA(Pjll2, cJU_LEAF2_MAXPOP1 - 1);
+        Pjv_t Pjv = JL_LEAF2VALUEAREA(Pjll2, cJU_LEAF2_MAXPOP1);
 #endif  // JUDYL
 
 	CIndex = Pjll2->jl2_Leaf[0];

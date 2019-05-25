@@ -861,7 +861,6 @@ extern PPvoid_t j__udyLGet(Pcvoid_t PArray, Word_t Index, P_JE);
     LEAFSIZE_t  *__PLeaf;       /* ^ toLeaf to search */        \
     int         __pos;          /* starting pos of search */    \
                                                                 \
-    if (START) assert((Word_t)(START) < (Word_t)(POP1));        \
     __pos    = (int)(START);                                    \
     __Key    = (LEAFSIZE_t)(KEY);                               \
     __PLeaf  = (LEAFSIZE_t *)(PLEAF);                           \

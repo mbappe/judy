@@ -306,7 +306,7 @@ FUNCTION void j__udyFreeSM(
             Line = __LINE__;
 #endif  // DEBUG
 	    Pop1 = ju_LeafPop1(Pjp);
-            if (Pop1 == 0) Pop1 = 256;
+            assert(Pop1);       // Cannot have pop1 = 256 
 	    j__udyFreeJLL1(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
 #endif  // JUDYL
@@ -361,20 +361,6 @@ FUNCTION void j__udyFreeSM(
 
 
 // BITMAP LEAF -- free sub-expanse arrays of JPs, then free the JBB.
-
-#ifdef  OBSOLETE
-#ifdef  JUDYL
-        case cJL_JPLEAF_B1_UCOMP:
-        {
-#ifdef  DEBUG
-            Line = __LINE__;
-#endif  // DEBUG
-
-	    j__udyFreeJLB1(ju_PntrInJp(Pjp), Pjpm);
-            break;
-	} // case cJL_JPLEAF_B1_UCOMP
-#endif  // JUDYL
-#endif  // OBSOLETE
 
 	case cJU_JPLEAF_B1:
 	{
