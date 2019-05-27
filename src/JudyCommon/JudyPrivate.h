@@ -1301,7 +1301,7 @@ printf("\nOOps not using __builtin_popcountl()\n");
 #else   // PREFETCH
 #include <immintrin.h>          // Intel, Amd ??
 //#define PREFETCH(ADDR) (_mm_prefetch((void *)(ADDR), MM_HINT))
-#define PREFETCH(ADDR) (__builtin_prefetch((void *)(ADDR), 0,1))
+#define PREFETCH(ADDR) (__builtin_prefetch((void *)(ADDR), 1,0))
 #endif  // PREFETCH
 
 // Pre-fetch is not used for Judy1 -- yet
