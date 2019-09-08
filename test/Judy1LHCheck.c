@@ -250,11 +250,10 @@ main(int argc, char *argv[])
     // pretty easy in some variants of Mikey's code to introduce a bug that
     // clobbers one or the other so his debug code depends on these words
     // being zero so it can verify that neither is getting clobbered.
-    struct { void *pv0, *pv1, *pv2; } sj1 = { 0, 0, 0 };
+    struct { void *pv0, *pv1, *pv2; } sj1 = { (void*)-1, NULL, (void*)-1 };
 #define J1 (sj1.pv1)
-    struct { void *pv0, *pv1, *pv2; } sjL = { 0, 0, 0 };
+    struct { void *pv0, *pv1, *pv2; } sjL = { (void*)-1, NULL, (void*)-1 };
 #define JL (sjL.pv1)
-    printf("&sjL.pv1 %p %p\n", (void*)&sjL.pv1, sjL.pv1);
 #else // DEBUG
     void *J1 = NULL;            // Judy1
     void *JL = NULL;            // JudyL
@@ -303,6 +302,13 @@ main(int argc, char *argv[])
 
         case 'B':
             BValue = strtoul(optarg, NULL, 0);
+
+            // Allow -B0 to mean -B64 on 64-bit and -B32 on 32-bit.
+            // Allow -B-1 to mean -B63 on 64-bit and -B31 on 32-bit.
+            // To simplify writing shell scripts for testing that
+            // are compatible with 32-bit and 64-bit.
+            BValue = (BValue - 1) % (sizeof(Word_t) * 8) + 1;
+
             if  (
                     (BValue > (sizeof(Word_t) * 8))
                            ||
@@ -514,8 +520,10 @@ main(int argc, char *argv[])
         if (CountL != TotalPop)
             FAILURE("JudyLCount wrong", CountL);
 
-        if (Count1 != TotalPop)
+        if (Count1 != TotalPop) {
+            printf("Count1 %zd TotalPop %zd\n", Count1, TotalPop);
             FAILURE("Judy1Count wrong", Count1);
+        }
 
         if (TotalPop)
         {
@@ -591,6 +599,12 @@ TestJudyIns(void **J1, void **JL, void **JH, Word_t Seed, Word_t Elements)
         if (pFlag) { printf("JudyLIns: %8" PRIuPTR"\t%p\n", elm, (void *)TstIndex); }
 
 //      Judy1
+        Word_t wCount = Judy1Count(*J1, 0, ~0, NULL);
+        if (wCount != TotalPop) {
+            Judy1Dump((Word_t)*J1, sizeof(Word_t) * 8, 0);
+            printf("wCount %zd TotalPop %zd\n", wCount, TotalPop);
+            FAILURE("Count TotalIns", TotalIns);
+        }
 
         J1S(Rcode, *J1, TstIndex);
         if (Rcode == JERR)
@@ -601,6 +615,7 @@ TestJudyIns(void **J1, void **JL, void **JH, Word_t Seed, Word_t Elements)
         Rcode = Judy1Test(*J1, TstIndex, NULL);
         if (Rcode != 1) {
             Judy1Dump((Word_t)*J1, sizeof(Word_t) * 8, 0);
+            printf("TstIndex %zu 0x%zx\n", TstIndex, TstIndex);
             FAILURE("Judy1Test failed - Index missing, population =", TotalPop);
         }
 
@@ -817,11 +832,9 @@ TestJudyCount(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
                    ", should be: elm + 1 = %" PRIuPTR"\n",
                    Count1, CountL, elm + 1);
             if (Count1 != elm + 1) {
-                printf("Judy1Dump");
                 Judy1Dump((Word_t)J1, sizeof(Word_t) * 8, 0);
             }
             if (CountL != elm + 1) {
-                printf("JudyLDump");
                 JudyLDump((Word_t)JL, sizeof(Word_t) * 8, 0);
             }
             FAILURE("Count at", elm);
@@ -985,8 +998,11 @@ TestJudyNextEmpty(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
             FAILURE("Judy1NextEmpty Rcode != 1 =", Rcode1);
         }
 
-        if (J1index != JLindex)
+        if (J1index != JLindex) {
+            printf("RcodeL = %d, Rcode1 = %d, Index1 = 0x%" PRIxPTR", IndexL = 0x%" PRIxPTR"\n",
+                    RcodeL, Rcode1, J1index, JLindex);
             FAILURE("JLNE != J1NE returned index at", elm);
+        }
 
         if (pFlag)
         {
