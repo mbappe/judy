@@ -88,18 +88,6 @@ SM_EXTERN Word_t j__GetCallsM; // Num search calls with no direct hit and result
 SM_EXTERN Word_t j__GetCalls;  // Num search calls
 
 // The released Judy libraries do not, and some of Doug's work-in-progress
-// libraries may not, have Judy1Dump and/or JudyLDump entry points.
-// And Mike sometimes links Judy1LHTime with his own Judy1 library and the
-// released or Doug's JudyL or with his own JudyL and the released or
-// Doug's Judy1 libraries.
-// We want to be able to use the same Time.c for all of these cases.
-// The solution is to define JUDY1_V2 and/or JUDYL_V2 if/when we want Time.c
-// to use Judy1Dump and/or JudyLDump for real.
-// The solution is to define JUDY1_V2 and/or JUDY1_DUMP and/or JUDYL_V2
-// and/or JUDYL_DUMP if/when we want Time.c to use Judy1Dump and/or
-// JudyLDump for real.
-
-// The released Judy libraries do not, and some of Doug's work-in-progress
 // libraries may not, have Judy[1L]Dump entry points.
 // And Mike sometimes links Judy1LHTime with his own Judy1 library and the
 // released or Doug's JudyL library, or links Judy1LHTime with his own JudyL
