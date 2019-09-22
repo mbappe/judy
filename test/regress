@@ -1,0 +1,109 @@
+#!/bin/bash
+
+# What is the goal of this regression test script?
+# How much memory should it require? Should it test and adapt?
+# Should it assume 64-bit or 32-bit Judy?
+# Should it figure out which?
+# Should it work with either?
+# Is it supposed to test Judy1LHTime and Judy1LHCheck or just Judy?
+
+# For now it is a fast hoop test that works with both 64-bit and
+# 32-bit Judy.
+
+# Use a -DDEBUG build.
+
+TIME=Judy1LHTime
+CHECK=Judy1LHCheck
+
+# Basic runs we use for performance testing:
+# ${TIME} -1m
+# ${TIME} -1m -E
+# ${TIME} -1m -DS1
+# ${TIME} -Lm
+# ${TIME} -Lm -E
+# ${TIME} -Lm -DS1
+
+# Test keys going from small negative numbers to small positive numbers
+# relative to a particular BValue and vice versa.
+for Judy in 1 R # L
+do
+for magnitude in 1 5 # 11 7 3
+do
+for sign in 1 -1
+do
+for DOPT in "" -D # -E
+do
+ for B in 10 -21 12 -19 14 -17 16 -15 # 18 -13 20 -11 22  -9 24  -7 26  -5 28  -3 30  -1  0
+#for B in  0  -1 30  -3 28  -5 26  -7 # 24  -9 22 -11 20 -13 18 -15 16 -17 14 -19 12 -21 10
+do
+
+let S="$sign * $magnitude"
+let n=0x400
+let s="$S * $n / 2 * -1"
+
+cmd="${TIME} -W0 -$Judy -lvdgi -s$s $DOPT -S$S -n$n -B$B"
+echo $cmd
+$cmd > /dev/null
+if [ $? != 0 ]
+then
+    exit 1
+fi
+
+done
+done
+done
+done
+done
+
+# Both Judy1 and JudyL
+for B in 10 -21 12 -19 14 -17 16 -15 # 18 -13 20 -11 22  -9 24  -7 26  -5 28  -3 30  -1  0
+do
+for SOPT in "" -S1 -DS1 -S7 -DS7
+do
+
+cmd="${CHECK} -B$B $SOPT"
+echo $cmd
+$cmd > /dev/null
+if [ $? != 0 ]
+then
+    exit 1
+fi
+
+done
+done
+
+for Judy in 1 L # R # L
+do
+for EOPT in -E --splay-key-bits=0xff00ffff \
+               --splay-key-bits=0x0f0f0fff \
+               --splay-key-bits=0x0fff00ff
+do
+
+# -v and -h are incompatible
+
+# These options take a very long time.
+# cmd="${TIME} -W0 -$Judy -Cvdgi -n1e9 $EOPT"
+
+# These options take less time hence are more suitable for a hoop test.
+cmd="${TIME} -W0 -$Judy -lgih -n2e6 $EOPT"
+echo $cmd
+$cmd > /dev/null
+if [ $? != 0 ]
+then
+    exit 1
+fi
+
+done
+done
+
+# Targeted testing for LOWER_XX_SW and DoubleUp with cnListPopCntMax64=64.
+: \
+&& ${TIME} -W0 -1lgi --splay-key-bits=0x1f8f4f2fe000 -S1 -n0x100000 > /dev/null \
+:
+if [ $? != 0 ]
+then
+    exit 1
+fi
+
+exit 0
+
