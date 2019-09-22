@@ -482,7 +482,7 @@ void JudyFree(Word_t PWord, int Words)
 #endif // #else JUDY_105
 {
     (void) Words;
-    JudyFreeX(PWord, Words, /* nSpace */ -1);
+    JudyFreeX((Word_t)PWord, Words, /* nSpace */ -1);
 }
 
 
