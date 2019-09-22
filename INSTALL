@@ -1,20 +1,18 @@
 === QUICK INSTALLATION OF JUDY LIBRARY AND MANUAL ENTRIES ===
 
-1.  ./configure 		#NOTE: you must do configure with either
-				--enable-32-bit or --enable-64-bit
-				depending on your system. Also note if you
-				are doing a non-native compile you are
-				responsiable for setting the appropriate
-				CFLAGS. See README for more information. 
-2.  make
-3.  make check
-4.  make install                # NOTE: must be SUPERUSER for make install
+
+1.  make distclean; CC="gcc -DRAMMETRICS -DJUDY_105" bash -c "./configure; make check";cat test/Checkit.log
+                                #NOTE -- This replaces "./configure", "make" and "make check" below.
+                                Another option is -DLIBCMALLOC if wanting libc.a malloc().
+                                Default will use Judy internal malloc() -- has HUGE PAGES.
+
+2.  make install                # NOTE: must be SUPERUSER for make install
 				# This installs /opt/Judy/* and symlinks to
 				# files there from /usr/include/, /usr/lib/,
 				# /usr/share/man/, and /usr/share/doc/Judy/.
 
 (Installation done!  The rest is optional but recommended.)
 
-5) man Judy			# nroff -man version, or...
+3) man Judy			# nroff -man version, or...
 
-6) file:/opt/Judy/usr/share/doc/Judy/Judy_3x.htm   # from LOCAL Web browser.
+4) file:/opt/Judy/usr/share/doc/Judy/Judy_3x.htm   # from LOCAL Web browser.
