@@ -7,21 +7,21 @@ echo "=== +++++++++ This test runs in 15 seconds on a PIII 750Mhz +++++++"
 LIBJUDY=`find ../ -name libJudy.a`
 JUDY_H=`find ../ -name Judy.h`
 
-echo "$CC -O SLcompare.c -DHASHMETHOD -o SL_Hash"
-      $CC -O SLcompare.c -DHASHMETHOD -o SL_Hash
+echo "$CC -O2 SLcompare.c -DHASHMETHOD -o SL_Hash"
+      $CC -O2 SLcompare.c -DHASHMETHOD -o SL_Hash
 
-echo "$CC -O SLcompare.c -DSPLAYMETHOD -o SL_Splay"
-      $CC -O SLcompare.c -DSPLAYMETHOD -o SL_Splay
+echo "$CC -O2 SLcompare.c -DSPLAYMETHOD -o SL_Splay"
+      $CC -O2 SLcompare.c -DSPLAYMETHOD -o SL_Splay
 
-echo "$CC -O SLcompare.c -DREDBLACKMETHOD -o SL_Redblack"
-      $CC -O SLcompare.c -DREDBLACKMETHOD -o SL_Redblack
+echo "$CC -O2 SLcompare.c -DREDBLACKMETHOD -o SL_Redblack"
+      $CC -O2 SLcompare.c -DREDBLACKMETHOD -o SL_Redblack
 
 echo
 echo Compiling with Judy library: $LIBJUDY
 echo
 
-echo "$CC -O -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIBJUDY -lm"
-      $CC -O -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIBJUDY -lm
+echo "$CC -O2 -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIBJUDY -lm"
+      $CC -O2 -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIBJUDY -lm
 RET=$?
 if [ $RET -ne 0 ] ; then
 echo "===  $? Failed: $CC SLcompare.c -DJUDYMETHOD"
@@ -29,8 +29,8 @@ echo "===  $? Failed: $CC -O -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIBJU
 exit $?
 fi
 
-echo "$CC -O -I../src Judy1LHCheck.c -o Judy1LHCheck $LIBJUDY -lm"
-      $CC -O -I../src Judy1LHCheck.c -o Judy1LHCheck $LIBJUDY -lm
+echo "$CC -O2 -I../src Judy1LHCheck.c -o Judy1LHCheck $LIBJUDY -lm"
+      $CC -O2 -I../src Judy1LHCheck.c -o Judy1LHCheck $LIBJUDY -lm
 RET=$?
 if [ $RET -ne 0 ] ; then
 echo "===  $? Failed: $CC Judy1LHCheck.c"
@@ -38,8 +38,8 @@ exit $?
 fi
 
 
-echo "$CC -O -I../src Judy1LHTime.c -DNOINLINE  -o Judy1LHTime  $LIBJUDY -lm"
-      $CC -O -I../src Judy1LHTime.c -DNOINLINE  -o Judy1LHTime  $LIBJUDY -lm
+echo "$CC -O2 -I../src Judy1LHTime.c -DNOINLINE  -o Judy1LHTime  $LIBJUDY -lm"
+      $CC -O2 -I../src Judy1LHTime.c -DNOINLINE  -o Judy1LHTime  $LIBJUDY -lm
 RET=$?
 if [ $RET -ne 0 ] ; then
 echo "===  $? Failed: $CC Judy1LHTime.c"
