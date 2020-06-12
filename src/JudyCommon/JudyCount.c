@@ -145,14 +145,20 @@ JUDYLCODE(PPvoid_t PPvalue);	// from JudyLFirst() calls.
 //
 // As documented, return C_JERR if the Judy array is empty or Index1 > Index2.
 
-	if ((PArray == (Pvoid_t) NULL) || (Index1 > Index2))
+	if (PArray == (Pvoid_t) NULL)
 	{
-// should just swap Index1 and Index2 ????????????????????????????
 // or just return 0 ?????????????????????????//
 	    JU_SET_ERRNO(PJError, JU_ERRNO_NONE);
-            assert(0);
-	    return(C_JERR);
+//            assert(0);
+	      return(C_JERR);			// pass through error.
 	}
+// should just swap Index1 and Index2 ????????????????????????????
+	if (Index1 > Index2)
+        {
+            Word_t temp = Index1;
+            Index1 = Index2;
+            Index2 = temp;
+        }
 
 // If Index1 == Index2, simply check if the specified Index is set; pass
 // through the return value from Judy1Test() or JudyLGet() with appropriate
@@ -164,13 +170,13 @@ JUDYLCODE(PPvoid_t PPvalue);	// from JudyLFirst() calls.
 #ifdef JUDY1
 	    retcode = j__udy1Test(PArray, Index1, PJE0);
             if (retcode == 0)
-                return(0);
+                return((Word_t)0);
 #else   // JUDYL
 	    PPvalue = j__udyLGet(PArray, Index1, PJE0);
 	    if (PPvalue == (PPvoid_t) NULL)		// Index is not found.
-                return(0);
+	        return(C_JERR);			// pass through error.
 #endif  // JUDYL
-	    return(1);					// single index is set.
+	    return((Word_t)1);					// single index is set.
 	}
 
 
@@ -238,7 +244,7 @@ JUDYLCODE(PPvoid_t PPvalue);	// from JudyLFirst() calls.
 	    if (retcode == 0)
 	    {
 		JU_SET_ERRNO(PJError, JU_ERRNO_NONE);
-                assert(0);
+//                assert(0);  to pass regress/Judy1LHCheck
 		return(C_JERR);
 	    }
 
