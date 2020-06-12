@@ -191,6 +191,9 @@ Word_t CFlag = 0;
 #endif // NO_TEST_COUNT
 Word_t DFlag = 0;
 Word_t SkipN = 0;               // default == Random skip
+Word_t wSplayMask = -(Word_t)1;
+Word_t wSplayBase = 0;
+Word_t wOffset = 0;
 Word_t nElms = 1000000; // Default = 1M
 Word_t ErrorFlag = 0;
 Word_t TotalIns = 0;
@@ -225,6 +228,49 @@ Random(Word_t newseed)
         exit(0);
     }
     return(newseed);
+}
+
+static inline Word_t
+MyPDEP(Word_t wSrc, Word_t wMask)
+{
+  #ifdef USE_PDEP_INTRINSIC
+    // requires gcc -mbmi2
+      #if defined(__LP64__) || defined(_WIN64)
+    return _pdep_u64(wSrc, wMask);
+      #else // defined(__LP64__) || defined(_WIN64)
+    return _pdep_u32(wSrc, wMask);
+      #endif // defined(__LP64__) || defined(_WIN64)
+  #else // USE_PDEP_INTRINSIC
+    Word_t wTgt = 0;
+      #if defined(SLOW_PDEP) || defined(EXTRA_SLOW_PDEP)
+    // This loop assumes popcount(wMask) >= popcount(wSrc).
+    for (int nMaskBitNum = 0;; ++nMaskBitNum)
+    {
+          #ifdef EXTRA_SLOW_PDEP
+        int nLsb = __builtin_ctzll(wMask);
+        nMaskBitNum += nLsb;
+        wTgt |= (wSrc & 1) << nMaskBitNum;
+        if ((wSrc >>= 1) == 0) { break; }
+        wMask >>= nLsb + 1;
+          #else // EXTRA_SLOW_PDEP
+        if (wMask & 1)
+        {
+            wTgt |= (wSrc & 1) << nMaskBitNum;
+            if ((wSrc >>= 1) == 0) { break; }
+        }
+        wMask >>= 1;
+          #endif // EXTRA_SLOW_PDEP
+    }
+      #else // defined(SLOW_PDEP) || defined(EXTRA_SLOW_PDEP)
+    do
+    {
+        Word_t wLsbMask = (-wMask & wMask);
+        wTgt |= wLsbMask * (wSrc & 1);
+        wMask &= ~wLsbMask;
+    } while ((wSrc >>= 1) != 0);
+      #endif // defined(SLOW_PDEP) || defined(EXTRA_SLOW_PDEP)
+    return wTgt;
+  #endif // USE_PDEP_INTRINSIC
 }
 
 static Word_t                   // Placed here so INLINING compilers get to look at it.
@@ -274,7 +320,7 @@ main(int argc, char *argv[])
 // PARSE INPUT PARAMETERS
 //////////////////////////////////////////////////////////////
 
-    while ((c = getopt(argc, argv, "n:S:P:b:L:B:pdDC")) != -1)
+    while ((c = getopt(argc, argv, "n:S:E:e:o:P:b:L:B:pdDC")) != -1)
     {
         switch (c)
         {
@@ -290,6 +336,22 @@ main(int argc, char *argv[])
 
         case 'S':               // Step Size, 0 == Random
             SkipN = strtoul(optarg, NULL, 0);
+            break;
+
+        case 'E':
+            // wSplayMask must have at least BValue one bits.
+            wSplayMask = strtoul(optarg, NULL, 0);
+            break;
+
+        case 'e':
+            // wSplayBase is used if we want the zero bits in
+            // wSplayMask to be something other than zero in the
+            // indexes used for testing.
+            wSplayBase = strtoul(optarg, NULL, 0);
+            break;
+
+        case 'o':
+            wOffset = strtoul(optarg, NULL, 0);
             break;
 
         case 'P':               //
@@ -351,6 +413,9 @@ main(int argc, char *argv[])
         printf("-p      print index set - for debug\n");
         printf("-d      do not call JudyLDel/Judy1Unset\n");
         printf("-D      Swizzle data (mirror)\n");
+        printf("-E <#>  index = PDEP(index, <wSplayMask>)\n");
+        printf("-e <#>  index |= (<wSplayBase> & ~wSplayMask)\n");
+        printf("-o <#>  index += <wOffset>\n");
         printf("-S <#>  index skip amount, 0 = random\n");
         printf("-B <#>  # bits-1 in random number generator\n");
         printf("-P <#>  number measurement points per decade\n");
@@ -461,9 +526,12 @@ main(int argc, char *argv[])
         NewSeed = TestJudyIns(&J1, &JL, &JH, Seed, Delta);
 
 //      Test JLG, J1T
+        // Test/Get the indexes that were just inserted in the same order they
+        // were inserted. Return the lowest index tested.
         LowIndex = TestJudyGet(J1, JL, JH, Seed, Delta);
 
 //      Test JLI, J1S -dup
+        // Make sure Set fails and Ins returns a pointer to the correct value.
         LowIndex = TestJudyDup(&J1, &JL, &JH, Seed, Delta);
 
 //      Test Judy1Count, JudyLCount
@@ -472,7 +540,7 @@ main(int argc, char *argv[])
             TestJudyCount(J1, JL, LowIndex, Delta);
         }
 #ifndef NO_TEST_NEXT // for turn-on testing
-        Word_t HighIndex; (void)HighIndex;
+        Word_t HighIndex;
 //      Test JLN, J1N
         HighIndex = TestJudyNext(J1, JL, (Word_t)0, TotalPop);
 
@@ -575,6 +643,17 @@ main(int argc, char *argv[])
 #undef __FUNCTI0N__
 #define __FUNCTI0N__ "TestJudyIns"
 
+// Insert Elements indexes in each array. The same indexes for each array.
+// Generate the indexes by successive calls to GetNextIndex(Seed) followed
+// by Swizzle if Dflag followed by Splay, aka MyPDEP, if wSplayMask != -1
+// followed by adding wOffset.
+// If SkipN == 0, then GetNextIndex uses an LFSR to generate the next index.
+// Otherwise GetNextIndex simply adds SkipN to previous index.
+// Set the *PValue = TstIndex for JudyL.
+// Follow each Insert with a Get and another Insert of the same index
+// and verify the results.
+// Verify that Count(0, ~0) == TotalPop after each Insert.
+// Return the resulting Seed.
 Word_t
 TestJudyIns(void **J1, void **JL, void **JH, Word_t Seed, Word_t Elements)
 {
@@ -595,6 +674,9 @@ TestJudyIns(void **J1, void **JL, void **JH, Word_t Seed, Word_t Elements)
             TstIndex = Swizzle(Seed1);
         else
             TstIndex = Seed1;
+
+        if (wSplayMask != -(Word_t)1) { TstIndex = MyPDEP(TstIndex, wSplayMask) | (wSplayBase & ~wSplayMask); }
+        TstIndex += wOffset;
 
         if (pFlag) { printf("JudyLIns: %8" PRIuPTR"\t%p\n", elm, (void *)TstIndex); }
 
@@ -648,7 +730,7 @@ TestJudyIns(void **J1, void **JL, void **JH, Word_t Seed, Word_t Elements)
         {
             if (*PValue1 != TstIndex)
             {
-               FAILURE("JudyLIns failed - Index missing, population =", TotalPop);
+               FAILURE("JudyLIns failed - Incorrect value, population =", TotalPop);
             }
             else
             {
@@ -697,10 +779,16 @@ TestJudyIns(void **J1, void **JL, void **JH, Word_t Seed, Word_t Elements)
 #undef __FUNCTI0N__
 #define __FUNCTI0N__ "TestJudyGet"
 
+// Do Elements Tests/Gets on each array.
+// Generate the indexes using GetNextIndex and post-processing in the same way
+// it is done for TestJudyIns.
+// Check that PValue is not NULL and *PValue is equal to the index for JudyL.
+// Check that Test returns 1 for Judy1.
+// Return the lowest index tested.
 Word_t
 TestJudyGet(void *J1, void *JL, void *JH, Word_t Seed, Word_t Elements)
 {
-    Word_t LowIndex = (Word_t)~0;
+    Word_t LowIndex = ~(Word_t)0;
     Word_t TstIndex;
     Word_t elm;
     Word_t *PValue;
@@ -717,6 +805,9 @@ TestJudyGet(void *J1, void *JL, void *JH, Word_t Seed, Word_t Elements)
         else
             TstIndex = Seed1;
 
+        if (wSplayMask != -(Word_t)1) { TstIndex = MyPDEP(TstIndex, wSplayMask) | (wSplayBase & ~wSplayMask); }
+        TstIndex += wOffset;
+
         if (TstIndex < LowIndex)
             LowIndex = TstIndex;
 
@@ -731,7 +822,11 @@ TestJudyGet(void *J1, void *JL, void *JH, Word_t Seed, Word_t Elements)
         if (PValue == (Word_t *) NULL)
             FAILURE("JudyLGet ret PValue = NULL", 0L);
         if (*PValue != TstIndex)
+        {
+            printf("TstIndex 0x%zx PValue %p *PValue 0x%zx\n",
+                   TstIndex, PValue, *PValue);
             FAILURE("JudyLGet ret wrong Value at", elm);
+        }
 
 #ifdef TEST_HS
         PValue = (PWord_t)JudyHSGet(JH, (void *)(&TstIndex), sizeof(Word_t));
@@ -768,6 +863,9 @@ TestJudyDup(void **J1, void **JL, void **JH, Word_t Seed, Word_t Elements)
         else
             TstIndex = Seed1;
 
+        if (wSplayMask != -(Word_t)1) { TstIndex = MyPDEP(TstIndex, wSplayMask) | (wSplayBase & ~wSplayMask); }
+        TstIndex += wOffset;
+
         if (TstIndex < LowIndex)
             LowIndex = TstIndex;
 
@@ -796,6 +894,16 @@ TestJudyDup(void **J1, void **JL, void **JH, Word_t Seed, Word_t Elements)
 #undef __FUNCTI0N__
 #define __FUNCTI0N__ "TestJudyCount"
 
+// Count(LowIndex, TstIndex) on each array then advance TstIndex using Next
+// and repeat.
+// Do it Elements times on each array.
+// LowIndex is the lowest index inserted in the most recent delta.
+// Start with TstIndex = LowIndex.
+// Verify the result of each Count.
+// Make sure Next returns the same thing for both arrays unless NO_TEST_NEXT.
+// Both indexes passed to JudyCount always exist.
+// We should enhance the test to specify indexes that are not present and
+// to do important testing around narrow pointers and prefix mismatches.
 int
 TestJudyCount(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
 {
@@ -804,8 +912,133 @@ TestJudyCount(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
     Word_t TstIndex = LowIndex;
     PWord_t PValue; (void)PValue;
     int Rc; (void)Rc;
+    Word_t TstIndexL = TstIndex; (void)TstIndexL;
+    Word_t TstIndex1 = TstIndex; (void)TstIndex1;
 
-    TstIndex = LowIndex;
+    Count1 = Judy1Count(J1, 0, -(Word_t)1, NULL);
+    if (Count1 != TotalPop) {
+        printf("TotalPop %zd\n", TotalPop);
+        FAILURE("Judy1Count(0, -1)", Count1);
+    }
+    CountL = JudyLCount(JL, 0, -(Word_t)1, NULL);
+    if (CountL != TotalPop) {
+        printf("TotalPop %zd\n", TotalPop);
+        FAILURE("JudyLCount(0, -1)", CountL);
+    }
+    // We never Insert index == 0.
+    // Unless user makes a mistake with -S.
+    Count1 = Judy1Count(J1, 1, -(Word_t)1, NULL);
+    if (Count1 != TotalPop) {
+        printf("TotalPop %zd\n", TotalPop);
+        FAILURE("Judy1Count(1, -1)", Count1);
+    }
+    CountL = JudyLCount(JL, 1, -(Word_t)1, NULL);
+    if (CountL != TotalPop) {
+        printf("TotalPop %zd\n", TotalPop);
+        FAILURE("JudyLCount(1, -1)", CountL);
+    }
+
+    // Tests designed specifically for missing keys around a narrow pointer.
+    // Need to make it more flexible.
+    // For now it requires wOffset have a high byte greater than zero and less than 0xff
+    // and the rest of the bits must be zero.
+    // E.g. Check -B32 -o0x5500000000000000
+    if ((wSplayMask == -(Word_t)1) // keep it simple for now
+        && (BValue < sizeof(Word_t) * 8 - 8) // we have a narrow pointer at the top
+        && (wOffset >= ((Word_t)1 << (sizeof(Word_t) * 8 - 8))) // high byte is not zero
+        && (wOffset < ((Word_t)0xff << (sizeof(Word_t) * 8 - 8))) // high byte is not 0xff
+        && ((wOffset & (((Word_t)1 << (sizeof(Word_t) * 8 - 8)) - 1)) == 0)
+        )
+    {
+        // Test index == 1 and index == -2 so special treatment of 0 and -1
+        // can't hide a bug as easily.
+        Count1 = Judy1Count(J1, 1, -(Word_t)2, NULL);
+        if (Count1 != TotalPop) {
+            printf("TotalPop %zd\n", TotalPop);
+            FAILURE("Judy1Count(1, -2)", Count1);
+        }
+        CountL = JudyLCount(JL, 1, -(Word_t)2, NULL);
+        if (CountL != TotalPop) {
+            printf("TotalPop %zd\n", TotalPop);
+            FAILURE("JudyLCount(1, -2)", CountL);
+        }
+
+        // wIndexA is the index just before the narrow pointer expanse.
+        Word_t wIndexA = wOffset - 1;
+        //printf("wIndexA 0x%016zx\n", wIndexA);
+        // wIndexB is the first index after the narrow pointer expanse with a different
+        // high byte.
+        Word_t wIndexB = wOffset + ((Word_t)2 << (sizeof(Word_t) * 8 - 8));
+        //printf("wIndexB 0x%016zx\n", wIndexB);
+
+        Count1 = Judy1Count(J1, 0, wIndexA, NULL);
+        if (Count1 != 0) {
+            printf("wIndexA 0x%016zx TotalPop %zd\n", wIndexA, TotalPop);
+            FAILURE("Judy1Count(0, wIndexA)", Count1);
+        }
+        CountL = JudyLCount(JL, 0, wIndexA, NULL);
+        if (CountL != 0) {
+            printf("wIndexA 0x%016zx TotalPop %zd\n", wIndexA, TotalPop);
+            FAILURE("JudyLCount(0, wIndexA)", CountL);
+        }
+
+        Count1 = Judy1Count(J1, 1, wIndexA, NULL);
+        if (Count1 != 0) {
+            printf("wIndexA 0x%016zx TotalPop %zd\n", wIndexA, TotalPop);
+            FAILURE("Judy1Count(1, wIndexA)", Count1);
+        }
+        CountL = JudyLCount(JL, 1, wIndexA, NULL);
+        if (CountL != 0) {
+            printf("wIndexA 0x%016zx TotalPop %zd\n", wIndexA, TotalPop);
+            FAILURE("JudyLCount(1, wIndexA)", CountL);
+        }
+
+        Count1 = Judy1Count(J1, wIndexB, -(Word_t)1, NULL);
+        if (Count1 != 0) {
+            printf("wIndexB 0x%016zx TotalPop %zd\n", wIndexB, TotalPop);
+            FAILURE("Judy1Count(wIndexB, -1)", Count1);
+        }
+        CountL = JudyLCount(JL, wIndexB, -(Word_t)1, NULL);
+        if (CountL != 0) {
+            printf("wIndexB 0x%016zx TotalPop %zd\n", wIndexB, TotalPop);
+            FAILURE("JudyLCount(wIndexB, -1)", CountL);
+        }
+
+        // Test index == -2 so special treatment of -1 can't hide a bug as easily.
+        Count1 = Judy1Count(J1, wIndexB, -(Word_t)2, NULL);
+        if (Count1 != 0) {
+            printf("wIndexB 0x%016zx TotalPop %zd\n", wIndexB, TotalPop);
+            FAILURE("Judy1Count(wIndexB, -2)", Count1);
+        }
+        CountL = JudyLCount(JL, wIndexB, -(Word_t)2, NULL);
+        if (CountL != 0) {
+            printf("wIndexB 0x%016zx TotalPop %zd\n", wIndexB, TotalPop);
+            FAILURE("JudyLCount(wIndexB, -2)", CountL);
+        }
+
+        Count1 = Judy1Count(J1, wIndexA, wIndexB, NULL);
+        if (Count1 != TotalPop) {
+            printf("wIndexA 0x%016zx wIndexB 0x%016zx TotalPop %zd\n", wIndexA, wIndexB, TotalPop);
+            FAILURE("Judy1Count(wIndexA, wIndexB)", Count1);
+        }
+        CountL = JudyLCount(JL, wIndexA, wIndexB, NULL);
+        if (CountL != TotalPop) {
+            printf("wIndexA 0x%016zx wIndexB 0x%016zx TotalPop %zd\n", wIndexA, wIndexB, TotalPop);
+            FAILURE("JudyLCount(wIndexA, wIndexB)", CountL);
+        }
+
+        Count1 = Judy1Count(J1, wIndexA + 1, wIndexB - 1, NULL);
+        if (Count1 != TotalPop) {
+            printf("wIndexA 0x%016zx wIndexB 0x%016zx TotalPop %zd\n", wIndexA, wIndexB, TotalPop);
+            FAILURE("Judy1Count(wIndexA + 1, wIndexB - 1)", Count1);
+        }
+        CountL = JudyLCount(JL, wIndexA + 1, wIndexB - 1, NULL);
+        if (CountL != TotalPop) {
+            printf("wIndexA 0x%016zx wIndexB 0x%016zx TotalPop %zd\n", wIndexA, wIndexB, TotalPop);
+            FAILURE("JudyLCount(wIndexA + 1, wIndexB - 1)", CountL);
+        }
+    }
+
     for (elm = 0; elm < Elements; elm++)
     {
         Count1 = Judy1Count(J1, LowIndex, TstIndex, NULL);
@@ -840,23 +1073,22 @@ TestJudyCount(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
             FAILURE("Count at", elm);
         }
 
-        Word_t TstIndexBefore = TstIndex; (void)TstIndexBefore;
-        Word_t TstIndex1 = TstIndex; (void)TstIndex1;
 #if defined(USE_JUDY1_NEXT_IN_COUNT)
         Rc = Judy1Next(J1, &TstIndex1, NULL);
         TstIndex = TstIndex1;
 #else // defined(USE_JUDY1_NEXT_IN_COUNT)
-        PValue = (PWord_t)JudyLNext(JL, &TstIndex, NULL);
+        PValue = (PWord_t)JudyLNext(JL, &TstIndexL, NULL);
+        TstIndex = TstIndexL;
 #endif // defined(USE_JUDY1_NEXT_IN_COUNT)
         // Count test depends on Next.
         // But it doesn't require both Judy1Next and JudyLNext.
 #ifndef NO_TEST_NEXT
   #if defined(USE_JUDY1_NEXT_IN_COUNT)
-        PValue = (PWord_t)JudyLNext(JL, &TstIndex, NULL);
+        PValue = (PWord_t)JudyLNext(JL, &TstIndexL, NULL);
   #else // defined(USE_JUDY1_NEXT_IN_COUNT)
         Rc = Judy1Next(J1, &TstIndex1, NULL);
   #endif // defined(USE_JUDY1_NEXT_IN_COUNT)
-        if (TstIndex != TstIndex1) {
+        if (TstIndexL != TstIndex1) {
             if ((PValue != NULL) || (Rc == 1)) {
                 Word_t LastIndex1 = -1;
                 Judy1Last(J1, &LastIndex1, NULL);
@@ -866,8 +1098,8 @@ TestJudyCount(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
                 printf("Elements = %zd\n", Elements);
                 printf("LastIndexL = %zd 0x%zx LastIndex1 = %zd 0x%zx\n",
                        LastIndexL, LastIndexL, LastIndex1, LastIndex1);
-                printf("Next TstIndex = %zd 0x%zx != TstIndex1 = %zd 0x%zx\n",
-                       TstIndex, TstIndex, TstIndex1, TstIndex1);
+                printf("Next TstIndexL = %zd 0x%zx != TstIndex1 = %zd 0x%zx\n",
+                       TstIndexL, TstIndexL, TstIndex1, TstIndex1);
                 FAILURE("Count at", elm);
             }
         }
@@ -879,6 +1111,10 @@ TestJudyCount(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
 #undef __FUNCTI0N__
 #define __FUNCTI0N__ "TestJudyNext"
 
+// Do First on LowIndex followed by Elements Nexts.
+// Vefify that we find the same indexes in both arrays.
+// Verify that the last Next finds no index.
+// Maybe we should verify the value for JudyL.
 Word_t TestJudyNext(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
 {
     Word_t JLindex, J1index, JPindex = 0;
@@ -966,6 +1202,10 @@ TestJudyPrev(void *J1, void *JL, Word_t HighIndex, Word_t Elements)
 #undef __FUNCTI0N__
 #define __FUNCTI0N__ "TestJudyNextEmpty"
 
+// Start with LowIndex and do NextEmpty.
+// Verify that Test/Get don't find the resulting index.
+// Do Next to find the next index.
+// Repeat.
 int
 TestJudyNextEmpty(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
 {
@@ -1162,6 +1402,9 @@ TestJudyDel(void **J1, void **JL, void **JH, Word_t Seed, Word_t Elements)
             TstIndex = Swizzle(Seed1);
         else
             TstIndex = Seed1;
+
+        if (wSplayMask != -(Word_t)1) { TstIndex = MyPDEP(TstIndex, wSplayMask) | (wSplayBase & ~wSplayMask); }
+        TstIndex += wOffset;
 
         if (pFlag) { printf("JudyLDel: %8" PRIuPTR"\t0x%p\n", elm, (void *)TstIndex); }
 
