@@ -25,10 +25,20 @@ elif [ "$1" = "L" ]; then
     TIME=bLtime
     CHECK=bLcheck
 elif [ "$1" = "" ]; then
+<<<<<<< HEAD
 #    TIME=btime
 #    CHEDK=bcheck
     TIME=test/Judy1LHTime
     CHECK=test/Judy1LHCheck
+=======
+    if [ -x btime ]; then
+        TIME=btime
+        CHECK=bcheck
+    else
+        TIME=test/Judy1LHTime
+        CHECK=test/Judy1LHCheck
+    fi
+>>>>>>> 7d2d1ac309f6991c881c18a2180b45e51b8e53f5
 else
     TIME=${1}time # jtime, c++time, c++1time, c++Ltime
     CHECK=${1}check # jcheck, c++check, c++1check, c++Lcheck
