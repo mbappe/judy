@@ -174,7 +174,7 @@ JUDYLCODE(PPvoid_t PPvalue);	// from JudyLFirst() calls.
 #else   // JUDYL
 	    PPvalue = j__udyLGet(PArray, Index1, PJE0);
 	    if (PPvalue == (PPvoid_t) NULL)		// Index is not found.
-	        return(C_JERR);			// pass through error.
+	        return((Word_t)0);
 #endif  // JUDYL
 	    return((Word_t)1);					// single index is set.
 	}
