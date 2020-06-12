@@ -1,0 +1,7 @@
+sudo apt install libtool
+sudo apt install automake
+aclocal
+libtoolize
+autoheader
+automake --add-missing
+autoconf
