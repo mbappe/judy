@@ -154,7 +154,7 @@ FUNCTION void GenTable(
 
 // 8 columns per line, starting with 1:
 
-	if ((ii % 10) == 1) fprintf(fd,"\n    ");
+	if ((ii % 10) == 1) fprintf(fd,"  // %3d\n", ii - 1);
 
 	fprintf(fd, " %3d,", Words[ii]);
 
@@ -237,11 +237,11 @@ FUNCTION int main()
 
 //    GenTable("j__1_Leaf1", "cJ1_LEAF1_MAXPOP1", 1, cJ1_LEAF1_MAXPOP1, 0, 1);
     GenTable("j__1_Leaf2", "cJ1_LEAF2_MAXPOP1", 2, cJ1_LEAF2_MAXPOP1, 0, 1);
-    GenTable("j__1_Leaf3", "cJ1_LEAF3_MAXPOP1", 3, cJ1_LEAF3_MAXPOP1, 0, 1);
+    GenTable("j__1_Leaf3", "cJ1_LEAF3_MAXPOP1", 4, cJ1_LEAF3_MAXPOP1, 0, 1);
     GenTable("j__1_Leaf4", "cJ1_LEAF4_MAXPOP1", 4, cJ1_LEAF4_MAXPOP1, 0, 1);
-    GenTable("j__1_Leaf5", "cJ1_LEAF5_MAXPOP1", 5, cJ1_LEAF5_MAXPOP1, 0, 1);
-    GenTable("j__1_Leaf6", "cJ1_LEAF6_MAXPOP1", 6, cJ1_LEAF6_MAXPOP1, 0, 1);
-    GenTable("j__1_Leaf7", "cJ1_LEAF7_MAXPOP1", 7, cJ1_LEAF7_MAXPOP1, 0, 1);
+    GenTable("j__1_Leaf5", "cJ1_LEAF5_MAXPOP1", 8, cJ1_LEAF5_MAXPOP1, 0, 1);
+    GenTable("j__1_Leaf6", "cJ1_LEAF6_MAXPOP1", 8, cJ1_LEAF6_MAXPOP1, 0, 1);
+    GenTable("j__1_Leaf7", "cJ1_LEAF7_MAXPOP1", 8, cJ1_LEAF7_MAXPOP1, 0, 1);
     GenTable("j__1_Leaf8", "cJ1_LEAF8_MAXPOP1", 8, cJ1_LEAF8_MAXPOP1, 0, 1);
 #endif  // JUDY1
 
@@ -275,12 +275,12 @@ FUNCTION int main()
 //    GenTable("j__L_LeafB1", "cJL_LEAFB1_MAXPOP1",0,              256,   BPW, cJL_WORDSPERLEAFB1);
     GenTable("j__L_Leaf1", "cJL_LEAF1_MAXPOP1",  1, cJL_LEAF1_MAXPOP1,  BPW, 1);
     GenTable("j__L_Leaf2", "cJL_LEAF2_MAXPOP1",  2, cJL_LEAF2_MAXPOP1,  BPW, 1);
-    GenTable("j__L_Leaf3", "cJL_LEAF3_MAXPOP1",  3, cJL_LEAF3_MAXPOP1,  BPW, 1);
+    GenTable("j__L_Leaf3", "cJL_LEAF3_MAXPOP1",  4, cJL_LEAF3_MAXPOP1,  BPW, 1);
     GenTable("j__L_Leaf4", "cJL_LEAF4_MAXPOP1",  4, cJL_LEAF4_MAXPOP1,  BPW, 1);
-    GenTable("j__L_Leaf5", "cJL_LEAF5_MAXPOP1",  5, cJL_LEAF5_MAXPOP1,  BPW, 1);
-    GenTable("j__L_Leaf6", "cJL_LEAF6_MAXPOP1",  6, cJL_LEAF6_MAXPOP1,  BPW, 1);
-    GenTable("j__L_Leaf7", "cJL_LEAF7_MAXPOP1",  7, cJL_LEAF7_MAXPOP1,  BPW, 1);
-    GenTable("j__L_Leaf8", "cJL_LEAF8_MAXPOP1",  8, cJL_LEAF8_MAXPOP1,  BPW, 1);
+    GenTable("j__L_Leaf5", "cJL_LEAF5_MAXPOP1",  8, cJL_LEAF5_MAXPOP1,  BPW, 1);
+    GenTable("j__L_Leaf6", "cJL_LEAF6_MAXPOP1",  8, cJL_LEAF6_MAXPOP1,  BPW, 1);
+    GenTable("j__L_Leaf7", "cJL_LEAF7_MAXPOP1",  8, cJL_LEAF7_MAXPOP1,  BPW, 1);
+    GenTable("j__L_Leaf8", "cJL_LEAF8_MAXPOP1",  8, cJL_LEAF8_MAXPOP1  ,BPW, 1);
 //    GenTable("j__L_LeafV", "cJU_BITSPERSUBEXPL", 8, cJU_BITSPERSUBEXPL, 0, 0);
     GenTable("j__L_LeafV", "cJU_BITSPERSUBEXPL", 8, 8 /* ImmedL max pop */, 0, 0);
 #endif // JUDYL

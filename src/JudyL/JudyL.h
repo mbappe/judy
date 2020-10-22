@@ -117,6 +117,13 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
         cJL_JPBRANCH_U7,        // 7 bytes Pop0, 0 bytes Dcd.
         cJL_JPBRANCH_U8,        // 8 bytes Pop0, 0 bytes Dcd.
 
+        cJL_JPBRANCH1_L2,       // 2 bytes Pop0, 6 bytes Dcd.
+        cJL_JPBRANCH1_L3,       // 3 bytes Pop0, 5 bytes Dcd.
+        cJL_JPBRANCH1_L4,       // 4 bytes Pop0, 4 bytes Dcd.
+        cJL_JPBRANCH1_L5,       // 5 bytes Pop0, 3 bytes Dcd.
+        cJL_JPBRANCH1_L6,       // 6 bytes Pop0, 2 byte  Dcd.
+        cJL_JPBRANCH1_L7,       // 7 bytes Pop0, 1 bytes Dcd.
+        cJL_JPBRANCH1_L8,       // 8 bytes Pop0, 0 bytes Dcd.
 
 // Linear branches:
 //
@@ -166,8 +173,8 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // bitmap would grow from 256 to 256^2, 256^3, ... bits, which would not be
 // efficient..
 
-        cJL_JPLEAF_B1,          // 1] byte Pop0, 7 bytes Dcd.
-#define cJL_JLEAFMAX (cJL_JPLEAF_B1) // max Leaf jp_type
+        cJL_JPLEAF_B1U,          // 1] byte Pop0, 7 bytes Dcd.
+#define cJL_JLEAFMAX (cJL_JPLEAF_B1U) // max Leaf jp_type
 
 // Full population; Index Size == 1 virtual leaf:
 //
@@ -312,19 +319,19 @@ typedef enum            // uint8_t -- but C does not support this type of enum.
 // series of pointers?  (See 4.27.)  Turns out this wastes a cache fill on
 // systems with smaller cache lines than the assumed value cJU_WORDSPERCL.
 
-#define JL_JLB_BITMAP(Pjlb, Subexp)  ((Pjlb)->jLlb_Bitmap[Subexp])
+#define JL_JLB_BITMAP(Pjlb, Subexp)     ((Pjlb)->jLlb_Bitmap[Subexp])
 #define JL_JLB_PVALUE(Pjlb)  ((Pjlb)->jLlb_PV)
 //
 typedef struct J__UDYL_LEAF_BITMAP
 {
+        Word_t    jlb_LastKey;          // now in the jp_t DcdPop0????
         BITMAPL_t jLlb_Bitmap[cJU_NUMSUBEXPL];
-//        Word_t    jLlb_LastKey;     now in the jp_t DcdPop0
         jv_t      jLlb_PV[256];
 } jLlb_t, * PjLlb_t;
 
 // Words per bitmap leaf:
 
-#define cJL_WORDSPERLEAFB1  (sizeof(jLlb_t) / cJU_BYTESPERWORD)
+#define cJL_WORDSPERLEAFB1U  (sizeof(jLlb_t) / cJU_BYTESPERWORD)
 
 
 // ****************************************************************************
@@ -518,23 +525,27 @@ extern const uint16_t j__L_Leaf8Offset    [cJL_LEAF8_MAXPOP1 + 1];
 PjLpm_t j__udyLAllocJLPM(void);                         // constant size.
 
 Word_t  j__udyLAllocJBL(          PjLpm_t);             // constant size.
+
+#ifdef  NEWJBB
+Word_t  j__udyLAllocJBB(    int,  PjLpm_t);             // constant size.
+#else   // NEWJBB
 Word_t  j__udyLAllocJBB(          PjLpm_t);             // constant size.
-Word_t  j__udyLAllocJBBJP(int,    PjLpm_t);
+#endif  // NEWJBB
+
+Word_t  j__udyLAllocJBBJP(Word_t, PjLpm_t);
 Word_t  j__udyLAllocJBU(          PjLpm_t);             // constant size.
 
-Word_t  j__udyLAllocJLL1( int,    PjLpm_t);
-Word_t  j__udyLAllocJLL2( int,    PjLpm_t);
-Word_t  j__udyLAllocJLL3( int,    PjLpm_t);
+Word_t  j__udyLAllocJLL1( Word_t, PjLpm_t);
+Word_t  j__udyLAllocJLL2( Word_t, PjLpm_t);
+Word_t  j__udyLAllocJLL3( Word_t, PjLpm_t);
 
-Word_t  j__udyLAllocJLL4( int,    PjLpm_t);
-Word_t  j__udyLAllocJLL5( int,    PjLpm_t);
-Word_t  j__udyLAllocJLL6( int,    PjLpm_t);
-Word_t  j__udyLAllocJLL7( int,    PjLpm_t);
-
-Pjll8_t j__udyLAllocJLL8( int            );             // no PjLpm_t needed.
-Word_t  j__udyLAllocJLB1(         PjLpm_t);             // constant size
-Word_t  j__udyLAllocJV(   int,    PjLpm_t);
-
+Word_t  j__udyLAllocJLL4( Word_t, PjLpm_t);
+Word_t  j__udyLAllocJLL5( Word_t, PjLpm_t);
+Word_t  j__udyLAllocJLL6( Word_t, PjLpm_t);
+Word_t  j__udyLAllocJLL7( Word_t, PjLpm_t);
+Word_t  j__udyLAllocJLL8( Word_t         );             // no PjLpm_t needed.
+Word_t  j__udyLAllocJLB1U(        PjLpm_t);             // uncompressed
+Word_t  j__udyLAllocJV(   Word_t, PjLpm_t);
 
 // FUNCTIONS TO FREE OBJECTS:
 
@@ -542,21 +553,24 @@ void    j__udyLFreeJLPM( PjLpm_t,        PjLpm_t);      // constant size.
 
 void    j__udyLFreeJBL(  Word_t,         PjLpm_t);      // constant size.
 void    j__udyLFreeJBB(  Word_t,         PjLpm_t);      // constant size.
-void    j__udyLFreeJBBJP(Word_t, int,    PjLpm_t);
+#ifdef  NEWJBB
+#else   // NEWJBB
+void    j__udyLFreeJBBJP(Word_t, Word_t, PjLpm_t);
+#endif  // NEWJBB
 void    j__udyLFreeJBU(  Word_t,         PjLpm_t);      // constant size.
 
-void    j__udyLFreeJLL1( Word_t, int,    PjLpm_t);
-void    j__udyLFreeJLL2( Word_t, int,    PjLpm_t);
-void    j__udyLFreeJLL3( Word_t, int,    PjLpm_t);
+void    j__udyLFreeJLL1( Word_t, Word_t, PjLpm_t);
+void    j__udyLFreeJLL2( Word_t, Word_t, PjLpm_t);
+void    j__udyLFreeJLL3( Word_t, Word_t, PjLpm_t);
 
-void    j__udyLFreeJLL4( Word_t, int,    PjLpm_t);
-void    j__udyLFreeJLL5( Word_t, int,    PjLpm_t);
-void    j__udyLFreeJLL6( Word_t, int,    PjLpm_t);
-void    j__udyLFreeJLL7( Word_t, int,    PjLpm_t);
+void    j__udyLFreeJLL4( Word_t, Word_t, PjLpm_t);
+void    j__udyLFreeJLL5( Word_t, Word_t, PjLpm_t);
+void    j__udyLFreeJLL6( Word_t, Word_t, PjLpm_t);
+void    j__udyLFreeJLL7( Word_t, Word_t, PjLpm_t);
 
-void    j__udyLFreeJLL8( Pjll8_t,int,    PjLpm_t);
-void    j__udyLFreeJLB1( Word_t,         PjLpm_t);      // constant size.
-void    j__udyLFreeJV(   Word_t, int,    PjLpm_t);
-void    j__udyLFreeSM(   Pjp_t,          PjLpm_t);      // everything below Pjp.
+void    j__udyLFreeJLL8( Word_t, Word_t, PjLpm_t);
+void    j__udyLFreeJLB1U(Word_t,         PjLpm_t);      // constant size.
+void    j__udyLFreeJV(   Word_t, Word_t, PjLpm_t);
+Word_t  j__udyLFreeSM(   Pjp_t,          PjLpm_t);      // everything below Pjp.
 
 #endif // ! _JUDYL_INCLUDED

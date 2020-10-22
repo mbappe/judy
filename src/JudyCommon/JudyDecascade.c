@@ -317,7 +317,7 @@ FUNCTION int j__udyLeafB1ToLeaf1(
 	Pjp_t	  Pjp,		// points to LeafB1 to shrink.
 	Pjpm_t	  Pjpm)		// for global accounting.
 {
-	assert(ju_Type(Pjp) == cJU_JPLEAF_B1);
+	assert(ju_Type(Pjp) == cJU_JPLEAF_B1U);
 	assert(((ju_DcdPop0(Pjp) & 0xFF) + 1) == cJU_LEAF1_MAXPOP1);
 
 #ifdef  PCAS
@@ -358,7 +358,7 @@ printf("Dec: j__udyLeafB1ToLeaf1, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPo
 
 // Finish up:  Free the old LeafB1 and plug the new Leaf1 into the JP:
 // Note:  jp_DcdPopO and jp_LeafPop1 does NOT change here.
-	j__udyFreeJLB1(PjlbRaw, Pjpm);
+	j__udyFreeJLB1U(PjlbRaw, Pjpm);
         ju_SetPntrInJp(Pjp, Pjll1Raw);                  // new ^
         ju_SetJpType(Pjp, cJL_JPLEAF1);                 // new jp_Type
 
@@ -371,7 +371,7 @@ printf("Dec: j__udyLeafB1ToLeaf1, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPo
 // __ J U D Y   L E A F   1   T O   L E A F   2
 //
 // Copy 1-byte Indexes from a LeafB1 or Leaf1 to 2-byte Indexes in a Leaf2.
-// Pjp MUST be one of:  cJU_JPLEAF_B1, cJU_JPLEAF1, or cJU_JPIMMED_1_*.
+// Pjp MUST be one of:  cJU_JPLEAF_B1U, cJU_JPLEAF1, or cJU_JPIMMED_1_*.
 // Return number of Indexes copied.
 //
 // TBD:  In this and all following functions, the caller should already be able
@@ -393,8 +393,8 @@ FUNCTION Word_t  j__udyLeaf1orB1ToLeaf2(
 
 	switch (ju_Type(Pjp))
 	{
-// JPLEAF_B1:
-	case cJU_JPLEAF_B1:
+// JPLEAF_B1U:
+	case cJU_JPLEAF_B1U:
 	{
             Word_t PjlbRaw = ju_PntrInJp(Pjp);
             Pjlb_t Pjlb    = P_JLB1(PjlbRaw);
@@ -419,9 +419,9 @@ FUNCTION Word_t  j__udyLeaf1orB1ToLeaf2(
             }
             assert(Pop1 == ju_LeafPop1(Pjp));   // sanity check
 
-	    j__udyFreeJLB1(PjlbRaw, Pjpm);  // LeafB1 itself.
+	    j__udyFreeJLB1U(PjlbRaw, Pjpm);  // LeafB1 itself.
 	    return(Pop1);
-	} // case cJU_JPLEAF_B1
+	} // case cJU_JPLEAF_B1U
 
 #ifdef  JUDYL
 // JPLEAF1:     only JudyL has a Leaf1
@@ -552,6 +552,7 @@ FUNCTION Word_t  j__udyLeaf2ToLeaf3(
 printf("j__udyLeaf2ToLeaf3, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop1(Pjp), ju_DcdPop0(Pjp));
 #endif  // PCAS
 
+#ifdef  obs
 	switch (ju_Type(Pjp))
 	{
 // JPLEAF2:
@@ -617,11 +618,13 @@ printf("j__udyLeaf2ToLeaf3, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop1(Pjp
             break;
 
 	} // switch
+#endif  //  obs
 	return (0);
 
 } // j__udyLeaf2ToLeaf3()
 
 
+#ifdef  obs
 
 // ****************************************************************************
 // __ J U D Y   L E A F   3   T O   L E A F   4
@@ -657,7 +660,7 @@ printf("j__udyLeaf3ToLeaf4, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop1(Pjp
 	case cJU_JPLEAF3:
 	{
             Pjll3_t Pjll3 = P_JLL3(ju_PntrInJp(Pjp));
-            uint8_t * PLeaf3 = Pjll3->jl3_Leaf;
+            uint32_t * PLeaf3 = Pjll3->jl3_Leaf;
 
 	    Pop1 = ju_LeafPop1(Pjp);
 	    j__udyCopy3to4(PLeaf4, PLeaf3, Pop1, MSByte);
@@ -692,7 +695,7 @@ printf("j__udyLeaf3ToLeaf4, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop1(Pjp
 	case cJ1_JPIMMED_3_05:
 #endif
 	{
-	    uint8_t * PLeaf3 = ju_PImmed3(Pjp);
+	    uint32_t * PLeaf3 = ju_PImmed3(Pjp);
 
 	    JUDY1CODE(Pop1 = ju_Type(Pjp) - cJU_JPIMMED_3_02 + 2;)
 	    JUDYLCODE(Pop1 = 2;)
@@ -733,7 +736,7 @@ printf("j__udyLeaf3ToLeaf4, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop1(Pjp
 // objects are below it and must be handled here.
 
 FUNCTION Word_t  j__udyLeaf4ToLeaf5(
-	uint8_t * PLeaf5,	// destination "uint40_t *" Index part of leaf.
+	uint32_t * PLeaf5,	// destination "uint40_t *" Index part of leaf.
 #ifdef JUDYL
 	Pjv_t	  Pjv5,		// destination value part of leaf.
 #endif
@@ -827,7 +830,7 @@ printf("j__udyLeaf4ToLeaf5, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop1(Pjp
 // objects are below it and must be handled here.
 
 FUNCTION Word_t  j__udyLeaf5ToLeaf6(
-	uint8_t * PLeaf6,	// destination uint8_t * Index part of leaf.
+	Word_t * PLeaf6,	// destination uint8_t * Index part of leaf.
 #ifdef JUDYL
 	Pjv_t	  Pjv6,		// destination value part of leaf.
 #endif
@@ -848,7 +851,7 @@ printf("j__udyLeaf5ToLeaf6, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop1(Pjp
 	case cJU_JPLEAF5:
 	{
             Pjll5_t Pjll5 = P_JLL5(ju_PntrInJp(Pjp));
-	    uint8_t * PLeaf5 = Pjll5->jl5_Leaf;
+	    Word_t * PLeaf5 = Pjll5->jl5_Leaf;
 
 	    Pop1 = ju_LeafPop1(Pjp);
 	    j__udyCopy5to6(PLeaf6, PLeaf5, Pop1, MSByte);
@@ -880,10 +883,9 @@ printf("j__udyLeaf5ToLeaf6, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop1(Pjp
 // JPIMMED_5_0[2+]:
 
 	case cJ1_JPIMMED_5_02:
-	case cJ1_JPIMMED_5_03:
 	{
 //            uint8_t * PLeaf5 = (uint8_t *) (Pjp->jp_1Index1);
-	    uint8_t * PLeaf5 = ju_PImmed5(Pjp);
+	    Word_t * PLeaf5 = ju_PImmed5(Pjp);
 
 	    Pop1 = ju_Type(Pjp) - cJ1_JPIMMED_5_02 + 2;
 	    j__udyCopy5to6(PLeaf6, PLeaf5, Pop1, MSByte);
@@ -916,7 +918,7 @@ printf("j__udyLeaf5ToLeaf6, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop1(Pjp
 // objects are below it and must be handled here.
 
 FUNCTION Word_t  j__udyLeaf6ToLeaf7(
-	uint8_t * PLeaf7,	// destination "uint24_t *" Index part of leaf.
+	Word_t * PLeaf7,	// destination "uint24_t *" Index part of leaf.
 #ifdef JUDYL
 	Pjv_t	  Pjv7,		// destination value part of leaf.
 #endif
@@ -937,7 +939,7 @@ printf("j__udyLeaf6ToLeaf7, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop1(Pjp
 	case cJU_JPLEAF6:
 	{
             Pjll6_t Pjll6 = P_JLL6(ju_PntrInJp(Pjp));
-	    uint8_t * PLeaf6 = Pjll6->jl6_Leaf;
+	    Word_t * PLeaf6 = Pjll6->jl6_Leaf;
 
 	    Pop1 = ju_LeafPop1(Pjp);
 	    j__udyCopy6to7(PLeaf7, PLeaf6, Pop1, MSByte);
@@ -970,7 +972,7 @@ printf("j__udyLeaf6ToLeaf7, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop1(Pjp
 
 	case cJ1_JPIMMED_6_02:
 	{
-	    uint8_t * PLeaf6 = ju_PImmed6(Pjp);
+	    Word_t * PLeaf6 = ju_PImmed6(Pjp);
 
 	    j__udyCopy6to7(PLeaf7, PLeaf6, /* Pop1 = */ 2, MSByte);
 	    return(2);
@@ -1026,7 +1028,7 @@ printf("j__udyLeaf7ToLeaf8, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop1(Pjp
 	case cJU_JPLEAF7:
 	{
             Pjll7_t Pjll7 = P_JLL7(ju_PntrInJp(Pjp));
-	    uint8_t * PLeaf7 = Pjll7->jl7_Leaf;
+	    Word_t * PLeaf7 = Pjll7->jl7_Leaf;
 
 	    Pop1 = ju_LeafPop1(Pjp);
 	    j__udyCopy7to8(PWord8, PLeaf7, Pop1, MSByte);
@@ -1059,7 +1061,7 @@ printf("j__udyLeaf7ToLeaf8, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop1(Pjp
 	case cJ1_JPIMMED_7_02:
 	{
 //            uint8_t * PLeaf7 = (uint8_t *) (Pjp->jp_1Index1);
-	    uint8_t * PLeaf7 = ju_PImmed7(Pjp);
+	    Word_t * PLeaf7 = ju_PImmed7(Pjp);
 
 	    j__udyCopy7to8(PWord8, PLeaf7, /* Pop1 = */ 2, MSByte);
 	    return(2);
@@ -1078,3 +1080,4 @@ printf("j__udyLeaf7ToLeaf8, Pop1 = 0x%lx, DcdPop0 = 0x%016lx\n", ju_LeafPop1(Pjp
 
 } // j__udyLeaf7ToLeaf8()
 
+#endif  //  obs

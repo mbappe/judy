@@ -636,8 +636,10 @@ TestJudyIns(void **J1, void **JL, void **JH, Word_t Seed, Word_t Elements)
         *PValue = TstIndex;
 
         PValue1 = (PWord_t)JudyLGet(*JL, TstIndex, NULL);
-        if (PValue != PValue1)
-            FAILURE("JudyLGet failed - Incorrect PValue, population =", TotalPop);
+//        if (PValue != PValue1)
+//        {
+//            FAILURE("JudyLGet failed - Incorrect PValue, population =", TotalPop);
+//        }
 
         PValue1 = (PWord_t)JudyLIns(JL, TstIndex, NULL);
         if (PValue != PValue1)
@@ -807,6 +809,7 @@ TestJudyCount(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
         Count1 = Judy1Count(J1, LowIndex, TstIndex, NULL);
         if (Count1 == (Word_t)JERR)
             FAILURE("Judy1Count ret JERR", Count1);
+        Judy1Test(J1, TstIndex, PJE0);
 
         if (pFlag) {
             printf("Judy1Count: Count=%" PRIuPTR" Low=%p High=%p\n",
@@ -814,6 +817,7 @@ TestJudyCount(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
         }
 
         CountL = JudyLCount(JL, LowIndex, TstIndex, NULL);
+//        JudyLGet(JL, TstIndex, PJE0);
         if (CountL == (Word_t)JERR)
             FAILURE("JudyLCount ret JERR", CountL);
 
@@ -983,6 +987,13 @@ TestJudyNextEmpty(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
 
 //      Find next Empty Index, JLindex is modified by JLNE
         JLNE(RcodeL, JL, JLindex);      // Rcode = JudyLNextEmpty(JL, &JLindex, PJE0)
+        
+        PValue = (PWord_t)JudyLGet(JL, JLindex, NULL);
+        if (PValue != (Word_t *) NULL)
+        {
+            printf("OOps - JudyLGet Index = 0x%016lx, with *PValue = 0x%016lx\n", JLindex, *PValue);
+            FAILURE("JLNE returned non-empty Index =", JLindex);
+        }
 
 //      Find next Empty Index, J1index is modified by J1NE
         J1NE(Rcode1, J1, J1index);      // Rcode = Judy1NextEmpty(J1, &J1index, PJE0)
@@ -1010,14 +1021,11 @@ TestJudyNextEmpty(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
 
         Rcode1 = Judy1Test(J1, J1index, NULL);
 
-        if (Rcode1 != 0) {
+        if (Rcode1 != 0) 
+        {
             printf("PrevKey 0x%zx J1index 0x%zx\n", PrevKey, J1index);
             FAILURE("J1NE returned non-empty Index =", J1index);
         }
-
-        PValue = (PWord_t)JudyLGet(JL, JLindex, NULL);
-        if (PValue != (Word_t *) NULL)
-            FAILURE("JLNE returned non-empty Index =", JLindex);
 
 //      find next Index (Key) in array
         Rcode1 = Judy1Next(J1, &J1index, PJE0);

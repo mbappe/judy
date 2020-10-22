@@ -182,11 +182,12 @@ FUNCTION PPvoid_t JudyLByCount
 	state = cJU_ROOTSTATE;	\
 	goto Next
 
-// Use PREPB_DCD() to first copy the Dcd bytes to *PIndex if there are any
+// Use PREP_BRANCH_DCD() to first copy the Dcd bytes to *PIndex if there are any
 // (only if state < cJU_ROOTSTATE - 1):
 
-#define	PREPB_DCD(Pjp,cState,Next)			\
-	JU_SETDCD(*PIndex, Pjp, cState);	        \
+#define	PREP_BRANCH_DCD(Pjp,cState,Next)			        \
+/* _SET_BRANCH_DCD(*PIndex, Pjp, cState);               */              \
+        *PIndex = JU_MERGE_DCD_KEY(*PIndex, ju_DcdPop0(Pjp), cState);   \
 	PREPB((Pjp), cState, Next)
 
 #define	PREPB(Pjp,cState,Next)	\
@@ -222,8 +223,7 @@ FUNCTION PPvoid_t JudyLByCount
 	assert((Offset) >= 0);				\
 	assert((Offset) <  (cPop1))
 
-#define	SETOFFSET_IMM(Offset,Count0,Pop1lower) \
-	(Offset) = (Count0) - (Pop1lower)
+//#define	SETOFFSET_IMM(Offset,Count0,Pop1lower) (Offset) = (Count0) - (Pop1lower)
 
 
 // STATE MACHINE -- TRAVERSE TREE:
@@ -253,12 +253,12 @@ SMByCount:			// return here for next branch/leaf.
 // sets pop1 for the whole array, but that value is not used here.  001215:
 // Maybe its true again?
 
-	case cJU_JPBRANCH_L2:  PREPB_DCD(Pjp, 2, BranchL);
-	case cJU_JPBRANCH_L3:  PREPB_DCD(Pjp, 3, BranchL);
-	case cJU_JPBRANCH_L4:  PREPB_DCD(Pjp, 4, BranchL);
-	case cJU_JPBRANCH_L5:  PREPB_DCD(Pjp, 5, BranchL);
-	case cJU_JPBRANCH_L6:  PREPB_DCD(Pjp, 6, BranchL);
-	case cJU_JPBRANCH_L7:  PREPB_DCD(Pjp, 7, BranchL);
+	case cJU_JPBRANCH_L2:  PREP_BRANCH_DCD(Pjp, 2, BranchL);
+	case cJU_JPBRANCH_L3:  PREP_BRANCH_DCD(Pjp, 3, BranchL);
+	case cJU_JPBRANCH_L4:  PREP_BRANCH_DCD(Pjp, 4, BranchL);
+	case cJU_JPBRANCH_L5:  PREP_BRANCH_DCD(Pjp, 5, BranchL);
+	case cJU_JPBRANCH_L6:  PREP_BRANCH_DCD(Pjp, 6, BranchL);
+	case cJU_JPBRANCH_L7:  PREP_BRANCH_DCD(Pjp, 7, BranchL);
         case cJU_JPBRANCH_L8:  PREPB_ROOT(	 BranchL);
 	{
 	    Pjbl_t Pjbl;
@@ -306,13 +306,13 @@ BranchL:
 //
 // Note:  There are no null JPs in a JBB; watch out for pop1 == 0.
 
-	case cJU_JPBRANCH_B2:  PREPB_DCD(Pjp, 2, BranchB);
-	case cJU_JPBRANCH_B3:  PREPB_DCD(Pjp, 3, BranchB);
-	case cJU_JPBRANCH_B4:  PREPB_DCD(Pjp, 4, BranchB);
-	case cJU_JPBRANCH_B5:  PREPB_DCD(Pjp, 5, BranchB);
-	case cJU_JPBRANCH_B6:  PREPB_DCD(Pjp, 6, BranchB);
+	case cJU_JPBRANCH_B2:  PREP_BRANCH_DCD(Pjp, 2, BranchB);
+	case cJU_JPBRANCH_B3:  PREP_BRANCH_DCD(Pjp, 3, BranchB);
+	case cJU_JPBRANCH_B4:  PREP_BRANCH_DCD(Pjp, 4, BranchB);
+	case cJU_JPBRANCH_B5:  PREP_BRANCH_DCD(Pjp, 5, BranchB);
+	case cJU_JPBRANCH_B6:  PREP_BRANCH_DCD(Pjp, 6, BranchB);
 //	case cJU_JPBRANCH_B7:  PREPB(	 Pjp, 7, BranchB);
-	case cJU_JPBRANCH_B7:  PREPB_DCD(Pjp, 7, BranchB);
+	case cJU_JPBRANCH_B7:  PREP_BRANCH_DCD(Pjp, 7, BranchB);
 	case cJU_JPBRANCH_B8:   PREPB_ROOT(	 BranchB);
 	{
 	    Pjbb_t Pjbb;
@@ -389,7 +389,7 @@ BranchB:
 
 // Warning:  pop1lower and pop1 are unsigned, see earlier comment:
 
-			if (pop1lower + pop1 > Count0)
+			if ((pop1lower + pop1) > Count0)
 			    JBB_FOUNDEXPANSE;	// Index is in this expanse.
 
 			pop1lower += pop1;	// add this JPs pop1.
@@ -459,13 +459,13 @@ BranchB:
 // UNCOMPRESSED BRANCH; count populations in JPs in the JBU upwards or
 // downwards until finding the expanse (digit) containing Count, and "recurse".
 
-	case cJU_JPBRANCH_U2:  PREPB_DCD(Pjp, 2, BranchU);
-	case cJU_JPBRANCH_U3:  PREPB_DCD(Pjp, 3, BranchU);
-	case cJU_JPBRANCH_U4:  PREPB_DCD(Pjp, 4, BranchU);
-	case cJU_JPBRANCH_U5:  PREPB_DCD(Pjp, 5, BranchU);
-	case cJU_JPBRANCH_U6:  PREPB_DCD(Pjp, 6, BranchU);
+	case cJU_JPBRANCH_U2:  PREP_BRANCH_DCD(Pjp, 2, BranchU);
+	case cJU_JPBRANCH_U3:  PREP_BRANCH_DCD(Pjp, 3, BranchU);
+	case cJU_JPBRANCH_U4:  PREP_BRANCH_DCD(Pjp, 4, BranchU);
+	case cJU_JPBRANCH_U5:  PREP_BRANCH_DCD(Pjp, 5, BranchU);
+	case cJU_JPBRANCH_U6:  PREP_BRANCH_DCD(Pjp, 6, BranchU);
 //	case cJU_JPBRANCH_U7:  PREPB(	 Pjp, 7, BranchU);
-	case cJU_JPBRANCH_U7:  PREPB_DCD(Pjp, 7, BranchU);
+	case cJU_JPBRANCH_U7:  PREP_BRANCH_DCD(Pjp, 7, BranchU);
 	case cJU_JPBRANCH_U8:   PREPB_ROOT(	 BranchU);
 	{
 	    Pjbu_t Pjbu;
@@ -595,94 +595,96 @@ BranchU:
 #ifdef JUDYL
 	case cJU_JPLEAF1:
         {
-	    JU_SETDCD(*PIndex, Pjp, 1);
             Pjll1_t Pjll1 = P_JLL1(RawPntr);
-	    JU_SETDIGIT1(*PIndex, Pjll1->jl1_Leaf[offset]);
+//	    JU_SETLEAFDCD(*PIndex, Pjp, 1);
+	    *PIndex = JU_MERGE_DCD_KEY(*PIndex, Pjll1->jl1_LastKey, 1);
+	    offset  = Count0 - pop1lower;
+	    *PIndex = JU_MERGE_DCD_KEY(*PIndex, Pjll1->jl1_Leaf[offset], 1);
+//	    JU_SETDIGIT1(*PIndex, Pjll1->jl1_Leaf[offset]);
 	    pop1 = ju_LeafPop1(Pjp);
-	    offset = Count0 - pop1lower;
 	    JU_RET_FOUND_LEAF1(Pjll1, pop1, offset);
         }
 #endif  //JUDYL
 
 	case cJU_JPLEAF2:
         {
-	    JU_SETDCD(*PIndex, Pjp, 2);
 	    Pjll2_t Pjll2 = P_JLL2(RawPntr);
+//	    JU_SETLEAFDCD(*PIndex, Pjp, 2);
+	    *PIndex = JU_MERGE_DCD_KEY(*PIndex, Pjll2->jl2_LastKey, 2);
 #ifdef JUDYL
 	    pop1 = ju_LeafPop1(Pjp);
 #endif  //JUDYL
 	    offset  = Count0 - pop1lower;
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(2)))
-		    | Pjll2->jl2_Leaf[offset];
+	    *PIndex = JU_MERGE_DCD_KEY(*PIndex, Pjll2->jl2_Leaf[offset], 2); //  *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(2))) | Pjll2->jl2_Leaf[offset];
 	    JU_RET_FOUND_LEAF2(Pjll2, pop1, offset);
         }
 
 	case cJU_JPLEAF3:
 	{
-	    Word_t lsb;
-	    JU_SETDCD(*PIndex, Pjp, 3);
 	    Pjll3_t Pjll3 = P_JLL3(RawPntr);
+//	    JU_SETLEAFDCD(*PIndex, Pjp, 3);
+	    *PIndex = JU_MERGE_DCD_KEY(*PIndex, Pjll3->jl3_LastKey, 3);
 #ifdef JUDYL
 	    pop1 = ju_LeafPop1(Pjp);
 #endif  //JUDYL
 	    offset  = Count0 - pop1lower;
-	    JU_COPY3_PINDEX_TO_LONG(lsb, Pjll3->jl3_Leaf + (3 * offset));
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(3))) | lsb;
+	    Word_t lsb = Pjll3->jl3_Leaf[offset];
+	    *PIndex = JU_MERGE_DCD_KEY(*PIndex, lsb, 3); //    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(3))) | lsb;
 	    JU_RET_FOUND_LEAF3(Pjll3, pop1, offset);
 	}
 
 	case cJU_JPLEAF4:
         {
-	    JU_SETDCD(*PIndex, Pjp, 4);
 	    Pjll4_t Pjll4 = P_JLL4(RawPntr);
+//	    JU_SETLEAFDCD(*PIndex, Pjp, 4);
+	    *PIndex = JU_MERGE_DCD_KEY(*PIndex, Pjll4->jl4_LastKey, 4);
 #ifdef JUDYL
 	    pop1 = ju_LeafPop1(Pjp);
 #endif  //JUDYL
 	    offset  = Count0 - pop1lower;
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(4)))
-		    | Pjll4->jl4_Leaf[offset];
+	    *PIndex = JU_MERGE_DCD_KEY(*PIndex, Pjll4->jl4_Leaf[offset], 4); // *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(4))) | Pjll4->jl4_Leaf[offset];
 	    JU_RET_FOUND_LEAF4(Pjll4, pop1, offset);
         }
 
 	case cJU_JPLEAF5:
 	{
-	    Word_t lsb;
-	    JU_SETDCD(*PIndex, Pjp, 5);
 	    Pjll5_t Pjll5 = P_JLL5(RawPntr);
+//	    JU_SETLEAFDCD(*PIndex, Pjp, 5);
+	    *PIndex = JU_MERGE_DCD_KEY(*PIndex, Pjll5->jl5_LastKey, 5);
 #ifdef JUDYL
 	    pop1 = ju_LeafPop1(Pjp);
 #endif  //JUDYL
 	    offset  = Count0 - pop1lower;
-	    JU_COPY5_PINDEX_TO_LONG(lsb, Pjll5->jl5_Leaf + (5 * offset));
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(5))) | lsb;
+	    Word_t lsb = Pjll5->jl5_Leaf[offset];
+	    *PIndex = JU_MERGE_DCD_KEY(*PIndex, lsb, 5); // *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(5))) | lsb;
 	    JU_RET_FOUND_LEAF5(Pjll5, pop1, offset);
 	}
 
 	case cJU_JPLEAF6:
 	{
-	    Word_t lsb;
-	    JU_SETDCD(*PIndex, Pjp, 6);
 	    Pjll6_t Pjll6 = P_JLL6(RawPntr);
+//	    JU_SETLEAFDCD(*PIndex, Pjp, 6);
+	    *PIndex = JU_MERGE_DCD_KEY(*PIndex, Pjll6->jl6_LastKey, 6);
 #ifdef JUDYL
 	    pop1 = ju_LeafPop1(Pjp);
 #endif  //JUDYL
 	    offset  = Count0 - pop1lower;
-	    JU_COPY6_PINDEX_TO_LONG(lsb, Pjll6->jl6_Leaf + (6 * offset));
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(6))) | lsb;
+	    Word_t lsb = Pjll6->jl6_Leaf[offset];
+	    *PIndex = JU_MERGE_DCD_KEY(*PIndex, lsb, 6); // *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(6))) | lsb;
 	    JU_RET_FOUND_LEAF6(Pjll6, pop1, offset);
 	}
 
 	case cJU_JPLEAF7:
 	{
-	    Word_t lsb;
-	    JU_SETDCD(*PIndex, Pjp, 7);
 	    Pjll7_t Pjll7 = P_JLL7(RawPntr);
+//	    JU_SETLEAFDCD(*PIndex, Pjp, 7);
+	    *PIndex = JU_MERGE_DCD_KEY(*PIndex, Pjll7->jl7_LastKey, 7);
 #ifdef JUDYL
 	    pop1 = ju_LeafPop1(Pjp);
 #endif  //JUDYL
 	    offset  = Count0 - pop1lower;
-	    JU_COPY7_PINDEX_TO_LONG(lsb, Pjll7->jl7_Leaf + (7 * offset));
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(7))) | lsb;
+	    Word_t lsb = Pjll7->jl7_Leaf[offset];
+	    *PIndex = JU_MERGE_DCD_KEY(*PIndex, lsb, 7); // *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(7))) | lsb;
 	    JU_RET_FOUND_LEAF7(Pjll7, pop1, offset);
 	}
 
@@ -697,12 +699,10 @@ BranchU:
 // Note:  The preceding branch traversal code MIGHT set pop1 for this expanse
 // (bitmap leaf) as a side-effect, but dont depend on that.
 
-	case cJU_JPLEAF_B1:
+	case cJU_JPLEAF_B1U:
 	{
-	    Pjlb_t Pjlb;
-
-	    JU_SETDCD(*PIndex, Pjp, 1);
-	    Pjlb = P_JLB1(RawPntr);
+	    Pjlb_t Pjlb = P_JLB1(RawPntr);
+	    *PIndex = JU_MERGE_DCD_KEY(*PIndex, Pjlb->jlb_LastKey, 1); // JU_SETLEAFDCD(*PIndex, Pjp, 1);
 	    pop1 = ju_LeafPop1(Pjp);
 
 // COUNT UPWARD, adding the pop1 of each subexpanse:
@@ -772,10 +772,10 @@ BranchU:
 // subexpanse.
 
 LeafB1:
-	    SETOFFSET(offset, Count0, pop1lower, Pjp);
+            offset = Count0 - pop1lower;        // SETOFFSET(offset, Count0, pop1lower, Pjp);
 	    JU_BITMAPDIGITL(digit, subexp, JU_JLB_BITMAP(Pjlb, subexp), offset);
-	    JU_SETDIGIT1(*PIndex, digit);
-	    JU_RET_FOUND_LEAF_B1(Pjlb, subexp, offset);
+            *PIndex = JU_MERGE_DCD_KEY(*PIndex, digit, 1); // JU_SETDIGIT1(*PIndex, digit);
+	    JU_RET_FOUND_LEAF_B1U(Pjlb, subexp, offset);
 //	    == return((PPvoid_t) (P_JV(JL_JLB_PVALUE(Pjlb, subexp)) + offset))
 
 	} // case cJU_JPLEAF_B1
@@ -791,13 +791,13 @@ LeafB1:
 
 	case cJ1_JPFULLPOPU1:
 
-	    JU_SETDCD(*PIndex, Pjp, 1);
-	    SETOFFSET(offset, Count0, pop1lower, Pjp);
+            *PIndex = JU_MERGE_DCD_KEY(*PIndex, ju_DcdPop0(Pjp), 1); // JU_SETBRANCHDCD(*PIndex, Pjp, 1);
+            offset = Count0 - pop1lower;        // SETOFFSET(offset, Count0, pop1lower, Pjp);
 	    assert(offset >= 0);
 	    assert(offset <= cJU_JPFULLPOPU1_POP0);
-	    JU_SETDIGIT1(*PIndex, offset);
-	    JU_RET_FOUND_FULLPOPU1;
-#endif
+            *PIndex = JU_MERGE_DCD_KEY(*PIndex, offset, 1); // JU_SETDIGIT1(*PIndex, offset);
+            return(1);  // JU_RET_FOUND_FULLPOPU1;
+#endif  // JUDY1
 
 
 // ----------------------------------------------------------------------------
@@ -819,130 +819,105 @@ LeafB1:
 	case cJU_JPIMMED_7_01: SET_01(7); goto Imm_01;
 
 Imm_01:
-
 	    DBGCODE(SETOFFSET_IMM_CK(offset, Count0, pop1lower, 1);)
 	    JU_RET_FOUND_IMM_01(Pjp);
 
 // Shorthand for where to find start of Index bytes array:
 //
-#define PJI_1 ju_PImmed1(Pjp)
-#define PJI_2 ju_PImmed2(Pjp)
-#define PJI_3 ju_PImmed3(Pjp)
-#define PJI_4 ju_PImmed4(Pjp)
-#define PJI_5 ju_PImmed5(Pjp)
-#define PJI_6 ju_PImmed6(Pjp)
-#define PJI_7 ju_PImmed7(Pjp)
-
 // Optional code to check the remaining ordinal (see SETOFFSET_IMM()) against
 // the Index Size of the Immediate:
 
-#ifndef DEBUG				// simple placeholder:
-#define	IMM(cPop1,Next) \
-	goto Next
-#else					// extra pop1-specific checking:
-#define	IMM(cPop1,Next)						\
-	SETOFFSET_IMM_CK(offset, Count0, pop1lower, cPop1);	\
-	goto Next
-#endif
+// #ifndef DEBUG				// simple placeholder:
+// #define	IMM(cPop1,Next) 
+// 	goto Next
+// #else					// extra pop1-specific checking:
+// #define	IMM(cPop1,Next)						
+// 	SETOFFSET_IMM_CK(offset, Count0, pop1lower, cPop1);	
+// 	goto Next
+// #endif
 
-	case cJU_JPIMMED_1_02: IMM( 2, Imm1);
-	case cJU_JPIMMED_1_03: IMM( 3, Imm1);
-	case cJU_JPIMMED_1_04: IMM( 4, Imm1);
-	case cJU_JPIMMED_1_05: IMM( 5, Imm1);
-	case cJU_JPIMMED_1_06: IMM( 6, Imm1);
-	case cJU_JPIMMED_1_07: IMM( 7, Imm1);
-	case cJU_JPIMMED_1_08: IMM( 8, Imm1);
+	case cJU_JPIMMED_1_02:          // IMM( 2, Imm1);
+	case cJU_JPIMMED_1_03:          // IMM( 3, Imm1);
+	case cJU_JPIMMED_1_04:          // IMM( 4, Imm1);
+	case cJU_JPIMMED_1_05:          // IMM( 5, Imm1);
+	case cJU_JPIMMED_1_06:          // IMM( 6, Imm1);
+	case cJU_JPIMMED_1_07:          // IMM( 7, Imm1);
+	case cJU_JPIMMED_1_08:          // IMM( 8, Imm1);
 
 #ifdef  JUDY1
-	case cJ1_JPIMMED_1_09: IMM( 9, Imm1);
-	case cJ1_JPIMMED_1_10: IMM(10, Imm1);
-	case cJ1_JPIMMED_1_11: IMM(11, Imm1);
-	case cJ1_JPIMMED_1_12: IMM(12, Imm1);
-	case cJ1_JPIMMED_1_13: IMM(13, Imm1);
-	case cJ1_JPIMMED_1_14: IMM(14, Imm1);
-	case cJ1_JPIMMED_1_15: IMM(15, Imm1);
+	case cJ1_JPIMMED_1_09:          // IMM( 9, Imm1);
+	case cJ1_JPIMMED_1_10:          // IMM(10, Imm1);
+	case cJ1_JPIMMED_1_11:          // IMM(11, Imm1);
+	case cJ1_JPIMMED_1_12:          // IMM(12, Imm1);
+	case cJ1_JPIMMED_1_13:          // IMM(13, Imm1);
+	case cJ1_JPIMMED_1_14:          // IMM(14, Imm1);
+	case cJ1_JPIMMED_1_15:          // IMM(15, Imm1);
 #endif
 
-Imm1:	    SETOFFSET_IMM(offset, Count0, pop1lower);
-	    JU_SETDIGIT1(*PIndex, (PJI_1)[offset]);
+// Imm1:	    
+            offset = Count0 - pop1lower;        //Imm1:	    SETOFFSET_IMM(offset, Count0, pop1lower);
+            *PIndex = JU_MERGE_DCD_KEY(*PIndex, ju_PImmed1(Pjp)[offset], 1); // JU_SETDIGIT1(*PIndex, ju_PImmed1(Pjp)[offset]);
 	    JU_RET_FOUND_IMM(Pjp, offset);
 
-	case cJU_JPIMMED_2_02: IMM(2, Imm2);
-	case cJU_JPIMMED_2_03: IMM(3, Imm2);
-	case cJU_JPIMMED_2_04: IMM(4, Imm2);
+	case cJU_JPIMMED_2_02:          // IMM(2, Imm2);
+	case cJU_JPIMMED_2_03:          // IMM(3, Imm2);
+	case cJU_JPIMMED_2_04:          // IMM(4, Imm2);
 
 #ifdef  JUDY1
-	case cJ1_JPIMMED_2_05: IMM(5, Imm2);
-	case cJ1_JPIMMED_2_06: IMM(6, Imm2);
-	case cJ1_JPIMMED_2_07: IMM(7, Imm2);
+	case cJ1_JPIMMED_2_05:          // IMM(5, Imm2);
+	case cJ1_JPIMMED_2_06:          // IMM(6, Imm2);
+	case cJ1_JPIMMED_2_07:          // IMM(7, Imm2);
 #endif
 
-Imm2:	    SETOFFSET_IMM(offset, Count0, pop1lower);
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(2)))
-		    | (PJI_2)[offset];
+// Imm2:	    
+            offset = Count0 - pop1lower; //Imm2:	    SETOFFSET_IMM(offset, Count0, pop1lower);
+            *PIndex = JU_MERGE_DCD_KEY(*PIndex, ju_PImmed2(Pjp)[offset], 1);    //  *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(2))) | ju_PImmed2(Pjp)[offset];
 	    JU_RET_FOUND_IMM(Pjp, offset);
 
-	case cJU_JPIMMED_3_02: IMM(2, Imm3);
+	case cJU_JPIMMED_3_02:          // IMM(2, Imm3);
 
 #ifdef  JUDY1
-	case cJ1_JPIMMED_3_03: IMM(3, Imm3);
-	case cJ1_JPIMMED_3_04: IMM(4, Imm3);
-	case cJ1_JPIMMED_3_05: IMM(5, Imm3);
+	case cJ1_JPIMMED_3_03:          // IMM(3, Imm3);
+//	case cJ1_JPIMMED_3_04:          // IMM(4, Imm3);
+//	case cJ1_JPIMMED_3_05:          // IMM(5, Imm3);
 #endif
 
-Imm3:
+// Imm3:
 	{
+            offset = Count0 - pop1lower; //	    SETOFFSET_IMM(offset, Count0, pop1lower);
 	    Word_t lsb;
-	    SETOFFSET_IMM(offset, Count0, pop1lower);
-	    JU_COPY3_PINDEX_TO_LONG(lsb, (PJI_3) + (3 * offset));
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(3))) | lsb;
+	    JU_COPY3_PINDEX_TO_LONG(lsb, ju_PImmed3(Pjp) + offset);
+            *PIndex = JU_MERGE_DCD_KEY(*PIndex, lsb, 3); // *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(3))) | lsb;
 	    JU_RET_FOUND_IMM(Pjp, offset);
 	}
 
-	case cJU_JPIMMED_4_02: IMM(2, Imm4);
-
+	case cJU_JPIMMED_4_02:          // IMM(2, Imm4);
 #ifdef  JUDY1
-	case cJ1_JPIMMED_4_03: IMM(3, Imm4);
+	case cJ1_JPIMMED_4_03:          // IMM(3, Imm4);
 #endif  // JUDYL
-
-Imm4:	    SETOFFSET_IMM(offset, Count0, pop1lower);
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(4)))
-		    | (PJI_4)[offset];
+        {
+           
+// Imm4:
+            offset = Count0 - pop1lower; //  SETOFFSET_IMM(offset, Count0, pop1lower); 
+            *PIndex = JU_MERGE_DCD_KEY(*PIndex, ju_PImmed4(Pjp)[offset], 4); // *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(4))) | ju_PImmed4(Pjp)[offset];
 	    JU_RET_FOUND_IMM(Pjp, offset);
-
+        }
 #ifdef  JUDY1
-	case cJ1_JPIMMED_5_02: IMM(2, Imm5);
-	case cJ1_JPIMMED_5_03: IMM(3, Imm5);
-
-Imm5:
+	case cJ1_JPIMMED_5_02:          // IMM(2, Imm5);
+	case cJ1_JPIMMED_6_02:          // IMM(2, Imm6);
+	case cJ1_JPIMMED_7_02:          // IMM(2, Imm7);
 	{
-	    Word_t lsb;
-	    SETOFFSET_IMM(offset, Count0, pop1lower);
-	    JU_COPY5_PINDEX_TO_LONG(lsb, (PJI_5) + (5 * offset));
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(5))) | lsb;
-	    JU_RET_FOUND_IMM(Pjp, offset);
-	}
-
-	case cJ1_JPIMMED_6_02: IMM(2, Imm6);
-
-Imm6:
-	{
-	    Word_t lsb;
-	    SETOFFSET_IMM(offset, Count0, pop1lower);
-	    JU_COPY6_PINDEX_TO_LONG(lsb, (PJI_6) + (6 * offset));
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(6))) | lsb;
-	    JU_RET_FOUND_IMM(Pjp, offset);
-	}
-
-	case cJ1_JPIMMED_7_02: IMM(2, Imm7);
-
-Imm7:
-	{
-	    Word_t lsb;
-	    SETOFFSET_IMM(offset, Count0, pop1lower);
-	    JU_COPY7_PINDEX_TO_LONG(lsb, (PJI_7) + (7 * offset));
-	    *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(7))) | lsb;
-	    JU_RET_FOUND_IMM(Pjp, offset);
+            int level = ju_Type(Pjp) - cJ1_JPIMMED_2_02 + 2;
+	    offset = Count0 - pop1lower; //	    SETOFFSET_IMM(offset, Count0, pop1lower);
+            Word_t Dcd;
+//	        lsb = ju_PImmed7(Pjp)[offset];
+            if (offset == 0)
+                Dcd = ju_IMM01Key(Pjp);
+            else
+                Dcd = ju_IMM02Key(Pjp);
+            *PIndex = JU_MERGE_DCD_KEY(*PIndex, Dcd, level); // *PIndex = (*PIndex & (~JU_LEASTBYTESMASK(7))) | lsb;
+//	    JU_RET_FOUND_IMM(Pjp, offset);
+            return(1);
 	}
 #endif // JUDY1
 

@@ -108,6 +108,7 @@ bool_t j__udyEnabled;      // by default, unless env params set.
 // Shorthands for other announcements:
 
 #define OOPS    printf("-- OOPS, invalid Type\n"); exit(1)
+//#define OOPS    printf("-- OOPS, invalid Type\n")
 
 // This is harder to compute:
 
@@ -221,16 +222,16 @@ FUNCTION static void JudyPrintJP(
         case cJ1_JPBRANCH_U7:   JPTYPE("cJ1_JPBRANCH_U7"); POP7;NUMJPSU;break;
         case cJ1_JPBRANCH_U8:   JPTYPE("cJ1_JPBRANCH_U8"); POP8;NUMJPSU;break;
 
-        case cJ1_JPLEAF2:       JPTYPE("cJ1_JPLEAF2"); LEAFPOP1;            break;
-        case cJ1_JPLEAF3:       JPTYPE("cJ1_JPLEAF3"); LEAFPOP1;            break;
-        case cJ1_JPLEAF4:       JPTYPE("cJ1_JPLEAF4"); LEAFPOP1;            break;
-        case cJ1_JPLEAF5:       JPTYPE("cJ1_JPLEAF5"); LEAFPOP1;            break;
-        case cJ1_JPLEAF6:       JPTYPE("cJ1_JPLEAF6"); LEAFPOP1;            break;
-        case cJ1_JPLEAF7:       JPTYPE("cJ1_JPLEAF7"); LEAFPOP1;            break;
-        case cJ1_JPLEAF8:       JPTYPE("cJ1_JPLEAF8"); LEAFPOP1;            break;
+        case cJ1_JPLEAF2:       JPTYPE("cJ1_JPLEAF2"); LEAFPOP1;        break;
+        case cJ1_JPLEAF3:       JPTYPE("cJ1_JPLEAF3"); LEAFPOP1;        break;
+        case cJ1_JPLEAF4:       JPTYPE("cJ1_JPLEAF4"); LEAFPOP1;        break;
+        case cJ1_JPLEAF5:       JPTYPE("cJ1_JPLEAF5"); LEAFPOP1;        break;
+        case cJ1_JPLEAF6:       JPTYPE("cJ1_JPLEAF6"); LEAFPOP1;        break;
+        case cJ1_JPLEAF7:       JPTYPE("cJ1_JPLEAF7"); LEAFPOP1;        break;
+        case cJ1_JPLEAF8:       JPTYPE("cJ1_JPLEAF8"); LEAFPOP1;        break;
 
-        case cJ1_JPLEAF_B1:     JPTYPE("cJ1_JPLEAF_B1");    LEAFPOP1;       break;
-        case cJ1_JPFULLPOPU1:   JPTYPE("cJ1_JPFULLPOPU1");  LEAFPOP1;       break;
+        case cJ1_JPLEAF_B1U:    JPTYPE("cJ1_JPLEAF_B1U");   LEAFPOP1;   break;
+        case cJ1_JPFULLPOPU1:   JPTYPE("cJ1_JPFULLPOPU1");  LEAFPOP1;   break;
 
         case cJ1_JPIMMED_1_01:  JPTYPE("cJ1_JPIMMED_1_01"); POP_1;      break;
         case cJ1_JPIMMED_2_01:  JPTYPE("cJ1_JPIMMED_2_01"); POP_1;      break;
@@ -268,7 +269,6 @@ FUNCTION static void JudyPrintJP(
         case cJ1_JPIMMED_4_02:  JPTYPE("cJ1_JPIMMED_4_02"); POP_2;      break;
         case cJ1_JPIMMED_4_03:  JPTYPE("cJ1_JPIMMED_4_03"); POP_3;      break;
         case cJ1_JPIMMED_5_02:  JPTYPE("cJ1_JPIMMED_5_02"); POP_2;      break;
-        case cJ1_JPIMMED_5_03:  JPTYPE("cJ1_JPIMMED_5_03"); POP_3;      break;
         case cJ1_JPIMMED_6_02:  JPTYPE("cJ1_JPIMMED_6_02"); POP_2;      break;
         case cJ1_JPIMMED_7_02:  JPTYPE("cJ1_JPIMMED_7_02"); POP_2;      break;
         case cJ1_JPIMMED_CAP:   JPTYPE("cJ1_JPIMMED_CAP");              OOPS;
@@ -316,7 +316,7 @@ FUNCTION static void JudyPrintJP(
         case cJL_JPLEAF7:       JPTYPE("cJL_JPLEAF7"); LEAFPOP1;        break;
         case cJL_JPLEAF8:       JPTYPE("cJL_JPLEAF8"); LEAFPOP1;        break;
 
-        case cJL_JPLEAF_B1:     JPTYPE("cJL_JPLEAF_B1"); LEAFPOP1;  break;
+        case cJL_JPLEAF_B1U:    JPTYPE("cJL_JPLEAF_B1U"); LEAFPOP1;     break;
 
         case cJL_JPIMMED_1_01:  JPTYPE("cJL_JPIMMED_1_01"); POP_1;      break;
         case cJL_JPIMMED_2_01:  JPTYPE("cJL_JPIMMED_2_01"); POP_1;      break;

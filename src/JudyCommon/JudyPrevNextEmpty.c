@@ -144,25 +144,32 @@
 // should be much easier to implement since this is iterative rather than
 // recursive code.
 
-#ifdef JUDY1
-#ifdef JUDYPREV
+#ifdef  JUDY1
+#ifdef  JUDYPREV
 FUNCTION int Judy1PrevEmpty
-#else
+#endif  // JUDYPREV
+
+#ifdef  JUDYNEXT
 FUNCTION int Judy1NextEmpty
-#endif
-#else
-#ifdef JUDYPREV
+#endif  // JUDYNEXT
+#endif  // JUDY1
+
+#ifdef  JUDYL
+#ifdef  JUDYPREV
 FUNCTION int JudyLPrevEmpty
-#else
+#endif  // JUDYPREV
+
+#ifdef  JUDYNEXT
 FUNCTION int JudyLNextEmpty
-#endif
-#endif
+#endif  // JUDYNEXT
+#endif  // JUDYL
         (
 	Pcvoid_t  PArray,	// Judy array to search.
 	Word_t *  PIndex,	// starting point and result.
 	PJError_t PJError	// optional, for returning error info.
         )
 {
+        Pjpm_t    Pjpm;
 	Word_t	  Index;	// fast copy, in a register.
 	Pjp_t	  Pjp;		// current JP.
 	Pjbl_t	  Pjbl;		// Pjp->Jp_Addr0 masked and cast to types:
@@ -173,7 +180,7 @@ FUNCTION int JudyLNextEmpty
 
 	Word_t	  digit;	// next digit to decode from Index.
 	Word_t	  digits;	// current state in SM = digits left to decode.
-	Word_t	  pop0;		// in a leaf.
+	Word_t	  pop0 = 0;	// in a leaf.
 	Word_t	  pop0mask;	// precalculated to avoid variable shifts.
 	long	  offset;	// within a branch or leaf (can be large).
 	int	  subexp;	// subexpanse in a bitmap branch.
@@ -196,7 +203,7 @@ FUNCTION int JudyLNextEmpty
 // the latter clause since no Type should ever be below cJU_JPNULL1, but in
 // fact some root pointer types can be lower, so for safety do both checks.
 
-#define	JPNULL(Type)  (((Type) >= cJU_JPNULL1) && ((Type) <= cJU_JPNULLMAX))
+#define	JPNULL(Type)  ((Type) <= cJU_JPNULLMAX)
 
 
 // CHECK FOR A FULL JP:
@@ -238,14 +245,15 @@ FUNCTION int JudyLNextEmpty
 
 //  #define	JPFULL(Pjp) (ju_Type(Pjp) == cJ1_JPFULLPOPU1) : JPFULL_BRANCH(Pjp)
 
-#else   // JUDYL
+#endif  // JUDY1
 
+#ifdef  JUDYL
 #define	JPFULL(Pjp)							\
 	((digits == 2) ?						\
-	   (ju_Type(Pjp) == cJU_JPLEAF_B1)				\
-	 && (((ju_DcdPop0(Pjp) & cJU_POP0MASK(1)) == cJU_POP0MASK(1))) : \
+/*           (ju_Type(Pjp) == cJU_JPLEAF_B1U)	&& */	                \
+	    (ju_LEAF_POP1(Pjp) == 256) :                                \
 	 JPFULL_BRANCH(Pjp))
-#endif
+#endif  // JUDYL
 
 
 // RETURN SUCCESS:
@@ -366,31 +374,31 @@ FUNCTION int JudyLNextEmpty
 // them for digits == 2, but gcc -Wall isnt quite smart enough to see this, so
 // waste a bit of time and space to get rid of the warning:
 
-#define	SMPREPB2(Next)				\
-	digits	 = 2;				\
-	digit	 = JU_DIGITATSTATE(Index, 2);	\
-	pop0mask = cJU_POP0MASK(1);  /* for branchs JPs */ \
-	possfullJP1 = possfullJP2 = possfullJP3 = 0;	    \
+#define	SMPREPB2(Next)				                \
+	digits	 = 2;				                \
+	digit	 = JU_DIGITATSTATE(Index, 2);	                \
+	pop0mask = cJU_POP0MASK(1);  /* for branchs JPs */      \
+	possfullJP1 = possfullJP2 = possfullJP3 = 0;	        \
 	goto Next
 
-#define	SMPREPB3(Next) SMPREPB(3,	      Next, cJU_JPBRANCH_L2, \
-						    cJU_JPBRANCH_B2, \
-						    cJU_JPBRANCH_U2)
-#define	SMPREPB4(Next) SMPREPB(4,	      Next, cJU_JPBRANCH_L3, \
-						    cJU_JPBRANCH_B3, \
-						    cJU_JPBRANCH_U3)
-#define	SMPREPB5(Next) SMPREPB(5,	      Next, cJU_JPBRANCH_L4, \
-						    cJU_JPBRANCH_B4, \
-						    cJU_JPBRANCH_U4)
-#define	SMPREPB6(Next) SMPREPB(6,	      Next, cJU_JPBRANCH_L5, \
-						    cJU_JPBRANCH_B5, \
-						    cJU_JPBRANCH_U5)
-#define	SMPREPB7(Next) SMPREPB(7,	      Next, cJU_JPBRANCH_L6, \
-						    cJU_JPBRANCH_B6, \
-						    cJU_JPBRANCH_U6)
-#define	SMPREPB8(Next) SMPREPB(cJU_ROOTSTATE, Next, cJU_JPBRANCH_L7, \
-						    cJU_JPBRANCH_B7, \
-						    cJU_JPBRANCH_U7)
+#define	SMPREPB3(Next) SMPREPB(3, Next, cJU_JPBRANCH_L2,        \
+				        cJU_JPBRANCH_B2,        \
+				        cJU_JPBRANCH_U2)
+#define	SMPREPB4(Next) SMPREPB(4, Next, cJU_JPBRANCH_L3,        \
+				        cJU_JPBRANCH_B3,        \
+				        cJU_JPBRANCH_U3)
+#define	SMPREPB5(Next) SMPREPB(5, Next, cJU_JPBRANCH_L4,        \
+				        cJU_JPBRANCH_B4,        \
+				        cJU_JPBRANCH_U4)
+#define	SMPREPB6(Next) SMPREPB(6, Next, cJU_JPBRANCH_L5,        \
+				        cJU_JPBRANCH_B5,        \
+				        cJU_JPBRANCH_U5)
+#define	SMPREPB7(Next) SMPREPB(7, Next, cJU_JPBRANCH_L6,        \
+				        cJU_JPBRANCH_B6,        \
+				        cJU_JPBRANCH_U6)
+#define	SMPREPB8(Next) SMPREPB(8, Next, cJU_JPBRANCH_L7,        \
+				        cJU_JPBRANCH_B7,        \
+				        cJU_JPBRANCH_U7)
 
 
 // RESTART AFTER SECONDARY DEAD END:
@@ -851,7 +859,7 @@ SMGetRestart:		// return here with revised Index.
 // directly; but look for the most common cases first.
 
 	{
-	    Pjpm_t Pjpm = P_JPM(PArray);
+	    Pjpm = P_JPM(PArray);
 //	    Pjp = &(Pjpm->jpm_JP);
 	    Pjp = Pjpm->jpm_JP + 0;
 
@@ -882,9 +890,14 @@ SMGetRestart:		// return here with revised Index.
 SMGetContinue:			// return here for next branch/leaf.
 
 #ifdef TRACEJPSE
-	JudyPrintJP(Pjp, "sf", __LINE__, Index, Pjpm);
-#endif
+#ifdef JUDYPREV
+	JudyPrintJP(Pjp, "pe", __LINE__, Index, Pjpm);
+#endif // JUDYPREV
 
+#ifdef JUDYNEXT
+	JudyPrintJP(Pjp, "ne", __LINE__, Index, Pjpm);
+#endif // JUDYNEXT
+#endif
 	switch (ju_Type(Pjp))
 	{
 
@@ -951,9 +964,9 @@ SMBranchL:
 
 // Found expanse matching digit; if its not full, traverse through it:
 
-		if (! JPFULL((Pjbl->jbl_jp) + offset))
+		if (! JPFULL(Pjbl->jbl_jp + offset))
 		{
-		    Pjp = (Pjbl->jbl_jp) + offset;
+		    Pjp = Pjbl->jbl_jp + offset;
 		    goto SMGetContinue;
 		}
 
@@ -1226,7 +1239,7 @@ SMBranchU:
 	case cJU_JPLEAF1:  
         {
 	    Pjll1_t Pjll1 = P_JLL1(ju_PntrInJp(Pjp)); 
-            CHECKDCD(Index, Pjll1->jl1_LastKey, 1);
+//            CHECKDCD(Index, Pjll1->jl1_LastKey, 1);
 	    pop0          = ju_LeafPop1(Pjp) - 1; 
 	    JSLE_EVEN(Pjll1->jl1_Leaf, pop0, 1, uint8_t);
         }
@@ -1235,7 +1248,7 @@ SMBranchU:
 	case cJU_JPLEAF2:  
         {
 	    Pjll2_t Pjll2 = P_JLL2(ju_PntrInJp(Pjp)); 
-            CHECKDCD(Index, Pjll2->jl2_LastKey, 2); 
+//            CHECKDCD(Index, Pjll2->jl2_LastKey, 2); 
 //            SMLEAFL(2, j__udySearchLeafEmpty2, Pjll2->jl2_Leaf);
 	    pop0  = ju_LeafPop1(Pjp) - 1;
 	    JSLE_EVEN(Pjll2->jl2_Leaf, pop0, 2, uint16_t)
@@ -1243,16 +1256,17 @@ SMBranchU:
 	case cJU_JPLEAF3:  
         {
 	    Pjll3_t Pjll3 = P_JLL3(ju_PntrInJp(Pjp)); 
-            CHECKDCD(Index, Pjll3->jl3_LastKey, 3); 
+//            CHECKDCD(Index, Pjll3->jl3_LastKey, 3); 
 //            SMLEAFL(3, j__udySearchLeafEmpty3);
 	    pop0  = ju_LeafPop1(Pjp) - 1;
-	    JSLE_ODD(3, Pjll3->jl3_Leaf, pop0, j__udySearchLeaf3, JU_COPY3_PINDEX_TO_LONG, Pjll3);
+//	    JSLE_ODD(3, Pjll3->jl3_Leaf, pop0, j__udySearchLeaf3, JU_COPY3_PINDEX_TO_LONG, Pjll3);
+	    JSLE_EVEN(Pjll3->jl3_Leaf, pop0, 3, uint32_t)
         }
 
 	case cJU_JPLEAF4:  
         {
 	    Pjll4_t Pjll4 = P_JLL4(ju_PntrInJp(Pjp)); 
-            CHECKDCD(Index, Pjll4->jl4_LastKey, 4); 
+//            CHECKDCD(Index, Pjll4->jl4_LastKey, 4); 
 //            SMLEAFL(4, j__udySearchLeafEmpty4);
 	    pop0  = ju_LeafPop1(Pjp) - 1;
 	    JSLE_EVEN(Pjll4->jl4_Leaf, pop0, 4, uint32_t)
@@ -1261,28 +1275,31 @@ SMBranchU:
 	case cJU_JPLEAF5:  
         {
 	    Pjll5_t Pjll5 = P_JLL5(ju_PntrInJp(Pjp)); 
-            CHECKDCD(Index, Pjll5->jl5_LastKey, 5); 
+//            CHECKDCD(Index, Pjll5->jl5_LastKey, 5); 
 //            SMLEAFL(5, j__udySearchLeafEmpty5);
 	    pop0  = ju_LeafPop1(Pjp) - 1;
-	    JSLE_ODD(5, Pjll5->jl5_Leaf, pop0, j__udySearchLeaf5, JU_COPY5_PINDEX_TO_LONG, Pjll5);
+//	    JSLE_ODD(5, Pjll5->jl5_Leaf, pop0, j__udySearchLeaf5, JU_COPY5_PINDEX_TO_LONG, Pjll5);
+	    JSLE_EVEN(Pjll5->jl5_Leaf, pop0, 5, Word_t)
         }
 
 	case cJU_JPLEAF6:  
         {
 	    Pjll6_t Pjll6 = P_JLL6(ju_PntrInJp(Pjp)); 
-            CHECKDCD(Index, Pjll6->jl6_LastKey, 6); 
+//            CHECKDCD(Index, Pjll6->jl6_LastKey, 6); 
 //            SMLEAFL(6, j__udySearchLeafEmpty6);
 	    pop0  = ju_LeafPop1(Pjp) - 1;
-	    JSLE_ODD(6, Pjll6->jl6_Leaf, pop0, j__udySearchLeaf6, JU_COPY6_PINDEX_TO_LONG, Pjll6);
+//	    JSLE_ODD(6, Pjll6->jl6_Leaf, pop0, j__udySearchLeaf6, JU_COPY6_PINDEX_TO_LONG, Pjll6);
+	    JSLE_EVEN(Pjll6->jl6_Leaf, pop0, 6, Word_t)
         }
 
 	case cJU_JPLEAF7:  
         {
 	    Pjll7_t Pjll7 = P_JLL7(ju_PntrInJp(Pjp)); 
-            CHECKDCD(Index, Pjll7->jl7_LastKey, 7); 
+//            CHECKDCD(Index, Pjll7->jl7_LastKey, 7); 
 //            SMLEAFL(7, j__udySearchLeafEmpty7);
 	    pop0  = ju_LeafPop1(Pjp) - 1;
-	    JSLE_ODD(7, Pjll7->jl7_Leaf, pop0, j__udySearchLeaf7, JU_COPY7_PINDEX_TO_LONG, Pjll7);
+//	    JSLE_ODD(7, Pjll7->jl7_Leaf, pop0, j__udySearchLeaf7, JU_COPY7_PINDEX_TO_LONG, Pjll7);
+	    JSLE_EVEN(Pjll7->jl7_Leaf, pop0, 7, Word_t)
         }
 
 
@@ -1291,15 +1308,15 @@ SMBranchU:
 //
 // Check Decode bytes, if any, in the current JP, then search the leaf for the
 // previous/next empty index starting at Index.
-	case cJU_JPLEAF_B1:
+	case cJU_JPLEAF_B1U:
         {
-            CHECKDCD(Index, ju_DcdPop0(Pjp), 1); 
+//            CHECKDCD(Index, ju_DcdPop0(Pjp), 1); 
 
 	    Pjlb        = P_JLB1(ju_PntrInJp(Pjp));
 	    digit	= JU_DIGITATSTATE(Index, 1);
-	    subexp	= digit / cJU_BITSPERSUBEXPL;
-	    bitposmaskL	= JU_BITPOSMASKL(digit);
-	    assert(subexp < cJU_NUMSUBEXPL);	// falls in expected range.
+	    subexp	= digit / cbPW;   // subexp == 0..3
+//	    bitposmaskL	= JU_BITPOSMASKL(digit);
+	    bitposmaskL	= (Word_t)1 << (digit % cbPW);
 
 // Absent index = no index matches current digit in Index:
 
@@ -1390,9 +1407,10 @@ LeafB1NextSubexp:	// return here to check next bitmap subexpanse.
 
 	case cJ1_JPFULLPOPU1:
         {
-printf("\nOOps not implemented yet! Line = %d\n", __LINE__);
+printf("\nOOps cJ1_JPFULLPOPU1 not implemented yet! Line = %d\n", __LINE__);
+fprintf(stderr, "\nOOps cJ1_JPFULLPOPU1 not implemented yet! Line = %d\n", __LINE__);
 exit(1);
-            CHECKDCD(Index, ju_DcdPop0(Pjp), 1);
+//            CHECKDCD(Index, ju_DcdPop0(Pjp), 1);
 	    SMRESTART(1);
         }
 #endif  // JUDY1
@@ -1473,19 +1491,18 @@ exit(1);
 
 #ifdef  JUDY1
 	case cJ1_JPIMMED_3_03:
-	case cJ1_JPIMMED_3_04:
-	case cJ1_JPIMMED_3_05:
+//	case cJ1_JPIMMED_3_04:
+//	case cJ1_JPIMMED_3_05:
 #endif  // JUDY1
         {
 
 //	    IMM_MULTI(j__udySearchLeafEmpty3, cJU_JPIMMED_3_02, ju_PImmed3(Pjp));
             pop0 = ju_Type(Pjp) - cJU_JPIMMED_3_02 + 1;
-            uint8_t *PKeys = ju_PImmed3(Pjp);
-	    JSLE_ODD(3, PKeys, pop0, j__udySearchImmed3, JU_COPY3_PINDEX_TO_LONG, PKeys);
+//            uint8_t *PKeys = ju_PImmed3(Pjp);
+            uint32_t *PKeys = ju_PImmed3(Pjp);
+//	    JSLE_ODD(3, PKeys, pop0, j__udySearchImmed3, JU_COPY3_PINDEX_TO_LONG, PKeys);
+	    JSLE_EVEN(PKeys, pop0, 3, uint32_t);
         }
-
-
-
 	case cJU_JPIMMED_4_02:
 #ifdef  JUDY1
 	case cJ1_JPIMMED_4_03:
@@ -1498,26 +1515,38 @@ exit(1);
         }
 #ifdef  JUDY1
 	case cJ1_JPIMMED_5_02:
-	case cJ1_JPIMMED_5_03:
+//	case cJ1_JPIMMED_5_03:
         {
+            Word_t Keys[2];
+            Keys[1] = ju_IMM02Key(Pjp);
+            Keys[0] = ju_IMM01Key(Pjp) | (Keys[1] & cJU_DCDMASK(7));
 //	      IMM_MULTI(j__udySearchLeafEmpty5, cJ1_JPIMMED_5_02, ju_PImmed5(Pjp));
             pop0 = ju_Type(Pjp) - cJ1_JPIMMED_5_02 + 1;
-            uint8_t *PKeys = ju_PImmed5(Pjp);
-	    JSLE_ODD(5, PKeys, pop0, j__udySearchImmed5, JU_COPY5_PINDEX_TO_LONG, PKeys);
+//            uint8_t *PKeys = ju_PImmed5(Pjp);
+//	    JSLE_ODD(5, PKeys, pop0, j__udySearchImmed5, JU_COPY5_PINDEX_TO_LONG, PKeys);
+	    JSLE_EVEN(&Keys, pop0, 5, Word_t);
         }
 
 	case cJ1_JPIMMED_6_02:
         {
+            Word_t Keys[2];
+            Keys[1] = ju_IMM02Key(Pjp);
+            Keys[0] = ju_IMM01Key(Pjp) | (Keys[1] & cJU_DCDMASK(7));
 //	    IMM_MULTI(j__udySearchLeafEmpty6, cJ1_JPIMMED_6_02, ju_PImmed6(Pjp));
-            uint8_t *PKeys = ju_PImmed6(Pjp);
-	    JSLE_ODD(6, PKeys, 2 -1, j__udySearchImmed6, JU_COPY6_PINDEX_TO_LONG, PKeys);
+//            uint8_t *PKeys = ju_PImmed6(Pjp);
+//	    JSLE_ODD(6, PKeys, 2 -1, j__udySearchImmed6, JU_COPY6_PINDEX_TO_LONG, PKeys);
+	    JSLE_EVEN(&Keys, pop0, 6, Word_t);
         }
 
 	case cJ1_JPIMMED_7_02:
         {
+            Word_t Keys[2];
+            Keys[0] = ju_IMM01Key(Pjp);                         // 56 Bits
+            Keys[1] = JU_TrimToIMM01(ju_IMM02Key(Pjp));         // 56 to Bits
 //	    IMM_MULTI(j__udySearchLeafEmpty7, cJ1_JPIMMED_7_02, ju_PImmed7(Pjp));
-            uint8_t *PKeys = ju_PImmed7(Pjp);
-	    JSLE_ODD(7, PKeys, 2 -1, j__udySearchImmed7, JU_COPY7_PINDEX_TO_LONG, PKeys);
+//            uint8_t *PKeys = ju_PImmed7(Pjp);
+//	    JSLE_ODD(7, PKeys, 2 -1, j__udySearchImmed7, JU_COPY7_PINDEX_TO_LONG, PKeys);
+	    JSLE_EVEN(&Keys, pop0, 7, Word_t);
         }
 #endif  // JUDY1
 
@@ -1527,9 +1556,9 @@ exit(1);
 
 	default: 
 #ifdef  JUDY1
-printf("\nJudy1 Empyy: Pjp->jp_Type = %d\n", ju_Type(Pjp));
+printf("\n--OOps Judy1 Empty: Illegal Pjp->jp_Type = %d\n", ju_Type(Pjp));
 #else
-printf("\nJudyL Empyy: Pjp->jp_Type = %d\n", ju_Type(Pjp));
+printf("\n--OOps JudyL Empty: Illegal Pjp->jp_Type = %d\n", ju_Type(Pjp));
 #endif
 exit(1);
             assert (0); RET_CORRUPT;

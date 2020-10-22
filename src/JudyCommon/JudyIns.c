@@ -43,9 +43,34 @@
 #include "JudyPrintJP.c"
 #endif  // TRACEJPI
 
+// WARNING: Length of PDST must be 2 words longer that POP1
+#define JU_INSERTCOPYtoWORD(PDST,PSRC,POP1,OFFSET,INDEX,cIS)    \
+    assert((long)(POP1) > 0);                                   \
+    assert((Word_t)(OFFSET) <= (Word_t)(POP1));                 \
+    {                                                           \
+        uint8_t *_Psrc = (uint8_t *)(PSRC);                     \
+        PWord_t  _Pdst =  PDST;                                 \
+        Word_t   __key;                                         \
+        int _idx;                                               \
+        for (_idx = 0; _idx < (OFFSET); _idx++)                 \
+        {                                                       \
+            JU_COPY3_PINDEX_TO_LONG(__key, _Psrc);              \
+            *(_Pdst)++ = __key;                                 \
+            _Psrc  += cIS;                                      \
+        }                                                       \
+        *(_Pdst)++  = (INDEX) & JU_LEASTBYTESMASK(cIS);         \
+        for ( ; _idx < (POP1); _idx++)                          \
+        {                                                       \
+            JU_COPY3_PINDEX_TO_LONG(__key, _Psrc);              \
+            *(_Pdst)++ = __key;                                 \
+            _Psrc  += cIS;                                      \
+        }                                                       \
+    }
+
 #ifdef JUDY1
-extern Word_t j__udy1BranchBfromParts(Pjp_t, uint8_t *, Word_t, Pjpm_t);
-extern int j__udy1CreateBranchU(Pjp_t, Pjpm_t);
+extern Word_t j__udy1PartstoBranchB(Pjp_t, uint8_t *, Word_t, Pjpm_t);
+extern int j__udy1ConvertBranchBtoU(Pjp_t, Pjpm_t);
+extern int j__udy1ConvertBranchLtoU(Pjp_t, Pjpm_t);
 extern int j__udy1Cascade2(Pjp_t, Word_t, Pjpm_t);
 extern int j__udy1Cascade3(Pjp_t, Word_t, Pjpm_t);
 extern int j__udy1Cascade4(Pjp_t, Word_t, Pjpm_t);
@@ -55,8 +80,9 @@ extern int j__udy1Cascade7(Pjp_t, Word_t, Pjpm_t);
 extern int j__udy1Cascade8(Pjp_t, Word_t, Pjpm_t);
 extern int j__udy1InsertBranchL(Pjp_t Pjp, Word_t Index, Word_t Dcd, Word_t Btype, Pjpm_t);
 #else /* JUDYL */
-extern Word_t j__udyLBranchBfromParts(Pjp_t, uint8_t *, Word_t, Pjpm_t);
-extern int j__udyLCreateBranchU(Pjp_t, Pjpm_t);
+extern Word_t j__udyLPartstoBranchB(Pjp_t, uint8_t *, Word_t, Pjpm_t);
+extern int j__udyLConvertBranchBtoU(Pjp_t, Pjpm_t);
+extern int j__udyLConvertBranchLtoU(Pjp_t, Pjpm_t);
 extern int j__udyLCascade2(Pjp_t, Word_t, Pjpm_t);
 extern int j__udyLCascade3(Pjp_t, Word_t, Pjpm_t);
 extern int j__udyLCascade4(Pjp_t, Word_t, Pjpm_t);
@@ -66,6 +92,186 @@ extern int j__udyLCascade7(Pjp_t, Word_t, Pjpm_t);
 extern int j__udyLCascade8(Pjp_t, Word_t, Pjpm_t);
 extern int j__udyLInsertBranchL(Pjp_t Pjp, Word_t Index, Word_t Dcd, Word_t Btype, Pjpm_t);
 #endif /* JUDYL */
+
+
+#ifdef JUDY1
+#define j__udyJPPop1 j__udy1JPPop1
+#endif  // JUDY1
+
+#ifdef  JUDYL
+#define j__udyJPPop1 j__udyLJPPop1
+#endif  // JUDYL
+
+Word_t static j__udyJPPop1(Pjp_t Pjp);
+
+// ****************************************************************************
+// J U D Y   J P   P O P 1
+//
+// This function takes any type of JP other than a root-level JP (cJU_LEAF8* or
+// cJU_JPBRANCH* with no number suffix) and extracts the Pop1 from it.  In some
+// sense this is a wrapper around the JU_JP*_POP0 macros.  Why write it as a
+// function instead of a complex macro containing a trinary?  (See version
+// Judy1.h version 4.17.)  We think its cheaper to call a function containing
+// a switch statement with "constant" cases than to do the variable
+// calculations in a trinary.
+//
+// For invalid JP Types return cJU_ALLONES.  Note that this is an impossibly
+// high Pop1 for any JP below a top level branch.
+
+FUNCTION Word_t j__udyJPPop1(
+     	Pjp_t Pjp)		// JP to count.
+{
+	switch (ju_Type(Pjp))
+	{
+	case cJU_JPNULL1:
+	case cJU_JPNULL2:
+	case cJU_JPNULL3:
+	case cJU_JPNULL4:
+	case cJU_JPNULL5:
+	case cJU_JPNULL6:
+	case cJU_JPNULL7:  
+            return(0);
+
+	case cJU_JPBRANCH_L2:
+	case cJU_JPBRANCH_B2:
+	case cJU_JPBRANCH_U2:
+            return(ju_BranchPop0(Pjp, 2) + 1);
+
+	case cJU_JPBRANCH_L3:
+	case cJU_JPBRANCH_B3:
+	case cJU_JPBRANCH_U3:
+            return(ju_BranchPop0(Pjp, 3) + 1);
+
+	case cJU_JPBRANCH_L4:
+	case cJU_JPBRANCH_B4:
+	case cJU_JPBRANCH_U4: 
+            return(ju_BranchPop0(Pjp, 4) + 1);
+
+	case cJU_JPBRANCH_L5:
+	case cJU_JPBRANCH_B5:
+	case cJU_JPBRANCH_U5: 
+            return(ju_BranchPop0(Pjp, 5) + 1);
+
+	case cJU_JPBRANCH_L6:
+	case cJU_JPBRANCH_B6:
+	case cJU_JPBRANCH_U6: 
+            return(ju_BranchPop0(Pjp, 6) + 1);
+
+	case cJU_JPBRANCH_L7:
+	case cJU_JPBRANCH_B7:
+	case cJU_JPBRANCH_U7: 
+//      256 ^ 6 is as big of Pop possible (for now)
+            return(ju_BranchPop0(Pjp, 7) + 1);
+
+	case cJU_JPBRANCH_L8:
+	case cJU_JPBRANCH_B8:
+	case cJU_JPBRANCH_U8: 
+//      256 ^ 6 is as big of Pop possible (for now)
+            return(ju_BranchPop0(Pjp, 8) + 1);
+
+#ifdef  JUDYL
+	case cJU_JPLEAF1:
+#endif  // JUDYL
+	case cJU_JPLEAF2:
+	case cJU_JPLEAF3:
+	case cJU_JPLEAF4:
+	case cJU_JPLEAF5:
+	case cJU_JPLEAF6:
+	case cJU_JPLEAF7:
+             return(ju_LeafPop1(Pjp));
+	case cJU_JPLEAF_B1U:
+        {
+            Word_t pop1 = ju_LeafPop1(Pjp);
+#ifdef  JUDYL
+            if (pop1 == 0) pop1 = 256;
+#endif  // JUDYL
+             return(pop1);
+        }
+
+#ifdef JUDY1
+	case cJ1_JPFULLPOPU1:	
+           return(cJU_JPFULLPOPU1_POP0 + 1);
+#endif  // JUDY1
+	case cJU_JPIMMED_1_01:
+	case cJU_JPIMMED_2_01:
+	case cJU_JPIMMED_3_01:
+	case cJU_JPIMMED_4_01:
+	case cJU_JPIMMED_5_01:
+	case cJU_JPIMMED_6_01:
+	case cJU_JPIMMED_7_01:	
+            return(1);
+
+	case cJU_JPIMMED_1_02:  return(2);
+	case cJU_JPIMMED_1_03:  return(3);
+	case cJU_JPIMMED_1_04:  return(4);
+	case cJU_JPIMMED_1_05:  return(5);
+	case cJU_JPIMMED_1_06:  return(6);
+	case cJU_JPIMMED_1_07:  return(7);
+	case cJU_JPIMMED_1_08:  return(8);
+#ifdef  JUDY1
+	case cJ1_JPIMMED_1_09:  return(9);
+	case cJ1_JPIMMED_1_10:  return(10);
+	case cJ1_JPIMMED_1_11:  return(11);
+	case cJ1_JPIMMED_1_12:  return(12);
+	case cJ1_JPIMMED_1_13:  return(13);
+	case cJ1_JPIMMED_1_14:  return(14);
+	case cJ1_JPIMMED_1_15:  return(15);
+#endif  // JUDY1
+	case cJU_JPIMMED_2_02:  return(2);
+	case cJU_JPIMMED_2_03:  return(3);
+	case cJU_JPIMMED_2_04:  return(4);
+#ifdef  JUDY1
+	case cJ1_JPIMMED_2_05:  return(5);
+	case cJ1_JPIMMED_2_06:  return(6);
+	case cJ1_JPIMMED_2_07:  return(7);
+#endif  // JUDY1
+
+	case cJU_JPIMMED_3_02:  return(2);
+#ifdef  JUDY1
+	case cJ1_JPIMMED_3_03:  return(3);
+	case cJ1_JPIMMED_3_04:  return(4);
+	case cJ1_JPIMMED_3_05:  return(5);
+#endif  // JUDY1
+
+	case cJU_JPIMMED_4_02:	return(2);
+
+#ifdef  JUDY1
+	case cJ1_JPIMMED_4_03:	return(3);
+
+	case cJ1_JPIMMED_5_02:
+	case cJ1_JPIMMED_6_02:
+	case cJ1_JPIMMED_7_02:	return(2);
+#endif  // JUDY1
+
+	default:
+//printf("in j__udyJPPop1 jp_Type = %d Line = %d\n", ju_Type(Pjp), (int)__LINE__);
+                assert(FALSE);
+                exit(-1);
+	}
+	/*NOTREACHED*/
+} // j__udyJPPop1()
+
+#ifdef  DEBUG_COUNT
+static void j__udyCheckBranchPop(Pjp_t _Pjp, int _Level)
+{
+//        printf("===============================ju_Type(_Pjp) = %d\n", ju_Type(_Pjp));
+        Pjbu_t    Pjbu = P_JBU(ju_PntrInJp(_Pjp));
+
+        Word_t BranchUPop = ju_BranchPop0(_Pjp, _Level) + 1;
+        Word_t branchsum  = 0;
+        Word_t Bigsum     = 0;
+        for (int numjpU = 0; numjpU < 256; numjpU++)
+        {
+            Word_t jpsum = j__udyJPPop1(Pjbu->jbu_jp + numjpU);
+            branchsum += jpsum;
+        }
+        if (branchsum != BranchUPop)
+        {
+            printf("\n--OOps1-JudyIns JudyBranch_U%d Pop_jp = %ld, branchsum = %ld, diff = %ld\n", _Level, BranchUPop, branchsum, BranchUPop - branchsum);
+            assert(branchsum == BranchUPop);
+        }
+}
+#endif  // DEBUG_COUNT
 
 // ****************************************************************************
 // __ J U D Y   I N S   W A L K
@@ -78,17 +284,19 @@ extern int j__udyLInsertBranchL(Pjp_t Pjp, Word_t Index, Word_t Dcd, Word_t Btyp
 // new Index inserted.
 FUNCTION static int
 j__udyInsWalk(Pjp_t  Pjp,               // current Pjp_t to descend.
+	      Pjp_t  PPjp,
               Word_t Index,             // to insert.
               Pjpm_t Pjpm)              // for returning info to top Level.
 {
-    uint8_t   digit;                    // from Index, current offset into a branch.
     jp_t      newJP;                    // for creating a new Immed JP.
     Word_t    exppop1;                  // expanse (leaf) population.
-    int       retcode;                  // return codes:  -1, 0, 1.
-    uint8_t   jpLevel = 0;
     Word_t    RawJpPntr;                // Raw pointer in most jp_ts
+    int       retcode;                  // return codes:  -1, 0, 1.
+    uint8_t   digit;                    // from Index, current offset into a branch.
+    uint8_t   jpLevel = 0;
 
   ContinueInsWalk:                      // for modifying state without recursing.
+
 #ifdef TRACEJPI
         JudyPrintJP(Pjp, "i", __LINE__, Index, Pjpm);
 #endif  // TRACEJPI
@@ -122,7 +330,7 @@ j__udyInsWalk(Pjp_t  Pjp,               // current Pjp_t to descend.
 //      Value word is 2nd word of new Immed_*_01 jp_t:
         Pjpm->jpm_PValue = ju_PImmVal_01(Pjp);          // ^ to Immed Value
 #endif /* JUDYL */
-        return (1);
+        goto successreturn;
     }
 // ****************************************************************************
 // JPBRANCH_L*:
@@ -138,6 +346,7 @@ j__udyInsWalk(Pjp_t  Pjp,               // current Pjp_t to descend.
             return (j__udyInsertBranchL(Pjp, Index, ju_DcdPop0(Pjp), 2, Pjpm));
         digit = JU_DIGITATSTATE(Index, 2);
         exppop1 = ju_BranchPop0(Pjp, 2);
+        jpLevel = 2;
         goto JudyBranchL;
     }
 
@@ -147,6 +356,7 @@ j__udyInsWalk(Pjp_t  Pjp,               // current Pjp_t to descend.
             return (j__udyInsertBranchL(Pjp, Index, ju_DcdPop0(Pjp), 3, Pjpm));
         digit = JU_DIGITATSTATE(Index, 3);
         exppop1 = ju_BranchPop0(Pjp, 3);
+        jpLevel = 3;
         goto JudyBranchL;
     }
 
@@ -156,6 +366,7 @@ j__udyInsWalk(Pjp_t  Pjp,               // current Pjp_t to descend.
             return (j__udyInsertBranchL(Pjp, Index, ju_DcdPop0(Pjp), 4, Pjpm));
         digit = JU_DIGITATSTATE(Index, 4);
         exppop1 = ju_BranchPop0(Pjp, 4);
+        jpLevel = 4;
         goto JudyBranchL;
     } 
 
@@ -165,6 +376,7 @@ j__udyInsWalk(Pjp_t  Pjp,               // current Pjp_t to descend.
             return (j__udyInsertBranchL(Pjp, Index, ju_DcdPop0(Pjp), 5, Pjpm));
         digit = JU_DIGITATSTATE(Index, 5);
         exppop1 = ju_BranchPop0(Pjp, 5);
+        jpLevel = 5;
         goto JudyBranchL;
     }
 
@@ -174,6 +386,7 @@ j__udyInsWalk(Pjp_t  Pjp,               // current Pjp_t to descend.
             return (j__udyInsertBranchL(Pjp, Index, ju_DcdPop0(Pjp), 6, Pjpm));
         digit = JU_DIGITATSTATE(Index, 6);
         exppop1 = ju_BranchPop0(Pjp, 6);
+        jpLevel = 6;
         goto JudyBranchL;
     }
 
@@ -183,6 +396,7 @@ j__udyInsWalk(Pjp_t  Pjp,               // current Pjp_t to descend.
             return (j__udyInsertBranchL(Pjp, Index, ju_DcdPop0(Pjp), 7, Pjpm));
         digit = JU_DIGITATSTATE(Index, 7);
         exppop1 = ju_BranchPop0(Pjp, 7);
+        jpLevel = 7;
         goto JudyBranchL;
     }
 
@@ -194,116 +408,102 @@ j__udyInsWalk(Pjp_t  Pjp,               // current Pjp_t to descend.
         Word_t  PjbuRaw;
         digit = JU_DIGITATSTATE(Index, cJU_ROOTSTATE);
         exppop1 = Pjpm->jpm_Pop0;
+        jpLevel = 8;
+
         // fall through:
 // COMMON CODE FOR LINEAR BRANCHES:
 //
 // Come here with digit and exppop1 already set.
-      JudyBranchL:
-        PjblRaw = RawJpPntr;
-        Pjbl_t  Pjbl = P_JBL(PjblRaw);
-        Word_t  numJPs = Pjbl->jbl_NumJPs;
+   JudyBranchL:
+        PjblRaw         = RawJpPntr;
+        Pjbl_t  Pjbl    = P_JBL(PjblRaw);
+        Word_t  numJPs  = Pjbl->jbl_NumJPs;
+
+        exppop1++;
+
+#ifdef  DEBUG_COUNT
+    {
+        int ii = 0;
+        Word_t branchsum;
+        for (branchsum = 0; ii < numJPs; ii++)
+            branchsum += j__udyJPPop1(Pjbl->jbl_jp + ii);
+        if (branchsum != exppop1)
+            printf("--------JudyIns JudyBranch_L%d exppop1 = %ld, branchsum = %ld, diff = %ld\n", jpLevel, exppop1, branchsum, exppop1 - branchsum);
+        assert(branchsum == exppop1);
+    }
+#endif  // DEBUG_COUNT
 
 //      If population under this branch greater than:
 //      Convert to BranchU
         if ((exppop1 > JU_BRANCHL_MAX_POP) && (numJPs != 1))
         {
-// Memory efficiency is no object because the branch pop1 is large enough, so
-// speed up array access.  Come here with PjblRaw set.  Note:  This is goto
-// code because the previous block used to fall through into it as well, but no
-// longer.
-            jpLevel = ju_Type(Pjp) - cJU_JPBRANCH_L2 + 2;
-#ifdef  PCAS
-            printf("\nConvertBranchLtoU ju_BranchPop0 = %ld, NumJPs = %d, Level = %d\n", exppop1, Pjbl->jbl_NumJPs, jpLevel);
-#endif  // PCAS
-
-//         Allocate memory for an uncompressed branch:
-            PjbuRaw = j__udyAllocJBU(Pjpm);         // pointer to new uncompressed branch.
-            if (PjbuRaw == 0)
+            int ret = j__udyConvertBranchLtoU(Pjp, Pjpm);
+            if (ret == -1)
                 return (-1);
-            Pjbu_t  Pjbu = P_JBU(PjbuRaw);
-
-//          Set the proper NULL type for most of the uncompressed branchs JPs:
-            ju_SetIMM01(&newJP, 0, 0, cJU_JPNULL1 - 1 + jpLevel - 1);
-
-//          Initialize:  Pre-set uncompressed branch to JPNULL*s:
-            for (numJPs = 0; numJPs < cJU_BRANCHUNUMJPS; ++numJPs)
-                Pjbu->jbu_jp[numJPs] = newJP;
-       
-//          Copy JPs from linear branch to uncompressed branch:
-            for (numJPs = 0; numJPs < Pjbl->jbl_NumJPs; numJPs++)
-            {
-                Pjp_t       Pjp1 = Pjbl->jbl_jp + numJPs;       // next Pjp
-                int exp   = Pjbl->jbl_Expanse[numJPs];          // in jp_t ?
-                Pjbu->jbu_jp[exp] = *Pjp1;
-            }
-
-//          Copy jp count to BranchU
-            Pjbu->jbu_NumJPs = Pjbl->jbl_NumJPs;
-
-            j__udyFreeJBL(PjblRaw, Pjpm);   // free old BranchL.
-//          Plug new values into parent JP:
-            ju_SetPntrInJp(Pjp, PjbuRaw);
-
-//          Convert from BranchL to BranchU at the same level
-            jpLevel = ju_Type(Pjp) - cJU_JPBRANCH_L2 + 2;
-            ju_SetJpType(Pjp, cJU_JPBRANCH_U2 - 2 + jpLevel);
             goto ContinueInsWalk;           // now insert Index into BRANCH_U
         }
 //      else
 //      Search for a match to the digit:
         int offset = j__udySearchBranchL(Pjbl->jbl_Expanse, numJPs, digit);
 
+#ifdef xxxxx
+        if (offset >= 0)
+        {
+            Word_t PjbbRaw = j__udyPartstoBranchB(Pjbl->jbl_jp, Pjbl->jbl_Expanse, numJPs, Pjpm);
+            if (PjbbRaw == 0)
+                return (-1);
+            j__udyFreeJBL(PjblRaw, Pjpm);   // free old BranchL.
+//          Convert jp_Type from linear branch to equivalent bitmap branch:
+            ju_SetJpType(Pjp, ju_Type(Pjp) + cJU_JPBRANCH_B2 - cJU_JPBRANCH_L2);
+            ju_SetPntrInJp(Pjp, PjbbRaw);
+//          Having changed branch types, now do the insert in the new BranchB:
+            goto ContinueInsWalk;
+        }
+#endif  // xxxxx
+
 //      If Index is found, offset is into an array of 1..cJU_BRANCHLMAXJPS JPs:
         if (offset >= 0)
         {
-//          save Parent if special kind of Pjp
-            Pjp_t PPjp = Pjp;
-            Pjp  = Pjbl->jbl_jp + offset;       // address of next JP.
-
-            if (numJPs == 1)
-            {
-                if (Pjp->jp_Type <= cJU_JPMAXBRANCH)        // is a Branch
-                {
-                    Word_t RawPntr = ju_PntrInJp(PPjp);
-                    *PPjp = *Pjp;               // copy it higher in Tree
-                    j__udyFreeJBL(RawPntr, Pjpm);   // free old BranchL.
-                    Pjp = PPjp;
-                }
-            }
-            break;                      // continue walk.
+            Pjp  = Pjbl->jbl_jp + offset;       // decode to next level
+            break;                              // continue walk.
         }
-
-//      Expanse is missing in BranchL for the passed Index, so insert an Immed
-        if (numJPs < cJU_BRANCHLMAXJPS) // -- if theres room:
+//      else  Expanse is missing in BranchL for the passed Index, so insert an Immed
+        if (numJPs < cJU_BRANCHLMAXJPS)         // -- if theres room:
         {
-            offset = ~offset;           // insertion offset.
+            offset  = ~offset;                  // insertion offset.
             jpLevel = ju_Type(Pjp) - cJU_JPBRANCH_L2 + 2;
-//          Value = 0 in both Judy1 and JudyL
+
+//          Value == 0 in both Judy1 and JudyL
             ju_SetIMM01(&newJP, 0, Index, cJU_JPIMMED_1_01 - 1 + jpLevel - 1);
             JU_INSERTINPLACE(Pjbl->jbl_Expanse, numJPs, offset, digit);
             JU_INSERTINPLACE(Pjbl->jbl_jp, numJPs, offset, newJP);
             Pjbl->jbl_NumJPs++;
+
 #ifdef JUDYL
 //          Value area is in the new Immed 01 JP:
-            Pjp = Pjbl->jbl_jp + offset;
+            Pjp              = Pjbl->jbl_jp + offset;
             Pjpm->jpm_PValue =  ju_PImmVal_01(Pjp);     // ^ to Immed_01 Value
 #endif /* JUDYL */
-            return (1);                                 // done with insert
+
+            goto successreturn;
         }
 //      else 
 //      MAXED OUT LINEAR BRANCH, CONVERT TO A BITMAP BRANCH, THEN INSERT:
 
 //      Copy the linear branch to a bitmap branch.
         assert((numJPs) <= cJU_BRANCHLMAXJPS);
-        Word_t PjbbRaw = j__udyBranchBfromParts(Pjbl->jbl_jp, Pjbl->jbl_Expanse, numJPs, Pjpm);
+        Word_t PjbbRaw = j__udyPartstoBranchB(Pjbl->jbl_jp, Pjbl->jbl_Expanse, numJPs, Pjpm);
         if (PjbbRaw == 0)
             return (-1);
         j__udyFreeJBL(PjblRaw, Pjpm);   // free old BranchL.
+
 //      Convert jp_Type from linear branch to equivalent bitmap branch:
-        ju_SetJpType(Pjp, ju_Type(Pjp) + cJU_JPBRANCH_B2 - cJU_JPBRANCH_L2);
+//        ju_SetJpType(Pjp, ju_Type(Pjp) + cJU_JPBRANCH_B2 - cJU_JPBRANCH_L2);
+        ju_SetJpType(Pjp, cJU_JPBRANCH_B2 - 2 + jpLevel);
+
         ju_SetPntrInJp(Pjp, PjbbRaw);
 //      Having changed branch types, now do the insert in the new BranchB:
-        goto ContinueInsWalk;
+        goto ContinueInsWalk;           // no go do the Insert
     }                                   // case cJU_JPBRANCH_L.
 
 // ****************************************************************************
@@ -389,10 +589,24 @@ j__udyInsWalk(Pjp_t  Pjp,               // current Pjp_t to descend.
 // Come here with digit and exppop1 already set.
 
 JudyBranchB:
+#ifdef FIXIT
+#ifdef  DEBUG_COUNT
+    {
+        Word_t branchsum = 0;
+        for (int ii = 0; ii < numJPs; ii++) 
+            branchsum += j__udyJPPop1(Pjbb->jbb_jp + ii);
+
+        int jpLevel = ju_Type(Pjp) - cJU_JPBRANCH_B2 + 2;
+        printf("#--------JudyIns JudyBranch_B%d exppop1 = %ld, branchsum = %ld\n", jpLevel, exppop1, branchsum);
+        assert(branchsum == exppop1);
+    }
+#endif  // DEBUG_COUNT
+#endif  // FIXIT
 
 #ifdef noB
-//           Convert branchB to branchU
-             if (j__udyCreateBranchU(Pjp, Pjpm) == -1) return(-1);
+//      Convert branchB to branchU
+        if (j__udyConvertBranchBtoU(Pjp, Pjpm) == -1) 
+                 return(-1);
                 goto ContinueInsWalk;
 #endif  // noB
 
@@ -403,7 +617,7 @@ JudyBranchB:
 //            if ((Pjpm->jpm_Pop0 - Pjpm->jpm_LastUPop0) > JU_BTOU_POP_INCREMENT)
 //#endif  // noINC
 
-            {
+        {
 
 // If total array efficency is greater than 3 words per Key, then convert
 
@@ -421,7 +635,7 @@ JudyBranchB:
 
                     if (exppop1 > JU_BRANCHB_MIN_POP)
                     {
-                        if (j__udyCreateBranchU(Pjp, Pjpm) == -1) 
+                        if (j__udyConvertBranchBtoU(Pjp, Pjpm) == -1) 
                             return(-1);
 
 // Save global population of last BranchU conversion:
@@ -433,7 +647,7 @@ JudyBranchB:
                         goto ContinueInsWalk;
                     }
                 }
-            }
+        }
 #endif  // ! noU
 
 // CONTINUE TO USE BRANCHB:
@@ -441,7 +655,7 @@ JudyBranchB:
 // Get pointer to bitmap branch (JBB):
 //        PjbbRaw = ju_PntrInJp(Pjp);
         PjbbRaw = RawJpPntr;
-        Pjbb = P_JBB(PjbbRaw);
+        Pjbb    = P_JBB(PjbbRaw);
 // Form the Int32 offset, and Bit offset values:
 //
 // 8 bit Decode | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
@@ -450,13 +664,13 @@ JudyBranchB:
 // Get the 1 of 8 expanses from digit, Bits 5..7 = 1 of 8, and get the 32-bit
 // word that may have a bit set:
         sub4exp = digit / cJU_BITSPERSUBEXPB;
-        bitmap = JU_JBB_BITMAP(Pjbb, sub4exp);
+        bitmap  = JU_JBB_BITMAP(Pjbb, sub4exp);
         Pjp2Raw = JU_JBB_PJP(Pjbb, sub4exp);
-        Pjp2 = P_JP(Pjp2Raw);
+        Pjp2    = P_JP(Pjp2Raw);
 // Get the bit position that represents the desired expanse, and get the offset
 // into the array of JPs for the JP that matches the bit.
         bitmask = JU_BITPOSMASKB(digit);
-        offset = j__udyCountBitsB(bitmap & (bitmask - 1));
+        offset  = j__udyCountBitsB(bitmap & (bitmask - 1));
 // If JP is already in this expanse, get Pjp and continue the walk:
         if (bitmap & bitmask)
         {
@@ -525,7 +739,7 @@ JudyBranchB:
         }                               // else
 // Set the new Indexs bit:
         JU_JBB_BITMAP(Pjbb, sub4exp) |= bitmask;
-        return (1);
+        goto successreturn;
     }                                   // case
 
 // ****************************************************************************
@@ -537,11 +751,22 @@ JudyBranchB:
 //
     case cJU_JPBRANCH_U2:
     {
+        PPjp = Pjp;
         if (ju_DcdNotMatchKey(Index, Pjp, 2))
             return (j__udyInsertBranchL(Pjp, Index, ju_DcdPop0(Pjp), 2, Pjpm));
 
-        Pjbu_t    P_jbu = P_JBU(RawJpPntr);
-        Pjp     = P_jbu->jbu_jp + JU_DIGITATSTATE(Index, 2);
+        Pjbu_t    Pjbu = P_JBU(RawJpPntr);
+
+#ifdef  DEBUG_COUNT
+        j__udyCheckBranchPop(Pjp, 2);
+#endif  // DEBUG_COUNT
+
+        digit   = JU_DIGITATSTATE(Index, 2);
+        Pjp     = Pjbu->jbu_jp + digit;
+
+#ifndef noBigU
+        Pjbu->jbu_sums8[digit / 8]++;                   // grouping of 8 sums
+#endif  // noBigU
         break;
     }
 
@@ -550,8 +775,17 @@ JudyBranchB:
         if (ju_DcdNotMatchKey(Index, Pjp, 3))
             return (j__udyInsertBranchL(Pjp, Index, ju_DcdPop0(Pjp), 3, Pjpm));
 
-        Pjbu_t    P_jbu = P_JBU(RawJpPntr);
-        Pjp     = P_jbu->jbu_jp + JU_DIGITATSTATE(Index, 3);
+        Pjbu_t    Pjbu = P_JBU(RawJpPntr);
+
+#ifdef  DEBUG_COUNT
+        j__udyCheckBranchPop(Pjp, 3);
+#endif  // DEBUG_COUNT
+
+        digit   = JU_DIGITATSTATE(Index, 3);
+        Pjp     = Pjbu->jbu_jp + digit;
+#ifndef noBigU
+        Pjbu->jbu_sums8[digit / 8]++;                   // grouping of 8 sums
+#endif  // noBigU
         break;
     }
 
@@ -560,8 +794,17 @@ JudyBranchB:
         if (ju_DcdNotMatchKey(Index, Pjp, 4))
             return (j__udyInsertBranchL(Pjp, Index, ju_DcdPop0(Pjp), 4, Pjpm));
 
-        Pjbu_t    P_jbu = P_JBU(RawJpPntr);
-        Pjp     = P_jbu->jbu_jp + JU_DIGITATSTATE(Index, 4);
+        Pjbu_t    Pjbu = P_JBU(RawJpPntr);
+
+#ifdef  DEBUG_COUNT
+        j__udyCheckBranchPop(Pjp, 4);
+#endif  // DEBUG_COUNT
+
+        digit   = JU_DIGITATSTATE(Index, 4);
+        Pjp     = Pjbu->jbu_jp + digit;
+#ifndef noBigU
+        Pjbu->jbu_sums8[digit / 8]++;                   // grouping of 8 sums
+#endif  // noBigU
         break;
     }
 
@@ -570,8 +813,17 @@ JudyBranchB:
         if (ju_DcdNotMatchKey(Index, Pjp, 5))
             return (j__udyInsertBranchL(Pjp, Index, ju_DcdPop0(Pjp), 5, Pjpm));
 
-        Pjbu_t    P_jbu = P_JBU(RawJpPntr);
-        Pjp     = P_jbu->jbu_jp + JU_DIGITATSTATE(Index, 5);
+        Pjbu_t    Pjbu = P_JBU(RawJpPntr);
+
+#ifdef  DEBUG_COUNT
+        j__udyCheckBranchPop(Pjp, 5);
+#endif  // DEBUG_COUNT
+
+        digit   = JU_DIGITATSTATE(Index, 5);
+        Pjp     = Pjbu->jbu_jp + digit;
+#ifndef noBigU
+        Pjbu->jbu_sums8[digit / 8]++;                   // grouping of 8 sums
+#endif  // noBigU
         break;
     }
 
@@ -580,8 +832,17 @@ JudyBranchB:
         if (ju_DcdNotMatchKey(Index, Pjp, 6))
             return (j__udyInsertBranchL(Pjp, Index, ju_DcdPop0(Pjp), 6, Pjpm));
 
-        Pjbu_t    P_jbu = P_JBU(RawJpPntr);
-        Pjp     = P_jbu->jbu_jp + JU_DIGITATSTATE(Index, 6);
+        Pjbu_t    Pjbu = P_JBU(RawJpPntr);
+
+#ifdef  DEBUG_COUNT
+        j__udyCheckBranchPop(Pjp, 6);
+#endif  // DEBUG_COUNT
+
+        digit   = JU_DIGITATSTATE(Index, 6);
+        Pjp     = Pjbu->jbu_jp + digit;
+#ifndef noBigU
+        Pjbu->jbu_sums8[digit / 8]++;                   // grouping of 8 sums
+#endif  // noBigU
         break;
     }
 
@@ -590,15 +851,34 @@ JudyBranchB:
         if (ju_DcdNotMatchKey(Index, Pjp, 7))
             return (j__udyInsertBranchL(Pjp, Index, ju_DcdPop0(Pjp), 7, Pjpm));
 
-        Pjbu_t    P_jbu = P_JBU(RawJpPntr);
-        Pjp     = P_jbu->jbu_jp + JU_DIGITATSTATE(Index, 7);
+        Pjbu_t    Pjbu = P_JBU(RawJpPntr);
+
+#ifdef  DEBUG_COUNT
+        j__udyCheckBranchPop(Pjp, 7);
+#endif  // DEBUG_COUNT
+
+
+        digit   = JU_DIGITATSTATE(Index, 7);
+        Pjp     = Pjbu->jbu_jp + digit;
+#ifndef noBigU
+        Pjbu->jbu_sums8[digit / 8]++;                   // grouping of 8 sums
+#endif  // noBigU
         break;
     }
 
     case cJU_JPBRANCH_U8:
     {
-        Pjbu_t    P_jbu = P_JBU(RawJpPntr);
-        Pjp     = P_jbu->jbu_jp + JU_DIGITATSTATE(Index, cJU_ROOTSTATE);
+        Pjbu_t    Pjbu = P_JBU(RawJpPntr);
+
+#ifdef  DEBUG_COUNT
+        j__udyCheckBranchPop(Pjp, 8);
+#endif  // DEBUG_COUNT
+
+        digit   = JU_DIGITATSTATE(Index, 8);
+        Pjp     = Pjbu->jbu_jp + digit;
+#ifndef noBigU
+        Pjbu->jbu_sums8[digit / 8]++;                   // grouping of 8 sums
+#endif  // noBigU
         break;
     }
 
@@ -641,6 +921,7 @@ JudyBranchB:
         if (offset >= 0)
         {
             Pjpm->jpm_PValue = Pjv + offset;
+            assert(0);
             return (0);
         }
         offset = ~offset;
@@ -651,10 +932,13 @@ JudyBranchB:
             JU_PADLEAF1(Pjll1->jl1_Leaf, exppop1 + 1);
             JU_INSERTINPLACE(Pjv, exppop1, offset, 0);
 
+//          Put the LastKey in the Leaf1
+            Pjll1->jl1_LastKey = (Index & cJU_DCDMASK(1)) | Pjll1->jl1_Leaf[exppop1];
+
             Pjpm->jpm_PValue = Pjv + offset;
             ju_SetLeafPop1(Pjp, exppop1 + 1);               // increase Population0 by one
             Pjp->jp_subLeafPops += ((Word_t)1) << ((index8 >> (8 - 3)) * 8);    // and sum-exp
-            return (1);
+            goto successreturn;
         }
         if (exppop1 < cJU_LEAF1_MAXPOP1)      /* grow to new leaf */
         {
@@ -662,12 +946,13 @@ JudyBranchB:
             if (Pjll1newRaw == 0)
                 return (-1);
             Pjll1_t  Pjll1new = P_JLL1(Pjll1newRaw);
-
-//          Put the LastKey in the Leaf1
-            Pjll1new->jl1_LastKey = (Index & cJU_DCDMASK(1)); // + exppop1 + 0;
             Pjv_t Pjvnew = JL_LEAF1VALUEAREA(Pjll1new, exppop1 + 1);
             JU_INSERTCOPY(Pjll1new->jl1_Leaf, Pjll1->jl1_Leaf, exppop1, offset, index8);
             JU_PADLEAF1(  Pjll1new->jl1_Leaf, exppop1 + 1);     // only needed for Parallel search
+
+//          Put the LastKey in the Leaf1
+            Pjll1new->jl1_LastKey = (Index & cJU_DCDMASK(1)) | Pjll1new->jl1_Leaf[exppop1];
+
             JU_INSERTCOPY(Pjvnew, Pjv, exppop1, offset, 0);
 
             j__udyFreeJLL1(Pjll1Raw, exppop1, Pjpm);
@@ -676,16 +961,16 @@ JudyBranchB:
             Pjpm->jpm_PValue = Pjvnew + offset;
             ju_SetLeafPop1(Pjp, exppop1 + 1);   // increase Population0 by one
             Pjp->jp_subLeafPops += ((Word_t)1) << ((index8 >> (8 - 3)) * 8);    // and sum-exp
-            return (1);
+            goto successreturn;
         }
 //      Max population, convert to LeafB1
-        assert(exppop1 == (cJU_LEAF1_MAXPOP1));
+        assert(exppop1 == cJU_LEAF1_MAXPOP1);
 
 #ifdef  PCAS
-        printf("\n====JudyIns======= Leaf1 to LeafB1, Pop1 = %d\n", (int)exppop1 + 1);
+        printf("\n====JudyIns======= Leaf1 to LeafB1, Pop1 = %ld\n", exppop1 + 1);
 #endif  // PCAS
 
-	Word_t PjlbRaw = j__udyAllocJLB1(Pjpm);
+	Word_t PjlbRaw = j__udyAllocJLB1U(Pjpm);
 	if (PjlbRaw == 0)
             return(-1);
 
@@ -708,9 +993,10 @@ JudyBranchB:
             Pjvnew[Pjll1->jl1_Leaf[loff]] = Pjv[loff];
 
         j__udyFreeJLL1(Pjll1Raw, exppop1, Pjpm);
-//        Word_t DcdP0 = (Index & cJU_DCDMASK(1)) + cJU_LEAF1_MAXPOP1 - 1;
+        Word_t DcdP0 = (Index & cJU_DCDMASK(1)) | cJU_LEAF1_MAXPOP1 - 1;
+        Pjlb->jlb_LastKey = DcdP0;
 //        ju_SetDcdPop0(Pjp, DcdP0);  Done above
-        ju_SetJpType  (Pjp, cJL_JPLEAF_B1);
+        ju_SetJpType  (Pjp, cJL_JPLEAF_B1U);
         ju_SetPntrInJp(Pjp, PjlbRaw);
         goto ContinueInsWalk;   // now go do the Insert
     }
@@ -735,6 +1021,7 @@ JudyBranchB:
 #ifdef JUDYL
             Pjpm->jpm_PValue = Pjv + offset;
 #endif /* JUDYL */
+            assert(0);
             return (0);
         }
         offset = ~offset;
@@ -742,19 +1029,19 @@ JudyBranchB:
 //      bump sub-expanse pop from high 3 bits in Key -- imminent growth
         Pjp->jp_subLeafPops += ((Word_t)1) << ((index16 >> (16 - 3)) * 8);
 
-
-//printf("\nIn ins Leaf2 subLeafPops = 0x%016lx, Key = 0x%04x\n", Pjp->jp_subLeafPops, index16);
-
         if (JU_LEAF2GROWINPLACE(exppop1))       // add to current leaf
         {
             JU_INSERTINPLACE(Pjll2->jl2_Leaf, exppop1, offset, index16);
-            JU_PADLEAF2(Pjll2->jl2_Leaf, exppop1 + 1);
+            JU_PADLEAF2(Pjll2->jl2_Leaf, exppop1 + 1);     // only needed for Parallel search
+
+//          Put the LastKey in the Leaf2
+            Pjll2->jl2_LastKey = Pjll2->jl2_Leaf[exppop1] | (Index & cJU_DCDMASK(2));     
 #ifdef JUDYL
             JU_INSERTINPLACE(Pjv, exppop1, offset, 0);
             Pjpm->jpm_PValue = Pjv + offset;
 #endif /* JUDYL */
             ju_SetLeafPop1(Pjp, exppop1 + 1);   // increase Population0 by one
-            return (1);
+            goto successreturn;
         }
         if (exppop1 < cJU_LEAF2_MAXPOP1)        // grow to new leaf
         {
@@ -763,11 +1050,11 @@ JudyBranchB:
                 return (-1);
             Pjll2_t Pjll2new = P_JLL2(Pjll2newRaw);
 
-//          Put the Dcd in the Leaf2
-            Pjll2new->jl2_LastKey = Index & cJU_DCDMASK(2);
-
             JU_INSERTCOPY(Pjll2new->jl2_Leaf, Pjll2->jl2_Leaf, exppop1, offset, Index);
-            JU_PADLEAF2(Pjll2new->jl2_Leaf, exppop1 + 1);
+            JU_PADLEAF2(Pjll2new->jl2_Leaf, exppop1 + 1);       // only needed for Parallel search
+
+//          Put the LastKey in the Leaf2
+            Pjll2new->jl2_LastKey = Pjll2new->jl2_Leaf[exppop1] | (Index & cJU_DCDMASK(2));     
 #ifdef JUDYL
             Pjv_t     Pjvnew = JL_LEAF2VALUEAREA(Pjll2new, exppop1 + 1);
             JU_INSERTCOPY(Pjvnew, Pjv, exppop1, offset, 0);
@@ -776,7 +1063,7 @@ JudyBranchB:
             j__udyFreeJLL2(Pjll2Raw, exppop1, Pjpm);
             ju_SetPntrInJp(Pjp, Pjll2newRaw);
             ju_SetLeafPop1(Pjp, exppop1 + 1);   // increase Population0 by one
-            return (1);
+            goto successreturn;
         }
 // At this point the Leaf2 may go directly to one (1) LeafB1 in the case of -S1
 // So check and convert to B1 -- on 2nd thought, there may be some outliers, so
@@ -784,8 +1071,10 @@ JudyBranchB:
 
 //      else at max size, convert to Leaf1 probably for now
         assert(exppop1 == cJU_LEAF2_MAXPOP1);
+       
         if (j__udyCascade2(Pjp, Index, Pjpm) == -1)
             return (-1);
+
 //      Now Pjp->jp_Type is a Branch
         j__udyFreeJLL2(Pjll2Raw, cJU_LEAF2_MAXPOP1, Pjpm);
         goto ContinueInsWalk;
@@ -793,6 +1082,7 @@ JudyBranchB:
 
     case cJU_JPLEAF3:
     {
+//printf("\nRawJpPntr = 0x%016lx\n", RawJpPntr);
         exppop1 = ju_LeafPop1(Pjp);
         assert(exppop1 <= (cJU_LEAF3_MAXPOP1));
         Word_t Pjll3Raw = RawJpPntr;
@@ -808,18 +1098,22 @@ JudyBranchB:
 #ifdef JUDYL
             Pjpm->jpm_PValue = Pjv + offset;
 #endif /* JUDYL */
+            assert(0);
             return (0);
         }
         offset = ~offset;
         if (JU_LEAF3GROWINPLACE(exppop1))       // add to current leaf
         {
             JU_INSERTINPLACE3(Pjll3->jl3_Leaf, exppop1, offset, Index);
+
+//          Put the LastKey in the Leaf2
+            Pjll3->jl3_LastKey = Pjll3->jl3_Leaf[exppop1] | (Index & cJU_DCDMASK(3));     
 #ifdef JUDYL
             JU_INSERTINPLACE(Pjv, exppop1, offset, 0);
             Pjpm->jpm_PValue = Pjv + offset;
 #endif /* JUDYL */
             ju_SetLeafPop1(Pjp, exppop1 + 1);       // increase Population0 by one
-            return (1);
+            goto successreturn;
         }
         if (exppop1 < cJU_LEAF3_MAXPOP1)        // grow to new leaf
         {
@@ -828,10 +1122,11 @@ JudyBranchB:
                 return (-1);
             Pjll3_t Pjll3new = P_JLL3(Pjll3newRaw);
 
-//          Put the LastKey in the Leaf3
-            Pjll3new->jl3_LastKey = Index & cJU_DCDMASK(3);
+            JU_INSERTCOPY(Pjll3new->jl3_Leaf, Pjll3->jl3_Leaf, exppop1, offset, Index);
+            JU_PADLEAF3(Pjll3new->jl3_Leaf, exppop1 + 1);       // only needed for Parallel search
 
-            JU_INSERTCOPY3(Pjll3new->jl3_Leaf, Pjll3->jl3_Leaf, exppop1, offset, Index);
+//          Put the LastKey in the Leaf3
+            Pjll3new->jl3_LastKey = Pjll3new->jl3_Leaf[exppop1] | (Index & cJU_DCDMASK(3));     
 #ifdef JUDYL
             Pjv_t Pjvnew = JL_LEAF3VALUEAREA(Pjll3new, exppop1 + 1);
             JU_INSERTCOPY(Pjvnew, Pjv, exppop1, offset, 0);
@@ -840,13 +1135,32 @@ JudyBranchB:
             j__udyFreeJLL3(Pjll3Raw, exppop1, Pjpm);
             ju_SetPntrInJp(Pjp, Pjll3newRaw);
             ju_SetLeafPop1(Pjp, exppop1 + 1);   // increase Population0 by one
-            return (1);
+            goto successreturn;
         }
         assert(exppop1 == (cJU_LEAF3_MAXPOP1));
+
+#ifdef  later
+        Word_t StageKeys[258];
+
+        JU_INSERTCOPYtoWORD(StageKeys, Pjll3->jl3_Leaf, exppop1, offset, Index, 3); 
+
+        for (int ii = 0; ii < cJU_LEAF3_MAXPOP1; ii++)
+        {
+            Word_t Key;
+            JU_COPY3_PINDEX_TO_LONG(Key, Pjll3->jl3_Leaf + (ii * 3));
+            printf("%3d = 0x%016lx = 0x%016lx", ii, StageKeys[ii], Key);
+            if (ii == offset) printf("*\n");
+            else printf("\n");
+        }
+#endif  //  later
+
+//printf("\n3 Pjll3Raw = 0x%016lx\n", Pjll3Raw);
         if (j__udyCascade3(Pjp, Index, Pjpm) == -1)
             return (-1);
+//printf("\n4 Pjll3Raw = 0x%016lx\n", Pjll3Raw);
 //      Now Pjp->jp_Type is a BranchLBorU
         j__udyFreeJLL3(Pjll3Raw, cJU_LEAF3_MAXPOP1, Pjpm);
+//printf("\n5 Pjll3Raw = 0x%016lx\n", Pjll3Raw);
         goto ContinueInsWalk;
     }
 
@@ -866,18 +1180,23 @@ JudyBranchB:
 #ifdef JUDYL
             Pjpm->jpm_PValue = Pjv + offset;
 #endif /* JUDYL */
+            assert(0);
             return (0);
         }
         offset = ~offset;
         if (JU_LEAF4GROWINPLACE(exppop1))       /* add to current leaf */
         {
             JU_INSERTINPLACE(Pjll4->jl4_Leaf, exppop1, offset, Index);
+
+//          Put the LastKey in the Leaf4
+            Pjll4->jl4_LastKey = Pjll4->jl4_Leaf[exppop1] | (Index & cJU_DCDMASK(4));     
+
 #ifdef JUDYL
             JU_INSERTINPLACE(Pjv, exppop1, offset, 0);
             Pjpm->jpm_PValue = Pjv + offset;
 #endif /* JUDYL */
             ju_SetLeafPop1(Pjp, exppop1 + 1);   // increase Population0 by one
-            return (1);
+            goto successreturn;
         }
         if (exppop1 < cJU_LEAF4_MAXPOP1)      /* grow to new leaf */
         {
@@ -885,11 +1204,11 @@ JudyBranchB:
             if (Pjll4newRaw == 0)
                 return (-1);
             Pjll4_t Pjll4new = P_JLL4(Pjll4newRaw);
+            JU_INSERTCOPY(Pjll4new->jl4_Leaf, Pjll4->jl4_Leaf, exppop1, offset, Index);
 
 //          Put the LastKey in the Leaf4
-            Pjll4new->jl4_LastKey = Index & cJU_DCDMASK(4);
+            Pjll4new->jl4_LastKey = Pjll4new->jl4_Leaf[exppop1] | (Index & cJU_DCDMASK(4));     
 
-            JU_INSERTCOPY(Pjll4new->jl4_Leaf, Pjll4->jl4_Leaf, exppop1, offset, Index);
 #ifdef JUDYL
             Pjv_t     Pjvnew = JL_LEAF4VALUEAREA(Pjll4new, exppop1 + 1);
             JU_INSERTCOPY(Pjvnew, Pjv, exppop1, offset, 0);
@@ -898,7 +1217,7 @@ JudyBranchB:
             j__udyFreeJLL4(Pjll4Raw, exppop1, Pjpm);
             ju_SetPntrInJp(Pjp, Pjll4newRaw);
             ju_SetLeafPop1(Pjp, exppop1 + 1);   // increase Population0 by one
-            return (1);
+            goto successreturn;
         }
         assert(exppop1 == cJU_LEAF4_MAXPOP1);
 
@@ -927,18 +1246,23 @@ JudyBranchB:
 #ifdef JUDYL
             Pjpm->jpm_PValue = Pjv + offset;
 #endif /* JUDYL */
+            assert(0);
             return (0);
         }
         offset = ~offset;
         if (JU_LEAF5GROWINPLACE(exppop1))       /* add to current leaf */
         {
             JU_INSERTINPLACE5(Pjll5->jl5_Leaf, exppop1, offset, Index);
+
+//          Put the LastKey in the Leaf5
+            Pjll5->jl5_LastKey = Pjll5->jl5_Leaf[exppop1];
+
 #ifdef JUDYL
             JU_INSERTINPLACE(Pjv, exppop1, offset, 0);
             Pjpm->jpm_PValue = Pjv + offset;
 #endif /* JUDYL */
             ju_SetLeafPop1(Pjp, exppop1 + 1);   // increase Population0 by one
-            return (1);
+            goto successreturn;
         }
         if (exppop1 < cJU_LEAF5_MAXPOP1)      /* grow to new leaf */
         {
@@ -946,11 +1270,11 @@ JudyBranchB:
             if (Pjll5newRaw == 0)
                 return (-1);
             Pjll5_t Pjll5new = P_JLL5(Pjll5newRaw);
-
-//          Put the LastKey in the Leaf5
-            Pjll5new->jl5_LastKey = Index & cJU_DCDMASK(5);
-
             JU_INSERTCOPY5(Pjll5new->jl5_Leaf, Pjll5->jl5_Leaf, exppop1, offset, Index);
+
+//          Put the LastKey in the Leaf5 (64 bit so no extra nonsense)
+            Pjll5new->jl5_LastKey = Pjll5new->jl5_Leaf[exppop1];
+
 #ifdef JUDYL
             Pjv_t     Pjvnew = JL_LEAF5VALUEAREA(Pjll5new, (exppop1) + 1);
             JU_INSERTCOPY(Pjvnew, Pjv, exppop1, offset, 0);
@@ -959,9 +1283,10 @@ JudyBranchB:
             j__udyFreeJLL5(Pjll5Raw, exppop1, Pjpm);
             ju_SetPntrInJp(Pjp, Pjll5newRaw);
             ju_SetLeafPop1(Pjp, exppop1 + 1);   // increase Population0 by one
-            return (1);
+            goto successreturn;
         }
         assert(exppop1 == (cJU_LEAF5_MAXPOP1));
+
         if (j__udyCascade5(Pjp, Index, Pjpm) == -1)
             return (-1);
 //      Now Pjp->jp_Type is a BranchLBorU
@@ -984,18 +1309,23 @@ JudyBranchB:
 #ifdef JUDYL
             Pjpm->jpm_PValue = Pjv + offset;
 #endif /* JUDYL */
+            assert(0);
             return (0);
         }
         offset = ~offset;
         if (JU_LEAF6GROWINPLACE(exppop1))       /* add to current leaf */
         {
             JU_INSERTINPLACE6(Pjll6->jl6_Leaf, exppop1, offset, Index);
+
+//          Put the LastKey in the Leaf6
+            Pjll6->jl6_LastKey = Pjll6->jl6_Leaf[exppop1];
+
 #ifdef JUDYL
             JU_INSERTINPLACE(Pjv, exppop1, offset, 0);
             Pjpm->jpm_PValue = Pjv + offset;
 #endif /* JUDYL */
             ju_SetLeafPop1(Pjp, exppop1 + 1);   // increase Population0 by one
-            return (1);
+            goto successreturn;
         }
         if (exppop1 < cJU_LEAF6_MAXPOP1)      /* grow to new leaf */
         {
@@ -1003,11 +1333,11 @@ JudyBranchB:
             if (Pjll6newRaw == 0)
                 return (-1);
             Pjll6_t Pjll6new = P_JLL6(Pjll6newRaw);
-
-//          Put the LastKey in the Leaf6
-            Pjll6new->jl6_LastKey = Index & cJU_DCDMASK(6);
-
             JU_INSERTCOPY6(Pjll6new->jl6_Leaf, Pjll6->jl6_Leaf, exppop1, offset, Index);
+
+//          Put the LastKey in the Leaf5 (64 bit so no extra nonsense)
+            Pjll6new->jl6_LastKey = Pjll6new->jl6_Leaf[exppop1];
+
 #ifdef JUDYL
             Pjv_t     Pjvnew = JL_LEAF6VALUEAREA(Pjll6new, (exppop1) + 1);
             JU_INSERTCOPY(Pjvnew, Pjv, exppop1, offset, 0);
@@ -1016,9 +1346,10 @@ JudyBranchB:
             j__udyFreeJLL6(Pjll6Raw, exppop1, Pjpm);
             ju_SetPntrInJp(Pjp, Pjll6newRaw);
             ju_SetLeafPop1(Pjp, exppop1 + 1);   // increase Population0 by one
-            return (1);
+            goto successreturn;
         }
         assert(exppop1 == cJU_LEAF6_MAXPOP1);
+
         if (j__udyCascade6(Pjp, Index, Pjpm) == -1)
             return (-1);
 //      Now Pjp->jp_Type is a BranchLBorU
@@ -1042,58 +1373,47 @@ JudyBranchB:
 #ifdef JUDYL
             Pjpm->jpm_PValue = Pjv + offset;
 #endif /* JUDYL */
+            assert(0);
             return (0);
         }
         offset = ~offset;
         if (JU_LEAF7GROWINPLACE(exppop1))       /* add to current leaf */
         {
             JU_INSERTINPLACE7(Pjll7->jl7_Leaf, exppop1, offset, Index);
+
+//          Put the LastKey in the Leaf7
+            Pjll7->jl7_LastKey = Pjll7->jl7_Leaf[exppop1];
+
 #ifdef JUDYL
             JU_INSERTINPLACE(Pjv, exppop1, offset, 0);
             Pjpm->jpm_PValue = Pjv + offset;
 #endif  // JUDYL
             ju_SetLeafPop1(Pjp, exppop1 + 1);   // increase Population0 by one
-
-//for (int ii = 0; ii < (exppop1 + 1); ii++)
-//{
-//    Word_t Key;
-//    JU_COPY7_PINDEX_TO_LONG(Key, Pjll7->jl7_Leaf + (ii * 7));
-//    printf("%3d = 0x%016lx\n", ii, Key);
-//}
-
-
-            return (1);
+            goto successreturn;
         }
-        if (exppop1 < (cJU_LEAF7_MAXPOP1))      /* grow to new leaf */
+        if (exppop1 < cJU_LEAF7_MAXPOP1)      /* grow to new leaf */
         {
             Word_t    Pjll7newRaw = j__udyAllocJLL7(exppop1 + 1, Pjpm);
             if (Pjll7newRaw == 0)
                 return (-1);
             Pjll7_t Pjll7new = P_JLL7(Pjll7newRaw);
+            JU_INSERTCOPY(Pjll7new->jl7_Leaf, Pjll7->jl7_Leaf, exppop1, offset, Index);
 
-//          Put the LastKey in the Leaf6
-            Pjll7new->jl7_LastKey = Index & cJU_DCDMASK(7);
+//          Put the LastKey in the Leaf7 (64 bit so no extra nonsense)
+            Pjll7new->jl7_LastKey = Pjll7new->jl7_Leaf[exppop1];
 
-            JU_INSERTCOPY7(Pjll7new->jl7_Leaf, Pjll7->jl7_Leaf, exppop1, offset, Index);
 #ifdef JUDYL
-            Pjv_t     Pjvnew = JL_LEAF7VALUEAREA(Pjll7new, (exppop1) + 1);
+            Pjv_t     Pjvnew = JL_LEAF7VALUEAREA(Pjll7new, exppop1 + 1);
             JU_INSERTCOPY(Pjvnew, Pjv, exppop1, offset, 0);
             Pjpm->jpm_PValue = Pjvnew + offset;
 #endif  // JUDYL
             j__udyFreeJLL7(Pjll7Raw, exppop1, Pjpm);
             ju_SetPntrInJp(Pjp, Pjll7newRaw);
             ju_SetLeafPop1(Pjp, exppop1 + 1);   // increase Population0 by one
-
-//for (int ii = 0; ii < (exppop1 + 1); ii++)
-//{
-//    Word_t Key;
-//    JU_COPY7_PINDEX_TO_LONG(Key, Pjll7->jl7_Leaf + (ii * 7));
-//    printf("%3d = 0x%016lx\n", ii, Key);
-//}
-
-            return (1);
+            goto successreturn;
         }
         assert(exppop1 == cJU_LEAF7_MAXPOP1);
+
         if (j__udyCascade7(Pjp, Index, Pjpm) == -1)
             return (-1);
 //      Now Pjp->jp_Type is a BranchLorB
@@ -1103,7 +1423,7 @@ JudyBranchB:
     }
 
 // ****************************************************************************
-// JPLEAF_B1:
+// JPLEAF_B1U:
 //
 // 8 bit Decode | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
 //              |SubExpanse |    Bit offset     |
@@ -1112,7 +1432,7 @@ JudyBranchB:
 // array of up to 32[64] values each.
 
 #ifdef  JUDYL
-    case cJL_JPLEAF_B1:
+    case cJL_JPLEAF_B1U:
     {
 //      Get last byte to decode from Index, and pointer to bitmap leaf:
         int       key     = JU_DIGITATSTATE(Index, 1);
@@ -1121,23 +1441,29 @@ JudyBranchB:
         Pjlb_t    Pjlb    = P_JLB1(RawJpPntr);          // ^ to bitmap leaf
         BITMAPL_t bitmap  = JU_JLB_BITMAP(Pjlb, sube);  // 64 bit map.
         Pjv_t     Pjv     = JL_JLB_PVALUE(Pjlb);        // start of Value area
+//       Pjp_t      Pjv     = Pjlb->jLlb_PV;
 
 //      If Index already exists, value pointer and exit:
         Pjpm->jpm_PValue  = Pjv + key;                  // Value location
         if (bitmap & bitmask)
+        {
+            assert(0);
             return(0);
+        }
+        if (Index > Pjlb->jlb_LastKey)
+            Pjlb->jlb_LastKey = Index;
 
         Pjv[key] = 0;                                   // Value
         JU_JLB_BITMAP(Pjlb, sube) |= bitmask;           // set Key bit.
-        exppop1 = ju_LeafPop1(Pjp) + 1;
 
+        exppop1 = ju_LeafPop1(Pjp) + 1;
         ju_SetLeafPop1(Pjp, exppop1);                   // increase Pop by one
-        return(1);
+        goto successreturn;
     }
 #endif /* JUDYL */
 
 #ifdef JUDY1
-    case cJ1_JPLEAF_B1:
+    case cJ1_JPLEAF_B1U:
     {
         Pjlb_t    Pjlb    = P_JLB1(RawJpPntr);          // ^ to bitmap leaf
 
@@ -1150,7 +1476,7 @@ JudyBranchB:
 //      If bitmap is not full, set the new Indexs bit; otherwise convert to a Full:
         if (exppop1 == 256)                             // full
         {
-            j__udyFreeJLB1(RawJpPntr, Pjpm);            // free LeafB1.
+            j__udyFreeJLB1U(RawJpPntr, Pjpm);            // free LeafB1.
             ju_SetJpType(Pjp, cJ1_JPFULLPOPU1);         // mark at full population
             ju_SetPntrInJp(Pjp, 0);
             ju_SetDcdPop0(Pjp, Index & cJU_DCDMASK(1));
@@ -1159,7 +1485,7 @@ JudyBranchB:
         {
             JU_BITMAPSETL(Pjlb, Index);
         }
-        return(1);
+        goto successreturn;
     } // case
 
 // ****************************************************************************
@@ -1311,6 +1637,7 @@ JudyBranchB:
 #ifdef JUDYL
             Pjpm->jpm_PValue = ju_PImmVal_01(Pjp);   // ^ to Immed_x_01 Value
 #endif  // JUDYL
+            assert(0);
             return (0);
         }
 #ifdef JUDYL
@@ -1343,7 +1670,7 @@ JudyBranchB:
 #endif /* JUDYL */
         }
         ju_SetJpType(Pjp, cJU_JPIMMED_1_02);
-        return (1);
+        goto successreturn;
     }
 
 // 2_01 leads to 2_02, and 3_01 leads to 3_02, except for JudyL 32-bit, where
@@ -1361,6 +1688,7 @@ JudyBranchB:
 #ifdef JUDYL
             Pjpm->jpm_PValue = ju_PImmVal_01(Pjp);   // ^ to Immed_x_01 Value
 #endif  // JUDYL
+            assert(0);
             return (0);
         }
 #ifdef JUDYL
@@ -1393,7 +1721,7 @@ JudyBranchB:
 #endif /* JUDYL */
         }
         ju_SetJpType(Pjp, cJU_JPIMMED_2_02);
-        return (1);
+        goto successreturn;
     }
 
     case cJU_JPIMMED_3_01:
@@ -1406,6 +1734,7 @@ JudyBranchB:
 #ifdef JUDYL
             Pjpm->jpm_PValue = ju_PImmVal_01(Pjp);   // ^ to Immed_x_01 Value
 #endif  // JUDYL
+            assert(0);
             return (0);
         }
 #ifdef JUDYL
@@ -1416,11 +1745,11 @@ JudyBranchB:
         Word_t  oldValue = ju_ImmVal_01(Pjp);
         ju_SetPntrInJp(Pjp, PjvRaw);     // put ^ to Value area in Pjp
 #endif  // JUDYL
-        uint8_t  *PImmed3 = ju_PImmed3(Pjp);
+        uint32_t  *PImmed3 = ju_PImmed3(Pjp);
         if (oldIndex < newIndex)           // sort
         {
-            JU_COPY3_LONG_TO_PINDEX(PImmed3 + 0, oldIndex);
-            JU_COPY3_LONG_TO_PINDEX(PImmed3 + 3, newIndex);
+            PImmed3[0] = oldIndex;
+            PImmed3[1] = newIndex;
 #ifdef JUDYL
             Pjv[0] = oldValue;
             Pjv[1] = 0;
@@ -1429,16 +1758,16 @@ JudyBranchB:
         }
         else
         {
-            JU_COPY3_LONG_TO_PINDEX(PImmed3 + 0, newIndex);
-            JU_COPY3_LONG_TO_PINDEX(PImmed3 + 3, oldIndex);
+            PImmed3[0] = newIndex;
+            PImmed3[1] = oldIndex;
 #ifdef JUDYL
             Pjv[0] = 0;
-            Pjpm->jpm_PValue = Pjv + 0;
             Pjv[1] = oldValue;
+            Pjpm->jpm_PValue = Pjv + 0;
 #endif /* JUDYL */
         }
         ju_SetJpType(Pjp, cJU_JPIMMED_3_02);
-        return (1);
+        goto successreturn;
     }
 
 // [4-7]_01 lead to [4-7]_02 for Judy1, and to leaves for JudyL:
@@ -1454,9 +1783,11 @@ JudyBranchB:
 
         if (oldIndex == newIndex)                       // Duplicate
         {
+            assert(0);
 #ifdef JUDYL
             Pjpm->jpm_PValue = ju_PImmVal_01(Pjp);      // ^ to Immed_x_01 Value
 #endif  // JUDYL
+            assert(0);
             return (0);
         }
 //      Note: Special knowledge: we know this is really 3 words
@@ -1490,181 +1821,172 @@ JudyBranchB:
 #endif /* JUDYL */
         }
         ju_SetJpType(Pjp, cJU_JPIMMED_4_02);
-        return (1);
+        goto successreturn;
     }
 
-    case cJU_JPIMMED_5_01:
+#ifdef JUDYL
+    case cJL_JPIMMED_5_01:
     {
-        Word_t  oldIndex = ju_IMM01Key(Pjp);
-        Word_t  newIndex = JU_TrimToIMM01(Index);
-
+        Word_t newIndex = JU_TrimToIMM01(Index);
+        Word_t oldIndex = ju_IMM01Key(Pjp);
         if (oldIndex == newIndex)
         {
-#ifdef JUDYL
             Pjpm->jpm_PValue = ju_PImmVal_01(Pjp);
-#endif  // JUDYL
+            assert(0);
             return (0);
         }
-#ifdef JUDYL
-        Word_t  Pjll5Raw = j__udyAllocJLL5(2, Pjpm);
+        int offset;
+        if (newIndex > oldIndex)
+            offset = 1;                         // sort
+        else
+            offset = 0;
+
+        Word_t  Pjll5Raw = j__udyAllocJLL5((Word_t)2, Pjpm);
         if (Pjll5Raw  == 0)
             return (-1);
         Pjll5_t Pjll5    = P_JLL5(Pjll5Raw);
-
-//      Put the LastKey in the Leaf5
-        Pjll5->jl5_LastKey = Index & cJU_DCDMASK(5);
-
-        uint8_t *PImmed5 = Pjll5->jl5_Leaf;     // bad name
         Pjv_t    Pjv     = JL_LEAF5VALUEAREA(Pjll5, 2);
-        Word_t  oldValue = ju_ImmVal_01(Pjp);
-#else   //JUDY1
-        uint8_t *PImmed5 = ju_PImmed5(Pjp);     // good name
-#endif  // JUDY1
-        if (oldIndex < newIndex)
-        {
-            JU_COPY5_LONG_TO_PINDEX(PImmed5 + 0, oldIndex);
-            JU_COPY5_LONG_TO_PINDEX(PImmed5 + 5, newIndex);
-#ifdef JUDYL
-            Pjv[0] = oldValue;
-            Pjv[1] = 0;
-            Pjpm->jpm_PValue = Pjv + 1;
-#endif /* JUDYL */
-        }
-        else
-        {
-            JU_COPY5_LONG_TO_PINDEX(PImmed5 + 0, newIndex);
-            JU_COPY5_LONG_TO_PINDEX(PImmed5 + 5, oldIndex);
-#ifdef JUDYL
-            Pjv[0] = 0;
-            Pjv[1] = oldValue;
-            Pjpm->jpm_PValue = Pjv + 0;
-#endif /* JUDYL */
-        }
-#ifdef JUDYL
+
+        Word_t oldValue = ju_ImmVal_01(Pjp);
+        Pjv[0]          = oldValue;
+        Pjv[1]          = oldValue;
+        Pjv[offset]     = 0;
+        Pjpm->jpm_PValue = Pjv + offset;
+
+//      Make all Keys at full 64 bit accuracy
+        oldIndex |= Index & cJU_DCDMASK(7);
+        JU_INSERTCOPY(Pjll5->jl5_Leaf, &oldIndex, 1, offset, Index);
+
+//      Put the LastKey in the Leaf5 (64 bit so no extra nonsense)
+        Pjll5->jl5_LastKey = Pjll5->jl5_Leaf[1];
+
         ju_SetLeafPop1(Pjp, 2);
         ju_SetJpType(Pjp, cJU_JPLEAF5);
         ju_SetPntrInJp(Pjp, Pjll5Raw);
-#else /* JUDY1 */
-        ju_SetJpType(Pjp, cJ1_JPIMMED_5_02);
-#endif /* JUDY1 */
-        return (1);
+        goto successreturn;
     }
-
-    case cJU_JPIMMED_6_01:
+    case cJL_JPIMMED_6_01:
     {
-        Word_t  oldIndex = ju_IMM01Key(Pjp);
-        Word_t  newIndex = JU_TrimToIMM01(Index);
-
+        Word_t newIndex = JU_TrimToIMM01(Index);
+        Word_t oldIndex = ju_IMM01Key(Pjp);
         if (oldIndex == newIndex)
         {
-#ifdef JUDYL
-            Pjpm->jpm_PValue = ju_PImmVal_01(Pjp);   // ^ to Immed_x_01 Value
-#endif  // JUDYL
+            Pjpm->jpm_PValue = ju_PImmVal_01(Pjp);
+            assert(0);
             return (0);
         }
-#ifdef JUDYL
-        Word_t Pjll6Raw = j__udyAllocJLL6(2, Pjpm);
-        if (Pjll6Raw == 0)
-            return (-1);
-        Pjll6_t Pjll6 = P_JLL6(Pjll6Raw);
-
-//      Put the LastKey in the Leaf6
-        Pjll6->jl6_LastKey = Index & cJU_DCDMASK(6);
-
-        uint8_t *PImmed6 = Pjll6->jl6_Leaf;     // bad name
-
-        Pjv_t   Pjv   = JL_LEAF6VALUEAREA(Pjll6, 2);
-        Word_t  oldValue = ju_ImmVal_01(Pjp);
-#else   // JUDY1
-        uint8_t *PImmed6 = ju_PImmed6(Pjp);     // good name
-#endif  // JUDY1
-
-        if (oldIndex < newIndex)
-        {
-            JU_COPY6_LONG_TO_PINDEX(PImmed6 + 0, oldIndex);
-            JU_COPY6_LONG_TO_PINDEX(PImmed6 + 6, newIndex);
-#ifdef JUDYL
-            Pjv[0] = oldValue;
-            Pjv[1] = 0;
-            Pjpm->jpm_PValue = Pjv + 1;
-#endif /* JUDYL */
-        }
+        int offset;
+        if (newIndex > oldIndex)
+            offset = 1;                         // sort
         else
-        {
-            JU_COPY6_LONG_TO_PINDEX(PImmed6 + 0, newIndex);
-            JU_COPY6_LONG_TO_PINDEX(PImmed6 + 6, oldIndex);
-#ifdef JUDYL
-            Pjv[0] = 0;
-            Pjpm->jpm_PValue = Pjv + 0;
-            Pjv[1] = oldValue;
-#endif /* JUDYL */
-        }
-#ifdef JUDYL
-        ju_SetLeafPop1(Pjp, 2);         // pop1 == 2
-        ju_SetJpType  (Pjp, cJU_JPLEAF6);
-        ju_SetPntrInJp(Pjp, Pjll6Raw);
-#else /* JUDY1 */
-        ju_SetJpType(Pjp, cJ1_JPIMMED_6_02);
-#endif /* JUDY1 */
-        return (1);
-    }
+            offset = 0;
 
-    case cJU_JPIMMED_7_01:
-    {
-        Word_t  oldIndex = ju_IMM01Key(Pjp);
-        Word_t  newIndex = JU_TrimToIMM01(Index);
-
-        if (oldIndex == newIndex)
-        {
-#ifdef JUDYL
-            Pjpm->jpm_PValue = ju_PImmVal_01(Pjp);   // ^ to Immed_x_01 Value
-#endif  // JUDYL
-            return (0);
-        }
-#ifdef JUDYL
-        Word_t  Pjll7Raw = j__udyAllocJLL7(2, Pjpm);
-        if (Pjll7Raw == 0)
+        Word_t  Pjll6Raw = j__udyAllocJLL6((Word_t)2, Pjpm);
+        if (Pjll6Raw  == 0)
             return (-1);
-        Pjll7_t Pjll7  = P_JLL7(Pjll7Raw);
+        Pjll6_t Pjll6    = P_JLL6(Pjll6Raw);
+        Pjv_t    Pjv     = JL_LEAF6VALUEAREA(Pjll6, 2);
 
-//      Put the LastKey in the Leaf7
-        Pjll7->jl7_LastKey = Index & cJU_DCDMASK(7);
+        Word_t oldValue = ju_ImmVal_01(Pjp);
+//      Do it without branches
+        Pjv[0]          = oldValue;
+        Pjv[1]          = oldValue;
+        Pjv[offset]     = 0;
+        Pjpm->jpm_PValue = Pjv + offset;
 
-        uint8_t *PImmed7  = Pjll7->jl7_Leaf;    // bad name
-        Pjv_t    Pjv      = JL_LEAF7VALUEAREA(Pjll7, 2);
-        Word_t   oldValue = ju_ImmVal_01(Pjp);
-#else   // JUDY1
-        uint8_t *PImmed7 = ju_PImmed7(Pjp);       // good name
-#endif  // JUDY1
-        if (oldIndex < newIndex)
-        {
-            JU_COPY7_LONG_TO_PINDEX(PImmed7 + 0, oldIndex);
-            JU_COPY7_LONG_TO_PINDEX(PImmed7 + 7, newIndex);
-#ifdef JUDYL
-            Pjv[0] = oldValue;
-            Pjv[1] = 0;
-            Pjpm->jpm_PValue = Pjv + 1;
-#endif /* JUDYL */
-        }
-        else
-        {
-            JU_COPY7_LONG_TO_PINDEX(PImmed7 + 0, newIndex);
-            JU_COPY7_LONG_TO_PINDEX(PImmed7 + 7, oldIndex);
-#ifdef JUDYL
-            Pjv[0] = 0;
-            Pjpm->jpm_PValue = Pjv + 0;
-            Pjv[1] = oldValue;
-#endif /* JUDYL */
-        }
-#ifdef JUDYL
+//      Make all Keys at full 64 bit accuracy
+        oldIndex |= Index & cJU_DCDMASK(7);
+        JU_INSERTCOPY(Pjll6->jl6_Leaf, &oldIndex, 1, offset, Index);
+
+//      Put the LastKey in the Leaf6 (64 bit so no extra nonsense)
+        Pjll6->jl6_LastKey = Pjll6->jl6_Leaf[1];
+
         ju_SetLeafPop1(Pjp, 2);
-        ju_SetJpType  (Pjp, cJU_JPLEAF7);
-        ju_SetPntrInJp(Pjp, Pjll7Raw);
-#else /* JUDY1 */
-        ju_SetJpType(Pjp, cJ1_JPIMMED_7_02);
-#endif /* JUDY1 */
-        return (1);
+        ju_SetJpType(Pjp, cJU_JPLEAF6);
+        ju_SetPntrInJp(Pjp, Pjll6Raw);
+        goto successreturn;
     }
+    case cJL_JPIMMED_7_01:
+    {
+        Word_t newIndex = JU_TrimToIMM01(Index);
+        Word_t oldIndex = ju_IMM01Key(Pjp);
+
+        if (oldIndex == newIndex)
+        {
+            Pjpm->jpm_PValue = ju_PImmVal_01(Pjp);
+            assert(0);
+            return (0);
+        }
+        int offset;
+        if (newIndex > oldIndex)
+            offset = 1;                         // sort
+        else
+            offset = 0;
+
+        Word_t  Pjll7Raw = j__udyAllocJLL7((Word_t)2, Pjpm);
+        if (Pjll7Raw  == 0)
+            return (-1);
+        Pjll7_t Pjll7    = P_JLL7(Pjll7Raw);
+        Pjv_t    Pjv     = JL_LEAF7VALUEAREA(Pjll7, 2);
+
+        Word_t oldValue = ju_ImmVal_01(Pjp);
+//      Do it without branches
+        Pjv[0]          = oldValue;
+        Pjv[1]          = oldValue;
+        Pjv[offset]     = 0;
+        Pjpm->jpm_PValue = Pjv + offset;
+
+//      Make all Keys at full 64 bit accuracy
+        oldIndex |= Index & cJU_DCDMASK(7);
+        JU_INSERTCOPY(Pjll7->jl7_Leaf, &oldIndex, 1, offset, Index);
+
+//      Put the LastKey in the Leaf7 (64 bit so no extra nonsense)
+        Pjll7->jl7_LastKey = Pjll7->jl7_Leaf[1];
+
+        ju_SetLeafPop1(Pjp, 2);
+        ju_SetJpType(Pjp, cJU_JPLEAF7);
+        ju_SetPntrInJp(Pjp, Pjll7Raw);
+        goto successreturn;
+    }
+#endif  // JUDYL
+
+#ifdef  JUDY1 
+    case cJ1_JPIMMED_5_01:
+        jpLevel = cJ1_JPIMMED_5_02;     // not really jpLevel, but handy below
+        goto Immed01to02;
+
+    case cJ1_JPIMMED_6_01:
+        jpLevel = cJ1_JPIMMED_6_02;     // not really jpLevel, but handy below
+        goto Immed01to02;
+
+    case cJ1_JPIMMED_7_01:
+    {
+        Word_t Key0;
+        Word_t Key1;
+        jpLevel = cJ1_JPIMMED_7_02;     // not really jpLevel, but handy below
+
+  Immed01to02:
+        Key0 = ju_IMM01Key(Pjp);
+        Key1 = JU_TrimToIMM01(Index);
+//      Need high byte from Immed_x_01 7 byte Key?????
+        if (Key0 == Key1)
+        {
+            assert(0);
+            return (0);
+        }
+//      Sort so that Key1 is greater than Key0
+        if (Key0 > Key1)                // Sort with just registers
+        {
+            Key0 = Key0 ^ Key1;         // Swap Key0 with Key1
+            Key1 = Key0 ^ Key1;
+            Key0 = Key0 ^ Key1;
+        }
+        Key0 |= Index & cJU_DCDMASK(7);
+        Key1 |= Index & cJU_DCDMASK(7);
+        ju_SetIMM02(Pjp, Key0, Key1, jpLevel);  // for here
+        goto successreturn;
+    }
+#endif  // JUDY1
 
 // cJU_JPIMMED_1_* cases that can grow in place:
 //
@@ -1698,6 +2020,7 @@ JudyBranchB:
 #ifdef JUDYL
             Pjpm->jpm_PValue = Pjv + offset;
 #endif /* JUDYL */
+            assert(0);
             return (0);
         }
         offset = ~offset;
@@ -1723,7 +2046,7 @@ JudyBranchB:
         Pjpm->jpm_PValue = Pjv + offset;                // new value area.
 #endif // JUDYL
         ju_SetJpType(Pjp, ju_Type(Pjp) + 1);
-        return (1);
+        goto successreturn;
     }
 
 // cJU_JPIMMED_1_* cases that must cascade:
@@ -1743,29 +2066,37 @@ JudyBranchB:
         int offset = j__udySearchImmed1(PImmed1, cJU_IMMED1_MAXPOP1, Index, 1 * 8);
 
 #ifdef  JUDYL
-        Word_t PjvRaw = RawJpPntr;              // Value area
-        Pjv_t  Pjv    = P_JV(PjvRaw);
+        Word_t PjvRaw    = RawJpPntr;              // Value area
+        Pjv_t  Pjv       = P_JV(PjvRaw);
         Pjpm->jpm_PValue = Pjv + offset;
 #endif  // JUDYL
 
         if (offset >= 0)
+        {
+            assert(0);
             return (0);         // Duplicate
-
+        }
+//        offset = ~offset;  only used for Value offset
 
 #ifdef  JUDY1
+//        printf("\n# --- Pop1 at 1st cJ1_JPIMMED_1_15 splay = %lu jptype = %d\n", j__udyJPPop1(PPjp), ju_Type(PPjp));
 //      Produce a LeafB1
-	Word_t PjlbRaw = j__udyAllocJLB1(Pjpm);
+	Word_t PjlbRaw = j__udyAllocJLB1U(Pjpm);
 	if (PjlbRaw == 0)
             return(-1);
 	Pjlb_t Pjlb    = P_JLB1(PjlbRaw);
+
+        Pjlb->jlb_LastKey = (Index & cJU_DCDMASK(1)) 
+            | PImmed1[cJU_IMMED1_MAXPOP1 - 1];     
 
 //	Copy 1 byte index Leaf to bitmap Leaf
 	for (int off = 0; off < cJU_IMMED1_MAXPOP1; off++)
             JU_BITMAPSETL(Pjlb, PImmed1[off]);
 
-        ju_SetDcdPop0(Pjp, Index & cJU_DCDMASK(1));     // NOTE: no Pop0
+        ju_SetDcdPop0(Pjp, Index & cJU_DCDMASK(1));     
+
         ju_SetPntrInJp(Pjp, PjlbRaw);
-        ju_SetJpType(Pjp, cJU_JPLEAF_B1);
+        ju_SetJpType(Pjp, cJU_JPLEAF_B1U);
 #endif  // JUDY1
 
 #ifdef  JUDYL
@@ -1774,13 +2105,10 @@ JudyBranchB:
         if (Pjll1newRaw == 0)
             return (-1);
         Pjll1_t Pjll1new = P_JLL1(Pjll1newRaw);
-
-//      Put the LastKey in the Leaf1
-        Pjll1new->jl1_LastKey = Index & cJU_DCDMASK(1);
-
         JU_COPYMEM(Pjll1new->jl1_Leaf, PImmed1, cJU_IMMED1_MAXPOP1);
-//        JU_PADLEAF1(Pjll1new->jl1_Leaf, cJU_IMMED1_MAXPOP1); we havent done the Insert yet
 
+//      Note: Pjll1new->jl1_LastKey is set when the Insert Leaf1 is done
+         
 //      fill sub-expanse counts to the new Leaf1, NOT old PImmed1 (overwrite!)
         Word_t Counts = 0;
         for (int loff = 0; loff < cJU_IMMED1_MAXPOP1; loff++) 
@@ -1831,6 +2159,7 @@ JudyBranchB:
 #ifdef JUDYL
             Pjpm->jpm_PValue = Pjv + offset;
 #endif /* JUDYL */
+            assert(0);
             return (0);
         }
         offset = ~offset;
@@ -1857,9 +2186,10 @@ JudyBranchB:
 #endif // JUDYL
 
         ju_SetJpType(Pjp, ju_Type(Pjp) + 1);
-        return (1);
+        goto successreturn;
     }
 
+//      Terminal size, convert to something else
 #ifdef JUDYL
     case cJL_JPIMMED_2_04:
 #else /* JUDY1 */
@@ -1879,70 +2209,52 @@ JudyBranchB:
 #ifdef JUDYL
             Pjpm->jpm_PValue = PjvOld + offset;
 #endif /* JUDYL */
+            assert(0);
             return (0);
         }
         offset = ~offset;
-        Word_t Pjll2newRaw = j__udyAllocJLL2(exppop1 + 1, Pjpm);
-        if (Pjll2newRaw == 0)
+        Word_t Pjll2Raw = j__udyAllocJLL2(exppop1 + 1, Pjpm);
+        if (Pjll2Raw == 0)
             return (-1);
-        Pjll2_t Pjll2new = P_JLL2(Pjll2newRaw);
+        Pjll2_t Pjll2 = P_JLL2(Pjll2Raw);
 
-//      Put the Dcd in the Leaf2
-        Pjll2new->jl2_LastKey = Index & cJU_DCDMASK(2);
+        JU_INSERTCOPY(Pjll2->jl2_Leaf, PImmed2, exppop1, offset, Index);
+        JU_PADLEAF2(Pjll2->jl2_Leaf, exppop1 + 1);       // only needed for Parallel search
 
-        JU_INSERTCOPY(Pjll2new->jl2_Leaf, PImmed2, exppop1, offset, Index);
-        JU_PADLEAF2(Pjll2new->jl2_Leaf, exppop1 + 1);
+//      Do it every time because the next Insert to Leaf2 may be too late
+        Pjll2->jl2_LastKey = Pjll2->jl2_Leaf[exppop1] | (Index & cJU_DCDMASK(2));
 
-//      fill sub-expanse counts to the new Leaf1, NOT old PImmed2 (overwrite!)
+//      fill sub-expanse counts to the  Leaf1, NOT old PImmed2 (overwrite!)
         Word_t Counts = 0;
         for (int loff = 0; loff < (exppop1 + 1); loff++) 
         {       // bump the sub-expanse determined by hi 3 bits of Key
-            uint16_t  subexp = Pjll2new->jl2_Leaf[loff] >> (16 - 3);
+            uint16_t  subexp = Pjll2->jl2_Leaf[loff] >> (16 - 3);
             Counts += ((Word_t)1) << (subexp * 8);      // add 1 to sub-expanse
         }
         Pjp->jp_subLeafPops = Counts;      // place all 8 SubExps populations
+
 #ifdef JUDYL
-        Pjv_t   Pjvnew = JL_LEAF2VALUEAREA(Pjll2new, exppop1 + 1);
-        JU_INSERTCOPY(Pjvnew, PjvOld, exppop1, offset, 0);
+        Pjv_t   Pjv = JL_LEAF2VALUEAREA(Pjll2, exppop1 + 1);
+        JU_INSERTCOPY(Pjv, PjvOld, exppop1, offset, 0);
         j__udyLFreeJV(PjvOldRaw, /* 4 */ exppop1, Pjpm);
-        Pjpm->jpm_PValue = Pjvnew + offset;
+        Pjpm->jpm_PValue = Pjv + offset;
 #endif  // JUDYL
 
 // not nec?        Word_t D_P0 = (Index & cJU_DCDMASK(2)) + exppop1 - 1;
-//        JU_JPSETADT(Pjp, PjllRaw, D_P0, cJU_JPLEAF2);
 // not nec?        ju_SetDcdPop0(Pjp, D_P0);
         ju_SetLeafPop1(Pjp, exppop1 + 1);
         ju_SetJpType(Pjp, cJU_JPLEAF2);
-        ju_SetPntrInJp(Pjp, Pjll2newRaw);      // Combine these 3 !!!!!!!!!!!!!!
-        return (1);
+        ju_SetPntrInJp(Pjp, Pjll2Raw);      // Combine these 3 !!!!!!!!!!!!!!
+        goto successreturn;
     }
 
 // (3_01 => [ 3_02 => [ 3_03..05 => ]] LeafL)
-#ifdef JUDY1
-    case cJ1_JPIMMED_3_02:
-    case cJ1_JPIMMED_3_03:
-    case cJ1_JPIMMED_3_04:
-    {   // increase Pop of IMMED_3
-        uint8_t *PImmed3 = ju_PImmed3(Pjp);
-
-        exppop1 = ju_Type(Pjp) - (cJU_JPIMMED_3_02) + 2;
-        int offset = j__udySearchImmed3(PImmed3, exppop1, Index, 3 * 8);
-        if (offset >= 0)
-            return (0);
-        offset = ~offset;
-        JU_INSERTINPLACE3(PImmed3, exppop1, offset, Index);
-        ju_SetJpType(Pjp, ju_Type(Pjp) + 1);
-        return (1);
-    }
-
-    case cJ1_JPIMMED_3_05:
-#endif  //JUDY1
 
 #ifdef JUDYL
     case cJL_JPIMMED_3_02:
 #endif  // JUDYL
     {   // Convert IMMED to Leaf3
-        uint8_t *PImmed3 = ju_PImmed3(Pjp);
+        uint32_t *PImmed3 = ju_PImmed3(Pjp);
 
 #ifdef JUDYL
         Word_t  PjvOldRaw = RawJpPntr;
@@ -1956,182 +2268,262 @@ JudyBranchB:
 #ifdef JUDYL
             Pjpm->jpm_PValue = PjvOld + offset;
 #endif /* JUDYL */
+            assert(0);
             return (0);
         }
         offset = ~offset;
-        Word_t Pjll3newRaw = j__udyAllocJLL3(exppop1 + 1, Pjpm);
-        if (Pjll3newRaw == 0)
+        Word_t Pjll3Raw = j__udyAllocJLL3(exppop1 + 1, Pjpm);
+        if (Pjll3Raw == 0)
             return (-1);
-        Pjll3_t Pjll3new = P_JLL3(Pjll3newRaw);
+        Pjll3_t Pjll3 = P_JLL3(Pjll3Raw);
+        JU_INSERTCOPY3(Pjll3->jl3_Leaf, PImmed3, exppop1, offset, Index);
+        JU_PADLEAF3(Pjll3->jl3_Leaf, exppop1 + 1);       // only needed for Parallel search
 
-//      Put the LastKey in the Leaf3
-        Pjll3new->jl3_LastKey = Index & cJU_DCDMASK(3);
+//      Do it every time because the next Insert to Leaf3 may be too late
+        Pjll3->jl3_LastKey = Pjll3->jl3_Leaf[exppop1] | (Index & cJU_DCDMASK(3));
 
-        JU_INSERTCOPY3(Pjll3new->jl3_Leaf, PImmed3, exppop1, offset, Index);
 #ifdef JUDYL
-        Pjv_t Pjvnew = JL_LEAF3VALUEAREA(Pjll3newRaw, exppop1 + 1);
-        JU_INSERTCOPY(Pjvnew, PjvOld, exppop1, offset, 0);
+        Pjv_t Pjv = JL_LEAF3VALUEAREA(Pjll3Raw, exppop1 + 1);
+        JU_INSERTCOPY(Pjv, PjvOld, exppop1, offset, 0);
         j__udyLFreeJV(PjvOldRaw, exppop1, Pjpm);
-        Pjpm->jpm_PValue = Pjvnew + offset;
+        Pjpm->jpm_PValue = Pjv + offset;
 #endif  // JUDYL
-// not nec?        Word_t  D_P0 = (Index & cJU_DCDMASK(3)) + exppop1 - 1;
-//        JU_JPSETADT(Pjp, PjllRaw, D_P0, cJU_JPLEAF3);
-        ju_SetPntrInJp(Pjp, Pjll3newRaw);      // Combine all 3?
-// not nec?        ju_SetDcdPop0(Pjp, D_P0);
-        ju_SetLeafPop1(Pjp, exppop1 + 1);  // New Leaf
+        ju_SetPntrInJp(Pjp, Pjll3Raw);       // Combine all 3?
+        ju_SetLeafPop1(Pjp, exppop1 + 1);       // New Leaf
         ju_SetJpType(Pjp, cJU_JPLEAF3);
-        return (1);
+        goto successreturn;
     }
 
-// (4_01 => [[ 4_02..03 => ]] LeafL)
+//      Terminal size for JUDYL, convert to something else
+#ifdef  JUDYL
     case cJU_JPIMMED_4_02:
     {
         uint32_t *PImmed4 = ju_PImmed4(Pjp);
         int       offset  = j__udySearchImmed4(PImmed4, 2, Index, 4 * 8);
-#ifdef  JUDYL
         Word_t PjvRaw     = RawJpPntr;
         Pjv_t  Pjv        = P_JV(PjvRaw);               // corresponding values.
-#endif  // JUDYL
         if (offset >= 0)
         {
-#ifdef  JUDYL
             Pjpm->jpm_PValue = Pjv + offset;
-#endif  // JUDYL
+            assert(0);
             return (0);
         }
         offset = ~offset;
-#ifdef JUDYL
-        Word_t Pjll4newRaw = j__udyAllocJLL4(2 + 1, Pjpm);
-        if (Pjll4newRaw == 0)
+        Word_t Pjll4Raw = j__udyAllocJLL4((Word_t)2 + 1, Pjpm);
+        if (Pjll4Raw == 0)
             return (-1);
-        Pjll4_t Pjll4new = P_JLL4(Pjll4newRaw);
+        Pjll4_t Pjll4 = P_JLL4(Pjll4Raw);
+        JU_INSERTCOPY(Pjll4->jl4_Leaf, PImmed4, 2, offset, Index);
+        JU_PADLEAF4(Pjll4->jl4_Leaf, 2 + 1);       // only needed for Parallel search
 
-//      Put the LastKey in the Leaf4
-        Pjll4new->jl4_LastKey = Index & cJU_DCDMASK(4);
+//      Do it every time because the next Insert to Leaf4 may be too late
+        Pjll4->jl4_LastKey = Pjll4->jl4_Leaf[2] | (Index & cJU_DCDMASK(4));
 
-        JU_INSERTCOPY(Pjll4new->jl4_Leaf, PImmed4, 2, offset, Index);
-        Pjv_t Pjvnew = JL_LEAF4VALUEAREA(Pjll4new, 2 + 1);
+        Pjv_t Pjvnew = JL_LEAF4VALUEAREA(Pjll4, 2 + 1);
         JU_INSERTCOPY(Pjvnew, Pjv, 2, offset, 0);
-        Pjpm->jpm_PValue = Pjvnew + offset;                // new value area.
+        Pjpm->jpm_PValue = Pjvnew + offset;                //  value area.
         j__udyLFreeJV(PjvRaw, 2, Pjpm);
 
-        ju_SetPntrInJp(Pjp, Pjll4newRaw);
-        ju_SetLeafPop1(Pjp, 3);
+        ju_SetPntrInJp(Pjp, Pjll4Raw);
+        ju_SetLeafPop1(Pjp, 2 + 1);
         ju_SetJpType(Pjp, cJU_JPLEAF4);
-#else   // JUDY1
-        JU_INSERTINPLACE(PImmed4, 2, offset, Index);
-        ju_SetJpType(Pjp, cJ1_JPIMMED_4_03);
-#endif  // JUDY1
-        return (1);
+        goto successreturn;
     }
+#endif  // JUDYL
 
 #ifdef  JUDY1
+    case cJ1_JPIMMED_3_02:
+    {   // increase Pop of IMMED_3
+        uint32_t *PImmed3 = ju_PImmed3(Pjp);
+
+        exppop1 = 2;
+        int offset = j__udySearchImmed3(PImmed3, exppop1, Index, 3 * 8);
+        if (offset >= 0)
+        {
+            assert(0);
+            return (0);
+        }
+        offset = ~offset;
+        JU_INSERTINPLACE3(PImmed3, exppop1, offset, Index);
+        ju_SetJpType(Pjp, cJ1_JPIMMED_3_03);
+        goto successreturn;
+    }
+//      Terminal size, convert to Leaf3
+    case cJ1_JPIMMED_3_03:
+    {   // Convert IMMED to Leaf3
+        uint32_t *PImmed3 = ju_PImmed3(Pjp);
+
+        exppop1 = ju_Type(Pjp) - cJU_JPIMMED_3_02 + 2;
+        int offset = j__udySearchImmed3(PImmed3, exppop1, Index, 3 * 8);
+        if (offset >= 0)
+        {
+            assert(0);
+            return (0);
+        }
+        offset = ~offset;
+        Word_t Pjll3Raw = j__udyAllocJLL3(exppop1 + 1, Pjpm);
+        if (Pjll3Raw == 0)
+            return (-1);
+        Pjll3_t Pjll3 = P_JLL3(Pjll3Raw);
+        JU_INSERTCOPY3(Pjll3->jl3_Leaf, PImmed3, exppop1, offset, Index);
+        JU_PADLEAF3(Pjll3->jl3_Leaf, exppop1 + 1);       // only needed for Parallel search
+
+//      Do it every time because the next Insert to Leaf3 may be too late
+        Pjll3->jl3_LastKey = Pjll3->jl3_Leaf[exppop1] | (Index & cJU_DCDMASK(3));
+
+        ju_SetPntrInJp(Pjp, Pjll3Raw);          // Combine all 3?
+        ju_SetLeafPop1(Pjp, exppop1 + 1);       // New Leaf
+        ju_SetJpType(Pjp, cJU_JPLEAF3);
+        goto successreturn;
+    }
+ 
+    case cJ1_JPIMMED_4_02:
+    {
+        uint32_t *PImmed4 = ju_PImmed4(Pjp);
+        int       offset  = j__udySearchImmed4(PImmed4, 2, Index, 4 * 8);
+        if (offset >= 0)
+        {
+            assert(0);
+            return (0);
+        }
+        offset = ~offset;
+        JU_INSERTINPLACE(PImmed4, 2, offset, Index);
+        ju_SetJpType(Pjp, cJ1_JPIMMED_4_03);
+        goto successreturn;
+    }
+
+//      Terminal size, convert to something else
     case cJ1_JPIMMED_4_03:
     {
         uint32_t *PImmed4 = ju_PImmed4(Pjp);
         int offset = j__udySearchImmed4(PImmed4, 3, Index, 4 * 8);
         if (offset >= 0)
+        {
+            assert(0);
             return (0);
+        }
         offset = ~offset;
-        Word_t Pjll4newRaw = j__udyAllocJLL4((3) + 1, Pjpm);
-        if (Pjll4newRaw == 0)
+        Word_t Pjll4Raw = j__udyAllocJLL4((Word_t)3 + 1, Pjpm);
+        if (Pjll4Raw == 0)
             return (-1);
-        Pjll4_t Pjll4new = P_JLL4(Pjll4newRaw);
+        Pjll4_t Pjll4 = P_JLL4(Pjll4Raw);
+        JU_INSERTCOPY(Pjll4->jl4_Leaf, PImmed4, 3, offset, Index);
 
-//      Put the LastKey in the Leaf4
-        Pjll4new->jl4_LastKey = Index & cJU_DCDMASK(4);
+//      Do it every time because the next Insert to Leaf3 may be too late
+        Pjll4->jl4_LastKey = Pjll4->jl4_Leaf[3] | (Index & cJU_DCDMASK(4));
 
-        JU_INSERTCOPY(Pjll4new->jl4_Leaf, PImmed4, 3, offset, Index);
-        ju_SetPntrInJp(Pjp, Pjll4newRaw);
+        ju_SetPntrInJp(Pjp, Pjll4Raw);
         ju_SetLeafPop1(Pjp, 3 + 1);
         ju_SetJpType(Pjp, cJ1_JPLEAF4);
-        return (1);
+        goto successreturn;
     }
 
-// (5_01 => [[ 5_02..03 => ]] LeafL)
+//      Terminal size, convert to Leaf
     case cJ1_JPIMMED_5_02:
     {
-        uint8_t *PImmed5 = ju_PImmed5(Pjp);
-        exppop1 = 2;
-        int offset = j__udySearchImmed5(PImmed5, exppop1, Index, 5 * 8);
-        if (offset >= 0)
-            return (0);
-        offset = ~offset;
-        JU_INSERTINPLACE5(PImmed5, exppop1, offset, Index);
-        ju_SetJpType(Pjp, cJ1_JPIMMED_5_03);
-        return (1);
-    }
+        Word_t StageIMM5[2];
+        StageIMM5[0] = ju_IMM01Key(Pjp) | (Index & cJU_DCDMASK(7));
+        StageIMM5[1] = ju_IMM02Key(Pjp) | (Index & cJU_DCDMASK(7));
 
-    case cJ1_JPIMMED_5_03:
-    {
-        uint8_t *PImmed5 = ju_PImmed5(Pjp);
-        int offset = j__udySearchImmed5(PImmed5, 3, Index, 5 * 8);
+        int offset = j__udy1SearchImm02(Pjp, Index);
         if (offset >= 0)
+        {
+            assert(0);
             return (0);
+        }
         offset = ~offset;
-        Word_t Pjll5Raw = j__udyAllocJLL5(3 + 1, Pjpm);
+
+        Word_t Pjll5Raw = j__udyAllocJLL5((Word_t)2 + 1, Pjpm);
         if (Pjll5Raw == 0)
             return (-1);
         Pjll5_t Pjll5 = P_JLL5(Pjll5Raw);
+        JU_INSERTCOPY5(Pjll5->jl5_Leaf, StageIMM5, 2, offset, Index);
 
-//      Put the LastKey in the Leaf5
-        Pjll5->jl5_LastKey = Index & cJU_DCDMASK(5);
+//      Do it every time because the next Insert to Leaf5 may be too late
+        Pjll5->jl5_LastKey = Pjll5->jl5_Leaf[2];
 
-        JU_INSERTCOPY5(Pjll5->jl5_Leaf, PImmed5, 3, offset, Index);
         ju_SetPntrInJp(Pjp, Pjll5Raw);
-        ju_SetLeafPop1(Pjp, 3 + 1);
-        ju_SetJpType(Pjp, cJU_JPLEAF5);
-        return (1);
+        ju_SetLeafPop1(Pjp, 2 + 1);
+        ju_SetJpType(Pjp, cJ1_JPLEAF5);
+        goto successreturn;
     }
 
-// (6_01 => [[ 6_02 => ]] LeafL)
+//      Terminal size, convert to Leaf
     case cJ1_JPIMMED_6_02:
     {
-        uint8_t *PImmed6 = ju_PImmed6(Pjp);
-        int offset = j__udySearchImmed6(PImmed6, 2, Index, 6 * 8);
+        Word_t StageIMM6[2];
+        StageIMM6[0] = ju_IMM01Key(Pjp) | (Index & cJU_DCDMASK(7));
+        StageIMM6[1] = ju_IMM02Key(Pjp) | (Index & cJU_DCDMASK(7)); 
+        int offset = j__udy1SearchImm02(Pjp, Index);
         if (offset >= 0)
+        {
+            assert(0);
             return (0);
+        }
         offset = ~offset;
-        Word_t Pjll6Raw = j__udyAllocJLL6(2 + 1, Pjpm);
+        Word_t Pjll6Raw = j__udyAllocJLL6((Word_t)2 + 1, Pjpm);
         if (Pjll6Raw == 0)
             return (-1);
         Pjll6_t Pjll6 = P_JLL6(Pjll6Raw);
 
-//      Put the LastKey in the Leaf6
-        Pjll6->jl6_LastKey = Index & cJU_DCDMASK(6);
+        JU_INSERTCOPY6(Pjll6->jl6_Leaf, StageIMM6, 2, offset, Index);
 
-        JU_INSERTCOPY6(Pjll6->jl6_Leaf, PImmed6, 2, offset, Index);
+//      Do it every time because the next Insert to Leaf5 may be too late
+        Pjll6->jl6_LastKey = Pjll6->jl6_Leaf[2];
+
         ju_SetPntrInJp(Pjp, Pjll6Raw);
         ju_SetLeafPop1(Pjp, 2 + 1);
-        ju_SetJpType(Pjp, cJU_JPLEAF6);
-        return (1);
+        ju_SetJpType(Pjp, cJ1_JPLEAF6);
+        goto successreturn;
     }
 
-// (7_01 => [[ 7_02 => ]] LeafL)
+//      Terminal size, convert to Leaf
     case cJ1_JPIMMED_7_02:
     {
-        uint8_t *PImmed7 = ju_PImmed7(Pjp);
-        int      offset = j__udySearchImmed7(PImmed7, 2, Index, 7 * 8);
+        Word_t StageIMM7[2];
+        StageIMM7[0] = ju_IMM01Key(Pjp) | (Index & cJU_DCDMASK(7));
+        StageIMM7[1] = ju_IMM02Key(Pjp) | (Index & cJU_DCDMASK(7)); 
+        int offset = j__udy1SearchImm02(Pjp, Index);
         if (offset >= 0)
+        {
+            assert(0);
             return (0);
+        }
         offset = ~offset;
-        Word_t Pjll7Raw = j__udyAllocJLL7(2 + 1, Pjpm);
+        Word_t Pjll7Raw = j__udyAllocJLL7((Word_t)2 + 1, Pjpm);
         if (Pjll7Raw == 0)
             return (-1);
         Pjll7_t Pjll7 = P_JLL7(Pjll7Raw);
-//      Put the LastKey in the Leaf7
-        Pjll7->jl7_LastKey = Index & cJU_DCDMASK(7);
-        JU_INSERTCOPY7(Pjll7->jl7_Leaf, PImmed7, 2, offset, Index);
+
+        JU_INSERTCOPY7(Pjll7->jl7_Leaf, StageIMM7, 2, offset, Index);
+
+//      Do it every time because the next Insert to Leaf5 may be too late
+        Pjll7->jl7_LastKey = Pjll7->jl7_Leaf[2];
+
         ju_SetPntrInJp(Pjp, Pjll7Raw);
         ju_SetLeafPop1(Pjp, 2 + 1);
-        ju_SetJpType(Pjp, cJU_JPLEAF7);
-        return (7);
+        ju_SetJpType(Pjp, cJ1_JPLEAF7);
+        goto successreturn;
     }
 #endif /* JUDY1 */
 
 // ****************************************************************************
 // INVALID JP TYPE:
     default:
+
+#ifdef  DEBUG
+    if (PPjp) printf("\nOOps JudyIns: ju_Type(PPjp) = %d\n", ju_Type(PPjp));
+    printf("\nOOps JudyIns: ju_Type(Pjp) = %d\n", ju_Type(Pjp));
+#ifdef  TRACEJPI
+    startpop      = -(Word_t)1;
+    j__udyEnabled = TRUE;
+    JudyPrintJP(PPjp, "i PPjp", __LINE__, Index, Pjpm);
+    JudyPrintJP(Pjp, "i Pjp", __LINE__, Index, Pjpm);
+#endif  // TRACEJPI
+    assert(0);
+    exit(-1);
+#endif  //  DEBUG
+
         JU_SET_ERRNO_NONNULL(Pjpm, JU_ERRNO_CORRUPT);
         return (-1);
     } // end of switch on JP type
@@ -2140,7 +2532,18 @@ JudyBranchB:
 //
 // For non-Immed JP types, if successful, post-increment the population count
 // at this Level.
-    retcode = j__udyInsWalk(Pjp, Index, Pjpm);
+    retcode = j__udyInsWalk(Pjp, PPjp, Index, Pjpm);
+
+//#ifdef JUDY1
+        if (retcode == 0) return (0);               // == JU_RET_*_JPM().
+//#endif  // JUDY1
+
+#ifdef  PCAS
+//    if (retcode >= 2)
+//    {
+//        printf("#----Cascade%d, jp_t = %d\n", retcode, ju_Type(PPjp));
+//    }
+#endif  // PCAS
 
 //  Successful insert, increment JP and subexpanse count:
     if (retcode > 0)
@@ -2148,12 +2551,13 @@ JudyBranchB:
 //      Need to increment population of every Branch up the tree
         if (ju_Type(Pjp) <= cJU_JPMAXBRANCH)    
         {
+            PPjp = Pjp;
             Word_t DcdP0 = ju_DcdPop0(Pjp) + 1;
             ju_SetDcdPop0(Pjp, DcdP0);  // update DcdP0 by + 1
         }
-        retcode = 1;
     }
-    return (retcode);
+ successreturn:
+    return (1);
 }                                       // j__udyInsWalk()
 
 // ****************************************************************************
@@ -2182,13 +2586,28 @@ FUNCTION PPvoid_t JudyLIns(PPvoid_t PPArray,    // in which to insert.
     if (PPArray == (PPvoid_t) NULL)
     {
         JU_SET_ERRNO(PJError, JU_ERRNO_NULLPPARRAY);
-#ifdef JUDY1
+#ifdef  JUDY1
         return (JERRI);
-#else /* JUDYL */
+#endif  // JUDY1
+#ifdef  JUDYL
         return (PPJERR);
-#endif /* JUDYL */
+#endif  // JUDYL
     }
-    Pjll8_t Pjll8 = P_JLL8(*PPArray);   // first word of leaf (always TotalPop0)
+    Word_t Pjll8Raw = (Word_t)*PPArray;
+
+#ifndef noPREGETTEST
+#ifdef JUDY1
+    int retcode = Judy1Test((Pvoid_t)Pjll8Raw, Index, PJE0);
+    if (retcode == 1)
+        return((Word_t)0);                      // fail to do insert
+#else   // JUDYL
+     PPvoid_t PPvalue = JudyLGet((Pvoid_t)Pjll8Raw, Index, PJE0);
+    if (PPvalue != (PPvoid_t) NULL)          
+        return ((PPvoid_t)PPvalue);            // fail to do insert
+#endif  // JUDYL
+#endif  // noPREGETTEST
+
+    Pjll8_t Pjll8   = P_JLL8(Pjll8Raw);   // first word of leaf (always TotalPop0)
 
 // ****************************************************************************
 // PROCESS TOP LEVEL "JRP" BRANCHES AND LEAVES:
@@ -2199,9 +2618,9 @@ FUNCTION PPvoid_t JudyLIns(PPvoid_t PPArray,    // in which to insert.
 // ****************************************************************************
 
 // if a valid empty array (null pointer), so create an array of population == 1:
-    if (Pjll8 == (Pjll8_t) NULL)
+    if (Pjll8Raw == 0)
     {
-        Word_t    Pjll8Raw = (Word_t)j__udyAllocJLL8(1);        // currently 3 words
+        Pjll8Raw = j__udyAllocJLL8((Word_t)1);        // currently 3 words
         if (Pjll8Raw == 0)
         { // out of memory
             JU_SET_ERRNO(PJError, JU_ERRNO_NOMEM);
@@ -2225,39 +2644,21 @@ FUNCTION PPvoid_t JudyLIns(PPvoid_t PPArray,    // in which to insert.
         return ((PPvoid_t) (Pjv + 0));
 #endif  // JUDYL
     }                                   // NULL JRP
+
 // ****************************************************************************
-//  ELSE more Keys than 1
+//  ELSE more than 0 Keys
 // ****************************************************************************
-
-
-#ifdef MAYBE    // Notes for future:
-//  normally *PPArray is a ^ to Leaf8 or ^ to root structure  
-//  Currently the root structure does not have a ju_Type
-//  If it was to a jp_t then the 2nd word could have the 
-//  Total Pop, if it was a branch (in DcdPop0), else if a Leaf8 or
-//  any Leaf, then in the LeafPop field (in the Pointer to Leaf) or
-//  in the LastKey field (not necessarly in a Leaf8).
-
-//    Pjp_t Pjp = (Pjp_t)PPArray;
-//    RawJpPntr = ju_PntrInJp(Pjp);
-//    switch(ju_Type(Pjp))
-//    {
-//    case cJU_JPJJPM:            // Root structure ^
-//    case cJU_JPLEAF8:           // or just Leaf8 ^ (no Root struct yet)
-//        etc...
-#endif  // MAYBE
-
 
 #ifdef  TRACEJPI
     if (startpop && (Pjll8->jl8_Population0 >= startpop))
     {
 //        assert(Pjll8->jl8_Population0 == **(PWord_t)PPArray);   // first word is TotalPop0
 #ifdef JUDY1
-        printf("---Judy1Set, Key = 0x%016lx, Array TotalPop1 = %lu\n", 
-            (Word_t)Index, Pjll8->jl8_Population0 + 1); // TotalPop0 = 0 (== 1 at base 1)
+        printf("\n---Judy1Set, Key = 0x%016lx(%ld), Array Pop1 = %lu\n", Index,
+            Index, Pjll8->jl8_Population0 + 1); // TotalPop0 = 0 (== 1 at base 1)
 #else /* JUDYL */
-        printf("---JudyLIns, Key = 0x%016lx(%ld), Array Pop1 = %lu\n", Index,
-            (Word_t)Index, Pjll8->jl8_Population0 + 1); // TotalPop0 = 0 (== 1 at base 1)
+        printf("\n---JudyLIns, Key = 0x%016lx(%ld), Array Pop1 = %lu\n", Index,
+            Index, Pjll8->jl8_Population0 + 1); // TotalPop0 = 0 (== 1 at base 1)
 #endif /* JUDYL */
     }
 #endif  // TRACEJPI
@@ -2275,6 +2676,7 @@ FUNCTION PPvoid_t JudyLIns(PPvoid_t PPArray,    // in which to insert.
 #endif /* JUDYL */
         if (offset >= 0)                // index is already valid:
         {
+            assert(0);
 #ifdef JUDY1
             return (0);
 #else /* JUDYL */
@@ -2301,10 +2703,8 @@ FUNCTION PPvoid_t JudyLIns(PPvoid_t PPArray,    // in which to insert.
 //      else must alloc new Leaf for growth
         if (pop1 < cJU_LEAF8_MAXPOP1)   // can grow to a larger leaf.
         {
-            Pjll8_t  Pjll8new;
-            Word_t   Pjll8newRaw;
+            Word_t   Pjll8newRaw = j__udyAllocJLL8(pop1 + 1);
 //          Insert index into a new, larger leaf:
-            Pjll8newRaw = (Word_t)j__udyAllocJLL8(pop1 + 1);
             if (Pjll8newRaw == 0)
             { // out of memory
                 JU_SET_ERRNO(PJError, JU_ERRNO_NOMEM);
@@ -2314,13 +2714,13 @@ FUNCTION PPvoid_t JudyLIns(PPvoid_t PPArray,    // in which to insert.
                 return(PPJERR);
 #endif /* JUDYL */
             }
-            Pjll8new = P_JLL8(Pjll8newRaw);
+            Pjll8_t Pjll8new = P_JLL8(Pjll8newRaw);
             JU_INSERTCOPY(Pjll8new->jl8_Leaf, Pjll8->jl8_Leaf, pop1, offset, Index);
 #ifdef JUDYL
             Pjv_t Pjvnew = JL_LEAF8VALUEAREA(Pjll8new, pop1 + 1);
             JU_INSERTCOPY(Pjvnew, PjvOld, pop1, offset, 0);
 #endif /* JUDYL */
-            j__udyFreeJLL8(Pjll8, pop1, NULL);  // no jpm_t
+            j__udyFreeJLL8(Pjll8Raw, pop1, NULL);  // no jpm_t
             *PPArray = (Pvoid_t)Pjll8new;
             Pjll8new->jl8_Population0 = pop1;   // inc pop0 in new leaf
 #ifdef JUDY1
@@ -2354,11 +2754,15 @@ FUNCTION PPvoid_t JudyLIns(PPvoid_t PPArray,    // in which to insert.
 
         Pjp_t Pjp         = Pjpm->jpm_JP + 0;
         Pjpm->jpm_Pop0    = cJU_LEAF8_MAXPOP1 - 1;
-        ju_SetLeafPop1(Pjp, cJU_LEAF8_MAXPOP1);
+
+        ju_SetLeafPop1(Pjp, cJU_LEAF8_MAXPOP1);         // only in the Leaf ^
 //        ju_SetDcdPop0 (Pjp, cJU_LEAF8_MAXPOP1 - 1);     // Level = 8, no pre-Key bytes
-        ju_SetPntrInJp(Pjp, (Word_t)Pjll8);
-//        ju_SetJpType(Pjp, cJU_JPLEAF8); Cascade8 knows what kind of LEAF
-        if (j__udyCascade8(Pjp, Index, Pjpm) == -1)
+//
+        ju_SetPntrInJp(Pjp, Pjll8Raw);
+        ju_SetJpType(Pjp, cJU_JPLEAF8);                 // Cascade8 knows it is a cJU_JPLEAF8
+//
+//      This cJU_JPLEAF8 does not last long under a jpm
+        if (j__udyCascade8(Pjp, Index, Pjpm) == -1)     // Now do the Splay
         {
             JU_COPY_ERRNO(PJError, Pjpm);
 #ifdef JUDY1
@@ -2367,11 +2771,14 @@ FUNCTION PPvoid_t JudyLIns(PPvoid_t PPArray,    // in which to insert.
             return (PPJERR);
 #endif /* JUDYL */
         }
+
+//printf("Ins: return from Cascade8, j__udyJPPop1 = %ld, LEAF8 = %ld, jpType = %d\n", j__udyJPPop1(Pjp), cJU_LEAF8_MAXPOP1, ju_Type(Pjp));
+
 //      Now Pjp->jp_Type is a BranchL*]
 
 // Note:  No need to pass Pjpm for memory decrement; LEAF8 memory is never
 // counted in the jpm_t because there is no jpm_t.
-        j__udyFreeJLL8(Pjll8, cJU_LEAF8_MAXPOP1, NULL);
+        j__udyFreeJLL8(Pjll8Raw, cJU_LEAF8_MAXPOP1, NULL);
 
         assert(Pjpm->jpm_Pop0 == (cJU_LEAF8_MAXPOP1 - 1));
 
@@ -2385,8 +2792,13 @@ FUNCTION PPvoid_t JudyLIns(PPvoid_t PPArray,    // in which to insert.
     {
         Pjpm = P_JPM(*PPArray); // Caution: this is necessary
 
+//      Now "Walk" the tree recursively
+        int retcode = j__udyInsWalk(Pjpm->jpm_JP, Pjpm->jpm_JP, Index, Pjpm);
 
-        int retcode = j__udyInsWalk(Pjpm->jpm_JP, Index, Pjpm);
+#ifdef JUDY1
+        if (retcode == 0) return (0);               // == JU_RET_*_JPM().
+#endif  // JUDY1
+
         if (retcode == -1)
         {
             JU_COPY_ERRNO(PJError, Pjpm);
@@ -2396,12 +2808,24 @@ FUNCTION PPvoid_t JudyLIns(PPvoid_t PPArray,    // in which to insert.
             return (PPJERR);
 #endif /* JUDYL */
         }
-        if (retcode == 1)
-        {
-            ++Pjpm->jpm_Pop0;         // incr total array popu.
 
+        if (retcode == 2) 
+        {
+//            printf("\n--------=Just finished a Cascade at Top\n");
+        }
+
+        if (retcode > 0)
+        {
+//printf("\n  Ins exit: Pjpm->jpm_Pop0 = %lu, Pjpm->jpm_JP = %lu, DIF = %ld\n", Pjpm->jpm_Pop0, ju_DcdPop0(Pjpm->jpm_JP), Pjpm->jpm_Pop0 - ju_DcdPop0(Pjpm->jpm_JP));
+
+//          254 chances out of 255 test
+//            assert(((Pjpm->jpm_Pop0 ^ ju_DcdPop0(Pjpm->jpm_JP)) & 0xFF) == 0); 
+
+            Pjpm->jpm_Pop0++;                                   // incr total array popu.
+
+//          Note: The Pop0 field are in lower bits, so the Dcd field wont be changed
             Word_t DcdP0 = ju_DcdPop0(Pjpm->jpm_JP) + 1;
-            ju_SetDcdPop0(Pjpm->jpm_JP, DcdP0);  // update DcdP0 by + 1
+            ju_SetDcdPop0(Pjpm->jpm_JP, DcdP0);                 // update DcdP0 by + 1
 
 //            Pjpm->jpm_Pop0 = JU_LEAF8_POP0(*PPArray) + 1);
 //            if (ju_DcdPop0(Pjpm->jpm_JP) == Pjpm->jpm_Pop0)
@@ -2414,12 +2838,16 @@ FUNCTION PPvoid_t JudyLIns(PPvoid_t PPArray,    // in which to insert.
 //            ju_SetLeafPop0(Pjpt, cJU_LEAF8_MAXPOP1);    // should be done in cascade
         }
         assert((retcode == 0) || (retcode == 1));
+
 #ifdef JUDY1
         return (retcode);               // == JU_RET_*_JPM().
-#else /* JUDYL */
+#else   // JUDYL
+
         assert(Pjpm->jpm_PValue != (Pjv_t) NULL);
+
+//      return Pointer (^) to Value, even if a duplicate insert attempt
         return ((PPvoid_t) Pjpm->jpm_PValue);
-#endif /* JUDYL */
+#endif  // JUDYL
     }
  /*NOTREACHED*/
 }                        // Judy1Set() / JudyLIns()

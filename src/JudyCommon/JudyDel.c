@@ -2323,7 +2323,7 @@ UpdateLeafPop1AndReturnTrue:    // requires Pjp and Pop1
     }
 // ****************************************************************************
 // BITMAP LEAF:
-    case cJU_JPLEAF_B1:
+    case cJU_JPLEAF_B1U:
     {
         Word_t    PjlbRaw = ju_PntrInJp(Pjp);
         Pjlb_t    Pjlb    = P_JLB1(PjlbRaw); // pointer to bitmap part of the leaf.
@@ -2391,7 +2391,7 @@ UpdateLeafPop1AndReturnTrue:    // requires Pjp and Pop1
                     if (JU_BITMAPTESTL(Pjlb, ldigit))
                         *Pleaf1new++ = ldigit;          // only 15 of 256
                 }
-                j__udyFreeJLB1(PjlbRaw, Pjpm);          // Free LeafB1
+                j__udyFreeJLB1U(PjlbRaw, Pjpm);          // Free LeafB1
 //#ifdef  JUDY1
                 ju_SetJpType(Pjp, cJ1_JPIMMED_1_15);
 //#else   //  JUDYL
@@ -2525,7 +2525,7 @@ printf("Del B1: Line = %d, Pop1 = %d\n", __LINE__, (int)Pop1);
         Pop1 = ju_LeafPop1(Pjp);
         assert(Pop1 == 256);
 
-        if ((PjlbRaw = j__udyAllocJLB1(Pjpm)) == 0)
+        if ((PjlbRaw = j__udyAllocJLB1U(Pjpm)) == 0)
             return (-1);
         Pjlb = P_JLB1(PjlbRaw);
 // Fully populate the leaf, then unset Key bit:
@@ -2534,7 +2534,7 @@ printf("Del B1: Line = %d, Pop1 = %d\n", __LINE__, (int)Pop1);
 
         JU_BITMAPCLEARL(Pjlb, Index);   // delete key
 
-        ju_SetJpType(Pjp, cJU_JPLEAF_B1);
+        ju_SetJpType(Pjp, cJU_JPLEAF_B1U);
 //        ju_SetLeafPop1(Pjp, cJU_JPFULLPOPU1_POP0);
         ju_SetPntrInJp(Pjp, PjlbRaw);
         goto UpdateLeafPop1AndReturnTrue;   // requires Pjp and Pop1

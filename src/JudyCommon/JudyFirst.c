@@ -54,7 +54,8 @@ FUNCTION PPvoid_t JudyLFirst
             return(0);
 
 #ifdef JUDY1
-	int ret = j__udy1Test(PArray, *PIndex, NULL);
+//	int ret = j__udy1Test(PArray, *PIndex, NULL);
+	int ret = Judy1Test(PArray, *PIndex, NULL);
         if (ret == 0)
             return(Judy1Next(PArray, PIndex, NULL));
 	return(1);			// found *PIndex itself.
@@ -62,7 +63,8 @@ FUNCTION PPvoid_t JudyLFirst
 	{
 	    PPvoid_t PValue;
 
-	    PValue = j__udyLGet(PArray, *PIndex, NULL);
+//	    PValue = j__udyLGet(PArray, *PIndex, NULL);
+	    PValue = JudyLGet(PArray, *PIndex, NULL);
 	    if (PValue != (PPvoid_t) NULL) 
                 return(PValue);  // found *PIndex.
 	    return(JudyLNext(PArray, PIndex, NULL));
@@ -92,12 +94,14 @@ FUNCTION PPvoid_t JudyLLast
             return(0);
 
 #ifdef JUDY1
-	int ret = j__udy1Test(PArray, *PIndex, NULL);
+//	int ret = j__udy1Test(PArray, *PIndex, NULL);
+	int ret = Judy1Test(PArray, *PIndex, NULL);
         if (ret == 0) 
             return(Judy1Prev(PArray, PIndex, NULL));
         return(1);
 #else
-	PPvoid_t PValue = j__udyLGet(PArray, *PIndex, NULL);
+//	PPvoid_t PValue = j__udyLGet(PArray, *PIndex, NULL);
+	PPvoid_t PValue = JudyLGet(PArray, *PIndex, NULL);
         if (PValue != (PPvoid_t) NULL) 
             return(PValue);  // found *PIndex.
 	return(JudyLPrev(PArray, PIndex, NULL));
@@ -128,13 +132,15 @@ FUNCTION int JudyLFirstEmpty(
             return(0);
 
 #ifdef JUDY1
-	int ret = j__udy1Test(PArray, *PIndex, NULL);
+//	int ret = j__udy1Test(PArray, *PIndex, NULL);
+	int ret = Judy1Test(PArray, *PIndex, NULL);
         if (ret == 0)
 	    return(1);			// found *PIndex itself.
 	return(Judy1NextEmpty(PArray, PIndex, NULL));
 #else
 	{
-	    PPvoid_t PValue = j__udyLGet(PArray, *PIndex, NULL);
+//	    PPvoid_t PValue = j__udyLGet(PArray, *PIndex, NULL);
+	    PPvoid_t PValue = JudyLGet(PArray, *PIndex, NULL);
 	    if (PValue == (PPvoid_t) NULL) 
                 return(1);	// found *PIndex.
 	    return(JudyLNextEmpty(PArray, PIndex, NULL));
@@ -166,12 +172,14 @@ FUNCTION int JudyLLastEmpty(
             return(1);
 
 #ifdef JUDY1
-	int ret = j__udy1Test(PArray, *PIndex, NULL);
+//	int ret = j__udy1Test(PArray, *PIndex, NULL);
+	int ret = Judy1Test(PArray, *PIndex, NULL);
         if (ret == 0)
             return(1);
 	return(Judy1PrevEmpty(PArray, PIndex, NULL));
 #else
-	PPvoid_t PValue = j__udyLGet(PArray, *PIndex, NULL);
+//	PPvoid_t PValue = j__udyLGet(PArray, *PIndex, NULL);
+	PPvoid_t PValue = JudyLGet(PArray, *PIndex, NULL);
 
         if (PValue == (PPvoid_t) NULL) 
             return(1);	// found *PIndex.

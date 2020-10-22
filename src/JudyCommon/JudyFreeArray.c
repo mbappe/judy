@@ -78,41 +78,51 @@ FUNCTION Word_t JudyLFreeArray
 
 	if (JU_LEAF8_POP0(*PPArray) < cJU_LEAF8_MAXPOP1) // must be a LEAF8
 	{
-	    Pjll8_t Pjll8 = P_JLL8(*PPArray);	// first word of leaf.
+	    Word_t Pjll8Raw = (Word_t)*PPArray; // first word of leaf.
+	    Pjll8_t Pjll8 = P_JLL8(Pjll8Raw);	// first word of leaf.
 
-	    j__udyFreeJLL8(Pjll8, Pjll8->jl8_Population0 + 1, &jpm);
+	    j__udyFreeJLL8(Pjll8Raw, Pjll8->jl8_Population0 + 1, &jpm);
 	    *PPArray = (Pvoid_t) NULL;		// make an empty array.
 	    return (-(jpm.jpm_TotalMemWords * cJU_BYTESPERWORD));  // see above.
 	}
 	else
+	{
 
 // Rootstate leaves:  just free the leaf:
 
-// Common code for returning the amount of memory freed.
+// Common code for returning the amount of memory freed and Population.
 //
 // Note:  In a an ordinary LEAF8, pop0 = *PPArray[0].
 //
 // Accumulate (negative) words freed, while freeing objects.
 // Return the positive bytes freed.
 
-	{
 	    Pjpm_t Pjpm	    = P_JPM(*PPArray);
 	    Word_t TotalMem = Pjpm->jpm_TotalMemWords;
 
 //	    j__udyFreeSM(&(Pjpm->jpm_JP), &jpm);  // recurse through tree.
-	    j__udyFreeSM((Pjpm->jpm_JP + 0), &jpm);  // recurse through tree.
+            Word_t Pop1 = j__udyFreeSM((Pjpm->jpm_JP + 0), &jpm);  // recurse through tree.
+            long PopDiff = Pop1 - (Pjpm->jpm_Pop0 + 1);
 	    j__udyFreeJPM(Pjpm, &jpm);
+
+            if (PopDiff)
+            {
+                printf("\nOOps FreeArray population = %ld != Array population = %ld, Diff = %ld\n", Pop1, Pjpm->jpm_Pop0 + 1, PopDiff);
+                fprintf(stderr, "OOps FreeArray population = %ld != Array population = %ld, Diff = %ld\n", Pop1, Pjpm->jpm_Pop0 + 1, PopDiff);
+            }
 
 // Verify the array was not corrupt.  This means that amount of memory freed
 // (which is negative) is equal to the initial amount:
 
-	    if (TotalMem + jpm.jpm_TotalMemWords)
+            Word_t MemDiff = TotalMem + jpm.jpm_TotalMemWords;
+	    if (MemDiff)
 	    {
+                printf("\nOOps FreeArray Words = %ld != Array Words = %ld, Diff = %ld\n", TotalMem, -jpm.jpm_TotalMemWords, MemDiff);
+                fprintf(stderr, "OOps FreeArray Words = %ld != Array Words = %ld, Diff = %ld\n", TotalMem, -jpm.jpm_TotalMemWords, MemDiff);
 	        *PPArray = (Pvoid_t) NULL;		// make an empty array.
 		JU_SET_ERRNO(PJError, JU_ERRNO_CORRUPT);
 		return(JERR);
 	    }
-
 	    *PPArray = (Pvoid_t) NULL;		// make an empty array.
 	    return (TotalMem * cJU_BYTESPERWORD);
 	}
@@ -126,9 +136,9 @@ FUNCTION Word_t JudyLFreeArray
 // ****************************************************************************
 // __ J U D Y   F R E E   S M
 //
-// Given a pointer to a JP, recursively visit and free (depth first) all nodes
-// in a Judy array BELOW the JP, but not the JP itself.  Accumulate in *Pjpm
-// the total words freed (as a negative value).  "SM" = State Machine.
+// Given a pointer to a jp_t (Pjp), recursively visit and free (depth first) all 
+// nodes in a Judy array BELOW the jp_t, but not the jp_t itself.  Accumulate in
+// *Pjpm the total words freed (as a negative value).  "SM" = S_tate M_achine.
 //
 // Note:  Corruption is not detected at this level because during a FreeArray,
 // if the code hasnt already core dumped, its better to remain silent, even
@@ -136,12 +146,11 @@ FUNCTION Word_t JudyLFreeArray
 // corruption.  TBD:  Is this true?  If not, must list all legitimate JPNULL
 // and JPIMMED above first, and revert to returning bool_t (see 4.34).
 
-FUNCTION void j__udyFreeSM(
+FUNCTION Word_t j__udyFreeSM(   // return Freed population
 	Pjp_t	Pjp,		// top of Judy (top-state).
 	Pjpm_t	Pjpm)		// to return words freed.
 {
-	Word_t	Pop1;
-
+	Word_t	Pop1 = 0;       // incase of NULL or Branch
 
 	switch (ju_Type(Pjp))
 	{
@@ -152,6 +161,7 @@ FUNCTION void j__udyFreeSM(
         case    cJU_JPNULL5:            // Index Size 5 bytes 
         case    cJU_JPNULL6:            // Index Size 6 bytes 
         case    cJU_JPNULL7:            // Index Size 7 bytes 
+            break;
         case    cJU_JPIMMED_1_01:       // Index Size = 1, Pop1 = 1.
         case    cJU_JPIMMED_2_01:       // Index Size = 2, Pop1 = 1.
         case    cJU_JPIMMED_3_01:       // Index Size = 3, Pop1 = 1.
@@ -159,6 +169,8 @@ FUNCTION void j__udyFreeSM(
         case    cJU_JPIMMED_5_01:       // Index Size = 5, Pop1 = 1.
         case    cJU_JPIMMED_6_01:       // Index Size = 6, Pop1 = 1.
         case    cJU_JPIMMED_7_01:       // Index Size = 7, Pop1 = 1.
+            Pop1 = 1;
+            break;
 
 #ifdef  JUDY1
         case    cJ1_JPIMMED_1_02:       // Index Size = 1, Pop1 = 2.
@@ -175,28 +187,40 @@ FUNCTION void j__udyFreeSM(
         case    cJ1_JPIMMED_1_13:       // Index Size = 1, Pop1 = 13.
         case    cJ1_JPIMMED_1_14:       // Index Size = 1, Pop1 = 14.
         case    cJ1_JPIMMED_1_15:       // Index Size = 1, Pop1 = 15.
+	    Pop1 = ju_Type(Pjp) - cJ1_JPIMMED_1_02 + 2;
+            break;
+
         case    cJ1_JPIMMED_2_02:       // Index Size = 2, Pop1 = 2.
         case    cJ1_JPIMMED_2_03:       // Index Size = 2, Pop1 = 3.
         case    cJ1_JPIMMED_2_04:       // Index Size = 2, Pop1 = 4.
         case    cJ1_JPIMMED_2_05:       // Index Size = 2, Pop1 = 5.
         case    cJ1_JPIMMED_2_06:       // Index Size = 2, Pop1 = 6.
         case    cJ1_JPIMMED_2_07:       // Index Size = 2, Pop1 = 7.
+	    Pop1 = ju_Type(Pjp) - cJ1_JPIMMED_2_02 + 2;
+            break;
+
         case    cJ1_JPIMMED_3_02:       // Index Size = 3, Pop1 = 2.
         case    cJ1_JPIMMED_3_03:       // Index Size = 3, Pop1 = 3.
         case    cJ1_JPIMMED_3_04:       // Index Size = 3, Pop1 = 4.
         case    cJ1_JPIMMED_3_05:       // Index Size = 3, Pop1 = 5.
+	    Pop1 = ju_Type(Pjp) - cJ1_JPIMMED_3_02 + 2;
+            break;
+
         case    cJ1_JPIMMED_4_02:       // Index Size = 4, Pop1 = 2.
         case    cJ1_JPIMMED_4_03:       // Index Size = 4, Pop1 = 3.
+	    Pop1 = ju_Type(Pjp) - cJ1_JPIMMED_4_02 + 2;
+            break;
+            
         case    cJ1_JPIMMED_5_02:       // Index Size = 5, Pop1 = 2.
-        case    cJ1_JPIMMED_5_03:       // Index Size = 5, Pop1 = 3.
         case    cJ1_JPIMMED_6_02:       // Index Size = 6, Pop1 = 2.
         case    cJ1_JPIMMED_7_02:       // Index Size = 7, Pop1 = 2.
+            Pop1 = 2;
+            break;
+
 	case    cJ1_JPFULLPOPU1:        // FULL EXPANSE    Pop1 = 256
+            Pop1 = 256;
+            break;
 #endif  // JUDY1
-#ifdef  DEBUG
-            Line = __LINE__;
-#endif  // DEBUG
-	    break;              // no memory to Free
 
 // JUDY BRANCH -- free the sub-tree depth first:
 
@@ -204,13 +228,13 @@ FUNCTION void j__udyFreeSM(
 //
 // Note:  There are no null JPs in a JBL.
 
-        case cJU_JPBRANCH_L8:
 	case cJU_JPBRANCH_L2:
 	case cJU_JPBRANCH_L3:
 	case cJU_JPBRANCH_L4:
 	case cJU_JPBRANCH_L5:
 	case cJU_JPBRANCH_L6:
 	case cJU_JPBRANCH_L7:
+        case cJU_JPBRANCH_L8:
 	{
 #ifdef  DEBUG
             Line = __LINE__;
@@ -219,7 +243,7 @@ FUNCTION void j__udyFreeSM(
 	    Word_t offset;
 
 	    for (offset = 0; offset < Pjbl->jbl_NumJPs; offset++)
-	        j__udyFreeSM(Pjbl->jbl_jp + offset, Pjpm);
+	        Pop1 += j__udyFreeSM(Pjbl->jbl_jp + offset, Pjpm);
 
 	    j__udyFreeJBL(ju_PntrInJp(Pjp), Pjpm);
 	    break;
@@ -230,13 +254,13 @@ FUNCTION void j__udyFreeSM(
 //
 // Note:  There are no null JPs in a JBB.
 
-	case cJU_JPBRANCH_B8:
 	case cJU_JPBRANCH_B2:
 	case cJU_JPBRANCH_B3:
 	case cJU_JPBRANCH_B4:
 	case cJU_JPBRANCH_B5:
 	case cJU_JPBRANCH_B6:
 	case cJU_JPBRANCH_B7:
+	case cJU_JPBRANCH_B8:
 	{
 #ifdef  DEBUG
             Line = __LINE__;
@@ -254,9 +278,8 @@ FUNCTION void j__udyFreeSM(
 	        if (jpcount)
 	        {
 		    for (offset = 0; offset < jpcount; ++offset)
-		    {
-		       j__udyFreeSM(P_JP(JU_JBB_PJP(Pjbb, subexp)) + offset, Pjpm);
-		    }
+		       Pop1 += j__udyFreeSM(P_JP(JU_JBB_PJP(Pjbb, subexp)) + offset, Pjpm);
+
 		    j__udyFreeJBBJP(JU_JBB_PJP(Pjbb, subexp), jpcount, Pjpm);
 	        }
 	    }
@@ -271,13 +294,13 @@ FUNCTION void j__udyFreeSM(
 //
 // Note:  Null JPs are handled during recursion at a lower state.
 
-	case cJU_JPBRANCH_U8:
 	case cJU_JPBRANCH_U2:
 	case cJU_JPBRANCH_U3:
 	case cJU_JPBRANCH_U4:
 	case cJU_JPBRANCH_U5:
 	case cJU_JPBRANCH_U6:
 	case cJU_JPBRANCH_U7:
+	case cJU_JPBRANCH_U8:
 	{
 #ifdef  DEBUG
             Line = __LINE__;
@@ -286,7 +309,7 @@ FUNCTION void j__udyFreeSM(
 	    Pjbu_t Pjbu = P_JBU(ju_PntrInJp(Pjp));
 
 	    for (offset = 0; offset < cJU_BRANCHUNUMJPS; ++offset)
-	        j__udyFreeSM(Pjbu->jbu_jp + offset, Pjpm);
+	        Pop1 += j__udyFreeSM(Pjbu->jbu_jp + offset, Pjpm);
 
 	    j__udyFreeJBU(ju_PntrInJp(Pjp), Pjpm);
 	    break;
@@ -362,17 +385,19 @@ FUNCTION void j__udyFreeSM(
 
 // BITMAP LEAF -- free sub-expanse arrays of JPs, then free the JBB.
 
-	case cJU_JPLEAF_B1:
+	case cJU_JPLEAF_B1U:
 	{
 #ifdef  DEBUG
             Line = __LINE__;
 #endif  // DEBUG
 
-	    Pop1 = ju_LeafPop1(Pjp);
-	    j__udyFreeJLB1(ju_PntrInJp(Pjp), Pjpm);
+	    Pop1 = ju_LeafPop1(Pjp);    // for Pop1 metrics only
+            if (Pop1 == 0) Pop1 = 256;
+
+	    j__udyFreeJLB1U(ju_PntrInJp(Pjp), Pjpm);
 	    break;
 
-	} // case cJU_JPLEAF_B1
+	} // case cJU_JPLEAF_B1U
 
 #ifdef JUDYL
 
@@ -394,16 +419,17 @@ FUNCTION void j__udyFreeSM(
 	case cJL_JPIMMED_2_02:
 	case cJL_JPIMMED_2_03:
 	case cJL_JPIMMED_2_04:
-
 	    Pop1 = ju_Type(Pjp) - cJU_JPIMMED_2_02 + 2;
 	    j__udyLFreeJV(ju_PntrInJp(Pjp), Pop1, Pjpm);
 	    break;
 
 	case cJL_JPIMMED_3_02:
+            Pop1 = 2;
 	    j__udyLFreeJV(ju_PntrInJp(Pjp), 2, Pjpm);
 	    break;
 
 	case cJL_JPIMMED_4_02:
+            Pop1 = 2;
 	    j__udyLFreeJV(ju_PntrInJp(Pjp), 2, Pjpm);
 	    break;
 #endif // JUDYL
@@ -415,10 +441,12 @@ FUNCTION void j__udyFreeSM(
 // comments.
 
 	default: 
+            assert(0);
             break;
 
 	} // switch (ju_Type(Pjp))
 
+        return(Pop1);
 } // j__udyFreeSM()
 
 // Dump the jp path to the subtree specified by wKeyPrefix and
@@ -426,9 +454,9 @@ FUNCTION void j__udyFreeSM(
 FUNCTION void
 #ifdef JUDY1
 Judy1Dump
-#else
+#else   // JUDYL
 JudyLDump
-#endif
+#endif  // JUDYL
     (
     Word_t wRoot,     // root word of array
     int nBitsLeft,    // level of subtree to dump

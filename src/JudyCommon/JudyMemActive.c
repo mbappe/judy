@@ -171,12 +171,13 @@ Leaf8ords:
             return((IdxSz + sizeof(Word_t))
 		 * ju_LeafPop1(Pjp));
 #endif
-	case cJU_JPLEAF_B1:
+	case cJU_JPLEAF_B1U:
 	{
 #ifdef JUDY1
             return(sizeof(jlb_t));
 #else
-            Bytes = ju_LeafPop1(Pjp) * sizeof(Word_t);
+//            Bytes = ju_LeafPop1(Pjp) * sizeof(Word_t);
+            Bytes = 256 * sizeof(Word_t);
 
 	    return(Bytes + sizeof(jlb_t));
 #endif
@@ -233,7 +234,6 @@ Leaf8ords:
 	case cJ1_JPIMMED_4_02:	return(0);
 	case cJ1_JPIMMED_4_03:	return(0);
 	case cJ1_JPIMMED_5_02:	return(0);
-	case cJ1_JPIMMED_5_03:	return(0);
 	case cJ1_JPIMMED_6_02:	return(0);
 	case cJ1_JPIMMED_7_02:	return(0);
 #endif

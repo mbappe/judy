@@ -143,6 +143,7 @@ typedef struct J_UDY_POINTER_OTHERS     // JPO.
         union
         {
             Word_t  j_po_Addr1;         // 2nd Word_t
+            Word_t  j_po_DcdPop0;       // 2nd Word_t
             Word_t  j_po_subLeafPops;
             uint8_t j_po_subPop1[8];
         };
@@ -164,6 +165,7 @@ typedef struct _JUDY_POINTER_IMMED1
         {   // jp_Type is low addrs and each array is 2 Word_t
             uint8_t  j_pi_1Index1[(2 * sizeof(Word_t))/1];   // 15 Keys
             uint16_t j_pi_1Index2[(2 * sizeof(Word_t))/2];   // 7 Keys
+            uint32_t j_pi_1Index3[(2 * sizeof(Word_t))/4];   // 3 Keys
             uint32_t j_pi_1Index4[(2 * sizeof(Word_t))/4];   // 3 Keys
         };
 } jpi_t;
@@ -175,8 +177,9 @@ typedef struct _JUDY_POINTER_IMMEDL      // JPI.
         Word_t   j_pi_Space;       // (48 bit) pointer to Values
         union 
         {
-            uint8_t  j_pi_LIndex1[sizeof(Word_t)];      // 8 Keys in 2nd word
+            uint8_t  j_pi_LIndex1[sizeof(Word_t)/1];    // 8 Keys in 2nd word
             uint16_t j_pi_LIndex2[sizeof(Word_t)/2];    // 4 Keys in 2nd word
+            uint32_t j_pi_LIndex3[sizeof(Word_t)/4];    // 2 Keys in 2nd word
             uint32_t j_pi_LIndex4[sizeof(Word_t)/4];    // 2 Keys in 2nd word
         };
 } jpi_t;
@@ -200,20 +203,23 @@ typedef union J_UDY_POINTER         // JP.
 // These are offset by one key to make room for jp_Type - no jp_Ipop for 1,3,5,6,7
 #define jp_PIndex1 j_pi.j_pi_1Index1    // for storing uint8_t  Keys in 1st  word.
 #define jp_PIndex2 j_pi.j_pi_1Index2    // for storing uint16_t Keys in 1st  word.
+#define jp_PIndex3 j_pi.j_pi_1Index3    // for storing uint32_t Keys in 1st  word.
 #define jp_PIndex4 j_pi.j_pi_1Index4    // for storing uint32_t Keys in 1st  word.
 #endif  //JUDY1
 
 #ifdef  JUDYL
 #define jp_PIndex1 j_pi.j_pi_LIndex1    // for storing uint8_t in first word.
 #define jp_PIndex2 j_pi.j_pi_LIndex2    // for storing uint16_t in first word
+#define jp_PIndex3 j_pi.j_pi_LIndex3    // for storing uint16_t in first word
 #define jp_PIndex4 j_pi.j_pi_LIndex4    // for storing uint16_t in first word
-#define jp_PValue  j_pi.j_pi_PValue          // Pointer to Values for IMMED_[1..7]_[02..15]
+#define jp_PValue  j_pi.j_pi_PValue     // Pointer to Values for IMMED_[1..7]_[02..15]
 #endif  // JUDYL
 
 #define jp_Type     j_po.j_po_jp_Type[0] // jp_Type
 #define jp_LeafPop1 j_po.j_po_jp_Type[1] // jp_LeafPop1
 #define jp_Addr0    j_po.j_po_Addr0      // only the hi 48 bits are available
 #define jp_Addr1    j_po.j_po_Addr1      // 2nd Word in jp
+#define jp_DcdPop0  j_po.j_po_DcdPop0    // 2nd Word in jp
 #define jp_subPop1  j_po.j_po_subPop1    // uint8_t[] 8 octants in array
 #define jp_subLeafPops  j_po.j_po_subLeafPops    // Word_t -- 8 octants in Word_t
 
@@ -252,11 +258,15 @@ static Word_t  ju_PntrInJp(Pjp_t Pjp)
 static Word_t  ju_PntrInJp1(Pjp_t Pjp)
         { return(Pjp->jp_Addr1 >> 16); } 
 
+// For Branch Pop0 and skipped Decode bits share same Word_t
 static Word_t  ju_DcdPop0(Pjp_t Pjp)
-        { return(Pjp->jp_Addr1); } 
+        { return(Pjp->jp_DcdPop0); } 
 
 static Word_t  ju_LeafPop1(Pjp_t Pjp)
         { return(Pjp->jp_LeafPop1); }   // TEMP - should be below
+
+//  No conditional branch to return 1..256, instead of 0..255
+#define ju_LEAF_POP1(Pjp) ((int)((uint8_t)(ju_LeafPop1(Pjp) - 1)) + 1)
 
 static Word_t  ju_BranchPop0(Pjp_t Pjp, int level)
         { return(Pjp->jp_Addr1 & JU_LEASTBYTESMASK(level)); }
@@ -320,7 +330,7 @@ static void ju_SetJpType(Pjp_t Pjp, uint8_t Type)
         { Pjp->jp_Type  = Type; }
 
 static void ju_SetDcdPop0(Pjp_t Pjp, Word_t DcdPop0)
-        { Pjp->jp_Addr1 = DcdPop0; }
+        { Pjp->jp_DcdPop0 = DcdPop0; }
 
 // Temp
 static void ju_SetDcdPop0Leaf(Word_t PJLL, Word_t DcdPop0)
@@ -335,15 +345,13 @@ static Pjv_t ju_PImmVal_01(Pjp_t Pjp)
         { return((Pjv_t)(&Pjp->jp_Addr1)); }
 
 static uint8_t *ju_PImmed1(Pjp_t Pjp)
-        { return(Pjp->jp_PIndex1); }   // used for 1,3,5,6,7 Keys
-
-#define ju_PImmed3 ju_PImmed1
-#define ju_PImmed5 ju_PImmed1
-#define ju_PImmed6 ju_PImmed1
-#define ju_PImmed7 ju_PImmed1
+        { return(Pjp->jp_PIndex1); } 
 
 static uint16_t *ju_PImmed2(Pjp_t Pjp)
         { return(Pjp->jp_PIndex2); }
+
+static uint32_t *ju_PImmed3(Pjp_t Pjp)
+        { return(Pjp->jp_PIndex3); }
 
 static uint32_t *ju_PImmed4(Pjp_t Pjp)
         { return(Pjp->jp_PIndex4); }
@@ -355,19 +363,48 @@ static uint32_t *ju_PImmed4(Pjp_t Pjp)
 //      JUDY1 Get routines
 //
 
-static uint8_t *ju_PImmed1(Pjp_t Pjp)   // used for 1,3,5,6,7 Keys
+
+static uint8_t *ju_PImmed1(Pjp_t Pjp)           // 1 byte Keys
         { return(Pjp->jp_PIndex1 + 1); }
 
-#define ju_PImmed3 ju_PImmed1
-#define ju_PImmed5 ju_PImmed1
-#define ju_PImmed6 ju_PImmed1
-#define ju_PImmed7 ju_PImmed1
-
-static uint16_t *ju_PImmed2(Pjp_t Pjp)  // 2 byte Keys
+static uint16_t *ju_PImmed2(Pjp_t Pjp)          // 2 byte Keys
         { return(Pjp->jp_PIndex2 + 1); }
 
-static uint32_t *ju_PImmed4(Pjp_t Pjp)  // 4 byte Keys
+static uint32_t *ju_PImmed3(Pjp_t Pjp)          // 3 byte Keys (1 byte over decode)
+        { return(Pjp->jp_PIndex3 + 1); }
+
+static uint32_t *ju_PImmed4(Pjp_t Pjp)          // 4 byte Keys
         { return(Pjp->jp_PIndex4 + 1); }
+
+static void ju_SetIMM02(Pjp_t Pjp, Word_t Key0, Word_t Key1, uint8_t Type)
+        { 
+            Pjp->jp_Addr0 = (Key0 << 8) | Type;
+//            Pjp->jp_Type  = Type; // lo-byte of Addr0 (see above)
+            Pjp->jp_Addr1 = Key1;
+        }
+
+static Word_t ju_IMM02Key(Pjp_t Pjp)
+//        { return(Pjp->jp_Addr1 & JU_LEASTBYTESMASK(7)); }
+        { return(Pjp->jp_Addr1); }
+
+// return 0, if 1st, 1 if 2nd, -1 if not found
+static int j__udy1SearchImm02(Pjp_t Pjp, Word_t Key)
+{
+    Word_t Immeds[2];
+
+    Immeds[0] = (Pjp->jp_Addr0 >> 8) | (Pjp->jp_Addr1 & cJU_DCDMASK(7));
+    Immeds[1] = Pjp->jp_Addr1;
+
+//    Immeds[0] = ju_IMM01Key(Pjp); //  | (Key & cJU_DCDMASK(7));
+//    Immeds[1] = ju_IMM02Key(Pjp); //  | (Key & cJU_DCDMASK(7));
+//printf("\nCount:  Key    = 0x%016lx\n", Key);
+//printf("Count:  Immed0 = 0x%016lx\n", Immeds[0]);
+//printf("Count:  Immed1 = 0x%016lx\n", Immeds[1]);
+//    Key      &= JU_LEASTBYTESMASK(7);
+
+        int posidx = j__udySearchRawLeaf7(Immeds, 2, Key, 7 * 8);
+        return(posidx);
+}
 #endif  // JUDY1
 
 // ****************************************************************************
@@ -403,6 +440,23 @@ static uint32_t *ju_PImmed4(Pjp_t Pjp)  // 4 byte Keys
 
 #define cJU_BRANCHUNUMJPS  cJU_SUBEXPPERSTATE
 
+// ****************************************************************************
+// JUDY BRANCH[LBU] HEADER SUPPORT
+// ****************************************************************************
+
+typedef struct J__UDY_BRANCH_HEADR
+{
+        Word_t   jbh_DCDPop0;                   // DCDPop0
+//      below must be  == sizeof(Word_t)
+        uint16_t jbh_NumJPs;                    // Total num (non-null) jp_t (0..256)
+        uint16_t jbh_Num_Imm1_01;               // number of IMMED_1_01 (0,,256)
+        uint16_t jbh_Num_Leaf_C;                // number of Leafs (Compressed)
+        uint8_t  jbh_Num_Nulls;                 // number of Nulls      (0.255)
+        uint8_t  jbh_Num_Imm2_N;                // number of IMMED_1_   (0..255)
+//        uint8_t  jbh_Num_Leaf_U;                // number of Leafs (Uncompressed)
+//      End of 1 word
+} jbh_t, *Pjbh_t;
+
 
 // ****************************************************************************
 // JUDY BRANCH LINEAR (JBL) SUPPORT
@@ -417,20 +471,26 @@ static uint32_t *ju_PImmed4(Pjp_t Pjp)  // 4 byte Keys
 // Note:  This number results in a 1-cacheline sized structure.  Previous
 // versions had a larger struct so a linear branch didnt become a bitmap
 // branch until the memory consumed was even, but for speed, its better to
-// switch "sooner" and keep a linear branch fast.
+// switch "sooner" and keep a linear branch fast. (this is bullshit (dlb2020))
 
+// LINEAR BRANCH1 STRUCT of population of one(1) jp_t:
+// Note:  The performance of a jpl_t is VERY poor compared to a Branch_U
+// This should have performance slightly better than a Branch_U with 1 jp_t
+// The primary purpose is to do the Decoding for a Leaf, which no-longer
+// has a Dcb.  Perhaps we should have a seperate case for testing Dcb in
+// the Leaf (in LastKey)
+typedef struct J__UDY_BRANCH1
+        {
+            jp_t   jb1_jp;
+        } jb1_t, *Pjb1_t;
+
+// LINEAR BRANCH STRUCT:
 #ifndef cJU_BRANCHLMAXJPS
 #define cJU_BRANCHLMAXJPS 7
 #endif  // cJU_BRANCHLMAXJPS
-
-
-// LINEAR BRANCH STRUCT:
-//
 // 1-byte count, followed by array of byte-sized expanses, followed by JPs.
-
 typedef struct J__UDY_BRANCH_LINEAR
         {
-            Word_t  jbl_RootStruct;                 // ^ to root Structure
             Word_t  jbl_DCDPop0;                    // DCDPop0
             uint8_t jbl_NumJPs;                     // num of JPs (Pjp_t), 1..N.
             uint8_t jbl_Expanse[cJU_BRANCHLMAXJPS]; // 1..7 MSbs of pop exps.
@@ -540,15 +600,18 @@ typedef struct J__UDY_BRANCH_BITMAP_SUBEXPANSE
 
 // static size
 typedef struct J__UDY_BRANCH_BITMAP
-        {
-            Word_t jbb_RootStruct;                  // ^ to root Structure
-            Word_t jbb_DCDPop0;                     // DCDPop0
-            jbbs_t jbb_jbbs   [cJU_NUMSUBEXPB];
-//            Word_t jbbs_Pjp[];
-            Word_t jbb_NumJPs;         // number of pointers in jp_t s
+{
+       jbh_t   jbb_Headr;
+//        Word_t jbb_DCDPop0;                     // DCDPop0
+//        Word_t jbb_NumJPs;                      // number of Pointers in jp_t s
+        jbbs_t jbb_jbbs[cJU_NUMSUBEXPB];        // bitmaps & ^ to jp_t
 
-        } jbb_t, * Pjbb_t;
+} jbb_t, * Pjbb_t;
 
+#define jbb_DCDPop0 jbb_Headr.jbh_DCDPop0
+#define jbb_NumJPs  jbb_Headr.jbh_NumJPs
+
+//        Word_t jbb_NumJPs;                      // number of Pointers in jp_t s
 #define JU_BRANCHJP_NUMJPSTOWORDS(NumJPs) (j__U_BranchBJPPopToWords[NumJPs])
 
 // ****************************************************************************
@@ -565,13 +628,17 @@ typedef struct J__UDY_BRANCH_BITMAP
 
 typedef struct J__UDY_BRANCH_UNCOMPRESSED
 {
-//        Word_t jbu_RootStruct;                  // ^ to root Structure
-        Word_t jbu_DCDPop0;                     // DCDPop0
-        Word_t jbu_NumJPs;                     // number of Pointers in jp_t s
+        jbh_t   jbu_Headr;
+//        Word_t jbu_DCDPop0;                     // DCDPop0
+//        Word_t jbu_NumJPs;                     // number of Pointers in jp_t s
         jp_t   jbu_jp     [cJU_BRANCHUNUMJPS];  // JPs for populated exp.
-//        jp_t   jbu_jp[0];                     // JPs for populated exp.
+#ifndef noBigU
+        Word_t jbu_sums8[32];                   // grouping of 8 sums
+#endif  // noBigU
 } jbu_t, * Pjbu_t;
 
+#define jbu_DCDPop0 jbu_Headr.jbh_DCDPop0
+#define jbu_NumJPs  jbu_Headr.jbh_NumJPs
 
 // ****************************************************************************
 // OTHER SUPPORT FOR JUDY STATE MACHINES (SMs)

@@ -32,7 +32,7 @@
 
 #include "JudyPrivate1L.h"
 
-extern int j__udyCreateBranchL(Pjp_t, Pjp_t, uint8_t *, Word_t, Pjpm_t);
+extern int j__udyPartstoBranchL(Pjp_t, Pjp_t, uint8_t *, Word_t, Pjpm_t);
 
 
 // ****************************************************************************
@@ -108,9 +108,9 @@ FUNCTION int j__udyInsertBranchL(
 
 //	Create a 2 Expanse Linear branch
 //
-//	Note: Pjp->Jp_Addr0 is set by j__udyCreateBranchL()
+//	Note: Pjp->Jp_Addr0 is set by j__udyPartstoBranchL()
 
-	Ret = j__udyCreateBranchL(Pjp, JP2, Exp2, 2, Pjpm);
+	Ret = j__udyPartstoBranchL(Pjp, JP2, Exp2, 2, Pjpm);
 	if (Ret == -1) return(-1);
 
 //	Get Pjp to the NULL of where to do insert

@@ -729,9 +729,9 @@ FUNCTION static bool_t j__udyInsArray(
             }
 #endif
 
-// JPLEAF_B1:
+// JPLEAF_B1U:
 
-            if ((PjlbRaw = j__udyAllocJLB1(Pjpm)) == 0)
+            if ((PjlbRaw = j__udyAllocJLB1U(Pjpm)) == 0)
                 NOMEM;
             Pjlb = P_JLB1(PjlbRaw);
 
@@ -781,11 +781,11 @@ FUNCTION static bool_t j__udyInsArray(
 //                    (*PIndex & cJU_DCDMASK(1)) | (*PPop1 - 1), cJU_JPLEAF_B1);
             ju_SetPntrInJp(PjpParent, PjlbRaw);
             ju_SetDcdPop0(PjpParent, (*PIndex & cJU_DCDMASK(1)) | (*PPop1 - 1));
-            ju_SetJpType(PjpParent, cJU_JPLEAF_B1);
+            ju_SetJpType(PjpParent, cJU_JPLEAF_B1U);
 
             return(retval);
 
-        } // JPLEAF_B1 or JPFULLPOPU1
+        } // JPLEAF_B1U or JPFULLPOPU1
 
 
 // BUILD JPBRANCH_U*:
