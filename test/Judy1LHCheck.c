@@ -722,8 +722,10 @@ TestJudyIns(void **J1, void **JL, void **JH, Word_t Seed, Word_t Elements)
         *PValue = TstIndex;
 
         PValue1 = (PWord_t)JudyLGet(*JL, TstIndex, NULL);
-        if (PValue != PValue1)
+        if (PValue != PValue1) {
+            printf("TstIndex %zu 0x%zx PValue1 %p\n", TstIndex, TstIndex, PValue1);
             FAILURE("JudyLGet failed - Incorrect PValue, population =", TotalPop);
+        }
 
         PValue1 = (PWord_t)JudyLIns(JL, TstIndex, NULL);
         if (PValue != PValue1)
@@ -825,6 +827,7 @@ TestJudyGet(void *J1, void *JL, void *JH, Word_t Seed, Word_t Elements)
         {
             printf("TstIndex 0x%zx PValue %p *PValue 0x%zx\n",
                    TstIndex, PValue, *PValue);
+            JudyLDump((Word_t)JL, sizeof(Word_t) * 8, TstIndex);
             FAILURE("JudyLGet ret wrong Value at", elm);
         }
 
@@ -1039,6 +1042,13 @@ TestJudyCount(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
         }
     }
 
+  #ifndef NO_TEST_BY_COUNT
+    // Number of keys preceding LowIndex.
+    // LowIndex is not counted in wLowCount.
+    Word_t wLowCount
+        = (LowIndex == 0) ? 0 : Judy1Count(J1, 0, LowIndex - 1, NULL);
+  #endif // !NO_TEST_BY_COUNT
+
     for (elm = 0; elm < Elements; elm++)
     {
         Count1 = Judy1Count(J1, LowIndex, TstIndex, NULL);
@@ -1073,6 +1083,38 @@ TestJudyCount(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
             FAILURE("Count at", elm);
         }
 
+  #ifndef NO_TEST_BY_COUNT
+        // LowIndex is counted in Count1 if it is present.
+        Word_t wByKey = LowIndex;
+        Word_t wByCnt = Count1;
+        int retBy = Judy1ByCount(J1, wByCnt, &wByKey, NULL);
+        if (retBy != 1) {
+            FAILURE("ByCount != -1; wByCnt", wByCnt);
+        }
+        if (wByKey != TstIndex) {
+            printf("LowIndex 0x%zx TstIndex 0x%zx Count1 %zd\n",
+                   LowIndex, TstIndex, Count1);
+            printf("wByCnt %zd wByKey 0x%zx\n", wByCnt, wByKey);
+            FAILURE("ByCount from LowIndex at elm", elm);
+        }
+        wByKey = 0;
+        wByCnt += wLowCount;
+        retBy = Judy1ByCount(J1, wByCnt, &wByKey, NULL);
+        if (retBy != 1) {
+            FAILURE("ByCount != -1; wByCnt", wByCnt);
+        }
+        if (wByKey != TstIndex) {
+            printf("wLowCount %zd\n", wLowCount);
+            printf("LowIndex 0x%zx TstIndex 0x%zx Count1 %zd\n",
+                   LowIndex, TstIndex, Count1);
+            printf("wByCnt %zd wByKey 0x%zx\n", wByCnt, wByKey);
+            FAILURE("ByCount from 0 at elm", elm);
+        }
+  #endif // !NO_TEST_BY_COUNT
+
+        assert(TstIndexL == TstIndex);
+        assert(TstIndex1 == TstIndex);
+        Word_t PrevIndex = TstIndex;
 #if defined(USE_JUDY1_NEXT_IN_COUNT)
         Rc = Judy1Next(J1, &TstIndex1, NULL);
         TstIndex = TstIndex1;
@@ -1096,10 +1138,11 @@ TestJudyCount(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
                 JudyLLast(JL, &LastIndexL, NULL);
                 printf("PValue = %p Rc = %d\n", (void*)PValue, Rc);
                 printf("Elements = %zd\n", Elements);
-                printf("LastIndexL = %zd 0x%zx LastIndex1 = %zd 0x%zx\n",
-                       LastIndexL, LastIndexL, LastIndex1, LastIndex1);
-                printf("Next TstIndexL = %zd 0x%zx != TstIndex1 = %zd 0x%zx\n",
-                       TstIndexL, TstIndexL, TstIndex1, TstIndex1);
+                printf("LastIndexL 0x%zx LastIndex1 0x%zx\n",
+                       LastIndexL, LastIndex1);
+                printf("PrevIndex 0x%zx\n", PrevIndex);
+                printf("Next TstIndexL 0x%zx != TstIndex1 0x%zx\n",
+                       TstIndexL, TstIndex1);
                 FAILURE("Count at", elm);
             }
         }
@@ -1138,6 +1181,7 @@ Word_t TestJudyNext(void *J1, void *JL, Word_t LowIndex, Word_t Elements)
         if (JLindex != J1index)
         {
             printf("JudyLNext = %zx Judy1Next = %zx\n", JLindex, J1index);
+            Judy1Dump((Word_t)J1, sizeof(Word_t) * 8, 0);
             FAILURE("JudyLNext & Judy1Next ret different *PIndex at", elm);
         }
 
