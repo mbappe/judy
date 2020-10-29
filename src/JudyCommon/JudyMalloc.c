@@ -50,10 +50,31 @@ Word_t    j__AllocWordsJV; // j__AllocWordsJLB2 for JUDY1 for MIKEY_1
 Word_t    j__NumbJV;
 #endif // RAMMETRICS
 
+#ifdef DSMETRICS_HITS
+  #ifdef DSMETRICS_NHITS
+    #error DSMETRICS_HITS and DSMETRICS_NHITS are mutually exclusive.
+  #endif // DSMETRICS_NHITS
+  #undef  DSMETRICS_GETS
+  #define DSMETRICS_GETS
+#endif // DSMETRICS_HITS
+
+#ifdef DSMETRICS_NHITS
+  #undef  DSMETRICS_GETS
+  #define DSMETRICS_GETS
+#endif // DSMETRICS_NHITS
+
+#ifdef DSMETRICS_GETS
+  #undef  SEARCHMETRICS
+  #define SEARCHMETRICS
+#endif // DSMETRICS_GETS
+
 #ifdef SEARCHMETRICS
-Word_t j__SearchPopulation;
 Word_t j__GetCalls;
+Word_t j__GetCallsNot;
+Word_t j__GetCallsSansPop;
+Word_t j__SearchPopulation;
 Word_t j__DirectHits;
+Word_t j__NotDirectHits;
 Word_t j__GetCallsP;
 Word_t j__GetCallsM;
 Word_t j__MisComparesP;
@@ -275,6 +296,23 @@ pre_mmap(void *addr, Word_t length, int prot, int flags, int fd, off_t offset)
 
 #endif // LIBCMALLOC
 
+#ifdef RAMMETRICS
+static Word_t
+AllocWords(Word_t *pw, int nWords)
+{
+    (void)pw; (void)nWords;
+  #ifdef EXCLUDE_MALLOC_OVERHEAD
+    return nWords;
+  #else // EXCLUDE_MALLOC_OVERHEAD
+      #if !defined(LIBCMALLOC) || defined(__linux__)
+    return (pw[-1] & 0xfffff8) / sizeof(Word_t); // dlmalloc head word
+      #else // !defined(LIBCMALLOC) || defined(__linux__)
+    return nWords;
+      #endif //#else !defined(LIBCMALLOC) || defined(__linux__)
+  #endif // EXCLUDE_MALLOC_OVERHEAD
+}
+#endif // RAMMETRICS
+
 // ****************************************************************************
 // J U D Y   M A L L O C
 //
@@ -342,13 +380,7 @@ JudyMallocX(int Words, int nSpace, int nLogAlign)
         if (Addr)
         {
             j__RequestedWordsTOT += Words;
-  #if !defined(LIBCMALLOC) || defined(__linux__)
-            // get # bytes in malloc buffer from preamble
-            Word_t zAllocWords = (((Word_t *)Addr)[-1] & ~3) / sizeof(Word_t);
-  #else // !defined(LIBCMALLOC) || defined(__linux__)
-            Word_t zAllocWords = Words;
-  #endif // #else !defined(LIBCMALLOC) || defined(__linux__)
-            j__AllocWordsTOT += zAllocWords;
+            j__AllocWordsTOT += AllocWords((void*)Addr, Words);
         }
 #endif  // RAMMETRICS
 
@@ -410,15 +442,8 @@ JudyFreeX(Word_t PWord, int Words, int nSpace)
     (void)nSpace;
 
 #ifdef  RAMMETRICS
-  #if !defined(LIBCMALLOC) || defined(__linux__)
-    // get # bytes in malloc buffer from preamble
-    Word_t zAllocWords = (((Word_t *)PWord)[-1] & ~3) / sizeof(Word_t);
-  #else // !defined(LIBCMALLOC) || defined(__linux__)
-    Word_t zAllocWords = Words;
-  #endif // #else !defined(LIBCMALLOC) || defined(__linux__)
-    j__AllocWordsTOT -= zAllocWords;
-
     j__MalFreeCnt++;        // keep track of total malloc() + free()
+    j__AllocWordsTOT -= AllocWords((void*)PWord, Words);
     j__RequestedWordsTOT -= Words;
 #endif  // RAMMETRICS
 
@@ -438,8 +463,10 @@ JudyFreeX(Word_t PWord, int Words, int nSpace)
         if (GuardWord != ~(Word_t)PWord)
         {
             printf("\n\nOops JF(PWord %p Words 0x%x)"
-                   " GuardWord aka PWord[Words] 0x%zx != ~PWord 0x%zx\n",
-                   (void *)PWord, Words, GuardWord, ~(Word_t)PWord);
+                   " GuardWord aka PWord[Words] 0x%zx != ~PWord 0x%zx"
+                   " &PWord[Words] %p\n",
+                   (void *)PWord, Words, GuardWord, ~PWord,
+                   (((Word_t*)PWord) + Words));
             exit(-1);
         }
 
@@ -482,7 +509,7 @@ void JudyFree(Word_t PWord, int Words)
 #endif // #else JUDY_105
 {
     (void) Words;
-    JudyFreeX((Word_t)PWord, Words, /* nSpace */ -1);
+    JudyFreeX(PWord, Words, /* nSpace */ -1);
 }
 
 
