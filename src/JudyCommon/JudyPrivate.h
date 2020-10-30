@@ -289,18 +289,45 @@ extern Word_t  j__DirectHits;
 
 #define KEYSPERBUCKET(KEY)   (BUCKETSIZE / (KEY))
 
-// Perhaps should change name to SEARCHCOMPAREMISES
-#define  MISCOMPARESP(CNT)      (j__MisComparesP   += (Word_t)(CNT), j__GetCallsP++)
-#define  MISCOMPARESM(CNT)      (j__MisComparesM   += (Word_t)(CNT), j__GetCallsM++)
-
-#define  MISCOMPARESP1          (j__MisComparesP++)     // GETCALLS() must be called appropriately
-#define  MISCOMPARESM1          (j__MisComparesM++)
-
+#ifdef DSMETRICS_NHITS
+#define  GETCALLSP
+#define  GETCALLSM
+#else // DSMETRICS_NHITS
 #define  GETCALLSP              (j__GetCallsP++)        // for B1 & Binary search only
 #define  GETCALLSM              (j__GetCallsM++)        // for B1 & Binary search only
+#endif // DSMETRICS_NHITS else
 
+// Perhaps should change name to SEARCHCOMPAREMISES
+#ifdef SMETRICS_MISCOMPARES
+#define  MISCOMPARESP(CNT)      { j__MisComparesP   += (Word_t)(CNT); GETCALLSP; }
+#define  MISCOMPARESM(CNT)      { j__MisComparesM   += (Word_t)(CNT); GETCALLSM; }
+#define  MISCOMPARESP1          (j__MisComparesP++)     // GETCALLS() must be called appropriately
+#define  MISCOMPARESM1          (j__MisComparesM++)
+#else // SMETRICS_MISCOMPARES
+#define  MISCOMPARESP(CNT)      GETCALLSP
+#define  MISCOMPARESM(CNT)      GETCALLSM
+#define  MISCOMPARESP1                                  // GETCALLS() must be called appropriately
+#define  MISCOMPARESM1
+#endif // SMETRICS_MISCOMPARES endif
+
+#ifdef DSMETRICS_GETS
+    #define GETCALLS
+#else // DSMETRICS_GETS
+    #define GETCALLS  (j__GetCalls++)
+#endif // DSMETRICS_GETS else
+
+#ifdef DSMETRICS_HITS
+#define  DIRECTHITS
+#else // DSMETRICS_HITS
 #define  DIRECTHITS             (j__DirectHits++)
-#define  SEARCHPOPULATION(CNT)  (j__SearchPopulation += (Word_t)(CNT), j__GetCalls++)
+#endif // DSMETRICS_HITS else
+
+#ifdef SMETRICS_SEARCH_POP
+#define  SEARCHPOPULATION(CNT)  { j__SearchPopulation += (Word_t)(CNT); GETCALLS; }
+#else // SMETRICS_SEARCH_POP
+#define  SEARCHPOPULATION(CNT)  GETCALLS
+#endif // SMETRICS_SEARCH_POP else
+
 #else
 #define  MISCOMPARESP(CNT)
 #define  MISCOMPARESM(CNT)
