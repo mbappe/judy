@@ -146,8 +146,8 @@ extern Word_t    j__AllocWordsJBL;
 extern Word_t    j__AllocWordsJLB1;
 // extern Word_t    j__AllocWordsJLB2;
 extern Word_t    j__AllocWordsJLL[8];
-Word_t    j__AllocWordsJV;
-Word_t    j__NumbJV;
+extern Word_t    j__AllocWordsJV;
+extern Word_t    j__NumbJV;
 #endif // RAMMETRICS
 
 #define   j__AllocWordsJLLW  j__AllocWordsJLL[0]
