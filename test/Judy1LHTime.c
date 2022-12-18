@@ -134,8 +134,6 @@ SM_EXTERN Word_t j__NotDirectHits;
 SM_EXTERN Word_t j__GetCallsP;
 // Num Gets with no direct hit and resulting in backward search.
 SM_EXTERN Word_t j__GetCallsM;
-SM_EXTERN Word_t j__MisComparesP; // Sum of miscompares j__GetCallsP.
-SM_EXTERN Word_t j__MisComparesM; // Sum of miscompares j__GetCallsM.
 
 // The released Judy libraries do not, and some of Doug's work-in-progress
 // libraries may not, have Judy1Dump and/or JudyLDump entry points.
@@ -389,6 +387,84 @@ int       TestByteTest(PNewSeed_t PSeed, Word_t Meas);
 
 int       TimeNumberGen(void **TestRan, PNewSeed_t PSeed, Word_t Delta);
 
+#ifdef  TESTCOUNTACCURACY
+#undef __FUNCTI0N__
+#define __FUNCTI0N__ "Judy1CountWithNext"
+static Word_t Judy1CountWithNext(Pvoid_t J1, Word_t Key1, Word_t Key2)
+{
+    if (Key1 > Key2)                // make Key1 smaller than Key2
+    {
+        Key1 = Key1 ^ Key2;
+        Key2 = Key1 ^ Key2;
+        Key1 = Key1 ^ Key2;
+    }
+
+    int Rc = Judy1First(J1, &Key1, PJE0);
+    if (Rc != 1)
+        return((Word_t)0);
+    if (Key1 == Key2)
+    {
+        return((Word_t)1);
+    }
+
+    Word_t NextCount;
+    for (NextCount = 0; Key1 < Key2; NextCount++)
+    {
+        Word_t  PrevKey = Key1;
+        Rc = Judy1Next(J1, &Key1, PJE0);
+        if (Rc != 1) {
+            Key1 = Key2; // Make sure it gets counted.
+            break;
+        }
+        if (Key1 <= PrevKey)
+        {
+            printf("\n--OOps, Judy1CountWithNext failed Key1 = 0x%zx >= PrevKey = 0x%zx", Key1, PrevKey);
+            FAILURE("--OOps, Judy1CountWithNext failed at = ", NextCount);
+        }
+    }
+    if (Key1 == Key2)
+        NextCount++;
+    return (NextCount);
+}
+
+#undef __FUNCTI0N__
+#define __FUNCTI0N__ "JudyLCountWithNext"
+static Word_t JudyLCountWithNext(Pvoid_t JL, Word_t Key1, Word_t Key2)
+{
+    if (Key1 > Key2)                // make Key1 the smallest
+    {
+        Key1 = Key1 ^ Key2;
+        Key2 = Key1 ^ Key2;
+        Key1 = Key1 ^ Key2;
+    }
+    Pvoid_t Pvoid = JudyLFirst(JL, &Key1, PJE0);
+    if (Pvoid == (Pvoid_t)0)
+        return((Word_t)0);
+
+    if (Key1 == Key2)
+        return((Word_t)1);
+
+    Word_t NextCount;
+    for (NextCount = 0; Key1 < Key2; NextCount++)
+    {
+        Word_t  PrevKey = Key1;
+        Pvoid = JudyLNext(JL, &Key1, PJE0);
+        if (Pvoid == (Pvoid_t)0) {
+            Key1 = Key2; // Make sure it gets counted.
+            break;
+        }
+        if (Key1 <= PrevKey)
+        {
+            printf("\n--OOps, JudyLCountWithNext failed Key1 = 0x%zx >= PrevKey = 0x%zx", Key1, PrevKey);
+            FAILURE("--OOps, JudyLCountWithNext failed at = ", NextCount);
+        }
+    }
+    if (Key1 == Key2)
+        NextCount++;
+    return (NextCount);
+}
+#endif // TESTCOUNTACCURACY
+
 
 // Routine to get next size of Keys
 static int                              // return 1 if last number
@@ -438,9 +514,194 @@ Swizzle(Word_t word)
     return (word);
 }
 
+// Print as many significant digits of dVal as possible using engineering
+// notation without exceeding nCharsFieldWidth characters. If
+// nCharsFieldWidth is not big enough then print dVal with one to three
+// significant digits using engineering notation.
+// If fabs(dVal) is less than one and nCharsFieldWidth is not big enough and
+// bRoundToZero is true then round dVal to -1, 0 or 1.
+// If dVal > 0 and rounded to zero and nCharsFieldWidth > 1, then print "+0".
+// If dVal < 0 and rounded to zero and nCharsFieldWidth > 1, then print "-0".
+void
+PrintValEng(double dVal, int nCharsFieldWidth, int bRoundToZero)
+{
+#ifdef DEBUG_PRINT_VAL_ENG
+    printf("nCharsFieldWidth %d\n", nCharsFieldWidth);
+#endif // DEBUG_PRINT_VAL_ENG
+    if (nCharsFieldWidth < 1) {
+        return;
+    }
+
+again:
+    if (dVal == 0) {
+        for (int i = 0; i < nCharsFieldWidth - 1; ++i) putchar(' ');
+        putchar('0');
+        return;
+    }
+#ifdef DEBUG_PRINT_VAL_ENG
+    printf("dVal %20.12f\n", dVal);
+    printf("dVal %24.12e\n", dVal);
+#endif // DEBUG_PRINT_VAL_ENG
+
+    int nExp = (int)floor(log10(fabs(dVal)));
+    if (nExp < 0) {
+        nExp -= 2;
+    }
+    nExp = nExp / 3 * 3;
+#ifdef DEBUG_PRINT_VAL_ENG
+    printf("nExp %d\n", nExp);
+#endif // DEBUG_PRINT_VAL_ENG
+
+    double dSig = dVal / pow(10, nExp);
+#ifdef DEBUG_PRINT_VAL_ENG
+    printf("dSig %f\n", dSig);
+#endif // DEBUG_PRINT_VAL_ENG
+    assert(fabs(dSig) >= 1);
+    assert(fabs(dSig) < 1000);
+
+    // digits needed for numeric part of exponent
+    int nDigitsExp = 0; // initialize in case nExp is zero
+    if (nExp != 0) {
+        nDigitsExp = (int)floor(log10(abs(nExp))) + 1;
+    }
+#ifdef DEBUG_PRINT_VAL_ENG
+    printf("nDigitsExp %d\n", nDigitsExp);
+#endif // DEBUG_PRINT_VAL_ENG
+
+    // characters needed for exponent field including 'e' plus '-' if needed
+    int nCharsExp = nDigitsExp + (nExp != 0) + (nExp < 0);
+#ifdef DEBUG_PRINT_VAL_ENG
+    printf("nCharsExp %d\n", nCharsExp);
+#endif // DEBUG_PRINT_VAL_ENG
+
+    // characters available for significand
+    int nCharsSig = nCharsFieldWidth - nCharsExp;
+#ifdef DEBUG_PRINT_VAL_ENG
+    printf("nCharsSig %d\n", nCharsSig);
+#endif // DEBUG_PRINT_VAL_ENG
+
+    // digits needed left of the decimal point
+    int nDigitsWhole = (int)floor(log10(fabs(dSig))) + 1;
+#ifdef DEBUG_PRINT_VAL_ENG
+    printf("nDigitsWhole %d\n", nDigitsWhole);
+#endif // DEBUG_PRINT_VAL_ENG
+
+    // characters needed left of the decimal point including '-' if needed
+    int nCharsWhole = nDigitsWhole + (dSig < 0);
+#ifdef DEBUG_PRINT_VAL_ENG
+    printf("nCharsWhole %d\n", nCharsWhole);
+#endif // DEBUG_PRINT_VAL_ENG
+
+    if (nCharsWhole > nCharsSig) {
+        // We don't have enough characters to represent dVal correctly
+        // given our requirement that we use only multiple of three
+        // exponents and 1 <= significand < 1000.
+        // We go ahead and overflow the field for a nonnegative exponent.
+        // What should we do for a negative exponent?
+        // Round to -1 (may overflow the field anyway), 0, or 1?
+        // Or go ahead and overflow the field to get at least one significant
+        // digit?
+        if (nExp < 0) {
+            if (round(dVal) != 0) {
+                assert(fabs(dVal) == 1);
+                dVal = round(dVal);
+#ifdef DEBUG_PRINT_VAL_ENG
+                printf("Again C\n\n");
+#endif // DEBUG_PRINT_VAL_ENG
+                goto again;
+            }
+            if (bRoundToZero) {
+                if (nCharsFieldWidth == 1) {
+                    putchar('0');
+                    return;
+                }
+                for (int i = 0; i < nCharsFieldWidth - 2; ++i) putchar(' ');
+                printf("%c0", dVal < 0 ? '-' : '+');
+                return;
+            }
+        }
+        if (nCharsSig < 1) {
+            // we don't have enough characters
+            nCharsSig = 1;
+        }
+    }
+
+    // number of characters left for fractional digits
+    int nDigitsFraction = nCharsFieldWidth - nCharsExp - nDigitsWhole - 1;
+#ifdef DEBUG_PRINT_VAL_ENG
+    printf("nDigitsFraction %d\n", nDigitsFraction);
+#endif // DEBUG_PRINT_VAL_ENG
+
+    char strFormat[25];
+    // Does adding .5 or .05 or .005 result in rounding up to
+    // 10 or 100 or 1000?
+    if (nDigitsFraction >= 1) {
+        // We have room for a decimal point and at least one digit of fraction.
+        // Rounding may result in an extra digit, e.g. 999.99 to 1000.0.
+        assert(dSig != 0);
+        double dSigNoExp = dSig * pow(10, nDigitsFraction);
+#ifdef DEBUG_PRINT_VAL_ENG
+        printf("dSigNoExp %f\n", dSigNoExp);
+#endif // DEBUG_PRINT_VAL_ENG
+        if (floor(log10(fabs(round(dSigNoExp)))) > log10(fabs(dSigNoExp))) {
+            dVal = round(dSigNoExp) / pow(10, nDigitsFraction - nExp);
+#ifdef DEBUG_PRINT_VAL_ENG
+            printf("Again A\n\n");
+#endif // DEBUG_PRINT_VAL_ENG
+            goto again;
+        }
+        // %<x>.<y>f min field width <x>; fraction digits <y>
+        sprintf(strFormat, "%%%d.%df", nCharsSig, nDigitsFraction);
+#ifdef DEBUG_PRINT_VAL_ENG
+        printf("xxx ");
+        for (int i = 0; i < nCharsFieldWidth; ++i) putchar(' ');
+        printf(" xxx\n");
+        printf("xxx ");
+#endif // DEBUG_PRINT_VAL_ENG
+        printf(strFormat, dSig);
+    } else {
+        assert(fabs(dSig) >= 1);
+        assert(fabs(dSig) < 1000);
+        if ((dSig >= 999.5) || (dSig <= -999.5)) {
+            dVal = round(dSig) * pow(10, nExp);
+#ifdef DEBUG_PRINT_VAL_ENG
+            printf("Again B\n\n");
+#endif // DEBUG_PRINT_VAL_ENG
+            goto again;
+        }
+        // We do not have space for a decimal point and at least one digit.
+        // BUG: nDigitsFraction < 0
+        // FIX: add three to nExp
+        // BUG: adding three increases nCharsExp so
+        // nCharsFieldWidth - nCharsExp does not leave space for decimal point
+        // and one digit; are we forced to overflow the field?
+        // should we resort to non-power of three exponent to avoid overflow?
+        sprintf(strFormat, "%%%dd", nCharsSig);
+#ifdef DEBUG_PRINT_VAL_ENG
+        printf("xxx ");
+        for (int i = 0; i < nCharsFieldWidth; ++i) putchar(' ');
+        printf(" xxx\n");
+        printf("xxx ");
+#endif // DEBUG_PRINT_VAL_ENG
+        printf(strFormat, (int)round(dSig));
+    }
+    if (nExp != 0) {
+        printf("e%d", nExp);
+    }
+#ifdef DEBUG_PRINT_VAL_ENG
+    printf(" xxx\n");
+    printf("xxx ");
+    for (int i = 0; i < nCharsFieldWidth; ++i) putchar(' ');
+    printf(" xxx");
+    putchar('\n');
+#endif // DEBUG_PRINT_VAL_ENG
+}
+
 // PrintValFF - PrintValFreeForm
-// Print dVal in nWidth provided with a format that fits with as
-// much precision as possible.
+// Print dVal with as much precision as possible in nWidth characters.
+// Sort of. We prefer not using an exponent.
+// We resort to using an exponent only if we cannot get at
+// least one significant digit without using an exponent.
 static void
 PrintValFF(double dVal, // raw value to be scaled, formatted and printed
            int nWidth, // field width for printed number
@@ -448,31 +709,39 @@ PrintValFF(double dVal, // raw value to be scaled, formatted and printed
            )
 {
     char acFormat[24];
-    double dExpWidth = pow(10, nWidth);
-    if ((dVal > .05) && (dVal <= pow(10, nWidth - 2) - .5)) {
+    int nWholeDigits = floor(log10(dVal)) + 1; // min needed for dVal > 1
+    int nFractionDigits = -floor(log10(dVal)); // min needed for dVal < 1
+    if ((nWholeDigits < nWidth - 1) && (nFractionDigits <= nWidth - 2)) {
         // decimal point and no exponent
-        sprintf(acFormat, "%%%d.%df", nWidth, nWidth - 2 - (int)log10(dVal));
+        nWholeDigits = nWholeDigits < 1 ? 1 : nWholeDigits;
+        sprintf(acFormat, "%%%d.%df", nWidth, nWidth - nWholeDigits - 1);
          printf(acFormat, dVal);
-    } else
-    if ((dVal > pow(10, nWidth - 2) - .5) && (dVal <= pow(10, nWidth) + .5)) {
-        // no decimal point or exponent
+        return;
+    }
+    if ((nWholeDigits == nWidth) || (nWholeDigits == nWidth - 1)) {
+        // no decimal point and no exponent
         sprintf(acFormat, "%%%dd", nWidth); // minimum field width
-         printf(acFormat, (unsigned long)dVal);
-    } else
-    if (dVal < 5 / pow(10, nWidth)) {
+         printf(acFormat, (long)(dVal + .5));
+        return;
+    }
+    // Must use an exponent.
+    // Normalized scientific notation: 1 <= abs(significant) < 10.
+    // Engineering notation: exponents are multiples of 3.
+    if (dVal < 1) {
         // Must use a variant of scientific notation with a negative exponent.
-        if (dVal < 1e-9) {
-            sprintf(acFormat, "%%%dd", nWidth); // minimum field width
-             printf(acFormat, 0);
-        } else {
+        // Can we stick with multiples of 3 for the exponent?
+        // Not unless we have enough width.
+        if (nWidth <= 6) {
             sprintf(acFormat, "%%%d.0e", nWidth); // minimum field width
-             printf(acFormat, dVal);
+        } else {
+            sprintf(acFormat, "%%%d.%de", nWidth, nWidth - 6);
         }
-    } else /* if (dVal >= dExpWidth - .5) */ {
+         printf(acFormat, dVal);
+        return;
+    }
+    double dExpWidth = pow(10, nWidth);
+    {
         // Must use a variant of scientific notation with a positive exponent.
-        // Normalized scientific notation: 1 <= abs(significant) < 10.
-        // Engineering notation: exponents are multiples of 3.
-        // The '=' above is necessary to avoid assertion below.
         // How many digits of exponent are needed?
         //  999e9 is dMax for 5 characters with 1 digit  of exponent
         //        it represents up to  999.5e9
@@ -482,7 +751,7 @@ PrintValFF(double dVal, // raw value to be scaled, formatted and printed
         //        it represents up to  99.5e99
         // 999e99 is dMax for 6 characters with 2 digits of exponent
         //        it represents up to 999.5e99
-        // Does GNUplot understand SI prefixes, e.g. k, M, G, T? No.
+        // Does GNUplot understand SI suffixes, e.g. k, M, G, T? No.
         int nDigitsSig = nWidth - 2; // no decimal point in significand
         int nDigitsExp = 1; // arbitrary -- ok for now
         double dMaxE1 = (pow(10, nDigitsSig) - .5) * pow(10, pow(10, nDigitsExp) - 1);
@@ -540,13 +809,21 @@ PrintValX(double dVal, // raw value to be scaled, formatted and printed
     fputs(strPrefix, stdout);
     dVal *= dScale;
     char acFormat[16];
-    int nLogVal = log10(dVal);
-    if ((nDigitsFraction > 0) && (nLogVal < nWidth - nDigitsFraction - 1)) {
+    double dValMax;
+    double dValMin = pow(10, -nDigitsFraction) / 2;
+    if (nDigitsFraction == 0) {
         sprintf(acFormat, "%%%d.%df", nWidth, nDigitsFraction);
-         printf(acFormat, dVal);
-    } else if ((nDigitsFraction == 0) && (nLogVal < nWidth)) {
-        sprintf(acFormat, "%%%dlu", nWidth);
-         printf(acFormat, (unsigned long)dVal);
+        dValMax = pow(10, nWidth - nDigitsFraction) - dValMin;
+    } else {
+        sprintf(acFormat, "%%%d.%df", nWidth, nDigitsFraction);
+        dValMax = pow(10, nWidth - nDigitsFraction - 1) - dValMin;
+    }
+    if ((dVal == 0) || ((dVal > dValMin) && (dVal < dValMax))) {
+        printf(acFormat, dVal);
+    // Using strPrefix[0] == '\0' to trigger calling of PrintValEng
+    // instead of PrintValFF is a hack.
+    } else if (strPrefix[0] == '\0') {
+        PrintValEng(dVal, nWidth, /*bRoundToZero*/ 1);
     } else {
         PrintValFF(dVal, nWidth, bUseSymbol);
     }
@@ -572,7 +849,8 @@ PrintValx100(double dVal, // raw value to be scaled, formatted and printed
               /* strPrefix */ " ", /* dScale */ 100);
 }
 
-#define PRINT5_1f(__X)  PrintValx100((__X), 5, 1)
+#define PRINT5_1f(__X) \
+    PrintValX((__X), 5, 1, /*Symbol*/0, /*Prefix*/ " ", /*Scale*/ 100)
 
 static void
 PRINT6_1f(double __X)
@@ -706,7 +984,7 @@ Word_t    PtsPdec = 50;                 // 4.71% spacing - default
 // command line for -s to get numbers near the maximum of the expanse.
 #define DEFAULT_BVALUE  (sizeof(Word_t) * 8)
 Word_t    BValue = DEFAULT_BVALUE;
-double    Bpercent = 100.0; // Default MaxNumb assumes 100.0.
+long double    Bpercent = 100.0; // Default MaxNumb assumes 100.0.
 // MaxNumb is initialized from DEFAULT_BVALUE and assumes Bpercent = 100.0.
 // Then overridden by -N and/or by -B. The last one on the command line wins.
 // Then trimmed if bSplayKeyBits
@@ -935,10 +1213,17 @@ GetNextKey(PNewSeed_t PNewSeed)
     return GetNextKeyX(PNewSeed, wFeedBTap /*global*/, bLfsrOnly /*global*/);
 }
 
+Word_t wPopWidth = 7; // Width of pop field in output.
+Word_t wCloseCountsMask; // Common prefix for keys in Count calls.
+int bCountTwiddledKeys; // Test keys that are probably not present with -S0.
+int bTestFirstEmpty;
+
 static void
 PrintHeaderX(const char *strFirstCol, int nRow)
 {
-    printf("# %4s", strFirstCol);
+    char acFormat[16];
+    sprintf(acFormat, "# %%%zds", wPopWidth - 2);
+    printf(acFormat, strFirstCol);
 
     printf(nRow ? "   Ins" : " Delta");
     printf(nRow ? "  Meas" : "   Get");
@@ -998,14 +1283,25 @@ PrintHeaderX(const char *strFirstCol, int nRow)
             printf(nRow ? "      " : "   J1P");
         if (JLFlag)
             printf(nRow ? "      " : "   JLP");
-        if (J1Flag)
-            printf(nRow ? "      " : "  J1NE");
-        if (JLFlag)
-            printf(nRow ? "      " : "  JLNE");
-        if (J1Flag)
-            printf(nRow ? "      " : "  J1PE");
-        if (JLFlag)
-            printf(nRow ? "      " : "  JLPE");
+        if (bTestFirstEmpty) {
+            if (J1Flag)
+                printf(nRow ? "      " : "  J1FE");
+            if (JLFlag)
+                printf(nRow ? "      " : "  JLFE");
+            if (J1Flag)
+                printf(nRow ? "      " : "  J1LE");
+            if (JLFlag)
+                printf(nRow ? "      " : "  JLLE");
+        } else {
+            if (J1Flag)
+                printf(nRow ? "      " : "  J1NE");
+            if (JLFlag)
+                printf(nRow ? "      " : "  JLNE");
+            if (J1Flag)
+                printf(nRow ? "      " : "  J1PE");
+            if (JLFlag)
+                printf(nRow ? "      " : "  JLPE");
+        }
     }
 
     if (dFlag)
@@ -1053,13 +1349,10 @@ PrintHeaderX(const char *strFirstCol, int nRow)
         if (JLFlag || JRFlag)
             printf(nRow ? "      " : " MFL/K");
 #ifdef SEARCHMETRICS
-        printf(nRow ? "      " : " +MsCm");
-        printf(nRow ? "      " : " -MsCm");
+        printf(nRow ? "   Cnt" : "  Gets");
         printf(nRow ? " Lenth" : " Srch ");
         printf(nRow ? "      " : " %%DiHt");
-        printf(nRow ? "      " : " %%GetP");
-        printf(nRow ? "      " : " %%GetM");
-        printf(nRow ? "   Cnt" : "  Gets");
+        printf(nRow ? "      " : " %%SFwd");
 #endif // SEARCHMETRICS
     }
 
@@ -1255,8 +1548,6 @@ static struct option longopts[] = {
     { NULL, 0, NULL, 0 }
 };
 
-Word_t    MisComparesP;            // number times LGet/1Test called
-Word_t    MisComparesM;            // number times LGet/1Test called
 Word_t    DirectHits;               // Number of direct hits -- no search
 Word_t    NotDirectHits; // not counted in GetCallsP or GetCallsM
 Word_t    SearchPopulation;         // Population of Searched object
@@ -1265,9 +1556,9 @@ Word_t    GetCallsP;                 // number of search calls
 Word_t    GetCallsM;                 // number of search calls
 Word_t    GetCalls;                  // number of search calls
 
-#ifndef OLD_DS1_GROUPS
-
 #define EXP(x) ((Word_t)1<<(x))
+
+#ifndef OLD_DS1_GROUPS
 
 static Word_t Log16(Word_t n) { return LOG(n) / 4; }
 static Word_t Pow16(Word_t n) { return EXP(4 * n); }
@@ -1445,23 +1736,41 @@ LogIfdefs(void)
     // NO_SPLAY_KEY_BITS
     // NO_SVALUE
 
-  #ifdef         NO_TEST_NEXT_EMPTY // for turn-on
+  #ifdef         TEST_FIRST_EMPTY // and LAST_EMPTY not [NEXT|PREV]_EMPTY
+    printf("#    TEST_FIRST_EMPTY\n");
+  #else //       TEST_FIRST_EMPTY
+    printf("# No TEST_FIRST_EMPTY\n");
+  #endif //      TEST_FIRST_EMPTY else
+
+  #ifdef         NO_TEST_NEXT_EMPTY // for turn-on; includes PrevEmpty
     printf("#    NO_TEST_NEXT_EMPTY\n");
   #else //       NO_TEST_NEXT_EMPTY
     printf("# No NO_TEST_NEXT_EMPTY\n");
   #endif //      NO_TEST_NEXT_EMPTY else
 
-  #ifdef         NO_TEST_NEXT // for turn-on
+  #ifdef         NO_TEST_NEXT // for turn-on; ignore -v
     printf("#    NO_TEST_NEXT\n");
   #else //       NO_TEST_NEXT
     printf("# No NO_TEST_NEXT\n");
   #endif //      NO_TEST_NEXT else
+
+  #ifdef         NO_TEST_NEXT_PROPER // for turn-on; skip TestJudyNext
+    printf("#    NO_TEST_NEXT_PROPER\n");
+  #else //       NO_TEST_NEXT_PROPER
+    printf("# No NO_TEST_NEXT_PROPER\n");
+  #endif //      NO_TEST_NEXT_PROPER else
 
   #ifdef         NO_TEST_NEXT_USING_JUDY_NEXT
     printf("#    NO_TEST_NEXT_USING_JUDY_NEXT\n");
   #else //       NO_TEST_NEXT_USING_JUDY_NEXT
     printf("# No NO_TEST_NEXT_USING_JUDY_NEXT\n");
   #endif //      NO_TEST_NEXT_USING_JUDY_NEXT else
+
+  #ifdef         NO_TEST_PREV // to speed -v; includes PrevEmpty
+    printf("#    NO_TEST_PREV\n");
+  #else //       NO_TEST_PREV
+    printf("# No NO_TEST_PREV\n");
+  #endif //      NO_TEST_PREV else
 
     // NO_TRIM_EXPANSE
 
@@ -1476,6 +1785,12 @@ LogIfdefs(void)
   #else //       RAMMETRICS
     printf("# No RAMMETRICS\n");
   #endif //      RAMMETRICS else
+
+  #ifdef         REGRESS
+    printf("#    REGRESS\n");
+  #else //       REGRESS
+    printf("# No REGRESS\n");
+  #endif //      REGRESS else
 
   #ifdef         SEARCHMETRICS
     printf("#    SEARCHMETRICS\n");
@@ -1499,6 +1814,12 @@ LogIfdefs(void)
   #else //       TEST_NEXT_USING_JUDY_NEXT
     printf("# No TEST_NEXT_USING_JUDY_NEXT\n");
   #endif //      TEST_NEXT_USING_JUDY_NEXT else
+
+  #ifdef         TESTCOUNTACCURACY
+    printf("#    TESTCOUNTACCURACY\n");
+  #else //       TESTCOUNTACCURACY
+    printf("# No TESTCOUNTACCURACY\n");
+  #endif //      TESTCOUNTACCURACY else
 
   #ifdef         USE_MALLOC
     printf("#    USE_MALLOC\n");
@@ -1526,9 +1847,9 @@ PrintRowHeader(Word_t wPop, Word_t wDelta, Word_t wMeas)
     } else
 #endif
     {
-        PrintValX(wPop,   6, 0, /*bUseSymbol*/ 0, /*strPrefix*/ "" , /*dScale*/ 1);
-        PrintValX(wDelta, 5, 0, /*bUseSymbol*/ 1, /*strPrefix*/ " ", /*dScale*/ 1);
-        PrintValX(wMeas,  5, 0, /*bUseSymbol*/ 1, /*strPrefix*/ " ", /*dScale*/ 1);
+        PrintValX(wPop, wPopWidth, 0, /*sym*/ 0, /*prefix*/ "" , /*dScale*/ 1);
+        PrintValX(wDelta,       5, 0, /*sym*/ 1, /*prefix*/ " ", /*dScale*/ 1);
+        PrintValX(wMeas,        5, 0, /*sym*/ 1, /*prefix*/ " ", /*dScale*/ 1);
     }
 }
 
@@ -1674,6 +1995,37 @@ main(int argc, char *argv[])
 
     exit(1);
 #endif // LATER
+
+// ============================================================
+// ENVIRONMENT VARIABLES
+// ============================================================
+
+    char* strPopWidth = getenv("POP_WIDTH");
+    if (strPopWidth != NULL) {
+        wPopWidth = strtoul(strPopWidth, 0, 0);
+    }
+
+  #ifndef TEST_COUNT_USING_JUDY_NEXT
+    char* strCloseCountsMask = getenv("CLOSE_COUNTS_MASK");
+    if (strCloseCountsMask != NULL) {
+        wCloseCountsMask = strtoul(strCloseCountsMask, 0, 0);
+    }
+  #endif // !TEST_COUNT_USING_JUDY_NEXT
+
+    char* strCountTwiddledKeys = getenv("COUNT_TWIDDLED_KEYS");
+    if (strCountTwiddledKeys != NULL) {
+        bCountTwiddledKeys = atoi(strCountTwiddledKeys);
+    }
+
+    // Use ifdef or environment variable to set bTestFirstEmpty.
+  #ifdef TEST_FIRST_EMPTY
+    bTestFirstEmpty = 1;
+  #else // TEST_FIRST_EMPTY
+    char* strTestFirstEmpty = getenv("TEST_FIRST_EMPTY");
+    if (strTestFirstEmpty != NULL) {
+        bTestFirstEmpty = atoi(strTestFirstEmpty);
+    }
+  #endif // TEST_FIRST_EMPTY else
 
 // ============================================================
 // PARSE INPUT PARAMETERS
@@ -1853,7 +2205,7 @@ eopt:
             if (Bpercent < 50.0 || Bpercent > 100.0)
             {
                 ErrorFlag++;
-                printf("\nError --- Bpercent = %.2f must be at least 50"
+                printf("\nError --- Bpercent = %.2Lf must be at least 50"
                            " and no more than 100 !!!\n",
                        Bpercent);
                 break;
@@ -2426,7 +2778,12 @@ eopt:
 //  print Title for plotting -- command + run arguments
 //
 
-    printf("# TITLE %s -W%" PRIuPTR"", argv[0], Warmup);
+    printf("# TITLE");
+    if (wCloseCountsMask) printf(" CLOSE_COUNTS_MASK=0x%zx", wCloseCountsMask);
+    if (bCountTwiddledKeys) printf(" COUNT_TWIDDLED_KEYS=1");
+    if (bTestFirstEmpty) printf(" TEST_FIRST_EMPTY=1");
+    if (wPopWidth != 6) printf(" POP_WIDTH=%zd", wPopWidth);
+    printf(" %s -W%" PRIuPTR"", argv[0], Warmup);
 
     printf(" -");
 
@@ -2574,8 +2931,11 @@ eopt:
     printf("# nElms (number of keys to be inserted) = %" PRIuPTR"[0x%" PRIxPTR"]\n", nElms, nElms);
     printf("# MaxNumb (maximum key in expanse) = %" PRIuPTR"[0x%" PRIxPTR"]\n", MaxNumb, MaxNumb);
     printf("# BValue = %" PRIuPTR"\n", BValue);
-    printf("# Bpercent = %20.18f\n", Bpercent);
+    printf("# Bpercent = %20.18Lf\n", Bpercent);
 
+    // Put run date (not build date) in output.
+    printf("# Run date "); fflush(stdout);
+    int sysret = system("date"); (void)sysret;
 
     printf("# XLABEL Array Population\n");
     printf("# YLABEL Nano-Seconds -or- ???\n");
@@ -2969,13 +3329,10 @@ eopt:
                  Col++);
 
 #ifdef SEARCHMETRICS
-        printf("# COLHEAD %2d +MsCm - Average number forward Compares failed Per Leaf Search\n", Col++);
-        printf("# COLHEAD %2d -MsCm - Average number reverse Compares failed Per Leaf Search\n", Col++);
+        printf("# COLHEAD %2d Gets  - Num get calls\n", Col++);
         printf("# COLHEAD %2d Srch Lenth - Average Search Length (number of keys in list)\n", Col++);
         printf("# COLHEAD %2d %%DiHt - %% get calls the result in a direct hit\n", Col++);
-        printf("# COLHEAD %2d %%GetP - %% get calls that miss and search forward\n", Col++);
-        printf("# COLHEAD %2d %%GetM - %% get calls that miss and search backward\n", Col++);
-        printf("# COLHEAD %2d Gets  - Num get calls\n", Col++);
+        printf("# COLHEAD %2d %%SFwd - %% of misses that have to search forward\n", Col++);
 #endif // SEARCHMETRICS
     }
 
@@ -3085,6 +3442,12 @@ eopt:
     }
 
     LogIfdefs();
+
+    // Log parameters set by environment variables.
+  #ifndef TEST_COUNT_USING_JUDY_NEXT
+    printf("# wCloseCountsMask 0x%zx\n", wCloseCountsMask);
+  #endif // TEST_COUNT_USING_JUDY_NEXT
+    printf("# bCountTwiddledKeys %d\n", bCountTwiddledKeys);
 
 // ============================================================
 // Warm up the cpu
@@ -3211,22 +3574,20 @@ eopt:
         double DeltaGenBy = 0.0;
         double DeltanSec1Sum = 0.0;
         double DeltanSecLSum = 0.0;
-        double DeltanSecHSSum = 0.0;
+        //double DeltanSecHSSum = 0.0;
         double DeltanSecBtSum = 0.0;
         double DeltanSecBySum = 0.0;
         double DeltaMalFre1Sum = 0.0;
         double DeltaMalFreLSum = 0.0;
-        double DeltaMalFreHSSum = 0.0;
+        //double DeltaMalFreHSSum = 0.0;
 
         if (mFlag) {
             // reset SEARCHMETRICS for this delta
             SearchPopulation = GetCallsSansPop = GetCalls = 0;
-            MisComparesP = MisComparesM = 0;
             DirectHits = NotDirectHits = GetCallsP = GetCallsM = 0;
         }
 
         Delta = Pms[grp].ms_delta;
-
         if (Delta == 0)
             break;
 
@@ -3247,7 +3608,7 @@ eopt:
                 // overhead from a bigger delta can't really be bigger
                 // than the overhead from a smaller delta and implements
                 // a monotonically decreasing overhead value called "Min".
-                // Unfortunatly, the parts on one delta aren't always
+                // Unfortunately, the parts of one delta aren't always
                 // bigger than the parts of the previous delta.
             }
 nextPart:
@@ -3255,6 +3616,10 @@ nextPart:
                 Delta = wFinalPop1 - Pop1;
             }
         }
+
+        j__GetCalls = j__GetCallsNot = 0;
+        j__SearchPopulation = j__GetCallsSansPop = 0;
+        j__DirectHits = j__NotDirectHits = j__GetCallsP = j__GetCallsM = 0;
 
 //      Accumulate the Total population of arrays
         Pop1 += Delta;
@@ -3426,10 +3791,10 @@ nextPart:
             TestJudyIns(&J1, &JL, &InsertSeed, Delta);
             DeltanSec1Sum += DeltanSec1;
             DeltanSecLSum += DeltanSecL;
-            DeltanSecHSSum += DeltanSecHS;
+            //DeltanSecHSSum += DeltanSecHS;
             DeltaMalFre1Sum += DeltaMalFre1;
             DeltaMalFreLSum += DeltaMalFreL;
-            DeltaMalFreHSSum += DeltaMalFreHS;
+            //DeltaMalFreHSSum += DeltaMalFreHS;
 
             if (Pop1 == wFinalPop1) {
                 // last part of Delta
@@ -3461,6 +3826,7 @@ nextPart:
 //      get bigger this value should be changed to a bigger value.
 
 //          Test J1T, JLG, JHSG
+
 
                 if (Meas <= wDoTit0Max) {
                     BeginSeed = StartSeed;      // reset at beginning
@@ -3830,11 +4196,17 @@ nextPart:
       // a subset in the library, and without DSMETRICS_GETS we can use
       // j__GetCalls to indicate how many calls were actually instrumented.
       // Should we add j__GetCallsNot for DSMETRICS_GETS? Done.
+        Word_t NewGetCalls = 0;
       #ifdef DSMETRICS_GETS
-        Word_t NewGetCalls = Meas - j__GetCallsNot;
+        if (Pop1 == wFinalPop1) {
+            NewGetCalls = Meas - j__GetCallsNot;
+        }
       #else // DSMETRICS_GETS
-        Word_t NewGetCalls = j__GetCalls; // count of gets with instrumentation
+        NewGetCalls = j__GetCalls; // count of gets with instrumentation
       #endif // DSMETRICS_GETS else
+        // Why are we adding to GetCalls here?
+        // Is it left over from when we ran TestJudyGet on multiple parts
+        // in the same delta?
         GetCalls += NewGetCalls;
       // We added DSMETRICS_[N]HITS in the same vein, i.e. to
       // reduce the overhead of SEARCHMETRICS in the library.
@@ -3904,8 +4276,6 @@ nextPart:
       // search population, e.g. GetCallsSansPop, and Time exclude them from
       // the average search pop calculation? Done.
         GetCallsSansPop += j__GetCallsSansPop;
-        MisComparesP += j__MisComparesP;
-        MisComparesM += j__MisComparesM;
   #endif // SEARCHMETRICS
 
         if (Pop1 != wFinalPop1)
@@ -3993,9 +4363,19 @@ nextPart:
             WaitForContextSwitch(Meas);
             TestJudyCount(J1, JL, &BeginSeed, Meas);
             if (J1Flag)
+            {
+                if (DeltanSec1 < DeltaGen1) {
+                    DeltaGen1 = DeltanSec1;
+                }
                 PrintValFFX(DeltanSec1 - DeltaGen1, 5, 0);
+            }
             if (JLFlag)
+            {
+                if (DeltanSecL < DeltaGenL) {
+                    DeltaGenL = DeltanSecL;
+                }
                 PrintValFFX(DeltanSecL - DeltaGenL, 5, 0);
+            }
             if (fFlag)
                 fflush(NULL);
         }
@@ -4199,15 +4579,15 @@ nextPart:
 
         if (mFlag && (bFlag == 0) && (yFlag == 0))
         {
-            PRINT5_1f((double)j__AllocWordsJBB   / (double)Pop1);       // 256 node branch
-            PRINT5_1f((double)j__AllocWordsJBU   / (double)Pop1);       // 256 node branch
-            PRINT5_1f((double)j__AllocWordsJBL   / (double)Pop1);       // xx node branch
-            PRINT5_1f((double)j__AllocWordsJLL[0] / (double)Pop1);      // > 56-bit key
+            PRINT5_1f((double)j__AllocWordsJBB    / Pop1);       // 256 node branch
+            PRINT5_1f((double)j__AllocWordsJBU    / Pop1);       // 256 node branch
+            PRINT5_1f((double)j__AllocWordsJBL    / Pop1);       // xx node branch
+            PRINT5_1f((double)j__AllocWordsJLL[0] / Pop1);
             for (int ll = 7; ll > 0; --ll) {
-                PRINT5_1f((double)j__AllocWordsJLL[ll] / (double)Pop1); // ll * 8 bit Key
+                PRINT5_1f((double)j__AllocWordsJLL[ll] / Pop1);
             }
-            PRINT5_1f((double)j__AllocWordsJLB1  / (double)Pop1);       // 1 digit bimap
-            PRINT5_1f((double)j__AllocWordsJV    / (double)Pop1);       // Values
+            PRINT5_1f((double)j__AllocWordsJLB1 / Pop1);       // 1 digit bimap
+            PRINT5_1f((double)j__AllocWordsJV   / Pop1);       // Values
 
 // SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSss
 
@@ -4219,13 +4599,23 @@ nextPart:
                 PRINT5_1f(DeltaMalFreLSum / Pms[grp].ms_delta);
 #ifdef SEARCHMETRICS
 //          print average number of failed compares done in leaf search
-            PrintValx100((double)MisComparesP / MAX(GetCallsP + DirectHits, 1), 5, 1);
-            PrintValx100((double)MisComparesM / MAX(GetCallsM + DirectHits, 1), 5, 1);
+            PrintVal(GetCalls, 5, 0);
             PrintVal((double)SearchPopulation / MAX(GetCalls - GetCallsSansPop, 1), 5, 1);
             PrintValx100((double)DirectHits / GetCalls, 5, 1);
-            PrintValx100((double)GetCallsP / GetCalls, 5, 1);
-            PrintValx100((double)GetCallsM / GetCalls, 5, 1);
-            PrintVal(GetCalls, 5, 0);
+            printf(" %5.1f ", GetCallsP * 100.0 / MAX(GetCallsP + GetCallsM, 1));
+    #ifdef DEBUG_SMETRICS
+            printf("\n");
+            printf("Meas %zd", Meas);
+            printf(" Gets %zd", j__GetCalls);
+            printf(" Not %zd", j__GetCallsNot);
+            printf(" SansPop %zd", j__GetCallsSansPop);
+            printf(" Pop %zd", j__SearchPopulation);
+            printf(" Hits %zd", j__DirectHits);
+            printf(" NHits %zd", j__NotDirectHits);
+            printf(" P %zd %zd", j__GetCallsP, GetCallsP);
+            printf(" M %zd %zd", j__GetCallsM, GetCallsM);
+            printf(" SearchLen %zd", j__SearchPopulation / Meas);
+    #endif // DEBUG_SMETRICS
 #endif // SEARCHMETRICS
         }
 
@@ -4885,7 +5275,6 @@ TestJudyGet(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements,
   #endif // DSMETRICS_GETS else
                 j__GetCallsSansPop = 0;
                 j__SearchPopulation = 0;
-                j__MisComparesP = j__MisComparesM = 0;
                 j__DirectHits = j__NotDirectHits = j__GetCallsP = j__GetCallsM = 0;
             }
 
@@ -4958,7 +5347,6 @@ TestJudyGet(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements,
   #endif // DSMETRICS_GETS else
                 j__GetCallsSansPop = 0;
                 j__SearchPopulation = 0;
-                j__MisComparesP = j__MisComparesM = 0;
                 j__DirectHits = j__NotDirectHits = j__GetCallsP = j__GetCallsM = 0;
             }
 
@@ -5054,7 +5442,6 @@ TestJudyLGet(void *JL, PNewSeed_t PSeed, Word_t Elements)
   #endif // DSMETRICS_GETS else
             j__GetCallsSansPop = 0;
             j__SearchPopulation = 0;
-            j__MisComparesP = j__MisComparesM = 0;
             j__DirectHits = j__NotDirectHits = j__GetCallsP = j__GetCallsM = 0;
         }
 
@@ -5157,8 +5544,7 @@ TestJudyCount(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
 {
     (void)PSeed; // for TEST_COUNT_USING_JUDY_NEXT
 
-    Word_t    elm;
-    Word_t    Count1, CountL;
+    Word_t    Count; (void)Count;
     Word_t    TstKey;
 
     double    DminTime;
@@ -5167,71 +5553,83 @@ TestJudyCount(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
 
     Word_t Loops = lFlag ? 1 : (MAXLOOPS / Elements) + MINLOOPS;
 
+  #ifndef TEST_COUNT_USING_JUDY_NEXT
+    Elements >>= !wCloseCountsMask; // two gets per loop
+  #endif // !TEST_COUNT_USING_JUDY_NEXT
     if (J1Flag)
     {
         for (DminTime = 1e40, icnt = ICNT, lp = 0; lp < Loops; lp++)
         {
-// TEST_COUNT_USING_JUDY_NEXT is incompatible with hFlag.
-#ifdef TEST_COUNT_USING_JUDY_NEXT // the old way
+            Word_t TstKey0 = 0;
+      // TEST_COUNT_USING_JUDY_NEXT is incompatible with hFlag.
+  #ifdef TEST_COUNT_USING_JUDY_NEXT // the old way; not a good test
             TstKey = 0;
-            int Rc = Judy1First(J1, &TstKey, PJE0);
-            elm = 0;
-#else // TEST_COUNT_USING_JUDY_NEXT
-            Word_t TstKey2;
+            Judy1First(J1, &TstKey, NULL);
+            TstKey ^= bCountTwiddledKeys;
+  #else // TEST_COUNT_USING_JUDY_NEXT
             NewSeed_t WorkingSeed = *PSeed;
-            elm = 1;
-#endif // TEST_COUNT_USING_JUDY_NEXT
-
+  #endif // TEST_COUNT_USING_JUDY_NEXT else
             STARTTm;
-            while (elm < Elements)
+            for (Word_t elm = 0; elm < Elements; ++elm)
             {
-#ifndef TEST_COUNT_USING_JUDY_NEXT // the new way
+  #ifndef TEST_COUNT_USING_JUDY_NEXT
                 SYNC_SYNC(TstKey = GetNextKey(&WorkingSeed));
-                TstKey2 = GetNextKey(&WorkingSeed);
-#endif // TEST_COUNT_USING_JUDY_NEXT
+                TstKey ^= bCountTwiddledKeys;
+                TstKey0 = wCloseCountsMask
+                    ? (TstKey ^ wCloseCountsMask)
+                    : (GetNextKey(&WorkingSeed) ^ bCountTwiddledKeys);
+                if (TstKey0 > TstKey) {
+                    // swap keys
+                    TstKey ^= TstKey0; TstKey0 ^= TstKey; TstKey ^= TstKey0;
+                }
+  #endif // !TEST_COUNT_USING_JUDY_NEXT
                 if (Tit)
                 {
-#ifdef TEST_COUNT_USING_JUDY_NEXT
-                    Count1 = Judy1Count(J1, 0, TstKey, PJE0);
-                    if (Count1 != (elm + 1))
+                    Count = Judy1Count(J1, TstKey0, TstKey, NULL);
+  #ifdef  TESTCOUNTACCURACY
+                    Word_t CountU = Judy1CountWithNext(J1, TstKey0, TstKey);
+                    if (Count != CountU)
                     {
                         printf("\n");
-                        printf("Count1 = %" PRIuPTR", TstKey = %" PRIuPTR"\n",
-                               Count1, TstKey);
-                        printf("Elements %zd\n", Elements);
-                        FAILURE("J1C at", elm);
+      #ifndef MIKEY_1
+                        printf(" -- Array Pop1 = %zu\n", ((PWord_t)J1)[0] + 1);
+      #endif // !MIKEY_1
+                        printf(" -- Count = %zu, != Debug CountU = %zu\n", Count, CountU);
+                        FAILURE("Judy1Count at", elm);
                     }
-#else // TEST_COUNT_USING_JUDY_NEXT
-                    if (TstKey > TstKey2) {
-                        // swap keys
-                        Word_t w = TstKey; TstKey = TstKey2; TstKey2 = w;
+  #endif // TESTCOUNTACCURACY
+  #ifdef REGRESS // Validate Count.
+                    if (TstKey > TstKey0) {
+                        Word_t TstKeyA = TstKey0 + (TstKey - TstKey0) / 3;
+                        Word_t CountA = Judy1Count(J1, TstKey0, TstKeyA, NULL);
+                        Word_t CountB = Judy1Count(J1, TstKeyA + 1, TstKey, NULL);
+                        if (Count != CountA + CountB) {
+                            printf("\n");
+                            printf("Count %zd TstKey0 0x%zx TstKey 0x%zx\n",
+                                   Count, TstKey0, TstKey);
+                            printf("TstKeyA 0x%zx CountA %zd CountB %zd\n",
+                                   TstKeyA, CountA, CountB);
+                            printf("Elements %zd\n", Elements);
+                            Judy1Dump((Word_t)J1, sizeof(Word_t) * 8, 0);
+                            FAILURE("J1C at", elm);
+                        }
+                    } else {
+                        int ret = Judy1Test(J1, TstKey, NULL);
+                        if (Count != (ret == 1)) {
+                            printf("TstKey 0x%zx Count %zd Judy1Test %d\n",
+                                   TstKey, Count, ret);
+                            FAILURE("J1C at", elm);
+                        }
                     }
-                    --TstKey2;
-                    Count1 = Judy1Count(J1, TstKey, TstKey2, PJE0);
-                    if ((Count1 < 1) || (Count1 > TstKey2 - TstKey + 1))
-                    {
-                        printf("\n");
-                        printf("Count1 %zd TstKey 0x%zx TstKey2 0x%zx\n",
-                               Count1, TstKey, TstKey2);
-                        printf("Elements %zd\n", Elements);
-                        FAILURE("J1C at", elm);
-                    }
-#endif // TEST_COUNT_USING_JUDY_NEXT
+  #endif // REGRESS
                 }
-#ifdef TEST_COUNT_USING_JUDY_NEXT
-                Rc = Judy1Next(J1, &TstKey, PJE0);
-#else // TEST_COUNT_USING_JUDY_NEXT
-                ++elm;
-#endif // TEST_COUNT_USING_JUDY_NEXT
-                ++elm;
+  #ifdef TEST_COUNT_USING_JUDY_NEXT
+                TstKey ^= bCountTwiddledKeys;
+                Judy1Next(J1, &TstKey, NULL);
+                TstKey ^= bCountTwiddledKeys;
+  #endif // TEST_COUNT_USING_JUDY_NEXT
             }
             ENDTm(DeltanSec1);
-
-#ifdef TEST_COUNT_USING_JUDY_NEXT
-            if (Rc == 1234)             // impossible value
-                exit(-1);               // shut up compiler only
-#endif // TEST_COUNT_USING_JUDY_NEXT
-
             if (DminTime > DeltanSec1)
             {
                 icnt = ICNT;
@@ -5245,76 +5643,82 @@ TestJudyCount(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
             }
         }
         DeltanSec1 = DminTime / (double)Elements;
-#ifndef TEST_COUNT_USING_JUDY_NEXT
-        DeltanSec1 *= 2;
-#endif // TEST_COUNT_USING_JUDY_NEXT
     }
 
     if (JLFlag)
     {
         for (DminTime = 1e40, icnt = ICNT, lp = 0; lp < Loops; lp++)
         {
-            Word_t *PValue; (void)PValue; // void for !TEST_COUNT_USING_JUDY_NEXT
-
-#ifdef TEST_COUNT_USING_JUDY_NEXT // the old way
+            Word_t TstKey0 = 0;
+      // TEST_COUNT_USING_JUDY_NEXT is incompatible with hFlag.
+  #ifdef TEST_COUNT_USING_JUDY_NEXT // the old way; not a good test
             TstKey = 0;
-            PValue = (PWord_t)JudyLFirst(JL, &TstKey, PJE0);
-            elm = 0;
-#else // TEST_COUNT_USING_JUDY_NEXT
-            Word_t TstKey2;
+            JudyLFirst(JL, &TstKey, NULL);
+            TstKey ^= bCountTwiddledKeys;
+  #else // TEST_COUNT_USING_JUDY_NEXT
             NewSeed_t WorkingSeed = *PSeed;
-            elm = 1;
-#endif // TEST_COUNT_USING_JUDY_NEXT
-
+  #endif // TEST_COUNT_USING_JUDY_NEXT else
             STARTTm;
-            while (elm < Elements)
+            for (Word_t elm = 0; elm < Elements; ++elm)
             {
-#ifndef TEST_COUNT_USING_JUDY_NEXT // the new way
+  #ifndef TEST_COUNT_USING_JUDY_NEXT
                 SYNC_SYNC(TstKey = GetNextKey(&WorkingSeed));
-                TstKey2 = GetNextKey(&WorkingSeed);
-#endif // TEST_COUNT_USING_JUDY_NEXT
+                TstKey ^= bCountTwiddledKeys;
+                TstKey0 = wCloseCountsMask
+                    ? (TstKey ^ wCloseCountsMask)
+                    : (GetNextKey(&WorkingSeed) ^ bCountTwiddledKeys);
+                if (TstKey0 > TstKey) {
+                    // swap keys
+                    TstKey ^= TstKey0; TstKey0 ^= TstKey; TstKey ^= TstKey0;
+                }
+  #endif // !TEST_COUNT_USING_JUDY_NEXT
                 if (Tit)
                 {
-#ifdef TEST_COUNT_USING_JUDY_NEXT
-                    CountL = JudyLCount(JL, 0, TstKey, PJE0);
-                    if (CountL != (elm + 1))
-                    {
-                        printf("CountL = %" PRIuPTR", elm +1 = %" PRIuPTR"\n", CountL, elm + 1);
-                        printf("Elements %zd\n", Elements);
-                        FAILURE("JLC at", elm);
-                    }
-#else // TEST_COUNT_USING_JUDY_NEXT
-                    if (TstKey > TstKey2) {
-                        // swap keys
-                        Word_t w = TstKey; TstKey = TstKey2; TstKey2 = w;
-                    }
-                    --TstKey2;
-                    CountL = JudyLCount(JL, TstKey, TstKey2, PJE0);
-                    if ((CountL < 1) || (CountL > TstKey2 - TstKey + 1))
+                    Count = JudyLCount(JL, TstKey0, TstKey, NULL);
+  #ifdef  TESTCOUNTACCURACY
+                    Word_t CountU = JudyLCountWithNext(JL, TstKey0, TstKey);
+                    if (Count != CountU)
                     {
                         printf("\n");
-                        printf("CountL %zd TstKey 0x%zx TstKey2 0x%zx\n",
-                               CountL, TstKey, TstKey2);
-                        printf("Elements %zd\n", Elements);
-                        FAILURE("JLC at", elm);
+      #ifndef MIKEY_L
+                        printf(" -- Array PopL = %zu\n", ((PWord_t)JL)[0] + 1);
+      #endif // !MIKEY_L
+                        printf(" -- Count = %zu, != Debug CountU = %zu\n", Count, CountU);
+                        FAILURE("JudyLCount at", elm);
                     }
-#endif // TEST_COUNT_USING_JUDY_NEXT
+  #endif // TESTCOUNTACCURACY
+  #ifdef REGRESS // Validate Count.
+                    if (TstKey > TstKey0) {
+                        Word_t TstKeyA = TstKey0 + (TstKey - TstKey0) / 3;
+                        Word_t CountA = JudyLCount(JL, TstKey0, TstKeyA, NULL);
+                        Word_t CountB = JudyLCount(JL, TstKeyA + 1, TstKey, NULL);
+                        if (Count != CountA + CountB) {
+                            printf("\n");
+                            printf("Count %zd TstKey0 0x%zx TstKey 0x%zx\n",
+                                   Count, TstKey0, TstKey);
+                            printf("TstKeyA 0x%zx CountA %zd CountB %zd\n",
+                                   TstKeyA, CountA, CountB);
+                            printf("Elements %zd\n", Elements);
+                            JudyLDump((Word_t)JL, sizeof(Word_t) * 8, 0);
+                            FAILURE("JLC at", elm);
+                        }
+                    } else {
+                        PPvoid_t ppvValue = JudyLGet(JL, TstKey, NULL);
+                        if (Count != (ppvValue != NULL)) {
+                            printf("TstKey 0x%zx Count %zd JudyLGet %p\n",
+                                   TstKey, Count, ppvValue);
+                            FAILURE("JLC at", elm);
+                        }
+                    }
+  #endif // REGRESS
                 }
-#ifdef TEST_COUNT_USING_JUDY_NEXT
-                PValue = (PWord_t)JudyLNext(JL, &TstKey, PJE0);
-                if (VFlag && PValue && (*PValue != TstKey))
-                {
-                    printf("\nPValue=0x%" PRIxPTR", *PValue=0x%" PRIxPTR", TstKey=0x%" PRIxPTR"\n",
-                           (Word_t)PValue, *PValue, TstKey);
-                    FAILURE("JudyLNext ret bad *PValue at", elm);
-                }
-#else // TEST_COUNT_USING_JUDY_NEXT
-                ++elm;
-#endif // TEST_COUNT_USING_JUDY_NEXT
-                ++elm;
+  #ifdef TEST_COUNT_USING_JUDY_NEXT
+                TstKey ^= bCountTwiddledKeys;
+                JudyLNext(JL, &TstKey, NULL);
+                TstKey ^= bCountTwiddledKeys;
+  #endif // TEST_COUNT_USING_JUDY_NEXT
             }
             ENDTm(DeltanSecL);
-
             if (DminTime > DeltanSecL)
             {
                 icnt = ICNT;
@@ -5328,9 +5732,6 @@ TestJudyCount(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
             }
         }
         DeltanSecL = DminTime / (double)Elements;
-#ifndef TEST_COUNT_USING_JUDY_NEXT
-        DeltanSecL *= 2;
-#endif // TEST_COUNT_USING_JUDY_NEXT
     }
 
     return (0);
@@ -5343,6 +5744,11 @@ Word_t
 TestJudyNext(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
 {
     (void)PSeed; // for TEST_NEXT_USING_JUDY_NEXT
+  #ifdef NO_TEST_NEXT_PROPER
+    (void)J1; (void)JL; (void)PSeed; (void)Elements;
+    DeltanSec1 = 0;
+    DeltanSecL = 0;
+  #else // NO_TEST_NEXT_PROPER
 
     Word_t    elm;
 
@@ -5358,36 +5764,45 @@ TestJudyNext(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
     {
         for (DminTime = 1e40, icnt = ICNT, lp = 0; lp < Loops; lp++)
         {
-            int Rc;
+            int Rc; (void)Rc;
+      #ifdef REGRESS
             Word_t J1KeyBefore;
-#ifdef TEST_NEXT_USING_JUDY_NEXT
-            J1KeyBefore = -1;
+      #endif // REGRESS
+  #ifdef TEST_NEXT_USING_JUDY_NEXT
             J1Key = 0;
             Rc = Judy1First(J1, &J1Key, PJE0);
-#else // TEST_NEXT_USING_JUDY_NEXT
+      #ifdef REGRESS
+            J1KeyBefore = ~J1Key;
+      #endif // REGRESS
+  #else // TEST_NEXT_USING_JUDY_NEXT
+      #ifdef REGRESS
             Word_t J1LastKey = -1;
             Judy1Last(J1, &J1LastKey, PJE0);
+      #endif // REGRESS
             NewSeed_t WorkingSeed = *PSeed;
-#endif // #else TEST_NEXT_USING_JUDY_NEXT
+  #endif // #else TEST_NEXT_USING_JUDY_NEXT
 
             STARTTm;
             for (elm = 0; elm < Elements; elm++)
             {
-#ifndef TEST_NEXT_USING_JUDY_NEXT
+  #ifndef TEST_NEXT_USING_JUDY_NEXT
                 SYNC_SYNC(J1Key = GetNextKey(&WorkingSeed));
-#endif // #ifndef TEST_NEXT_USING_JUDY_NEXT
+  #endif // #ifndef TEST_NEXT_USING_JUDY_NEXT
                 if (Tit)
                 {
-#ifndef TEST_NEXT_USING_JUDY_NEXT
+  #ifndef TEST_NEXT_USING_JUDY_NEXT
+      #ifdef REGRESS
                     J1KeyBefore = J1Key;
+      #endif // REGRESS
                     Rc = Judy1Next(J1, &J1Key, PJE0);
+      #ifdef REGRESS
                     if (J1KeyBefore == J1LastKey)
                     {
                         if ((Rc == 1)
   // Judy 1.0.5 did not preserve the key value on next/prev failure.
-  #ifndef NO_PRESERVED_KEY
+      #ifndef NO_PRESERVED_KEY
                             || (J1Key != J1KeyBefore)
-  #endif // #ifndef NO_PRESERVED_KEY
+      #endif // #ifndef NO_PRESERVED_KEY
                             )
                         {
                             printf("\n");
@@ -5396,12 +5811,12 @@ TestJudyNext(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                             printf("\nElements = %" PRIuPTR
                                    ", elm = %" PRIuPTR"\n",
                                    Elements, elm);
-  #ifndef NO_PRESERVED_KEY
+      #ifndef NO_PRESERVED_KEY
                             if (Rc != 1) {
                                 printf("Build with -DNO_PRESERVED_KEY");
                                 printf(" to disable this test.");
                             }
-  #endif // #ifndef NO_PRESERVED_KEY
+      #endif // #ifndef NO_PRESERVED_KEY
                             FAILURE("J1N succeeded on last key J1Key", J1Key);
                         }
                         if (Elements == 1) {
@@ -5410,23 +5825,28 @@ TestJudyNext(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                         J1Key = 0;
                         Rc = Judy1First(J1, &J1Key, PJE0);
                     }
-#endif // #ifndef TEST_NEXT_USING_JUDY_NEXT
+      #endif // REGRESS
+  #endif // #ifndef TEST_NEXT_USING_JUDY_NEXT
+  #ifdef REGRESS
                     if ((Rc != 1) || (J1Key == J1KeyBefore))
                     {
                         printf("\n");
-#ifndef TEST_NEXT_USING_JUDY_NEXT
+      #ifndef TEST_NEXT_USING_JUDY_NEXT
                         printf("J1LastKey 0x%zx\n", J1LastKey);
-#endif // #ifndef TEST_NEXT_USING_JUDY_NEXT
+      #endif // #ifndef TEST_NEXT_USING_JUDY_NEXT
                         printf("J1KeyBefore 0x%zx\n", J1KeyBefore);
                         printf("Rc %d\n", Rc);
                         printf("J1Key 0x%zx\n", J1Key);
                         printf("Elements %zu elm %zu\n", Elements, elm);
                         FAILURE("J1N failed J1Key", J1Key);
                     }
-#ifdef TEST_NEXT_USING_JUDY_NEXT
+  #endif // REGRESS
+  #ifdef TEST_NEXT_USING_JUDY_NEXT
+      #ifdef REGRESS
                     J1KeyBefore = J1Key;
+      #endif // REGRESS
                     Rc = Judy1Next(J1, &J1Key, PJE0);
-#endif // TEST_NEXT_USING_JUDY_NEXT
+  #endif // TEST_NEXT_USING_JUDY_NEXT
                 }
             }
             ENDTm(DeltanSec1);
@@ -5450,35 +5870,44 @@ TestJudyNext(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
     {
         for (DminTime = 1e40, icnt = ICNT, lp = 0; lp < Loops; lp++)
         {
+      #ifdef REGRESS
             Word_t JLKeyBefore;
-            Word_t *PValue = NULL;
-#ifdef TEST_NEXT_USING_JUDY_NEXT
-            JLKeyBefore = -1;
+      #endif // REGRESS
+            Word_t *PValue = NULL; (void)PValue;
+  #ifdef TEST_NEXT_USING_JUDY_NEXT
             JLKey = 0;
             PValue = (Word_t*)JudyLFirst(JL, &JLKey, PJE0);
-#else // TEST_NEXT_USING_JUDY_NEXT
+      #ifdef REGRESS
+            JLKeyBefore = ~JLKey;
+      #endif // REGRESS
+  #else // TEST_NEXT_USING_JUDY_NEXT
+      #ifdef REGRESS
             Word_t JLLastKey = -1;
             JudyLLast(JL, &JLLastKey, PJE0);
+      #endif // REGRESS
             NewSeed_t WorkingSeed = *PSeed;
-#endif // #else TEST_NEXT_USING_JUDY_NEXT
+  #endif // #else TEST_NEXT_USING_JUDY_NEXT
 
             STARTTm;
             for (elm = 0; elm < Elements; elm++)
             {
-#ifndef TEST_NEXT_USING_JUDY_NEXT
+  #ifndef TEST_NEXT_USING_JUDY_NEXT
                 SYNC_SYNC(JLKey = GetNextKey(&WorkingSeed));
-#endif // #ifndef TEST_NEXT_USING_JUDY_NEXT
+  #endif // #ifndef TEST_NEXT_USING_JUDY_NEXT
                 if (Tit)
                 {
-#ifndef TEST_NEXT_USING_JUDY_NEXT
+  #ifndef TEST_NEXT_USING_JUDY_NEXT
+      #ifdef REGRESS
                     JLKeyBefore = JLKey;
+      #endif // REGRESS
                     PValue = (Word_t*)JudyLNext(JL, &JLKey, PJE0);
+      #ifdef REGRESS
                     if (JLKeyBefore == JLLastKey)
                     {
                         if ((PValue != NULL)
-  #ifndef NO_PRESERVED_KEY
+      #ifndef NO_PRESERVED_KEY
                             || (JLKey != JLKeyBefore)
-  #endif // #ifndef NO_PRESERVED_KEY
+      #endif // #ifndef NO_PRESERVED_KEY
                             )
                         {
                             printf("\n");
@@ -5487,12 +5916,12 @@ TestJudyNext(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                             printf("\nElements = %" PRIuPTR
                                    ", elm = %" PRIuPTR"\n",
                                    Elements, elm);
-  #ifndef NO_PRESERVED_KEY
+      #ifndef NO_PRESERVED_KEY
                             if (PValue == NULL) {
                                 printf("Build with -DNO_PRESERVED_KEY");
                                 printf(" to disable this test.");
                             }
-  #endif // #ifndef NO_PRESERVED_KEY
+      #endif // #ifndef NO_PRESERVED_KEY
                             FAILURE("JLN succeeded on last key JLKey", JLKey);
                         }
                         if (Elements == 1) {
@@ -5501,16 +5930,18 @@ TestJudyNext(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                         JLKey = 0;
                         PValue = (Word_t*)JudyLFirst(JL, &JLKey, PJE0);
                     }
-#endif // #ifndef TEST_NEXT_USING_JUDY_NEXT
+      #endif // REGRESS
+  #endif // #ifndef TEST_NEXT_USING_JUDY_NEXT
+      #ifdef REGRESS
                     if ((PValue == NULL)
                         || (JLKey == JLKeyBefore)
                         // Could verify that PValue != PValueBefore.
                         || (VFlag && (*PValue != JLKey)))
                     {
                         printf("\n");
-#ifndef TEST_NEXT_USING_JUDY_NEXT
+  #ifndef TEST_NEXT_USING_JUDY_NEXT
                         printf("JLLastKey %" PRIuPTR"\n", JLLastKey);
-#endif // #ifndef TEST_NEXT_USING_JUDY_NEXT
+  #endif // #ifndef TEST_NEXT_USING_JUDY_NEXT
                         printf("JLKeyBefore %" PRIuPTR"\n", JLKeyBefore);
                         printf("JLKeyBefore 0x%zx PValue %p\n", JLKeyBefore, PValue);
                         if (PValue != NULL)
@@ -5526,10 +5957,13 @@ TestJudyNext(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                         }
                         FAILURE("JLN failed JLKey", JLKey);
                     }
-#ifdef TEST_NEXT_USING_JUDY_NEXT
+      #endif // REGRESS
+  #ifdef TEST_NEXT_USING_JUDY_NEXT
+      #ifdef REGRESS
                     JLKeyBefore = JLKey;
+      #endif // REGRESS
                     PValue = (Word_t*)JudyLNext(JL, &JLKey, PJE0);
-#endif // TEST_NEXT_USING_JUDY_NEXT
+  #endif // TEST_NEXT_USING_JUDY_NEXT
                 }
             }
             ENDTm(DeltanSecL);
@@ -5556,6 +5990,7 @@ TestJudyNext(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
         return (JLKey);
     if (J1Flag)
         return (J1Key);
+  #endif // NO_TEST_NEXT_PROPER else
     return (-1);
 }
 
@@ -5565,6 +6000,11 @@ TestJudyNext(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
 int
 TestJudyPrev(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
 {
+  #ifdef NO_TEST_PREV
+    (void)J1; (void)JL; (void)PSeed; (void)Elements;
+    DeltanSec1 = 0;
+    DeltanSecL = 0;
+  #else // NO_TEST_PREV
     (void)PSeed; // for TEST_NEXT_USING_JUDY_NEXT
 
     Word_t    elm;
@@ -5584,8 +6024,7 @@ TestJudyPrev(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
             int Rc;
             Word_t J1KeyBefore;
 #ifdef TEST_NEXT_USING_JUDY_NEXT
-            J1KeyBefore = 0;
-            J1Key = -1;
+            J1KeyBefore = J1Key = -1;
             Rc = Judy1Last(J1, &J1Key, PJE0);
 #else // TEST_NEXT_USING_JUDY_NEXT
             Word_t J1FirstKey = 0;
@@ -5633,16 +6072,24 @@ TestJudyPrev(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                         Rc = Judy1Last(J1, &J1Key, PJE0);
                     }
 #endif // #ifndef TEST_NEXT_USING_JUDY_NEXT
-                    if ((Rc != 1) || (J1Key == J1KeyBefore))
+                    if ((Rc != 1)
+                        || ((J1Key == J1KeyBefore)
+  #ifdef TEST_NEXT_USING_JUDY_NEXT
+                                && (elm != 0) // did Last for elm==0; not Prev
+  #endif // TEST_NEXT_USING_JUDY_NEXT
+                             ))
                     {
                         printf("\n");
 #ifndef TEST_NEXT_USING_JUDY_NEXT
                         printf("J1FirstKey %" PRIuPTR"\n", J1FirstKey);
 #endif // #ifndef TEST_NEXT_USING_JUDY_NEXT
-                        printf("J1KeyBefore %" PRIuPTR"\n", J1KeyBefore);
+                        printf("Rc %d\n", Rc);
+                        printf("J1Key 0x%zx\n", J1Key);
+                        printf("J1KeyBefore 0x%zx\n", J1KeyBefore);
                         printf("\nElements = %" PRIuPTR
                                ", elm = %" PRIuPTR"\n",
                                Elements, elm);
+                        Judy1Dump((Word_t)J1, sizeof(Word_t) * 8, 0);
                         FAILURE("J1P failed J1Key", J1Key);
                     }
 #ifdef TEST_NEXT_USING_JUDY_NEXT
@@ -5675,8 +6122,7 @@ TestJudyPrev(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
             Word_t JLKeyBefore;
             Word_t *PValue = NULL;
 #ifdef TEST_NEXT_USING_JUDY_NEXT
-            JLKeyBefore = 0;
-            JLKey = -1;
+            JLKeyBefore = JLKey = -1;
             PValue = (Word_t*)JudyLLast(JL, &JLKey, PJE0);
 #else // TEST_NEXT_USING_JUDY_NEXT
             Word_t JLFirstKey = 0;
@@ -5725,8 +6171,12 @@ TestJudyPrev(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                     }
 #endif // #ifndef TEST_NEXT_USING_JUDY_NEXT
                     if ((PValue == NULL)
-                        || (JLKey == JLKeyBefore)
-                        || (VFlag && (*PValue != JLKey)))
+                        || (VFlag && (*PValue != JLKey))
+                        || ((JLKey == JLKeyBefore)
+  #ifdef TEST_NEXT_USING_JUDY_NEXT
+                                && (elm != 0) // did Last for elm==0; not Prev
+  #endif // TEST_NEXT_USING_JUDY_NEXT
+                             ))
                     {
                         printf("\n");
 #ifndef TEST_NEXT_USING_JUDY_NEXT
@@ -5764,6 +6214,7 @@ TestJudyPrev(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
         }
         DeltanSecL = DminTime / (double)Elements;
     }
+  #endif // NO_TEST_PREV else
 
 //  perhaps a check should be done here -- if I knew what to expect.
     return (0);
@@ -5778,6 +6229,7 @@ TestJudyNextEmpty(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
 {
   #ifdef NO_TEST_NEXT_EMPTY
     (void)J1; (void)JL; (void)PSeed; (void)Elements;
+    DeltanSec1 = 0;
     DeltanSecL = 0;
   #else // NO_TEST_NEXT_EMPTY
     Word_t    elm;
@@ -5804,7 +6256,11 @@ TestJudyNextEmpty(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                 if (Tit)
                 {
                     Word_t J1KeyBefore = J1Key;
-                    Rc = Judy1NextEmpty(J1, &J1Key, PJE0);
+                    if (bTestFirstEmpty) {
+                        Rc = Judy1FirstEmpty(J1, &J1Key, PJE0);
+                    } else {
+                        Rc = Judy1NextEmpty(J1, &J1Key, PJE0);
+                    }
                     // We know that J1KeyBefore is in the array.
                     // If NextEmpty returns 0, then all of the keys greater
                     // than J1KeyBefore are also in the array.
@@ -5820,6 +6276,12 @@ TestJudyNextEmpty(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                             || (J1Key != J1KeyBefore)))
                     {
                         printf("\n");
+                        printf("J1KeyBefore %zd 0x%zx\n",
+                               J1KeyBefore, J1KeyBefore);
+                        printf("Count %zd 0x%zx -J1KeyBefore %zd 0x%zx\n",
+                               Judy1Count(J1, J1KeyBefore, -1, PJE0),
+                               Judy1Count(J1, J1KeyBefore, -1, PJE0),
+                               J1KeyBefore, J1KeyBefore);
                         Judy1Dump((Word_t)J1, sizeof(Word_t) * 8, 0);
                         FAILURE("Judy1NextEmpty Rcode != 1 Key", J1KeyBefore);
                     }
@@ -5856,7 +6318,11 @@ TestJudyNextEmpty(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
                 if (Tit)
                 {
                     Word_t JLKeyBefore = JLKey;
-                    Rc = JudyLNextEmpty(JL, &JLKey, PJE0);
+                    if (bTestFirstEmpty) {
+                        Rc = JudyLFirstEmpty(JL, &JLKey, PJE0);
+                    } else {
+                        Rc = JudyLNextEmpty(JL, &JLKey, PJE0);
+                    }
                     if ((Rc != 1)
                         && ((JudyLCount(JL, JLKeyBefore, -1, PJE0)
                                 != -JLKeyBefore)
@@ -5894,10 +6360,11 @@ TestJudyNextEmpty(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
 int
 TestJudyPrevEmpty(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
 {
-  #ifdef NO_TEST_NEXT_EMPTY
+  #if defined(NO_TEST_NEXT_EMPTY) || defined(NO_TEST_PREV)
     (void)J1; (void)JL; (void)PSeed; (void)Elements;
+    DeltanSec1 = 0;
     DeltanSecL = 0;
-  #else // NO_TEST_NEXT_EMPTY
+  #else // NO_TEST_NEXT_EMPTY || NO_TEST_PREV
     Word_t    elm;
 
     double    DminTime;
@@ -5996,7 +6463,7 @@ TestJudyPrevEmpty(void *J1, void *JL, PNewSeed_t PSeed, Word_t Elements)
         }
         DeltanSecL = DminTime / (double)Elements;
     }
-  #endif // !NO_TEST_NEXT_EMPTY
+  #endif // NO_TEST_NEXT_EMPTY || NO_TEST_PREV else
     return (0);
 }
 
