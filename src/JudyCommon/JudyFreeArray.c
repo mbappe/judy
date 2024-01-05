@@ -121,7 +121,7 @@ printf("FreeArray TotalMem = %ld, jpm.jpm_TotalMemWords = %ld\n",  TotalMem, -jp
 } // Judy1FreeArray() / JudyLFreeArray()
 
 #ifdef  DEBUG
-        Word_t Line;
+static Word_t Line;
 #endif  // DEBUG
 
 // ****************************************************************************
