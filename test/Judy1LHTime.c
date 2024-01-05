@@ -267,16 +267,34 @@ SM_EXTERN Word_t j__MisComparesM;
 
 #include <time.h>
 
-#if defined __APPLE__ && defined __MACH__
-
-#include <mach/mach_time.h>
+#if defined OLD_MAC_TIME && defined __APPLE__ && defined __MACH__
 
 uint64_t  start__;
 
-#define STARTTm  (start__ = mach_absolute_time())
-#define ENDTm(D) ((D) = (double)(mach_absolute_time() - start__))
+  #ifdef MAC_GETTIME_NSEC
 
-#else  // POSIX Linux and Unix
+#define STARTTm (start__ = clock_gettime_nsec_np(CLOCK_UPTIME_RAW))
+#define ENDTm(D) \
+{ \
+    (D) = (double)(clock_gettime_nsec_np(CLOCK_UPTIME_RAW) - start__); \
+}
+
+  #else // MAC_GETTIME_NSEC
+
+#include <mach/mach_time.h>
+
+mach_timebase_info_data_t sTimebase;
+
+#define STARTTm  (start__ = mach_absolute_time())
+#define ENDTm(D) \
+{ \
+    (D) = (double)(mach_absolute_time() - start__); \
+    (D) = (D) * sTimebase.numer / sTimebase.denom; \
+}
+
+  #endif // MAC_GETTIME_NSEC
+
+#else // OLD_MAC_TIME && __APPLE__ && __MACH__
 
 struct timespec TVBeg__, TVEnd__;
 
@@ -296,7 +314,8 @@ struct timespec TVBeg__, TVEnd__;
     (D) = (double)(TVEnd__.tv_sec - TVBeg__.tv_sec) * 1E9 +             \
          ((double)(TVEnd__.tv_nsec - TVBeg__.tv_nsec));                 \
 }
-#endif // POSIX Linux and Unix
+
+#endif // else OLD_MAC_TIME && __APPLE__ && __MACH__
 
 Word_t    xFlag = 0;    // Turn ON 'waiting for Context Switch'
 
@@ -1530,7 +1549,7 @@ oa2w(char *str, char **endptr, int base, int ch)
     errno = 0;
 
     long double ld = strtold(str, &lendptr);
-    ul = (Word_t)ld;
+    ul = (Word_t)(long)ld;
 
     if (errno != 0) {
         printf("\nError --- Illegal optarg, \"%s\", for option \"-%c\": %s.\n",
@@ -1949,6 +1968,12 @@ main(int argc, char *argv[])
     assert(MaxNumb == (Word_t)(pow(2.0, BValue) * Bpercent / 100) - 1);
 
     setbuf(stdout, NULL);               // unbuffer output
+
+#if defined OLD_MAC_TIME && defined __APPLE__ && defined __MACH__
+#ifndef MAC_GETTIME_NSEC
+    (void)mach_timebase_info(&sTimebase);
+#endif // MAC_GETTIME_NSEC
+#endif // OLD_MAC_TIME && __APPLE__ && __MACH__
 
 #if 0
     // Different get time functions on Linux.
@@ -3526,7 +3551,7 @@ eopt:
     }
 
 //  If this number is not consistant, then a longer warmup period is required
-    printf("# random() = %4.2f nSec per/call\n", DeltanSecW/1000000);
+    printf("# random() = %4.2f nSec per call\n", DeltanSecW/1000000);
     printf("#\n");
 
 // ============================================================
